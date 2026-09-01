@@ -11,15 +11,15 @@ from auto_runner import AutoRunner
 ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme("blue") 
 
-# Pastel Colors
-BG_COLOR = "#FAF5FF"        # Very light purple/pink background
+# Autumn Palette
+BG_COLOR = "#FFF8F0"        # Warm cream background
 CARD_COLOR = "#FFFFFF"      # Crisp white cards
-TEXT_COLOR = "#2D3748"      # Dark slate for text
-ACCENT_PINK = "#F472B6"     # Pastel Pink for Biohit
-ACCENT_PURPLE = "#A78BFA"   # Pastel Purple for Analysis
-ACCENT_BLUE = "#60A5FA"     # Pastel Blue for DB
-START_BTN_COLOR = "#FF4D79" # Vibrant pink-red for start button
-START_BTN_HOVER = "#E03A62"
+TEXT_COLOR = "#432818"      # Deep espresso brown for text
+ACCENT_PINK = "#D95D39"     # Burnt Orange / Rustic Red
+ACCENT_PURPLE = "#E07A5F"   # Terracotta
+ACCENT_BLUE = "#D4A373"     # Warm Sand / Golden Yellow
+START_BTN_COLOR = "#9E2A2B" # Deep Autumn Red
+START_BTN_HOVER = "#540B0E" # Darker Crimson
 
 class RobolabDashboard(ctk.CTk):
     def __init__(self):
@@ -76,10 +76,10 @@ class RobolabDashboard(ctk.CTk):
         header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(40, 10))
         
         # Fake logo icon
-        logo = ctk.CTkLabel(header_frame, text="✨", font=ctk.CTkFont(size=40))
+        logo = ctk.CTkLabel(header_frame, text="🍂", font=ctk.CTkFont(size=40))
         logo.pack(pady=(0,5))
 
-        header_title = ctk.CTkLabel(header_frame, text="Robolab Dynamics", text_color="#FF4D79", font=ctk.CTkFont(family="Helvetica", size=36, weight="bold"))
+        header_title = ctk.CTkLabel(header_frame, text="Robolab Dynamics", text_color=START_BTN_COLOR, font=ctk.CTkFont(family="Helvetica", size=36, weight="bold"))
         header_title.pack()
         
         subtitle = ctk.CTkLabel(header_frame, text="Build beautiful, automated lab workflows effortlessly.", text_color="#718096", font=ctk.CTkFont(family="Helvetica", size=16))
