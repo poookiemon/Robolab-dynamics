@@ -7,15 +7,26 @@ import subprocess
 
 from auto_runner import AutoRunner
 
-# Configure modern aesthetic
-ctk.set_appearance_mode("Dark")  # Sleek dark mode
-ctk.set_default_color_theme("blue")  # Professional blue accents
+# Force the bright, light "ReportGen" aesthetic
+ctk.set_appearance_mode("Light")
+ctk.set_default_color_theme("blue") 
+
+# Pastel Colors
+BG_COLOR = "#FAF5FF"        # Very light purple/pink background
+CARD_COLOR = "#FFFFFF"      # Crisp white cards
+TEXT_COLOR = "#2D3748"      # Dark slate for text
+ACCENT_PINK = "#F472B6"     # Pastel Pink for Biohit
+ACCENT_PURPLE = "#A78BFA"   # Pastel Purple for Analysis
+ACCENT_BLUE = "#60A5FA"     # Pastel Blue for DB
+START_BTN_COLOR = "#FF4D79" # Vibrant pink-red for start button
+START_BTN_HOVER = "#E03A62"
 
 class RobolabDashboard(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("Robolab Dynamics - Mission Control")
         self.geometry("900x850")
+        self.configure(fg_color=BG_COLOR)
         
         self.protocol_path = ctk.StringVar()
         self.data_path = ctk.StringVar()
@@ -47,9 +58,7 @@ class RobolabDashboard(ctk.CTk):
             
             def read_output():
                 for line in iter(p.stdout.readline, ''):
-                    if line:
-                        # Schedule UI update
-                        self.after(0, lambda l=line: self.log("STUDIO: " + l.strip()))
+                    if line: self.after(0, lambda l=line: self.log("STUDIO: " + l.strip()))
                 p.stdout.close()
                 self.after(0, lambda: self.log(f"--- Studio Closed ({os.path.basename(app_path)}) ---"))
                 
@@ -64,78 +73,79 @@ class RobolabDashboard(ctk.CTk):
 
         # --- Header Area ---
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(30, 10))
+        header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(40, 10))
         
-        header_title = ctk.CTkLabel(header_frame, text="Robolab Dynamics", font=ctk.CTkFont(family="Helvetica", size=32, weight="bold"))
-        header_title.pack(anchor="w")
+        # Fake logo icon
+        logo = ctk.CTkLabel(header_frame, text="✨", font=ctk.CTkFont(size=40))
+        logo.pack(pady=(0,5))
+
+        header_title = ctk.CTkLabel(header_frame, text="Robolab Dynamics", text_color="#FF4D79", font=ctk.CTkFont(family="Helvetica", size=36, weight="bold"))
+        header_title.pack()
         
-        subtitle = ctk.CTkLabel(header_frame, text="Unified Orchestration & Setup Studio", font=ctk.CTkFont(family="Helvetica", size=16), text_color="gray")
-        subtitle.pack(anchor="w")
+        subtitle = ctk.CTkLabel(header_frame, text="Build beautiful, automated lab workflows effortlessly.", text_color="#718096", font=ctk.CTkFont(family="Helvetica", size=16))
+        subtitle.pack(pady=(5, 10))
 
         # --- Main Cards Area ---
         main_scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        main_scroll.grid(row=1, column=0, sticky="nsew", padx=20)
+        main_scroll.grid(row=1, column=0, sticky="nsew", padx=40)
         main_scroll.grid_columnconfigure(0, weight=1)
 
-        # Function to create a beautifully styled step card
+        # Function to create a beautifully styled step card (ReportGen Style)
         def create_step_card(parent, step_num, title, button_text, button_cmd, entry_var, browse_cmd, color):
-            card = ctk.CTkFrame(parent, corner_radius=15)
-            card.grid(sticky="ew", pady=10, padx=10)
+            card = ctk.CTkFrame(parent, fg_color=CARD_COLOR, corner_radius=25, border_width=2, border_color="#F1F5F9")
+            card.grid(sticky="ew", pady=15)
             card.grid_columnconfigure(1, weight=1)
             
             # Title
-            title_lbl = ctk.CTkLabel(card, text=f"Step {step_num}: {title}", font=ctk.CTkFont(size=18, weight="bold"))
-            title_lbl.grid(row=0, column=0, columnspan=3, sticky="w", padx=20, pady=(20, 10))
+            title_lbl = ctk.CTkLabel(card, text=f"{step_num}. {title}", text_color=color, font=ctk.CTkFont(size=22, weight="bold"))
+            title_lbl.grid(row=0, column=0, columnspan=3, sticky="w", padx=30, pady=(25, 15))
             
             # Studio Button
-            btn_studio = ctk.CTkButton(card, text=button_text, command=button_cmd, fg_color=color, hover_color=color, height=40, font=ctk.CTkFont(weight="bold"))
-            btn_studio.grid(row=1, column=0, columnspan=3, sticky="ew", padx=20, pady=(0, 20))
+            btn_studio = ctk.CTkButton(card, text=button_text, command=button_cmd, fg_color=color, hover_color=color, text_color="white", corner_radius=12, height=45, font=ctk.CTkFont(size=14, weight="bold"))
+            btn_studio.grid(row=1, column=0, columnspan=3, sticky="ew", padx=30, pady=(0, 20))
             
             # File Picker
-            lbl_file = ctk.CTkLabel(card, text="Target File/Folder:", font=ctk.CTkFont(size=14))
-            lbl_file.grid(row=2, column=0, sticky="w", padx=(20, 10), pady=(0, 20))
+            entry_file = ctk.CTkEntry(card, textvariable=entry_var, state="readonly", height=45, fg_color="#F8FAFC", text_color="#334155", border_color="#E2E8F0", corner_radius=12)
+            entry_file.grid(row=2, column=0, columnspan=2, sticky="ew", padx=(30, 10), pady=(0, 30))
             
-            entry_file = ctk.CTkEntry(card, textvariable=entry_var, state="readonly", height=35)
-            entry_file.grid(row=2, column=1, sticky="ew", padx=10, pady=(0, 20))
-            
-            btn_browse = ctk.CTkButton(card, text="Browse", command=browse_cmd, width=100, height=35, fg_color="transparent", border_width=2, text_color=("gray10", "#DCE4EE"))
-            btn_browse.grid(row=2, column=2, sticky="e", padx=(0, 20), pady=(0, 20))
+            btn_browse = ctk.CTkButton(card, text="Browse", command=browse_cmd, width=120, height=45, fg_color="transparent", border_width=2, border_color=color, text_color=color, corner_radius=12, font=ctk.CTkFont(weight="bold"))
+            btn_browse.grid(row=2, column=2, sticky="e", padx=(0, 30), pady=(0, 30))
             
             return card
 
         # Step 1
-        create_step_card(main_scroll, "1", "Liquid Handling (Biohit)", "🛠️ Open Biohit Studio", 
+        create_step_card(main_scroll, "1", "Liquid Handling", "🛠️ Open Biohit Studio", 
                          lambda: self.launch_app("lims_master_gui.py", self.biohit_dir),
-                         self.protocol_path, self.browse_protocol, "#2A729E")
+                         self.protocol_path, self.browse_protocol, ACCENT_PINK)
         
         # Step 2
-        create_step_card(main_scroll, "2", "Data Analysis & CA Curves", "🛠️ Open Analysis Studio", 
+        create_step_card(main_scroll, "2", "Data Analysis", "🛠️ Open Analysis Studio", 
                          lambda: self.launch_app("run_gui.py", self.analyze_dir),
-                         self.data_path, self.browse_data, "#2B8C67")
+                         self.data_path, self.browse_data, ACCENT_PURPLE)
         
         # Step 3
         create_step_card(main_scroll, "3", "Database Archiving", "🛠️ Open DB Studio", 
                          lambda: self.launch_app("examples/contractionDbGui.py", self.contraction_dir),
-                         self.db_config_path, self.browse_config, "#9C6E26")
+                         self.db_config_path, self.browse_config, ACCENT_BLUE)
 
         # --- Status Log Area ---
-        log_frame = ctk.CTkFrame(main_scroll, corner_radius=15)
-        log_frame.grid(sticky="ew", pady=10, padx=10)
+        log_frame = ctk.CTkFrame(main_scroll, fg_color=CARD_COLOR, corner_radius=25, border_width=2, border_color="#F1F5F9")
+        log_frame.grid(sticky="ew", pady=15)
         log_frame.grid_columnconfigure(0, weight=1)
         
-        log_lbl = ctk.CTkLabel(log_frame, text="Live Orchestrator Log", font=ctk.CTkFont(size=16, weight="bold"))
-        log_lbl.grid(row=0, column=0, sticky="w", padx=20, pady=(15, 5))
+        log_lbl = ctk.CTkLabel(log_frame, text="Live Orchestrator Log", text_color="#475569", font=ctk.CTkFont(size=18, weight="bold"))
+        log_lbl.grid(row=0, column=0, sticky="w", padx=30, pady=(25, 10))
         
-        self.log_text = ctk.CTkTextbox(log_frame, height=150, font=ctk.CTkFont(family="Consolas", size=12), state="disabled", fg_color="#1E1E1E")
-        self.log_text.grid(row=1, column=0, sticky="ew", padx=20, pady=(0, 20))
+        self.log_text = ctk.CTkTextbox(log_frame, height=150, font=ctk.CTkFont(family="Consolas", size=13), state="disabled", fg_color="#F8FAFC", text_color="#10B981", corner_radius=12, border_width=1, border_color="#E2E8F0")
+        self.log_text.grid(row=1, column=0, sticky="ew", padx=30, pady=(0, 30))
 
         # --- Action Area ---
         action_frame = ctk.CTkFrame(self, fg_color="transparent")
-        action_frame.grid(row=2, column=0, sticky="ew", padx=30, pady=20)
+        action_frame.grid(row=2, column=0, sticky="ew", padx=40, pady=25)
         action_frame.grid_columnconfigure(0, weight=1)
         
-        self.start_btn = ctk.CTkButton(action_frame, text="🚀 START HANDS-FREE RUN", height=60, 
-                                       font=ctk.CTkFont(size=18, weight="bold"), fg_color="#2B8C67", hover_color="#20684C",
+        self.start_btn = ctk.CTkButton(action_frame, text="🚀 START AUTOMATED RUN", height=65, 
+                                       font=ctk.CTkFont(size=20, weight="bold"), fg_color=START_BTN_COLOR, hover_color=START_BTN_HOVER, corner_radius=20,
                                        command=self.start_run)
         self.start_btn.grid(row=0, column=0, sticky="ew")
 
@@ -147,18 +157,15 @@ class RobolabDashboard(ctk.CTk):
 
     def browse_protocol(self):
         filepath = filedialog.askopenfilename(filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")])
-        if filepath:
-            self.protocol_path.set(filepath)
+        if filepath: self.protocol_path.set(filepath)
             
     def browse_data(self):
         filepath = filedialog.askdirectory()
-        if filepath:
-            self.data_path.set(filepath)
+        if filepath: self.data_path.set(filepath)
             
     def browse_config(self):
         filepath = filedialog.askopenfilename(filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")])
-        if filepath:
-            self.db_config_path.set(filepath)
+        if filepath: self.db_config_path.set(filepath)
             
     def start_run(self):
         if not self.protocol_path.get() or not self.data_path.get() or not self.db_config_path.get():
@@ -183,7 +190,7 @@ class RobolabDashboard(ctk.CTk):
         
     def run_thread(self, runner):
         runner.run_pipeline()
-        self.after(0, lambda: self.start_btn.configure(state="normal", text="🚀 START HANDS-FREE RUN"))
+        self.after(0, lambda: self.start_btn.configure(state="normal", text="🚀 START AUTOMATED RUN"))
 
 if __name__ == "__main__":
     app = RobolabDashboard()
