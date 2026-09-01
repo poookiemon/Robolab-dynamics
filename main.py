@@ -74,16 +74,9 @@ class RobolabDashboard(ctk.CTk):
         # --- Header Area ---
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
         header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(40, 10))
-        
-        # Fake logo icon
-        logo = ctk.CTkLabel(header_frame, text="🍂", font=ctk.CTkFont(size=40))
-        logo.pack(pady=(0,5))
 
         header_title = ctk.CTkLabel(header_frame, text="Robolab Dynamics", text_color=START_BTN_COLOR, font=ctk.CTkFont(family="Helvetica", size=36, weight="bold"))
         header_title.pack()
-        
-        subtitle = ctk.CTkLabel(header_frame, text="Build beautiful, automated lab workflows effortlessly.", text_color="#718096", font=ctk.CTkFont(family="Helvetica", size=16))
-        subtitle.pack(pady=(5, 10))
 
         # --- Main Cards Area ---
         main_scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
@@ -114,17 +107,17 @@ class RobolabDashboard(ctk.CTk):
             return card
 
         # Step 1
-        create_step_card(main_scroll, "1", "Liquid Handling", "🛠️ Open Biohit Studio", 
+        create_step_card(main_scroll, "1", "Liquid handling", "Open Biohit studio", 
                          lambda: self.launch_app("lims_master_gui.py", self.biohit_dir),
                          self.protocol_path, self.browse_protocol, ACCENT_PINK)
         
         # Step 2
-        create_step_card(main_scroll, "2", "Data Analysis", "🛠️ Open Analysis Studio", 
+        create_step_card(main_scroll, "2", "Data analysis", "Open analysis studio", 
                          lambda: self.launch_app("run_gui.py", self.analyze_dir),
                          self.data_path, self.browse_data, ACCENT_PURPLE)
         
         # Step 3
-        create_step_card(main_scroll, "3", "Database Archiving", "🛠️ Open DB Studio", 
+        create_step_card(main_scroll, "3", "Database archiving", "Open DB studio", 
                          lambda: self.launch_app("examples/contractionDbGui.py", self.contraction_dir),
                          self.db_config_path, self.browse_config, ACCENT_BLUE)
 
@@ -133,7 +126,7 @@ class RobolabDashboard(ctk.CTk):
         log_frame.grid(sticky="ew", pady=15)
         log_frame.grid_columnconfigure(0, weight=1)
         
-        log_lbl = ctk.CTkLabel(log_frame, text="Live Orchestrator Log", text_color="#475569", font=ctk.CTkFont(size=18, weight="bold"))
+        log_lbl = ctk.CTkLabel(log_frame, text="Live orchestrator log", text_color="#475569", font=ctk.CTkFont(size=18, weight="bold"))
         log_lbl.grid(row=0, column=0, sticky="w", padx=30, pady=(25, 10))
         
         self.log_text = ctk.CTkTextbox(log_frame, height=150, font=ctk.CTkFont(family="Consolas", size=13), state="disabled", fg_color="#F8FAFC", text_color="#10B981", corner_radius=12, border_width=1, border_color="#E2E8F0")
@@ -144,7 +137,7 @@ class RobolabDashboard(ctk.CTk):
         action_frame.grid(row=2, column=0, sticky="ew", padx=40, pady=25)
         action_frame.grid_columnconfigure(0, weight=1)
         
-        self.start_btn = ctk.CTkButton(action_frame, text="🚀 START AUTOMATED RUN", height=65, 
+        self.start_btn = ctk.CTkButton(action_frame, text="Start automated run", height=65, 
                                        font=ctk.CTkFont(size=20, weight="bold"), fg_color=START_BTN_COLOR, hover_color=START_BTN_HOVER, corner_radius=20,
                                        command=self.start_run)
         self.start_btn.grid(row=0, column=0, sticky="ew")
@@ -169,15 +162,15 @@ class RobolabDashboard(ctk.CTk):
             
     def start_run(self):
         if not self.protocol_path.get() or not self.data_path.get() or not self.db_config_path.get():
-            messagebox.showwarning("Missing Inputs", "Please browse and select all three targets before starting.")
+            messagebox.showwarning("Missing inputs", "Please browse and select all three targets before starting.")
             return
             
-        self.start_btn.configure(state="disabled", text="⚙️ PIPELINE RUNNING...")
+        self.start_btn.configure(state="disabled", text="Pipeline running...")
         self.log_text.configure(state="normal")
         self.log_text.delete("0.0", "end")
         self.log_text.configure(state="disabled")
         
-        self.log("--- Initializing Hands-Free Orchestrator ---")
+        self.log("--- Initializing hands-free orchestrator ---")
         
         runner = AutoRunner(
             self.protocol_path.get(), 
@@ -190,7 +183,7 @@ class RobolabDashboard(ctk.CTk):
         
     def run_thread(self, runner):
         runner.run_pipeline()
-        self.after(0, lambda: self.start_btn.configure(state="normal", text="🚀 START AUTOMATED RUN"))
+        self.after(0, lambda: self.start_btn.configure(state="normal", text="Start automated run"))
 
 if __name__ == "__main__":
     app = RobolabDashboard()
