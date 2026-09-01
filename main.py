@@ -32,6 +32,8 @@ class RobolabDashboard(ttk.Window):
         if not os.path.exists(target_file):
             messagebox.showerror("Error", f"Could not find {app_path} in {cwd}")
             return
+            
+        self.log(f"--- Launching Studio: {os.path.basename(app_path)} ---")
         try:
             cmd = [sys.executable, app_path]
             env = os.environ.copy()
@@ -39,7 +41,18 @@ class RobolabDashboard(ttk.Window):
                 env["PYTHONPATH"] = f"{cwd}{os.pathsep}{env['PYTHONPATH']}"
             else:
                 env["PYTHONPATH"] = cwd
-            subprocess.Popen(cmd, cwd=cwd, env=env)
+                
+            p = subprocess.Popen(cmd, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+            
+            def read_output():
+                for line in iter(p.stdout.readline, ''):
+                    if line:
+                        self.after(0, lambda l=line: self.log("STUDIO: " + l.strip()))
+                p.stdout.close()
+                self.after(0, lambda: self.log(f"--- Studio Closed ({os.path.basename(app_path)}) ---"))
+                
+            threading.Thread(target=read_output, daemon=True).start()
+            
         except Exception as e:
             messagebox.showerror("Error", f"Failed to launch {app_path}:\n{str(e)}")
 
