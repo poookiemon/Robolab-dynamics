@@ -10,7 +10,7 @@ try:
 
     HAS_BIOHIT_DLL = True
     print("SUCCESS: Hardware Bridge Established via native biohit_pipettor package.")
-except ImportError as e:
+except Exception as e:
     HAS_BIOHIT_DLL = False
     print(f"CRITICAL: Bridge failed. Ensure 'biohit_pipettor' is installed. Error: {e}")
     RealBiohitPipettor = None
