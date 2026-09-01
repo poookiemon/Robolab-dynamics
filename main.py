@@ -13,7 +13,15 @@ def launch_app(app_path, cwd, extra_args=None):
         cmd = [sys.executable, app_path]
         if extra_args:
             cmd.extend(extra_args)
-        subprocess.Popen(cmd, cwd=cwd)
+            
+        # Ensure the subprocess can import local modules from its root directory
+        env = os.environ.copy()
+        if "PYTHONPATH" in env:
+            env["PYTHONPATH"] = f"{cwd}{os.pathsep}{env['PYTHONPATH']}"
+        else:
+            env["PYTHONPATH"] = cwd
+            
+        subprocess.Popen(cmd, cwd=cwd, env=env)
     except Exception as e:
         messagebox.showerror("Error", f"Failed to launch {app_path}:\n{str(e)}")
 
