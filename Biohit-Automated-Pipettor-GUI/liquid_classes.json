@@ -1,0 +1,4 @@
+{
+    "Cell_Medium_Standard": {"aspirate_speed": 5.0, "dispense_speed": 5.0, "blowout_volume": 10.0, "air_gap": 5.0, "z_retract_speed": 10.0},
+    "Calcium_Solution_0mM": {"aspirate_speed": 3.0, "dispense_speed": 4.0, "blowout_volume": 15.0, "air_gap": 5.0, "z_retract_speed": 8.0}
+}

@@ -1,0 +1,4 @@
+matplotlib~=3.9.4
+numpy~=2.0.2
+mysql-connector-python~=9.2.0
+setuptools~=68.2.0

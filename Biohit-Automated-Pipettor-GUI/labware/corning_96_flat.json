@@ -1,0 +1,8 @@
+{
+    "labware_name": "96 Well Flat Bottom",
+    "z_height_mm": 14.35,
+    "grid": {"rows": 8, "columns": 12},
+    "well_a1_offset": {"x": 2.6, "y": 12.2},
+    "spacing": {"x": 9.0, "y": 9.0},
+    "well_properties": {"radius_mm": 3.43}
+}

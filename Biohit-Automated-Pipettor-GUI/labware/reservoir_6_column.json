@@ -1,0 +1,21 @@
+{
+    "labware_name": "6-Column Reagent Reservoir",
+    "z_height_mm": 105.81,
+    "grid": {
+        "rows": 1,
+        "columns": 6
+    },
+    "well_a1_offset": {
+        "x": 1.3,
+        "y": 41.6
+    },
+    "spacing": {
+        "x": 21.0,
+        "y": 0.0
+    },
+    "well_properties": {
+        "depth_mm": 40.5,
+        "radius_mm": 3.0,
+        "max_volume_ul": 50000.0
+    }
+}
