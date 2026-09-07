@@ -69,72 +69,73 @@ class RobolabDashboard(ctk.CTk):
 
     def build_ui(self):
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(1, weight=1) # The tabs get the expanding space
+        self.grid_rowconfigure(2, weight=0) # Log stays fixed size
+        self.grid_rowconfigure(3, weight=0) # Button stays fixed size
 
         # --- Header Area ---
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(40, 10))
-
+        header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(30, 10))
+        
         header_title = ctk.CTkLabel(header_frame, text="Robolab Dynamics", text_color=START_BTN_COLOR, font=ctk.CTkFont(family="Helvetica", size=36, weight="bold"))
         header_title.pack()
 
-        # --- Main Cards Area ---
-        main_scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        main_scroll.grid(row=1, column=0, sticky="nsew", padx=40)
-        main_scroll.grid_columnconfigure(0, weight=1)
+        # --- Tabs Area ---
+        tabview = ctk.CTkTabview(self, fg_color=CARD_COLOR, segmented_button_fg_color="#F1F5F9", segmented_button_selected_color=START_BTN_COLOR, segmented_button_selected_hover_color=START_BTN_HOVER, corner_radius=15)
+        tabview.grid(row=1, column=0, sticky="nsew", padx=40, pady=10)
+        
+        tab_1 = tabview.add("1. Liquid Handling")
+        tab_2 = tabview.add("2. Data Analysis")
+        tab_3 = tabview.add("3. Database")
 
-        # Function to create a beautifully styled step card (ReportGen Style)
-        def create_step_card(parent, step_num, title, button_text, button_cmd, entry_var, browse_cmd, color):
-            card = ctk.CTkFrame(parent, fg_color=CARD_COLOR, corner_radius=25, border_width=2, border_color="#F1F5F9")
-            card.grid(sticky="ew", pady=15)
-            card.grid_columnconfigure(1, weight=1)
+        # Function to build content inside a tab
+        def build_tab(parent_tab, title, button_text, button_cmd, entry_var, browse_cmd, color):
+            parent_tab.grid_columnconfigure(1, weight=1)
             
-            # Title
-            title_lbl = ctk.CTkLabel(card, text=f"{step_num}. {title}", text_color=color, font=ctk.CTkFont(size=22, weight="bold"))
-            title_lbl.grid(row=0, column=0, columnspan=3, sticky="w", padx=30, pady=(25, 15))
+            title_lbl = ctk.CTkLabel(parent_tab, text=title, text_color=color, font=ctk.CTkFont(size=24, weight="bold"))
+            title_lbl.grid(row=0, column=0, columnspan=3, sticky="w", padx=20, pady=(30, 20))
             
             # Studio Button
-            btn_studio = ctk.CTkButton(card, text=button_text, command=button_cmd, fg_color=color, hover_color=color, text_color="white", corner_radius=12, height=45, font=ctk.CTkFont(size=14, weight="bold"))
-            btn_studio.grid(row=1, column=0, columnspan=3, sticky="ew", padx=30, pady=(0, 20))
+            btn_studio = ctk.CTkButton(parent_tab, text=button_text, command=button_cmd, fg_color=color, hover_color=color, text_color="white", corner_radius=12, height=55, font=ctk.CTkFont(size=16, weight="bold"))
+            btn_studio.grid(row=1, column=0, columnspan=3, sticky="ew", padx=20, pady=(0, 40))
             
             # File Picker
-            entry_file = ctk.CTkEntry(card, textvariable=entry_var, state="readonly", height=45, fg_color="#F8FAFC", text_color="#334155", border_color="#E2E8F0", corner_radius=12)
-            entry_file.grid(row=2, column=0, columnspan=2, sticky="ew", padx=(30, 10), pady=(0, 30))
+            lbl_file = ctk.CTkLabel(parent_tab, text="Target file or folder:", font=ctk.CTkFont(size=14, weight="bold"), text_color=TEXT_COLOR)
+            lbl_file.grid(row=2, column=0, sticky="w", padx=(20, 10), pady=(0, 20))
             
-            btn_browse = ctk.CTkButton(card, text="Browse", command=browse_cmd, width=120, height=45, fg_color="transparent", border_width=2, border_color=color, text_color=color, corner_radius=12, font=ctk.CTkFont(weight="bold"))
-            btn_browse.grid(row=2, column=2, sticky="e", padx=(0, 30), pady=(0, 30))
+            entry_file = ctk.CTkEntry(parent_tab, textvariable=entry_var, state="readonly", height=45, fg_color="#F8FAFC", text_color="#334155", border_color="#E2E8F0", corner_radius=12)
+            entry_file.grid(row=2, column=1, sticky="ew", padx=10, pady=(0, 20))
             
-            return card
+            btn_browse = ctk.CTkButton(parent_tab, text="Browse", command=browse_cmd, width=120, height=45, fg_color="transparent", border_width=2, border_color=color, text_color=color, corner_radius=12, font=ctk.CTkFont(weight="bold"))
+            btn_browse.grid(row=2, column=2, sticky="e", padx=(0, 20), pady=(0, 20))
 
-        # Step 1
-        create_step_card(main_scroll, "1", "Liquid handling", "Open Biohit studio", 
-                         lambda: self.launch_app("lims_master_gui.py", self.biohit_dir),
-                         self.protocol_path, self.browse_protocol, ACCENT_PINK)
-        
-        # Step 2
-        create_step_card(main_scroll, "2", "Data analysis", "Open analysis studio", 
-                         lambda: self.launch_app("run_gui.py", self.analyze_dir),
-                         self.data_path, self.browse_data, ACCENT_PURPLE)
-        
-        # Step 3
-        create_step_card(main_scroll, "3", "Database archiving", "Open DB studio", 
-                         lambda: self.launch_app("examples/contractionDbGui.py", self.contraction_dir),
-                         self.db_config_path, self.browse_config, ACCENT_BLUE)
+        # Populate Tabs
+        build_tab(tab_1, "Liquid handling setup", "Open Biohit studio", 
+                  lambda: self.launch_app("lims_master_gui.py", self.biohit_dir),
+                  self.protocol_path, self.browse_protocol, ACCENT_PINK)
+                  
+        build_tab(tab_2, "Data analysis setup", "Open analysis studio", 
+                  lambda: self.launch_app("run_gui.py", self.analyze_dir),
+                  self.data_path, self.browse_data, ACCENT_PURPLE)
+                  
+        build_tab(tab_3, "Database archiving setup", "Open DB studio", 
+                  lambda: self.launch_app("examples/contractionDbGui.py", self.contraction_dir),
+                  self.db_config_path, self.browse_config, ACCENT_BLUE)
 
         # --- Status Log Area ---
-        log_frame = ctk.CTkFrame(main_scroll, fg_color=CARD_COLOR, corner_radius=25, border_width=2, border_color="#F1F5F9")
-        log_frame.grid(sticky="ew", pady=15)
+        log_frame = ctk.CTkFrame(self, fg_color=CARD_COLOR, corner_radius=15, border_width=2, border_color="#F1F5F9")
+        log_frame.grid(row=2, column=0, sticky="ew", padx=40, pady=10)
         log_frame.grid_columnconfigure(0, weight=1)
         
-        log_lbl = ctk.CTkLabel(log_frame, text="Live orchestrator log", text_color="#475569", font=ctk.CTkFont(size=18, weight="bold"))
-        log_lbl.grid(row=0, column=0, sticky="w", padx=30, pady=(25, 10))
+        log_lbl = ctk.CTkLabel(log_frame, text="Live orchestrator log", text_color="#475569", font=ctk.CTkFont(size=16, weight="bold"))
+        log_lbl.grid(row=0, column=0, sticky="w", padx=20, pady=(15, 5))
         
-        self.log_text = ctk.CTkTextbox(log_frame, height=150, font=ctk.CTkFont(family="Consolas", size=13), state="disabled", fg_color="#F8FAFC", text_color="#10B981", corner_radius=12, border_width=1, border_color="#E2E8F0")
-        self.log_text.grid(row=1, column=0, sticky="ew", padx=30, pady=(0, 30))
+        self.log_text = ctk.CTkTextbox(log_frame, height=120, font=ctk.CTkFont(family="Consolas", size=13), state="disabled", fg_color="#F8FAFC", text_color="#10B981", corner_radius=12, border_width=1, border_color="#E2E8F0")
+        self.log_text.grid(row=1, column=0, sticky="ew", padx=20, pady=(0, 20))
 
         # --- Action Area ---
         action_frame = ctk.CTkFrame(self, fg_color="transparent")
-        action_frame.grid(row=2, column=0, sticky="ew", padx=40, pady=25)
+        action_frame.grid(row=3, column=0, sticky="ew", padx=40, pady=(10, 30))
         action_frame.grid_columnconfigure(0, weight=1)
         
         self.start_btn = ctk.CTkButton(action_frame, text="Start automated run", height=65, 
