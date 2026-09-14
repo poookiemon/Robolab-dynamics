@@ -38,34 +38,6 @@ class RobolabDashboard(ctk.CTk):
 
         self.build_ui()
 
-    def launch_app(self, app_path, cwd):
-        target_file = os.path.join(cwd, app_path)
-        if not os.path.exists(target_file):
-            messagebox.showerror("Error", f"Could not find {app_path} in {cwd}")
-            return
-            
-        self.log(f"[SYS] Launching Studio Subsystem: {os.path.basename(app_path)}")
-        try:
-            cmd = [sys.executable, app_path]
-            env = os.environ.copy()
-            if "PYTHONPATH" in env:
-                env["PYTHONPATH"] = f"{cwd}{os.pathsep}{env['PYTHONPATH']}"
-            else:
-                env["PYTHONPATH"] = cwd
-                
-            p = subprocess.Popen(cmd, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
-            
-            def read_output():
-                for line in iter(p.stdout.readline, ''):
-                    if line: self.after(0, lambda l=line: self.log("> " + l.strip()))
-                p.stdout.close()
-                self.after(0, lambda: self.log(f"[SYS] Subsystem Closed ({os.path.basename(app_path)})"))
-                
-            threading.Thread(target=read_output, daemon=True).start()
-            
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to launch {app_path}:\n{str(e)}")
-
     def build_ui(self):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1) 
@@ -83,12 +55,38 @@ class RobolabDashboard(ctk.CTk):
         tabview.grid(row=1, column=0, sticky="nsew", padx=30, pady=10)
         
         tab_ops = tabview.add("⚙️ Routine Ops")
-        tab_dev = tabview.add("🔬 Protocol Dev")
+        tab_biohit = tabview.add("🧪 Biohit Studio")
+        tab_analyze = tabview.add("📊 Analysis Studio")
+        tab_db = tabview.add("🗄️ DB Studio")
         tab_calc = tabview.add("🧮 Dilution Calc")
 
         self.build_ops_tab(tab_ops)
-        self.build_dev_tab(tab_dev)
         self.build_calc_tab(tab_calc)
+        
+        # --- EMBEDDING ALIEN GUIS INTO TABS ---
+        try:
+            sys.path.insert(0, self.biohit_dir)
+            from lims_master_gui import LIMSMasterApp
+            self.lims_app = LIMSMasterApp(tab_biohit)
+            sys.path.pop(0)
+        except Exception as e:
+            ctk.CTkLabel(tab_biohit, text=f"Error embedding Biohit Studio: {e}", text_color="red").pack(pady=20)
+
+        try:
+            sys.path.insert(0, self.analyze_dir)
+            from gui.gui import GUI as AnalyzeGUI
+            self.analyze_app = AnalyzeGUI(parent_frame=tab_analyze)
+            sys.path.pop(0)
+        except Exception as e:
+            ctk.CTkLabel(tab_analyze, text=f"Error embedding Analysis Studio: {e}", text_color="red").pack(pady=20)
+
+        try:
+            sys.path.insert(0, self.contraction_dir)
+            from examples.contractionDbGui import DBStudio
+            self.db_app = DBStudio(parent_frame=tab_db)
+            sys.path.pop(0)
+        except Exception as e:
+            ctk.CTkLabel(tab_db, text=f"Error embedding DB Studio: {e}", text_color="red").pack(pady=20)
 
         # --- Terminal Log Area ---
         log_frame = ctk.CTkFrame(self, fg_color="#000000", corner_radius=5, border_width=1, border_color="#333333")
@@ -98,7 +96,7 @@ class RobolabDashboard(ctk.CTk):
         log_lbl = ctk.CTkLabel(log_frame, text="TERMINAL OUTPUT", text_color="#555555", font=ctk.CTkFont(family="Consolas", size=12, weight="bold"))
         log_lbl.grid(row=0, column=0, sticky="w", padx=10, pady=(5, 0))
         
-        self.log_text = ctk.CTkTextbox(log_frame, height=160, font=ctk.CTkFont(family="Consolas", size=12), state="disabled", fg_color="#000000", text_color=ACCENT_GREEN, corner_radius=0)
+        self.log_text = ctk.CTkTextbox(log_frame, height=120, font=ctk.CTkFont(family="Consolas", size=12), state="disabled", fg_color="#000000", text_color=ACCENT_GREEN, corner_radius=0)
         self.log_text.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 10))
 
     def load_config(self):
@@ -139,51 +137,48 @@ class RobolabDashboard(ctk.CTk):
 
     def build_ops_tab(self, parent):
         parent.grid_columnconfigure(0, weight=1)
-        
-        lbl = ctk.CTkLabel(parent, text="TECHNICIAN DAILY OPERATIONS", text_color=TEXT_COLOR, font=ctk.CTkFont(family="Consolas", size=18, weight="bold"))
-        lbl.grid(row=0, column=0, pady=(20, 30))
-
-        btn_media = ctk.CTkButton(parent, text="[RUN] Daily Media Change (500µL)", fg_color=ACCENT_BLUE, hover_color="#0056b3", font=ctk.CTkFont(family="Consolas", size=16, weight="bold"), height=60, 
-                                  command=lambda: self.execute_routine("media_change", "Daily Media Change"))
-        btn_media.grid(row=1, column=0, sticky="ew", padx=50, pady=10)
-
-        btn_acute = ctk.CTkButton(parent, text="[RUN] Friday Acute SIPA Test", fg_color=ACCENT_PURPLE, hover_color="#7A18B3", font=ctk.CTkFont(family="Consolas", size=16, weight="bold"), height=60, 
-                                  command=lambda: self.execute_routine("acute_test", "Acute SIPA Test"))
-        btn_acute.grid(row=2, column=0, sticky="ew", padx=50, pady=10)
-
-        btn_ca = ctk.CTkButton(parent, text="[RUN] Automated Calcium Curve (FOC48)", fg_color="#E63946", hover_color="#B32431", font=ctk.CTkFont(family="Consolas", size=16, weight="bold"), height=60, 
-                               command=lambda: self.execute_routine("calcium_curve", "Calcium Curve"))
-        btn_ca.grid(row=3, column=0, sticky="ew", padx=50, pady=10)
-
-    def build_dev_tab(self, parent):
         parent.grid_columnconfigure(1, weight=1)
         
-        def create_dev_row(row_idx, label, btn_text, btn_cmd, var, browse_cmd, color):
-            ctk.CTkLabel(parent, text=label, font=ctk.CTkFont(family="Consolas", size=14, weight="bold"), text_color=color).grid(row=row_idx, column=0, columnspan=3, sticky="w", padx=20, pady=(15, 5))
-            ctk.CTkButton(parent, text=btn_text, command=btn_cmd, fg_color="transparent", border_width=1, border_color=color, text_color=color, hover_color="#1E293B", corner_radius=5).grid(row=row_idx+1, column=0, padx=20, pady=(0,10))
-            ctk.CTkEntry(parent, textvariable=var, state="readonly", fg_color="#0B0F19", border_color="#334155", corner_radius=5).grid(row=row_idx+1, column=1, sticky="ew", padx=10, pady=(0,10))
-            ctk.CTkButton(parent, text="Browse", command=browse_cmd, width=80, fg_color="#334155", hover_color="#475569", corner_radius=5).grid(row=row_idx+1, column=2, padx=(0,20), pady=(0,10))
-
-        create_dev_row(0, "1. LIQUID HANDLING", "Open Biohit Studio", lambda: self.launch_app("lims_master_gui.py", self.biohit_dir), self.protocol_path, self.browse_protocol, ACCENT_CYAN)
-        create_dev_row(2, "2. DATA ANALYSIS", "Open Analysis Studio", lambda: self.launch_app("run_gui.py", self.analyze_dir), self.data_path, self.browse_data, ACCENT_GREEN)
-        create_dev_row(4, "3. DATABASE", "Open DB Studio", lambda: self.launch_app("examples/contractionDbGui.py", self.contraction_dir), self.db_config_path, self.browse_config, ACCENT_PURPLE)
-
-        # Assignment Area
-        assign_frame = ctk.CTkFrame(parent, fg_color="#0F172A", corner_radius=5, border_width=1, border_color="#334155")
-        assign_frame.grid(row=6, column=0, columnspan=3, sticky="ew", padx=20, pady=(15,0))
-        assign_frame.grid_columnconfigure(1, weight=1)
+        # --- LEFT SIDE: EXECUTION ---
+        exec_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        exec_frame.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
         
-        ctk.CTkLabel(assign_frame, text="🔗 ASSIGN CURRENT PATHS TO ROUTINE OPERATION:", text_color="#E2E8F0", font=ctk.CTkFont(family="Consolas", size=12, weight="bold")).grid(row=0, column=0, padx=15, pady=10)
+        lbl = ctk.CTkLabel(exec_frame, text="TECHNICIAN DAILY OPERATIONS", text_color=TEXT_COLOR, font=ctk.CTkFont(family="Consolas", size=18, weight="bold"))
+        lbl.grid(row=0, column=0, pady=(0, 20))
+
+        btn_media = ctk.CTkButton(exec_frame, text="[RUN] Daily Media Change (500µL)", fg_color=ACCENT_BLUE, hover_color="#0056b3", font=ctk.CTkFont(family="Consolas", size=16, weight="bold"), height=50, 
+                                  command=lambda: self.execute_routine("media_change", "Daily Media Change"))
+        btn_media.grid(row=1, column=0, sticky="ew", pady=10)
+
+        btn_acute = ctk.CTkButton(exec_frame, text="[RUN] Friday Acute SIPA Test", fg_color=ACCENT_PURPLE, hover_color="#7A18B3", font=ctk.CTkFont(family="Consolas", size=16, weight="bold"), height=50, 
+                                  command=lambda: self.execute_routine("acute_test", "Acute SIPA Test"))
+        btn_acute.grid(row=2, column=0, sticky="ew", pady=10)
+
+        btn_ca = ctk.CTkButton(exec_frame, text="[RUN] Automated Calcium Curve", fg_color="#E63946", hover_color="#B32431", font=ctk.CTkFont(family="Consolas", size=16, weight="bold"), height=50, 
+                               command=lambda: self.execute_routine("calcium_curve", "Calcium Curve"))
+        btn_ca.grid(row=3, column=0, sticky="ew", pady=10)
+
+        # --- RIGHT SIDE: CONFIGURATION & ASSIGNMENT ---
+        config_frame = ctk.CTkFrame(parent, fg_color="#0F172A", corner_radius=10, border_width=1, border_color="#334155")
+        config_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
+        config_frame.grid_columnconfigure(1, weight=1)
         
+        ctk.CTkLabel(config_frame, text="CONFIG ASSIGNMENT", text_color=ACCENT_CYAN, font=ctk.CTkFont(family="Consolas", size=16, weight="bold")).grid(row=0, column=0, columnspan=3, pady=10)
+
+        def create_config_row(row_idx, label, var, browse_cmd):
+            ctk.CTkLabel(config_frame, text=label, font=ctk.CTkFont(family="Consolas", size=12)).grid(row=row_idx, column=0, sticky="e", padx=10, pady=5)
+            ctk.CTkEntry(config_frame, textvariable=var, state="readonly", width=150, fg_color="#0B0F19", border_color="#334155").grid(row=row_idx, column=1, sticky="ew", padx=5, pady=5)
+            ctk.CTkButton(config_frame, text="Browse", width=60, command=browse_cmd, fg_color="#334155", hover_color="#475569").grid(row=row_idx, column=2, padx=10, pady=5)
+
+        create_config_row(1, "Protocol JSON:", self.protocol_path, self.browse_protocol)
+        create_config_row(2, "FOC Data Dir:", self.data_path, self.browse_data)
+        create_config_row(3, "DB Config:", self.db_config_path, self.browse_config)
+
+        ctk.CTkLabel(config_frame, text="Assign To:", font=ctk.CTkFont(family="Consolas", size=12, weight="bold")).grid(row=4, column=0, sticky="e", padx=10, pady=(20, 5))
         self.op_var = ctk.StringVar(value="media_change")
-        ops_menu = ctk.CTkOptionMenu(assign_frame, variable=self.op_var, values=["media_change", "acute_test", "calcium_curve"], fg_color="#334155")
-        ops_menu.grid(row=0, column=1, sticky="ew", padx=10, pady=10)
+        ctk.CTkOptionMenu(config_frame, variable=self.op_var, values=["media_change", "acute_test", "calcium_curve"], fg_color="#334155").grid(row=4, column=1, sticky="ew", padx=5, pady=(20, 5))
         
-        ctk.CTkButton(assign_frame, text="Save Assignment", fg_color="#F59E0B", hover_color="#D97706", text_color="black", font=ctk.CTkFont(family="Consolas", weight="bold"), command=lambda: self.save_config(self.op_var.get())).grid(row=0, column=2, padx=15, pady=10)
-
-        # Single Run Button
-        self.start_btn = ctk.CTkButton(parent, text="INITIATE MASTER SEQUENCE (MANUAL)", height=40, font=ctk.CTkFont(family="Consolas", size=14, weight="bold"), fg_color="#10B981", hover_color="#059669", corner_radius=5, command=self.start_run)
-        self.start_btn.grid(row=7, column=0, columnspan=3, sticky="ew", padx=20, pady=(15,0))
+        ctk.CTkButton(config_frame, text="Save Target Mapping", fg_color="#F59E0B", hover_color="#D97706", text_color="black", font=ctk.CTkFont(family="Consolas", weight="bold"), command=lambda: self.save_config(self.op_var.get())).grid(row=5, column=0, columnspan=3, pady=20, padx=20, sticky="ew")
 
     def build_calc_tab(self, parent):
         parent.grid_columnconfigure((0,1), weight=1)
