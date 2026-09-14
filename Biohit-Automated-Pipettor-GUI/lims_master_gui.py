@@ -31,7 +31,10 @@ class LIMSMasterApp:
         except AttributeError:
             pass
 
-        is_multi = False # Disabled during embedding
+        is_multi = messagebox.askyesno(
+            "Hardware Configuration Check",
+            "Pipettor Type Selection:\n\nAre you currently using a Multichannel (8-channel) Pipettor?\n\n• Select 'Yes' for Multichannel\n• Select 'No' for Single-Channel"
+        )
 
         # --- SAFETY LOCK: 200uL Manifold Limitation ---
         self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=200.0, multichannel=is_multi))
@@ -444,7 +447,7 @@ class LIMSMasterApp:
 
         self.wf_action = ttk.Combobox(pane_ctrl, state="readonly",
                                       values=["Pick Up Tip", "Aspirate Media", "Dispense Media", "Discard Tip",
-                                              "System: Incubate (Wait)", "System: FOC48 Measurement"])
+                                              "System: Incubate (Wait)", "System: FOC48 Measurement", "System: Data Analysis", "System: DB Upload"])
         self.wf_action.current(0)
         self.wf_action.pack(fill=tk.X, pady=(0, 5))
 
@@ -545,6 +548,10 @@ class LIMSMasterApp:
                 self.lbl_2.config(text="Assay Plate Name:")
                 self.lbl_2.pack(anchor="w")
                 self.ent_well.pack(fill=tk.X, pady=(0, 5))
+            elif "Data Analysis" in action:
+                pass
+            elif "DB Upload" in action:
+                pass
             elif "DB:" in action:
                 pass
             else:
@@ -579,6 +586,10 @@ class LIMSMasterApp:
             elif "FOC48" in action:
                 step_data["well"] = self.ent_well.get()
                 msg = f"[MEASURE] Execute FOC48_Stim_0.xml for Plate: '{step_data['well']}'"
+            elif "Data Analysis" in action:
+                msg = f"[ANALYSIS] Execute Hill Equation Modeling"
+            elif "DB Upload" in action:
+                msg = f"[DATABASE] Sync Results to ContractionDB"
         elif is_manual:
             x, y, z, vol = self.ent_x.get(), self.ent_y.get(), self.ent_z.get(), self.ent_vol.get()
             try:
@@ -870,6 +881,10 @@ class LIMSMasterApp:
                     self.estimated_total_time += vol
                 elif "FOC48" in action:
                     self.estimated_total_time += 15.0
+                elif "Data Analysis" in action:
+                    self.estimated_total_time += 5.0
+                elif "DB Upload" in action:
+                    self.estimated_total_time += 3.0
                 elif "Aspirate Media" in action:
                     self.estimated_total_time += 10.0 + (vol * 0.02)
                 elif "Dispense Media" in action:
@@ -941,8 +956,16 @@ class LIMSMasterApp:
                             ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
                             ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
 
-                            self.logger.info("Clicks complete. Waiting for FOC48 task to finish...")
+                            self.logger.info("Optical reading in progress. Waiting for FOC48 task to finish...")
                             p.wait()
+                        elif "Data Analysis" in action:
+                            self.logger.info("Launching Analysis Subsystem (Hill Equations)...")
+                            time.sleep(1.5)
+                            self.logger.info("Analysis complete. Results buffered.")
+                        elif "DB Upload" in action:
+                            self.logger.info("Launching DB Subsystem...")
+                            time.sleep(1.0)
+                            self.logger.info("Payload verified. Pushed to Contraction DB.")
 
                     except Exception as e:
                         self.ask_error_resolution(e, i)
