@@ -101,39 +101,89 @@ class RobolabDashboard(ctk.CTk):
         self.log_text = ctk.CTkTextbox(log_frame, height=160, font=ctk.CTkFont(family="Consolas", size=12), state="disabled", fg_color="#000000", text_color=ACCENT_GREEN, corner_radius=0)
         self.log_text.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 10))
 
+    def load_config(self):
+        self.config_file = os.path.join(self.base_dir, "routine_config.json")
+        if os.path.exists(self.config_file):
+            import json
+            with open(self.config_file, 'r') as f:
+                return json.load(f)
+        return {
+            "media_change": {"protocol": "", "data": "", "db": ""},
+            "acute_test": {"protocol": "", "data": "", "db": ""},
+            "calcium_curve": {"protocol": "", "data": "", "db": ""}
+        }
+
+    def save_config(self, op_key):
+        config = self.load_config()
+        config[op_key] = {
+            "protocol": self.protocol_path.get(),
+            "data": self.data_path.get(),
+            "db": self.db_config_path.get()
+        }
+        import json
+        with open(self.config_file, 'w') as f:
+            json.dump(config, f, indent=4)
+        self.log(f"[SYS] Assigned current paths to {op_key} successfully.")
+        messagebox.showinfo("Success", f"Paths successfully assigned to {op_key}!")
+
+    def execute_routine(self, op_key, op_name):
+        config = self.load_config()
+        paths = config.get(op_key, {})
+        if not paths.get("protocol"):
+            messagebox.showwarning("Unassigned", f"No protocol assigned to '{op_name}'.\nPlease assign it in the Protocol Dev tab first.")
+            return
+            
+        self.log(f"[SYS] Initializing Routine Op: {op_name}")
+        runner = AutoRunner(paths.get("protocol", ""), paths.get("data", ""), paths.get("db", ""), self.log)
+        threading.Thread(target=runner.run_pipeline, daemon=True).start()
+
     def build_ops_tab(self, parent):
         parent.grid_columnconfigure(0, weight=1)
         
         lbl = ctk.CTkLabel(parent, text="TECHNICIAN DAILY OPERATIONS", text_color=TEXT_COLOR, font=ctk.CTkFont(family="Consolas", size=18, weight="bold"))
         lbl.grid(row=0, column=0, pady=(20, 30))
 
-        btn_media = ctk.CTkButton(parent, text="[RUN] Daily Media Change (500µL)", fg_color=ACCENT_BLUE, hover_color="#0056b3", font=ctk.CTkFont(family="Consolas", size=16, weight="bold"), height=60, command=lambda: self.log("[SYS] Executing pre-programmed Daily Media Change protocol..."))
+        btn_media = ctk.CTkButton(parent, text="[RUN] Daily Media Change (500µL)", fg_color=ACCENT_BLUE, hover_color="#0056b3", font=ctk.CTkFont(family="Consolas", size=16, weight="bold"), height=60, 
+                                  command=lambda: self.execute_routine("media_change", "Daily Media Change"))
         btn_media.grid(row=1, column=0, sticky="ew", padx=50, pady=10)
 
-        btn_acute = ctk.CTkButton(parent, text="[RUN] Friday Acute SIPA Test", fg_color=ACCENT_PURPLE, hover_color="#7A18B3", font=ctk.CTkFont(family="Consolas", size=16, weight="bold"), height=60, command=lambda: self.log("[SYS] Executing pre-programmed Acute SIPA protocol..."))
+        btn_acute = ctk.CTkButton(parent, text="[RUN] Friday Acute SIPA Test", fg_color=ACCENT_PURPLE, hover_color="#7A18B3", font=ctk.CTkFont(family="Consolas", size=16, weight="bold"), height=60, 
+                                  command=lambda: self.execute_routine("acute_test", "Acute SIPA Test"))
         btn_acute.grid(row=2, column=0, sticky="ew", padx=50, pady=10)
 
-        btn_ca = ctk.CTkButton(parent, text="[RUN] Automated Calcium Curve (FOC48)", fg_color="#E63946", hover_color="#B32431", font=ctk.CTkFont(family="Consolas", size=16, weight="bold"), height=60, command=lambda: self.log("[SYS] Executing pre-programmed Calcium Curve protocol..."))
+        btn_ca = ctk.CTkButton(parent, text="[RUN] Automated Calcium Curve (FOC48)", fg_color="#E63946", hover_color="#B32431", font=ctk.CTkFont(family="Consolas", size=16, weight="bold"), height=60, 
+                               command=lambda: self.execute_routine("calcium_curve", "Calcium Curve"))
         btn_ca.grid(row=3, column=0, sticky="ew", padx=50, pady=10)
 
     def build_dev_tab(self, parent):
         parent.grid_columnconfigure(1, weight=1)
         
         def create_dev_row(row_idx, label, btn_text, btn_cmd, var, browse_cmd, color):
-            ctk.CTkLabel(parent, text=label, font=ctk.CTkFont(family="Consolas", size=14, weight="bold"), text_color=color).grid(row=row_idx, column=0, columnspan=3, sticky="w", padx=20, pady=(20, 5))
-            
-            ctk.CTkButton(parent, text=btn_text, command=btn_cmd, fg_color="transparent", border_width=1, border_color=color, text_color=color, hover_color="#1E293B", corner_radius=5).grid(row=row_idx+1, column=0, padx=20, pady=(0,15))
-            
-            ctk.CTkEntry(parent, textvariable=var, state="readonly", fg_color="#0B0F19", border_color="#334155", corner_radius=5).grid(row=row_idx+1, column=1, sticky="ew", padx=10, pady=(0,15))
-            
-            ctk.CTkButton(parent, text="Browse", command=browse_cmd, width=80, fg_color="#334155", hover_color="#475569", corner_radius=5).grid(row=row_idx+1, column=2, padx=(0,20), pady=(0,15))
+            ctk.CTkLabel(parent, text=label, font=ctk.CTkFont(family="Consolas", size=14, weight="bold"), text_color=color).grid(row=row_idx, column=0, columnspan=3, sticky="w", padx=20, pady=(15, 5))
+            ctk.CTkButton(parent, text=btn_text, command=btn_cmd, fg_color="transparent", border_width=1, border_color=color, text_color=color, hover_color="#1E293B", corner_radius=5).grid(row=row_idx+1, column=0, padx=20, pady=(0,10))
+            ctk.CTkEntry(parent, textvariable=var, state="readonly", fg_color="#0B0F19", border_color="#334155", corner_radius=5).grid(row=row_idx+1, column=1, sticky="ew", padx=10, pady=(0,10))
+            ctk.CTkButton(parent, text="Browse", command=browse_cmd, width=80, fg_color="#334155", hover_color="#475569", corner_radius=5).grid(row=row_idx+1, column=2, padx=(0,20), pady=(0,10))
 
         create_dev_row(0, "1. LIQUID HANDLING", "Open Biohit Studio", lambda: self.launch_app("lims_master_gui.py", self.biohit_dir), self.protocol_path, self.browse_protocol, ACCENT_CYAN)
         create_dev_row(2, "2. DATA ANALYSIS", "Open Analysis Studio", lambda: self.launch_app("run_gui.py", self.analyze_dir), self.data_path, self.browse_data, ACCENT_GREEN)
         create_dev_row(4, "3. DATABASE", "Open DB Studio", lambda: self.launch_app("examples/contractionDbGui.py", self.contraction_dir), self.db_config_path, self.browse_config, ACCENT_PURPLE)
 
-        self.start_btn = ctk.CTkButton(parent, text="INITIATE MASTER SEQUENCE", height=50, font=ctk.CTkFont(family="Consolas", size=16, weight="bold"), fg_color="#10B981", hover_color="#059669", corner_radius=5, command=self.start_run)
-        self.start_btn.grid(row=6, column=0, columnspan=3, sticky="ew", padx=20, pady=(20,0))
+        # Assignment Area
+        assign_frame = ctk.CTkFrame(parent, fg_color="#0F172A", corner_radius=5, border_width=1, border_color="#334155")
+        assign_frame.grid(row=6, column=0, columnspan=3, sticky="ew", padx=20, pady=(15,0))
+        assign_frame.grid_columnconfigure(1, weight=1)
+        
+        ctk.CTkLabel(assign_frame, text="🔗 ASSIGN CURRENT PATHS TO ROUTINE OPERATION:", text_color="#E2E8F0", font=ctk.CTkFont(family="Consolas", size=12, weight="bold")).grid(row=0, column=0, padx=15, pady=10)
+        
+        self.op_var = ctk.StringVar(value="media_change")
+        ops_menu = ctk.CTkOptionMenu(assign_frame, variable=self.op_var, values=["media_change", "acute_test", "calcium_curve"], fg_color="#334155")
+        ops_menu.grid(row=0, column=1, sticky="ew", padx=10, pady=10)
+        
+        ctk.CTkButton(assign_frame, text="Save Assignment", fg_color="#F59E0B", hover_color="#D97706", text_color="black", font=ctk.CTkFont(family="Consolas", weight="bold"), command=lambda: self.save_config(self.op_var.get())).grid(row=0, column=2, padx=15, pady=10)
+
+        # Single Run Button
+        self.start_btn = ctk.CTkButton(parent, text="INITIATE MASTER SEQUENCE (MANUAL)", height=40, font=ctk.CTkFont(family="Consolas", size=14, weight="bold"), fg_color="#10B981", hover_color="#059669", corner_radius=5, command=self.start_run)
+        self.start_btn.grid(row=7, column=0, columnspan=3, sticky="ew", padx=20, pady=(15,0))
 
     def build_calc_tab(self, parent):
         parent.grid_columnconfigure((0,1), weight=1)
