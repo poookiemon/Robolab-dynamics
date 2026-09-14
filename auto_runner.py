@@ -77,7 +77,39 @@ class AutoRunner:
                     
                 if "FOC48" in action:
                     self.log("  >>> Triggering FOC48 Optical Reading Subsystem...")
-                    time.sleep(1.0)
+                    if sys.platform == "win32":
+                        import ctypes
+                        try:
+                            # Launch the executable in the background
+                            p = subprocess.Popen([r'C:\Labhub\Import\FOC48_20240227.exe', r'C:\Labhub\Import\myrPlate_Stim_0.xml', str(well)])
+                            self.log("  >>> Waiting for FOC48 window to load...")
+                            time.sleep(7.0)
+                            
+                            self.log("  >>> Executing ghost mouse clicks...")
+                            # 1. Click First Experiment
+                            ctypes.windll.user32.SetCursorPos(404, 168)
+                            ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
+                            ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
+                            time.sleep(1.0)
+                            
+                            # 2. Click First Measurement
+                            ctypes.windll.user32.SetCursorPos(690, 168)
+                            ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
+                            ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
+                            time.sleep(1.0)
+                            
+                            # 3. Click Save all
+                            ctypes.windll.user32.SetCursorPos(1021, 531)
+                            ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
+                            ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
+                            
+                            self.log("  >>> Optical reading in progress. Waiting for FOC48 task to finish...")
+                            p.wait()
+                        except Exception as e:
+                            self.log(f"  >>> FOC48 Execution Failed: {e}")
+                    else:
+                        self.log("  >>> [SIMULATION] FOC48 Optical Reading Complete.")
+                        time.sleep(1.0)
                     continue
 
                 if has_real_hw:
