@@ -31,10 +31,7 @@ class LIMSMasterApp:
         except AttributeError:
             pass
 
-        is_multi = False # Disabled during embedding # messagebox.askyesno(
-            "Hardware Configuration Check",
-            "Pipettor Type Selection:\n\nAre you currently using a Multichannel (8-channel) Pipettor?\n\n• Select 'Yes' for Multichannel\n• Select 'No' for Single-Channel"
-        )
+        is_multi = False # Disabled during embedding
 
         # --- SAFETY LOCK: 200uL Manifold Limitation ---
         self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=200.0, multichannel=is_multi))
@@ -92,7 +89,10 @@ class LIMSMasterApp:
         filemenu.add_separator()
         filemenu.add_command(label="Exit", command=self.on_closing)
         menubar.add_cascade(label="File", menu=filemenu)
-        self.root.config(menu=menubar)
+        try:
+            self.root.config(menu=menubar)
+        except Exception:
+            pass
 
     def action_edit_machine_limits(self):
         top = tk.Toplevel(self.root)

@@ -56,7 +56,10 @@ class GUI:
         self.gui = parent_frame if parent_frame else ttk.Window(title="Analyze measurement", themename="superhero")
         if not parent_frame: self.gui.geometry("1920x1080")
 
-        self.gui_theme_hex = self.gui.style.colors.bg
+        try:
+            self.gui_theme_hex = self.gui.style.colors.bg
+        except AttributeError:
+            self.gui_theme_hex = "#0f172a"
 
         self.wells = plate_rows * plate_columns
 
@@ -154,7 +157,10 @@ class GUI:
         self.scrollbar = ttk.Scrollbar(self.gui, orient="vertical", command=self.on_scrollbar)
         self.scrollbar.grid(row=0, column=3, sticky="ns", rowspan = 3)
 
-        self.gui.bind_all("<MouseWheel>", self._on_mousewheel)
+        try:
+            self.gui.bind_all("<MouseWheel>", self._on_mousewheel)
+        except Exception:
+            self.gui.bind("<MouseWheel>", self._on_mousewheel)
 
         self.row_window: dict[int, RowWindow] = {}
 
