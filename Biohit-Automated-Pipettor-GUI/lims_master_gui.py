@@ -26,9 +26,10 @@ class TextHandler(logging.Handler):
 class LIMSMasterApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Biohit LIMS - Pure Kinematic Execution")
-        self.root.geometry("1250x950")
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        try:
+            self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        except AttributeError:
+            pass
 
         is_multi = messagebox.askyesno(
             "Hardware Configuration Check",

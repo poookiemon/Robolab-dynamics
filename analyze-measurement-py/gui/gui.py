@@ -52,9 +52,9 @@ class GUI:
         Background colour of the active ttkbootstrap theme, used to
         match the Matplotlib figure background.
     """
-    def __init__(self, plate_rows: int = 8, plate_columns: int = 6):
-        self.gui = ttk.Window(title="Analyze measurement", themename="superhero")
-        self.gui.geometry("1920x1080")
+    def __init__(self, parent_frame=None, plate_rows=8, plate_columns=6):
+        self.gui = parent_frame if parent_frame else ttk.Window(title="Analyze measurement", themename="superhero")
+        if not parent_frame: self.gui.geometry("1920x1080")
 
         self.gui_theme_hex = self.gui.style.colors.bg
 

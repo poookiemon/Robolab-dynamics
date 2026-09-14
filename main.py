@@ -74,6 +74,8 @@ class RobolabDashboard(ctk.CTk):
 
         try:
             sys.path.insert(0, self.analyze_dir)
+            if 'gui' in sys.modules:
+                del sys.modules['gui']
             from gui.gui import GUI as AnalyzeGUI
             self.analyze_app = AnalyzeGUI(parent_frame=tab_analyze)
             sys.path.pop(0)
