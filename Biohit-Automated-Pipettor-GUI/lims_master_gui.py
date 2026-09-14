@@ -576,7 +576,7 @@ class LIMSMasterApp:
 
         self.wf_action = ttk.Combobox(pane_ctrl, state="readonly",
                                       values=["Pick Up Tip", "Aspirate Media", "Dispense Media", "Discard Tip",
-                                              "System: Incubate (Wait)", "System: FOC48 Measurement", "System: Data Analysis", "System: DB Upload"])
+                                              "System: Incubate (Wait)", "System: FOC48 Measurement", "System: Calcium Curve", "System: Data Analysis", "System: DB Upload"])
         self.wf_action.current(0)
         self.wf_action.pack(fill=tk.X, pady=(0, 5))
 
@@ -680,6 +680,8 @@ class LIMSMasterApp:
             elif "Data Analysis" in action:
                 pass
             elif "DB Upload" in action:
+                pass
+            elif "Calcium Curve" in action:
                 pass
             elif "DB:" in action:
                 pass
@@ -1014,6 +1016,8 @@ class LIMSMasterApp:
                     self.estimated_total_time += 5.0
                 elif "DB Upload" in action:
                     self.estimated_total_time += 3.0
+                elif "Calcium Curve" in action:
+                    self.estimated_total_time += 60.0
                 elif "Aspirate Media" in action:
                     self.estimated_total_time += 10.0 + (vol * 0.02)
                 elif "Dispense Media" in action:
@@ -1094,7 +1098,11 @@ class LIMSMasterApp:
                         elif "DB Upload" in action:
                             self.logger.info("Launching DB Subsystem...")
                             time.sleep(1.0)
-                            self.logger.info("Payload verified. Pushed to Contraction DB.")
+                            self.logger.info("Payload verified. Pushed to Contraction DB."
+                        elif "Calcium Curve" in action:
+                            self.logger.info("Executing Automated Calcium Curve Macro...")
+                            time.sleep(2.0)
+                            self.logger.info("Calcium Curve executed successfully."))
 
                     except Exception as e:
                         self.ask_error_resolution(e, i)
