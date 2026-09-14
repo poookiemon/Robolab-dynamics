@@ -5,13 +5,6 @@ import json
 import subprocess
 
 class AutoRunner:
-import os
-import sys
-import time
-import json
-import subprocess
-
-class AutoRunner:
     def __init__(self, protocol_path, status_callback=None):
         self.protocol_path = protocol_path
         self.status_callback = status_callback
