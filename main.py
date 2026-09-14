@@ -106,33 +106,29 @@ class RobolabDashboard(ctk.CTk):
             with open(self.config_file, 'r') as f:
                 return json.load(f)
         return {
-            "media_change": {"protocol": "", "data": "", "db": ""},
-            "acute_test": {"protocol": "", "data": "", "db": ""},
-            "calcium_curve": {"protocol": "", "data": "", "db": ""}
+            "media_change": "",
+            "acute_test": "",
+            "calcium_curve": ""
         }
 
     def save_config(self, op_key):
         config = self.load_config()
-        config[op_key] = {
-            "protocol": self.protocol_path.get(),
-            "data": self.data_path.get(),
-            "db": self.db_config_path.get()
-        }
+        config[op_key] = self.protocol_path.get()
         import json
         with open(self.config_file, 'w') as f:
             json.dump(config, f, indent=4)
-        self.log(f"[SYS] Assigned current paths to {op_key} successfully.")
-        messagebox.showinfo("Success", f"Paths successfully assigned to {op_key}!")
+        self.log(f"[SYS] Assigned unified protocol path to {op_key} successfully.")
+        messagebox.showinfo("Success", f"Unified protocol successfully assigned to {op_key}!")
 
     def execute_routine(self, op_key, op_name):
         config = self.load_config()
-        paths = config.get(op_key, {})
-        if not paths.get("protocol"):
-            messagebox.showwarning("Unassigned", f"No protocol assigned to '{op_name}'.\nPlease assign it in the Protocol Dev tab first.")
+        protocol = config.get(op_key, "")
+        if not protocol:
+            messagebox.showwarning("Unassigned", f"No protocol assigned to '{op_name}'.\nPlease assign one first.")
             return
             
         self.log(f"[SYS] Initializing Routine Op: {op_name}")
-        runner = AutoRunner(paths.get("protocol", ""), paths.get("data", ""), paths.get("db", ""), self.log)
+        runner = AutoRunner(protocol, self.log)
         threading.Thread(target=runner.run_pipeline, daemon=True).start()
 
     def build_ops_tab(self, parent):
@@ -165,14 +161,9 @@ class RobolabDashboard(ctk.CTk):
         
         ctk.CTkLabel(config_frame, text="CONFIG ASSIGNMENT", text_color=ACCENT_CYAN, font=ctk.CTkFont(family="Consolas", size=16, weight="bold")).grid(row=0, column=0, columnspan=3, pady=10)
 
-        def create_config_row(row_idx, label, var, browse_cmd):
-            ctk.CTkLabel(config_frame, text=label, font=ctk.CTkFont(family="Consolas", size=12)).grid(row=row_idx, column=0, sticky="e", padx=10, pady=5)
-            ctk.CTkEntry(config_frame, textvariable=var, state="readonly", width=150, fg_color="#0B0F19", border_color="#334155").grid(row=row_idx, column=1, sticky="ew", padx=5, pady=5)
-            ctk.CTkButton(config_frame, text="Browse", width=60, command=browse_cmd, fg_color="#334155", hover_color="#475569").grid(row=row_idx, column=2, padx=10, pady=5)
-
-        create_config_row(1, "Protocol JSON:", self.protocol_path, self.browse_protocol)
-        create_config_row(2, "FOC Data Dir:", self.data_path, self.browse_data)
-        create_config_row(3, "DB Config:", self.db_config_path, self.browse_config)
+        ctk.CTkLabel(config_frame, text="Unified JSON:", font=ctk.CTkFont(family="Consolas", size=12)).grid(row=1, column=0, sticky="e", padx=10, pady=5)
+        ctk.CTkEntry(config_frame, textvariable=self.protocol_path, state="readonly", width=150, fg_color="#0B0F19", border_color="#334155").grid(row=1, column=1, sticky="ew", padx=5, pady=5)
+        ctk.CTkButton(config_frame, text="Browse", width=60, command=self.browse_protocol, fg_color="#334155", hover_color="#475569").grid(row=1, column=2, padx=10, pady=5)
 
         ctk.CTkLabel(config_frame, text="Assign To:", font=ctk.CTkFont(family="Consolas", size=12, weight="bold")).grid(row=4, column=0, sticky="e", padx=10, pady=(20, 5))
         self.op_var = ctk.StringVar(value="media_change")
