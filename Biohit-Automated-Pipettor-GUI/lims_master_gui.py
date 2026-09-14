@@ -31,7 +31,7 @@ class LIMSMasterApp:
         except AttributeError:
             pass
 
-        is_multi = messagebox.askyesno(
+        is_multi = False # Disabled during embedding # messagebox.askyesno(
             "Hardware Configuration Check",
             "Pipettor Type Selection:\n\nAre you currently using a Multichannel (8-channel) Pipettor?\n\n• Select 'Yes' for Multichannel\n• Select 'No' for Single-Channel"
         )
