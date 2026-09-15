@@ -637,16 +637,16 @@ class LIMSMasterApp:
         self.pv_plotter.add_axes()
         self.pv_plotter.show(interactive_update=True)
         
-        # Keep updating in a background loop
+        # Keep updating on the main GUI thread to prevent macOS Cocoa crash
         def update_loop():
-            while self.pv_plotter and not getattr(self.pv_plotter, '_closed', True):
+            if self.pv_plotter and not getattr(self.pv_plotter, '_closed', True):
                 try:
                     self.pv_plotter.update()
-                    time.sleep(0.05)
-                except:
-                    break
+                    self.root.after(50, update_loop)
+                except Exception:
+                    pass
                     
-        threading.Thread(target=update_loop, daemon=True).start()
+        self.root.after(50, update_loop)
 
     def update_pv_needle(self, *args):
         if not hasattr(self, 'pv_plotter') or not self.pv_plotter: return
