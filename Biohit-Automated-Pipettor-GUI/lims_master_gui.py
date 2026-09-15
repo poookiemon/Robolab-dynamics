@@ -2,8 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import json, logging, threading, time, os, subprocess
 import ctypes  # Native Windows library for ghost mouse
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import pyvista as pv
 import numpy as np
 from working import LIMSOrchestrator, Labware, DeckSlot, Pipettor
 from gui import GUI as AnalyzerGUI
@@ -397,7 +396,7 @@ class LIMSMasterApp:
         self.canvas.delete("all")
         render_width = self.bed_width
         self.canvas.config(width=render_width * self.scale, height=self.bed_height * self.scale)
-        if hasattr(self, "ax_3d"): self.redraw_3d()
+        if hasattr(self, "pv_plotter") and self.pv_plotter: self.launch_pv_twin()
 
         for x in range(0, int(render_width) + 10, 10):
             vx = self.get_v_x(x)
@@ -558,74 +557,112 @@ class LIMSMasterApp:
 
     def build_3d_tab(self):
         f_controls = ttk.Frame(self.tab_3d)
-        f_controls.pack(side=tk.TOP, fill=tk.X, pady=5)
-        ttk.Button(f_controls, text="Refresh 3D Deck", command=self.redraw_3d).pack(side=tk.LEFT, padx=10)
-        ttk.Label(f_controls, text="Drag to rotate. Needle follows Jog coordinates.").pack(side=tk.LEFT, padx=10)
+        f_controls.pack(side=tk.TOP, fill=tk.X, pady=20)
         
-        self.fig_3d = plt.figure(figsize=(8, 6))
-        self.ax_3d = self.fig_3d.add_subplot(111, projection='3d')
-        self.canvas_3d = FigureCanvasTkAgg(self.fig_3d, master=self.tab_3d)
-        self.canvas_3d.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        ttk.Label(f_controls, text="High-Fidelity 3D Digital Twin", font=("Arial", 16, "bold")).pack(pady=10)
+        ttk.Label(f_controls, text="Powered by PyVista (VTK) rendering engine.").pack(pady=5)
+        ttk.Label(f_controls, text="The twin opens in a separate hardware-accelerated window.").pack(pady=5)
         
-        self.pipette_line = None
+        ttk.Button(f_controls, text="LAUNCH 3D TWIN", command=self.launch_pv_twin).pack(pady=20)
         
-        # Bind traces to live-update the needle
-        self.jog_vars["X"].trace_add("write", self.update_needle_3d)
-        self.jog_vars["Y"].trace_add("write", self.update_needle_3d)
-        self.jog_vars["Z"].trace_add("write", self.update_needle_3d)
+        self.pv_plotter = None
+        self.pv_pipette_actor = None
         
-        self.root.after(500, self.redraw_3d)
+        # Real-time binding
+        self.jog_vars["X"].trace_add("write", self.update_pv_needle)
+        self.jog_vars["Y"].trace_add("write", self.update_pv_needle)
+        self.jog_vars["Z"].trace_add("write", self.update_pv_needle)
 
-    def redraw_3d(self):
-        self.ax_3d.clear()
+    def launch_pv_twin(self):
+        if self.pv_plotter:
+            try:
+                self.pv_plotter.close()
+            except: pass
+            
+        self.pv_plotter = pv.Plotter(title="Robolab 3D Digital Twin")
         
-        # Draw physical boundaries (200x250)
-        self.ax_3d.set_xlim(0, 200)
-        self.ax_3d.set_ylim(0, 250)
-        self.ax_3d.set_zlim(0, 100)
+        assets_dir = "/Users/shri/Robolab-dynamics/assets"
         
-        self.ax_3d.set_xlabel('X (mm)')
-        self.ax_3d.set_ylabel('Y (mm)')
-        self.ax_3d.set_zlabel('Z (mm)')
-        self.ax_3d.set_title("Live Deck Digital Twin")
+        # Load Deck Base
+        base_path = os.path.join(assets_dir, "deck_base.stl")
+        if os.path.exists(base_path):
+            try:
+                mesh_base = pv.read(base_path)
+                self.pv_plotter.add_mesh(mesh_base, color="#3a3a3a", specular=0.5, ambient=0.2)
+            except: pass
+            
+        # Load Plates
+        ehm_path = os.path.join(assets_dir, "ehm_plate.stl")
+        tip_path = os.path.join(assets_dir, "tip_rack.stl")
         
-        # Draw Deck Slots
         colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+        
         for i, name in enumerate(self.placed_slots):
             slot = self.lims.deck_slots.get(name)
-            if slot:
-                # Base footprint
-                x = [slot.x_abs, slot.x_abs + slot.width_mm, slot.x_abs + slot.width_mm, slot.x_abs, slot.x_abs]
-                y = [slot.y_abs, slot.y_abs, slot.y_abs + slot.height_mm, slot.y_abs + slot.height_mm, slot.y_abs]
-                z = [slot.z_offset]*5
-                self.ax_3d.plot(x, y, z, color=colors[i%len(colors)], linewidth=2, label=name)
+            if not slot: continue
+            lw = self.lims.deck_labware.get(name)
+            
+            mesh_to_load = None
+            if lw and "ehm" in lw.name.lower():
+                mesh_to_load = ehm_path
+            elif lw and "tip" in lw.name.lower():
+                mesh_to_load = tip_path
+            elif lw:
+                # Default block if no STL matches
+                block = pv.Cube(center=(slot.x_abs + slot.width_mm/2, slot.y_abs + slot.height_mm/2, slot.z_offset + lw.z_working/2),
+                                x_length=slot.width_mm, y_length=slot.height_mm, z_length=lw.z_working)
+                self.pv_plotter.add_mesh(block, color=colors[i%len(colors)], opacity=0.8, show_edges=True)
                 
-                # If labware assigned, draw a 3D block
-                lw = self.lims.deck_labware.get(name)
-                if lw:
-                    z_height = lw.z_working
-                    # Top surface
-                    z_top = [slot.z_offset + z_height]*5
-                    self.ax_3d.plot(x, y, z_top, color=colors[i%len(colors)], alpha=0.5)
-                    # Vertical lines
-                    for j in range(4):
-                        self.ax_3d.plot([x[j], x[j]], [y[j], y[j]], [z[j], z_top[j]], color=colors[i%len(colors)], alpha=0.5)
+            if mesh_to_load and os.path.exists(mesh_to_load):
+                try:
+                    mesh = pv.read(mesh_to_load)
+                    # Translate mesh to slot coordinates
+                    mesh.translate((slot.x_abs, slot.y_abs, slot.z_offset), inplace=True)
+                    self.pv_plotter.add_mesh(mesh, color=colors[i%len(colors)], show_edges=False, smooth_shading=True, specular=0.5)
+                except Exception as e:
+                    self.logger.error(f"Failed to load {mesh_to_load}: {e}")
+                    
+        # Add a stand-in Pipette head (Cylinder + Cone)
+        pipette_body = pv.Cylinder(radius=5, height=80, direction=(0,0,1))
+        pipette_tip = pv.Cone(radius=5, height=20, direction=(0,0,-1))
+        pipette_body.translate((0, 0, 60), inplace=True) # Center it above the tip
+        pipette_tip.translate((0, 0, 10), inplace=True)
         
-        self.ax_3d.legend()
+        self.pipette_mesh = pipette_body.merge(pipette_tip)
+        self.pv_pipette_actor = self.pv_plotter.add_mesh(self.pipette_mesh, color="red", specular=0.8)
         
-        # Re-initialize needle
-        self.pipette_line, = self.ax_3d.plot([], [], [], 'r-', linewidth=3)
-        self.update_needle_3d()
+        # Initial position
+        self.update_pv_needle()
+        
+        self.pv_plotter.add_axes()
+        self.pv_plotter.show(interactive_update=True)
+        
+        # Keep updating in a background loop
+        def update_loop():
+            while self.pv_plotter and not getattr(self.pv_plotter, '_closed', True):
+                try:
+                    self.pv_plotter.update()
+                    time.sleep(0.05)
+                except:
+                    break
+                    
+        threading.Thread(target=update_loop, daemon=True).start()
 
-    def update_needle_3d(self, *args):
-        if not self.pipette_line: return
+    def update_pv_needle(self, *args):
+        if not hasattr(self, 'pv_plotter') or not self.pv_plotter: return
+        if not hasattr(self, 'pv_pipette_actor') or not self.pv_pipette_actor: return
         try:
             px = float(self.jog_vars["X"].get())
             py = float(self.jog_vars["Y"].get())
             pz = float(self.jog_vars["Z"].get())
-            # Needle starts at high Z (e.g., 100) and points down to current Z
-            self.pipette_line.set_data_3d([px, px], [py, py], [100, pz])
-            self.canvas_3d.draw_idle()
+            
+            # Reset transformation matrix and apply new translation
+            # We don't reset the original mesh, we modify the actor's user_matrix
+            mat = np.eye(4)
+            mat[0, 3] = px
+            mat[1, 3] = py
+            mat[2, 3] = pz
+            self.pv_pipette_actor.user_matrix = mat
         except Exception:
             pass
 
