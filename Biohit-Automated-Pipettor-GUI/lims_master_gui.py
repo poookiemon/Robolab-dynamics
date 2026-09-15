@@ -588,6 +588,7 @@ class LIMSMasterApp:
         if os.path.exists(base_path):
             try:
                 mesh_base = pv.read(base_path)
+                mesh_base.scale((1000, 1000, 1000), inplace=True) # Fix Blender Meter to MM export
                 self.pv_plotter.add_mesh(mesh_base, color="#3a3a3a", specular=0.5, ambient=0.2)
             except: pass
             
@@ -616,6 +617,7 @@ class LIMSMasterApp:
             if mesh_to_load and os.path.exists(mesh_to_load):
                 try:
                     mesh = pv.read(mesh_to_load)
+                    mesh.scale((1000, 1000, 1000), inplace=True) # Fix Blender Meter to MM export
                     # Translate mesh to slot coordinates
                     mesh.translate((slot.x_abs, slot.y_abs, slot.z_offset), inplace=True)
                     self.pv_plotter.add_mesh(mesh, color=colors[i%len(colors)], show_edges=False, smooth_shading=True, specular=0.5)
