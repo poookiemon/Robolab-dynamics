@@ -1098,11 +1098,11 @@ class LIMSMasterApp:
                         elif "DB Upload" in action:
                             self.logger.info("Launching DB Subsystem...")
                             time.sleep(1.0)
-                            self.logger.info("Payload verified. Pushed to Contraction DB."
+                            self.logger.info("Payload verified. Pushed to Contraction DB.")
                         elif "Calcium Curve" in action:
                             self.logger.info("Executing Automated Calcium Curve Macro...")
                             time.sleep(2.0)
-                            self.logger.info("Calcium Curve executed successfully."))
+                            self.logger.info("Calcium Curve executed successfully.")
 
                     except Exception as e:
                         self.ask_error_resolution(e, i)
