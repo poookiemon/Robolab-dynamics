@@ -2,8 +2,6 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import json, logging, threading, time, os, subprocess
 import ctypes  # Native Windows library for ghost mouse
-import pyvista as pv
-import numpy as np
 from working import LIMSOrchestrator, Labware, DeckSlot, Pipettor
 from gui import GUI as AnalyzerGUI
 
@@ -164,23 +162,20 @@ class LIMSMasterApp:
         self.tab_deck = ttk.Frame(self.nb, padding=10)
         self.tab_direct = ttk.Frame(self.nb, padding=15)
         self.tab_workflow = ttk.Frame(self.nb, padding=10)
-        self.tab_analysis = ttk.Frame(self.nb, padding=10)
+        self.tab_analysis = ttk.Frame(self.nb, padding=10)  # NEW
         self.tab_ops = ttk.Frame(self.nb, padding=10)
         self.tab_dilution = ttk.Frame(self.nb, padding=10)
-        self.tab_3d = ttk.Frame(self.nb, padding=10) # 3D TWIN
 
         self.nb.add(self.tab_jog, text="1. Jog & Hardware")
         self.nb.add(self.tab_deck, text="2. Deck Setup")
-        self.nb.add(self.tab_3d, text="2.5 Digital Twin (3D)")
         self.nb.add(self.tab_direct, text="3. Direct Operations")
         self.nb.add(self.tab_workflow, text="4. Protocol Runner")
-        self.nb.add(self.tab_analysis, text="5. Data Analysis")
+        self.nb.add(self.tab_analysis, text="5. Data Analysis")  # NEW
         self.nb.add(self.tab_ops, text="6. Daily Operations")
         self.nb.add(self.tab_dilution, text="7. SIPA Dilution Calc")
 
         self.build_jog_tab()
         self.build_deck_tab()
-        self.build_3d_tab()
         self.build_direct_ops_tab()
         self.build_workflow_tab()
         self.build_ops_tab()
@@ -396,7 +391,6 @@ class LIMSMasterApp:
         self.canvas.delete("all")
         render_width = self.bed_width
         self.canvas.config(width=render_width * self.scale, height=self.bed_height * self.scale)
-        if hasattr(self, "pv_plotter") and self.pv_plotter: self.launch_pv_twin()
 
         for x in range(0, int(render_width) + 10, 10):
             vx = self.get_v_x(x)
@@ -553,120 +547,6 @@ class LIMSMasterApp:
         self.logger.info(f"--- ALIGNMENT CHECK ---")
         self.logger.info(f"Visual Grid X (Mouse Cursor): {mouse_x:.1f}mm")
         self.logger.info(f"Hardware Jog X (Machine Base): {hardware_x:.1f}mm")
-
-
-    def build_3d_tab(self):
-        f_controls = ttk.Frame(self.tab_3d)
-        f_controls.pack(side=tk.TOP, fill=tk.X, pady=20)
-        
-        ttk.Label(f_controls, text="High-Fidelity 3D Digital Twin", font=("Arial", 16, "bold")).pack(pady=10)
-        ttk.Label(f_controls, text="Powered by PyVista (VTK) rendering engine.").pack(pady=5)
-        ttk.Label(f_controls, text="The twin opens in a separate hardware-accelerated window.").pack(pady=5)
-        
-        ttk.Button(f_controls, text="LAUNCH 3D TWIN", command=self.launch_pv_twin).pack(pady=20)
-        
-        self.pv_plotter = None
-        self.pv_pipette_actor = None
-        
-        # Real-time binding
-        self.jog_vars["X"].trace_add("write", self.update_pv_needle)
-        self.jog_vars["Y"].trace_add("write", self.update_pv_needle)
-        self.jog_vars["Z"].trace_add("write", self.update_pv_needle)
-
-    def launch_pv_twin(self):
-        if self.pv_plotter:
-            try:
-                self.pv_plotter.close()
-            except: pass
-            
-        self.pv_plotter = pv.Plotter(title="Robolab 3D Digital Twin")
-        
-        assets_dir = "/Users/shri/Robolab-dynamics/assets"
-        
-        # Load Deck Base
-        base_path = os.path.join(assets_dir, "deck_base.stl")
-        if os.path.exists(base_path):
-            try:
-                mesh_base = pv.read(base_path)
-                mesh_base.scale((1000, 1000, 1000), inplace=True) # Fix Blender Meter to MM export
-                self.pv_plotter.add_mesh(mesh_base, color="#3a3a3a", specular=0.5, ambient=0.2)
-            except: pass
-            
-        # Load Plates
-        ehm_path = os.path.join(assets_dir, "ehm_plate.stl")
-        tip_path = os.path.join(assets_dir, "tip_rack.stl")
-        
-        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
-        
-        for i, name in enumerate(self.placed_slots):
-            slot = self.lims.deck_slots.get(name)
-            if not slot: continue
-            lw = self.lims.deck_labware.get(name)
-            
-            mesh_to_load = None
-            if lw and "ehm" in lw.name.lower():
-                mesh_to_load = ehm_path
-            elif lw and "tip" in lw.name.lower():
-                mesh_to_load = tip_path
-            elif lw:
-                # Default block if no STL matches
-                block = pv.Cube(center=(slot.x_abs + slot.width_mm/2, slot.y_abs + slot.height_mm/2, slot.z_offset + lw.z_working/2),
-                                x_length=slot.width_mm, y_length=slot.height_mm, z_length=lw.z_working)
-                self.pv_plotter.add_mesh(block, color=colors[i%len(colors)], opacity=0.8, show_edges=True)
-                
-            if mesh_to_load and os.path.exists(mesh_to_load):
-                try:
-                    mesh = pv.read(mesh_to_load)
-                    mesh.scale((1000, 1000, 1000), inplace=True) # Fix Blender Meter to MM export
-                    # Translate mesh to slot coordinates
-                    mesh.translate((slot.x_abs, slot.y_abs, slot.z_offset), inplace=True)
-                    self.pv_plotter.add_mesh(mesh, color=colors[i%len(colors)], show_edges=False, smooth_shading=True, specular=0.5)
-                except Exception as e:
-                    self.logger.error(f"Failed to load {mesh_to_load}: {e}")
-                    
-        # Add a stand-in Pipette head (Cylinder + Cone)
-        pipette_body = pv.Cylinder(radius=5, height=80, direction=(0,0,1))
-        pipette_tip = pv.Cone(radius=5, height=20, direction=(0,0,-1))
-        pipette_body.translate((0, 0, 60), inplace=True) # Center it above the tip
-        pipette_tip.translate((0, 0, 10), inplace=True)
-        
-        self.pipette_mesh = pipette_body.merge(pipette_tip)
-        self.pv_pipette_actor = self.pv_plotter.add_mesh(self.pipette_mesh, color="red", specular=0.8)
-        
-        # Initial position
-        self.update_pv_needle()
-        
-        self.pv_plotter.add_axes()
-        self.pv_plotter.show(interactive_update=True)
-        
-        # Keep updating on the main GUI thread to prevent macOS Cocoa crash
-        def update_loop():
-            if self.pv_plotter and not getattr(self.pv_plotter, '_closed', True):
-                try:
-                    self.pv_plotter.update()
-                    self.root.after(50, update_loop)
-                except Exception:
-                    pass
-                    
-        self.root.after(50, update_loop)
-
-    def update_pv_needle(self, *args):
-        if not hasattr(self, 'pv_plotter') or not self.pv_plotter: return
-        if not hasattr(self, 'pv_pipette_actor') or not self.pv_pipette_actor: return
-        try:
-            px = float(self.jog_vars["X"].get())
-            py = float(self.jog_vars["Y"].get())
-            pz = float(self.jog_vars["Z"].get())
-            
-            # Reset transformation matrix and apply new translation
-            # We don't reset the original mesh, we modify the actor's user_matrix
-            mat = np.eye(4)
-            mat[0, 3] = px
-            mat[1, 3] = py
-            mat[2, 3] = pz
-            self.pv_pipette_actor.user_matrix = mat
-        except Exception:
-            pass
 
     def build_direct_ops_tab(self):
         ttk.Label(self.tab_direct, text="Immediate Machine Controls", font=("Arial", 16, "bold")).pack(anchor="w")
