@@ -323,11 +323,23 @@ class LIMSMasterApp:
                 save_path = os.path.join(save_dir, image_name)
                 plt.savefig(save_path, bbox_inches='tight', dpi=150)
                 
-                plt.show()
+                # Close the plot silently instead of popping up a blocking window
+                plt.close()
             except Exception as e:
                 self.logger.error(f"Error parsing {stats_file}: {e}")
                 messagebox.showerror("Error", f"Failed to process {os.path.basename(stats_file)}\n{e}")
                 
+        
+        # Auto-open the folder on Mac (or Windows) so they can use native Image Viewer
+        import subprocess, sys
+        try:
+            if sys.platform == "darwin":
+                subprocess.run(["open", save_dir])
+            elif sys.platform == "win32":
+                os.startfile(save_dir)
+        except Exception:
+            pass
+            
         messagebox.showinfo("Success", f"Analysis complete! Saved all heatmaps to:\n{save_dir}")
 
     def build_ops_tab(self):
