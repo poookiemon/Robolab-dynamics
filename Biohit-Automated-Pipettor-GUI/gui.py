@@ -263,10 +263,30 @@ class GUI:
 
     def generate_calcium_curve(self) -> None:
         # 1. Target the pre-calculated FOC48 peak files
+        import json
+        import os
+        config_path = "last_dir.json"
+        init_dir = "/"
+        try:
+            if os.path.exists(config_path):
+                with open(config_path, "r") as f: init_dir = json.load(f).get("ca2", "/")
+        except Exception: pass
+
         file_paths = filedialog.askopenfilenames(
             title="Select '*peak_forces.csv' or standard '.csv' files",
-            filetypes=[("CSV Files", "*.csv")]
+            filetypes=[("CSV Files", "*.csv")],
+            initialdir=init_dir
         )
+        
+        if file_paths:
+            try:
+                data = {}
+                if os.path.exists(config_path):
+                    with open(config_path, "r") as f: data = json.load(f)
+                data["ca2"] = os.path.dirname(file_paths[0])
+                with open(config_path, "w") as f: json.dump(data, f)
+            except Exception: pass
+
         if not file_paths:
             return
             

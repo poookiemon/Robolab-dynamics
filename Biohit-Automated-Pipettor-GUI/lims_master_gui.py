@@ -278,7 +278,24 @@ class LIMSMasterApp:
         self._current_photo = None
 
     def run_heatmap_analysis(self):
-        folder_path = filedialog.askdirectory(title="Select FOC48 Data Folder")
+        import json
+        config_path = "last_dir.json"
+        init_dir = "/"
+        try:
+            if os.path.exists(config_path):
+                with open(config_path, "r") as f: init_dir = json.load(f).get("heatmap", "/")
+        except Exception: pass
+
+        folder_path = filedialog.askdirectory(title="Select FOC48 Data Folder", initialdir=init_dir)
+        if folder_path:
+            try:
+                data = {}
+                if os.path.exists(config_path):
+                    with open(config_path, "r") as f: data = json.load(f)
+                data["heatmap"] = folder_path
+                with open(config_path, "w") as f: json.dump(data, f)
+            except Exception: pass
+
         if not folder_path: return
         
         import glob
