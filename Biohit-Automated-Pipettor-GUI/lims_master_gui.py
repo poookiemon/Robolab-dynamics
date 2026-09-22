@@ -186,7 +186,7 @@ class LIMSMasterApp:
         self.build_ops_tab()
         self.build_dilution_tab()
 
-        self.analyzer = AnalyzerGUI(master=self.frame_ca2)  # NEW------------------
+        # AnalyzerGUI is now launched via pop-out button  # NEW------------------
 
 
     def execute_routine(self, op_name, default_file):
@@ -245,6 +245,15 @@ class LIMSMasterApp:
         
         self.frame_ca2 = ttk.LabelFrame(self.tab_analysis, text="Analyze Measurement")
         self.frame_ca2.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        lbl_ca2 = ttk.Label(self.frame_ca2, text="Kinetic Traces & Peak Forces", font=("Arial", 16, "bold"))
+        lbl_ca2.pack(pady=5)
+        
+        desc_ca2 = ttk.Label(self.frame_ca2, text="Launch the full-screen interactive dashboard\nto analyze measurements and kinetic traces.", justify=tk.CENTER)
+        desc_ca2.pack(pady=5)
+        
+        btn_launch = ttk.Button(self.frame_ca2, text="Launch Dashboard", command=self.launch_analyzer_popout)
+        btn_launch.pack(pady=20)
 
         # Place heatmap logic in the left box
         lbl = ttk.Label(self.frame_heatmap, text="FOC48 Baseline Heatmaps", font=("Arial", 16, "bold"))
@@ -407,6 +416,15 @@ class LIMSMasterApp:
         if self.current_heatmap_index < len(self.heatmap_image_paths) - 1:
             self.current_heatmap_index += 1
             self.update_heatmap_gallery()
+
+    def launch_analyzer_popout(self):
+        popout = ttk.Toplevel(self.root)
+        popout.title("Analyze Measurement Dashboard")
+        popout.geometry("1600x900")
+        
+        # Instantiate the AnalyzerGUI inside the new full-screen Toplevel window
+        from gui import GUI as AnalyzerGUI
+        self.analyzer = AnalyzerGUI(master=popout)
 
     def build_ops_tab(self):
         ttk.Label(self.tab_ops, text="TECHNICIAN DAILY OPERATIONS", font=("Arial", 14, "bold")).pack(pady=20)
