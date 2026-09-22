@@ -418,7 +418,7 @@ class LIMSMasterApp:
             self.update_heatmap_gallery()
 
     def launch_analyzer_popout(self):
-        popout = ttk.Toplevel(self.root)
+        popout = tk.Toplevel(self.root)
         popout.title("Analyze Measurement Dashboard")
         popout.geometry("1600x900")
         
