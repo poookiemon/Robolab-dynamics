@@ -243,7 +243,7 @@ class LIMSMasterApp:
         self.frame_heatmap = ttk.LabelFrame(self.tab_analysis, text="Quality Control (Baseline Heatmaps)")
         self.frame_heatmap.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        self.frame_ca2 = ttk.LabelFrame(self.tab_analysis, text="Kinetic Traces (Ca2+ Curves)")
+        self.frame_ca2 = ttk.LabelFrame(self.tab_analysis, text="Analyze Measurement")
         self.frame_ca2.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Place heatmap logic in the left box
