@@ -37,10 +37,7 @@ class LIMSMasterApp:
         except AttributeError:
             pass
 
-        is_multi = messagebox.askyesno(
-            "Hardware Configuration Check",
-            "Pipettor Type Selection:\n\nAre you currently using a Multichannel (8-channel) Pipettor?\n\n• Select 'Yes' for Multichannel\n• Select 'No' for Single-Channel"
-        )
+        is_multi = False  # Auto-defaulted to Single-Channel per user request
 
         # --- SAFETY LOCK: 200uL Manifold Limitation ---
         self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=200.0, multichannel=is_multi))
