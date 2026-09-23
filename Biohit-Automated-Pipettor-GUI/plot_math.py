@@ -194,8 +194,16 @@ def compute_metrics(
     if len(peak_idx) >= 2:
         rr_intervals = np.diff(time[peak_idx])
         freq = float(1.0 / np.mean(rr_intervals))
+        
+        # --- Arrhythmia QC ---
+        try:
+            from backend_qc import check_arrhythmia
+            is_arrhythmic, cv = check_arrhythmia(time[peak_idx], threshold_cv=0.30)
+        except Exception:
+            is_arrhythmic, cv = False, 0.0
     else:
         freq = 0.0
+        is_arrhythmic, cv = False, 0.0
 
     return dict(
         smoothed=smoothed,
@@ -206,4 +214,6 @@ def compute_metrics(
         contraction=contraction,
         mean_contraction=mean_contraction,
         freq=freq,
+        is_arrhythmic=is_arrhythmic,
+        rr_cv=cv,
     )

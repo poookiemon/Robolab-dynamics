@@ -108,6 +108,10 @@ class GUI:
         ttk.Button(self.header_frame, text="Save Plot", command=self.save_plot).grid(
             row=0, column=2, pady=5, padx=5, sticky="nsew"
         )
+        
+        ttk.Button(self.header_frame, text="Export HTML", command=self.save_plotly).grid(
+            row=0, column=3, pady=5, padx=5, sticky="nsew"
+        )
 
         ttk.Label(self.left_panel, text="Rows:", font=("Helvetica", 16), anchor="c").grid(
             row=1, column=0, sticky="new", columnspan=3
@@ -211,6 +215,38 @@ class GUI:
             filename=self.filename,
         )
 
+
+    def save_plotly(self) -> None:
+        if not self.loaded_file:
+            from tkinter import messagebox
+            messagebox.showwarning("No Data", "Please load a CSV file first.")
+            return
+            
+        from tkinter import filedialog
+        filepath = filedialog.asksaveasfilename(
+            title="Export Interactive HTML",
+            defaultextension=".html",
+            filetypes=[("HTML File", "*.html")],
+            initialfile=f"{self.filename}_interactive.html"
+        )
+        if not filepath:
+            return
+            
+        try:
+            self.gui.config(cursor="wait")
+            self.gui.update()
+            
+            from backend_plotly import generate_interactive_html
+            time_arr, values_arr = self.get_data()
+            generate_interactive_html(time_arr, values_arr, filepath, title=f"FOC48 Kinetics: {self.filename}")
+            
+            self.gui.config(cursor="")
+            from tkinter import messagebox
+            messagebox.showinfo("Success", f"Interactive HTML successfully exported to:\n{filepath}")
+        except Exception as e:
+            self.gui.config(cursor="")
+            from tkinter import messagebox
+            messagebox.showerror("Error", f"Failed to export HTML:\n{e}")
 
     def save_plot(self) -> None:
         if not self.loaded_file:
@@ -415,11 +451,21 @@ class GUI:
 
             for x, val in [(X_HZ, metrics["freq"]),
                            (X_FORCE, metrics["mean_contraction"])]:
+                
+                val_str = f"{val:.1f}"
+                color_txt = "white"
+                
+                # Highlight in red if arrhythmic
+                if x == X_HZ and metrics.get("is_arrhythmic", False):
+                    val_str += " ⚠"
+                    color_txt = "orange"
+                    
                 txt = self.fig.text(
                     x, y_center,
-                    f"{val:.1f}",
+                    val_str,
                     va="center", ha="left",
-                    fontsize=8, color="white",
+                    fontsize=8, color=color_txt,
+                    fontweight="bold" if color_txt == "orange" else "normal"
                 )
                 self._metric_texts.append(txt)
 
