@@ -685,7 +685,13 @@ class LIMSPyQtApp(QMainWindow):
         from PyQt6.QtWidgets import QGroupBox, QLabel, QPushButton, QHBoxLayout, QVBoxLayout, QFileDialog, QMessageBox
         from PyQt6.QtCore import Qt
         from PyQt6.QtGui import QPixmap
-        import os, json, glob
+        import os, sys, json, glob
+        
+        # Add parent directory to path so we can import watchdog_pipeline which is at the root
+        parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if parent_dir not in sys.path:
+            sys.path.insert(0, parent_dir)
+            
         import watchdog_pipeline
         
         layout = QHBoxLayout(self.tab_analysis)
@@ -746,10 +752,15 @@ class LIMSPyQtApp(QMainWindow):
         self.current_heatmap_idx = 0
 
     def run_heatmap_gallery(self):
-        import json, os, glob
+        import json, os, glob, sys
         from PyQt6.QtWidgets import QFileDialog, QMessageBox
         from PyQt6.QtGui import QPixmap
         from PyQt6.QtCore import Qt
+        
+        parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if parent_dir not in sys.path:
+            sys.path.insert(0, parent_dir)
+            
         import watchdog_pipeline
         
         config_path = "last_dir.json"
