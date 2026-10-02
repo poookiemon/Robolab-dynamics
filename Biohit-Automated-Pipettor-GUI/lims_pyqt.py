@@ -346,11 +346,6 @@ class LIMSPyQtApp(QMainWindow):
         l_layout.addWidget(btn_assign)
         
         l_layout.addSpacing(20)
-        from PyQt6.QtWidgets import QCheckBox
-        self.chk_lock = QCheckBox("Lock Camera Orientation")
-        self.chk_lock.setChecked(True)
-        self.chk_lock.stateChanged.connect(self.draw_3d_deck)
-        l_layout.addWidget(self.chk_lock)
         
         l_layout.addSpacing(10)
         l_layout.addWidget(QLabel("--- QUICK JOG ---"))
@@ -372,89 +367,105 @@ class LIMSPyQtApp(QMainWindow):
         l_layout.addWidget(btn_go)
 
         layout.addWidget(left_pane, 1)
-        self.plotter = QtInteractor(self.tab_deck)
-        layout.addWidget(self.plotter.interactor, 3)
-        # Defer 3D drawing to fix Mac VTK black screen
-        self.draw_3d_deck()
+        
+        from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene
+        self.scene = QGraphicsScene()
+        self.view = QGraphicsView(self.scene)
+        layout.addWidget(self.view, 3)
+        
+        self.deck_x.textChanged.connect(lambda: self.draw_deck())
+        self.deck_y.textChanged.connect(lambda: self.draw_deck())
+        
+        self.draw_deck()
         self.deck_x.setText("200")
         self.deck_y.setText("250")
         self.deck_z.setText("100")
         self._deck_jog()
 
-    def draw_3d_deck(self):
-        self.plotter.clear()
-        assets_dir = "/Users/shri/Robolab-dynamics/assets"
+    def draw_deck(self):
+        self.scene.clear()
         
-        base_path = os.path.join(assets_dir, "deck_base.stl")
-        if os.path.exists(base_path):
-            mesh_base = pv.read(base_path)
-            mesh_base.scale((1000, 1000, 1000), inplace=True)
-            self.plotter.add_mesh(mesh_base, color="#3a3a3a")
-            
-        for name, slot in self.lims.deck_slots.items():
-            slot_plane = pv.Plane(
-                center=(slot.x_abs + slot.width_mm/2, slot.y_abs + slot.height_mm/2, 6.0), 
-                direction=(0,0,1), 
-                i_size=slot.width_mm - 4, 
-                j_size=slot.height_mm - 4
-            )
-            self.plotter.add_mesh(slot_plane, color="#1c3b57")
-            self.plotter.add_point_labels([(slot.x_abs + slot.width_mm/2, slot.y_abs + slot.height_mm/2, 8.0)], [name], font_size=14, text_color="white", shape=None, show_points=False)
-            
-        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
-        ehm_path = os.path.join(assets_dir, "ehm_plate.stl")
-        tip_path = os.path.join(assets_dir, "tip_rack.stl")
+        bed_width = 400
+        bed_height = 300
+        scale = 2.0
         
-        for i, name in enumerate(self.placed_slots):
-            slot = self.lims.deck_slots.get(name)
-            if not slot: continue
-            lw = self.lims.deck_labware.get(name)
-            
-            mesh_file = None
-
-            if lw:
-                if "tip" in lw.name.lower() or "rack" in lw.name.lower():
-                    mesh_file = tip_path
-                else:
-                    mesh_file = ehm_path # Fallback to EHM plate for any standard plate
-
-            
-            if mesh_file and os.path.exists(mesh_file):
-                mesh = pv.read(mesh_file)
-                mesh.scale((1000, 1000, 1000), inplace=True)
-                mesh.translate((slot.x_abs, slot.y_abs, slot.z_offset + 5.0), inplace=True)
-                self.plotter.add_mesh(mesh, color=colors[i%len(colors)])
+        self.scene.setSceneRect(0, 0, bed_width * scale, bed_height * scale)
+        
+        from PyQt6.QtGui import QPen, QBrush, QColor
+        from PyQt6.QtCore import Qt, QRectF
+        
+        # Grid lines
+        for x in range(0, int(bed_width) + 10, 10):
+            vx = (bed_width - x) * scale
+            color = "#cccccc" if x % 50 == 0 else "#ebebeb"
+            self.scene.addLine(vx, 0, vx, bed_height * scale, QPen(QColor(color)))
+            if x % 50 == 0:
+                t = self.scene.addText(f"{x}mm")
+                t.setPos(vx - 20, 10)
+                t.setDefaultTextColor(QColor("#888888"))
                 
-        # Pipette Stand-in
-        pipette_body = pv.Cylinder(radius=5, height=80, direction=(0,0,1))
-        pipette_tip = pv.Cone(radius=5, height=20, direction=(0,0,-1))
-        pipette_body.translate((0, 0, 60), inplace=True)
-        pipette_tip.translate((0, 0, 10), inplace=True)
+        for y in range(0, int(bed_height) + 10, 10):
+            vy = y * scale
+            color = "#cccccc" if y % 50 == 0 else "#ebebeb"
+            self.scene.addLine(0, vy, bed_width * scale, vy, QPen(QColor(color)))
+            if y % 50 == 0:
+                t = self.scene.addText(f"{y}mm")
+                t.setPos(bed_width * scale - 45, vy - 10)
+                t.setDefaultTextColor(QColor("#888888"))
+                
+        # Origin
+        ox = bed_width * scale
+        self.scene.addEllipse(ox - 15, 2, 13, 13, QPen(Qt.GlobalColor.black), QBrush(Qt.GlobalColor.red))
+        t = self.scene.addText("(0,0)")
+        t.setPos(ox - 45, 15)
+        t.setDefaultTextColor(Qt.GlobalColor.red)
         
-        self.pipette_mesh = pipette_body.merge(pipette_tip)
-        self.pv_pipette_actor = self.plotter.add_mesh(self.pipette_mesh, color="red")
+        # Draw slots
+        for name in self.placed_slots:
+            s = self.lims.deck_slots[name]
+            visual_x_right = (bed_width - s.x_abs) * scale
+            visual_x_left = (bed_width - (s.x_abs + s.width_mm)) * scale
+            y0 = s.y_abs * scale
+            y1 = (s.y_abs + s.height_mm) * scale
+            
+            fill = "#e9ecef"
+            if name in self.lims.deck_labware:
+                fill = "#f8f9fa" 
+            
+            rect = QRectF(visual_x_left, y0, visual_x_right - visual_x_left, y1 - y0)
+            self.scene.addRect(rect, QPen(QColor("#6c757d"), 2), QBrush(QColor(fill)))
+            
+            t = self.scene.addText(name)
+            t.setPos(visual_x_left + 5, y0 + 5)
+            
+            if name in self.lims.deck_labware:
+                lab = self.lims.deck_labware[name]
+                for w_name, w_info in lab.wells.items():
+                    wx = (bed_width - (s.x_abs + w_info['x'])) * scale
+                    wy = (s.y_abs + w_info['y']) * scale
+                    self.scene.addEllipse(wx - 2, wy - 2, 4, 4, QPen(Qt.GlobalColor.gray), QBrush(Qt.GlobalColor.white))
+                    
+        # Draw pipettor (blue dot)
+        jx, jy = 0.0, 0.0
+        try:
+            jx = float(self.deck_x.text())
+            jy = float(self.deck_y.text())
+        except ValueError:
+            pass
+            
+        vx = (bed_width - jx) * scale
+        vy = jy * scale
+        self.scene.addEllipse(vx - 7, vy - 7, 14, 14, QPen(Qt.GlobalColor.black), QBrush(Qt.GlobalColor.blue))
         
-        self.plotter.add_axes()
-        self._deck_jog() # Update needle position to match UI coordinates
-
-        self.plotter.camera_position = [(150, -300, 400), (150, 125, 0), (0, 0, 1)]
-        self.plotter.reset_camera_clipping_range()
-
-
     def _deck_jog(self):
         try:
             x = float(self.deck_x.text())
             y = float(self.deck_y.text())
             z = float(self.deck_z.text())
             self.lims.hw.move_to(x, y, z)
-            mat = np.eye(4)
-            mat[0,3] = x
-            mat[1,3] = y
-            mat[2,3] = z
-            if hasattr(self, 'pv_pipette_actor') and self.pv_pipette_actor:
-                self.pv_pipette_actor.user_matrix = mat
-            self.plotter.update()
-        except: pass
+            self.draw_deck()
+        except Exception: 
+            pass
 
     def assign_lw(self):
         sel = self.list_placed.selectedItems()
