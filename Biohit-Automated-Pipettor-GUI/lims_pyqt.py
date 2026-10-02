@@ -156,6 +156,17 @@ class WorkflowRunner(QThread):
         self.signals.update_ui_state.emit(False)
         self.signals.finished.emit()
 
+class WatchdogRunner(QThread):
+    log_signal = pyqtSignal(str)
+    
+    def run(self):
+        import watchdog_pipeline
+        self.log_signal.emit("Starting Watchdog Daemon in background...")
+        try:
+            watchdog_pipeline.start_watchdog()
+        except Exception as e:
+            self.log_signal.emit(f"Watchdog Error: {e}")
+
 class LIMSPyQtApp(QMainWindow):
     def __init__(self, is_multi=False):
         super().__init__()
@@ -602,7 +613,7 @@ class LIMSPyQtApp(QMainWindow):
     def handle_runner_error(self, error, step_idx):
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Icon.Warning)
-        msg.setText(f"Protocol Halted on Step {step_idx}.\n\nTrace:\n{error}\n\nIgnore and continue?")
+        msg.setText(f"Protocol Halted on Step {step_idx}.Trace:{error}Ignore and continue?")
         msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         ret = msg.exec()
         if ret == QMessageBox.StandardButton.Yes:
@@ -656,7 +667,7 @@ class LIMSPyQtApp(QMainWindow):
                 config = json.load(f)
         protocol_path = config.get(op_name, default_file)
         if not os.path.exists(protocol_path):
-            QMessageBox.warning(self, "Not Found", f"Protocol file not found:\n{protocol_path}")
+            QMessageBox.warning(self, "Not Found", f"Protocol file not found:{protocol_path}")
             return
         with open(protocol_path, 'r') as f:
             loaded_sequence = json.load(f)
@@ -669,17 +680,6 @@ class LIMSPyQtApp(QMainWindow):
         self.tabs.setCurrentWidget(self.tab_workflow)
         self.run_sequence()
 
-
-class WatchdogRunner(QThread):
-    log_signal = pyqtSignal(str)
-    
-    def run(self):
-        import watchdog_pipeline
-        self.log_signal.emit("Starting Watchdog Daemon in background...")
-        try:
-            watchdog_pipeline.start_watchdog()
-        except Exception as e:
-            self.log_signal.emit(f"Watchdog Error: {e}")
 
     def build_analysis_tab(self):
         layout = QVBoxLayout(self.tab_analysis)
@@ -783,29 +783,29 @@ class WatchdogRunner(QThread):
             transfer_vol = well_vol / (dilution_factor - 1)
             dmso_pct = (transfer_vol / (well_vol + transfer_vol)) * 100
             
-            res = "=== DILUTION INSTRUCTIONS ===\n\n"
+            res = "=== DILUTION INSTRUCTIONS ==="
             
             if transfer_vol < 50:
-                res += "⚠️ TRANSFER VOLUME TOO SMALL! (Needs Intermediate Stock)\n\n"
-                res += "STEP 1: Make a 10x Dilution (Working Stock)\n"
-                res += "        Mix 10 uL of your Drug Stock with 90 uL of pure Media.\n"
-                res += "        (This creates a new Working Stock at 1/10th concentration).\n\n"
+                res += "⚠️ TRANSFER VOLUME TOO SMALL! (Needs Intermediate Stock)"
+                res += "STEP 1: Make a 10x Dilution (Working Stock)"
+                res += "        Mix 10 uL of your Drug Stock with 90 uL of pure Media."
+                res += "        (This creates a new Working Stock at 1/10th concentration)."
                 
                 new_stock_um = stock_um / 10
                 new_df = new_stock_um / target_um
                 new_transfer = well_vol / (new_df - 1)
                 new_dmso = (new_transfer / (well_vol + new_transfer)) * 100
                 
-                res += "STEP 2: Pipette into EHM Well\n"
-                res += f"        Transfer {new_transfer:.1f} uL of the Working Stock into the {well_vol} uL EHM well.\n\n"
-                res += f"        -> Final DMSO % in well: {new_dmso/10:.3f}% (Safe!)\n"
+                res += "STEP 2: Pipette into EHM Well"
+                res += f"        Transfer {new_transfer:.1f} uL of the Working Stock into the {well_vol} uL EHM well."
+                res += f"        -> Final DMSO % in well: {new_dmso/10:.3f}% (Safe!)"
             else:
-                res += "✅ DIRECT PIPETTING (No intermediate stock needed)\n\n"
-                res += "STEP 1: Pipette into EHM Well\n"
-                res += f"        Transfer {transfer_vol:.1f} uL of the Drug Stock directly into the {well_vol} uL EHM well.\n\n"
-                res += f"        -> Final DMSO % in well: {dmso_pct:.3f}%\n"
+                res += "✅ DIRECT PIPETTING (No intermediate stock needed)"
+                res += "STEP 1: Pipette into EHM Well"
+                res += f"        Transfer {transfer_vol:.1f} uL of the Drug Stock directly into the {well_vol} uL EHM well."
+                res += f"        -> Final DMSO % in well: {dmso_pct:.3f}%"
                 if dmso_pct > 1.0:
-                    res += "\n🚨 WARNING: DMSO limit exceeded (>1%)! Tissue toxicity risk.\n"
+                    res += "🚨 WARNING: DMSO limit exceeded (>1%)! Tissue toxicity risk."
                 
             self.res_text.setPlainText(res)
         except Exception as e:
