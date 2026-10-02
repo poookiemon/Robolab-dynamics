@@ -495,7 +495,7 @@ class LIMSPyQtApp(QMainWindow):
             self.cbx_slot.clear()
             self.cbx_slot.addItems(self.placed_slots)
         # Defer 3D drawing to fix Mac VTK black screen
-        self.draw_3d_deck()
+        self.draw_deck()
 
     def build_workflow_tab(self):
         layout = QHBoxLayout(self.tab_workflow)
