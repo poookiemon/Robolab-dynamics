@@ -354,8 +354,22 @@ class LIMSMasterApp:
                             if b_pix is not None:
                                 df.at[r, c] = float(b_pix.text) / pix2mm
                                 
-                plt.figure(figsize=(10, 8))
-                sns.heatmap(df, annot=True, fmt=".2f", cmap="coolwarm", vmin=3.5, vmax=4.5, cbar_kws={'label': 'Baseline (mm)'})
+                from matplotlib.colors import LinearSegmentedColormap
+                colors = [
+                    (0.000, "mediumblue"),
+                    (0.332, "deepskyblue"),
+                    (0.333, "mediumseagreen"),
+                    (0.500, "limegreen"),
+                    (0.666, "mediumseagreen"),
+                    (0.667, "lightcoral"),
+                    (1.000, "firebrick")
+                ]
+                custom_cmap = LinearSegmentedColormap.from_list("blue_green_red", colors)
+                fig, ax = plt.subplots(figsize=(12, 9))
+                sns.heatmap(df, annot=True, fmt=".2f", cmap=custom_cmap, vmin=3.5, vmax=4.4, cbar_kws={'label': 'Baseline (mm)'}, ax=ax)
+                ax.xaxis.tick_top()
+                ax.xaxis.set_label_position('top')
+                plt.yticks(rotation=0)
                 
                 # --- Apply QC Flags ---
                 try:
@@ -371,10 +385,10 @@ class LIMSMasterApp:
                 # ----------------------
                 
                 file_name = os.path.basename(stats_file)
-                plt.title(f"Baseline Heatmap: {file_name}\n(Calculated using {pix2mm} pixels/mm)\nTarget Range: 3.7mm - 4.2mm", fontsize=14)
+                plt.title(f"Baseline Heatmap: {file_name}\n(Calculated using {pix2mm} pixels/mm)\nTarget Range: 3.8mm - 4.1mm", fontsize=14)
                 plt.xlabel("Columns")
                 plt.ylabel("Rows")
-                plt.figtext(0.5, 0.01, "Values between 3.7 and 4.2 are ideal. <3.7 is too small, >4.2 is too large.", ha="center", fontsize=10, bbox={"facecolor": "orange", "alpha": 0.2, "pad": 5})
+                plt.figtext(0.5, 0.01, "Values between 3.8 and 4.1 are ideal. <3.8 is too small, >4.1 is too large.", ha="center", fontsize=10, bbox={"facecolor": "orange", "alpha": 0.2, "pad": 5})
                 
                 # Save to the timestamped folder
                 image_name = file_name.replace(".stats.xml", "_heatmap.png")
