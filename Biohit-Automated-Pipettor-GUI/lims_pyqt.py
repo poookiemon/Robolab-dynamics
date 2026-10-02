@@ -156,17 +156,6 @@ class WorkflowRunner(QThread):
         self.signals.update_ui_state.emit(False)
         self.signals.finished.emit()
 
-class WatchdogRunner(QThread):
-    log_signal = pyqtSignal(str)
-    
-    def run(self):
-        import watchdog_pipeline
-        self.log_signal.emit("Starting Watchdog Daemon in background...")
-        try:
-            watchdog_pipeline.start_watchdog()
-        except Exception as e:
-            self.log_signal.emit(f"Watchdog Error: {e}")
-
 class LIMSPyQtApp(QMainWindow):
     def __init__(self, is_multi=False):
         super().__init__()
@@ -693,74 +682,151 @@ class LIMSPyQtApp(QMainWindow):
 
 
     def build_analysis_tab(self):
-        layout = QVBoxLayout(self.tab_analysis)
-        
-        # Top Controls
-        top_bar = QHBoxLayout()
-        btn_watchdog = QPushButton("Start Hands-Free Watchdog")
-        btn_watchdog.clicked.connect(self.start_watchdog_thread)
-        btn_watchdog.setStyleSheet("background-color: #2b3e50; color: white; font-weight: bold; padding: 10px;")
-        
-        btn_manual_qc = QPushButton("Manual Heatmap QC")
-        btn_manual_qc.clicked.connect(self.run_manual_heatmap_qc)
-        
-        btn_manual_ca2 = QPushButton("Manual Interactive Plotly")
-        btn_manual_ca2.clicked.connect(self.run_manual_ca2_plotly)
-        
-        top_bar.addWidget(btn_watchdog)
-        top_bar.addWidget(btn_manual_qc)
-        top_bar.addWidget(btn_manual_ca2)
-        top_bar.addStretch()
-        
-        layout.addLayout(top_bar)
-        
-        # Web Engine View for embedded HTML
-        self.web_view = QWebEngineView()
-        html = """
-        <html><body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #f0f0f0;">
-        <h2>Interactive Plotly Engine Ready.<br>Load a Ca2+ CSV or start the Watchdog pipeline.</h2>
-        </body></html>
-        """
-        self.web_view.setHtml(html)
-        
-        layout.addWidget(self.web_view)
-
-    def start_watchdog_thread(self):
-        self.log("Initializing FOC48 Background Watchdog...")
-        self.watchdog_thread = WatchdogRunner()
-        self.watchdog_thread.log_signal.connect(self.log)
-        self.watchdog_thread.start()
-        
-    def run_manual_heatmap_qc(self):
-        folder_path = QFileDialog.getExistingDirectory(self, "Select FOC48 Data Folder")
-        if not folder_path: return
+        from PyQt6.QtWidgets import QGroupBox, QLabel, QPushButton, QHBoxLayout, QVBoxLayout, QFileDialog, QMessageBox
+        from PyQt6.QtCore import Qt
+        from PyQt6.QtGui import QPixmap
+        import os, json, glob
         import watchdog_pipeline
-        self.log(f"Running manual QC on {folder_path}...")
+        
+        layout = QHBoxLayout(self.tab_analysis)
+        
+        # LEFT SIDE: Heatmap Gallery
+        left_group = QGroupBox("Quality Control (Baseline Heatmaps)")
+        l_layout = QVBoxLayout(left_group)
+        
+        l_layout.addWidget(QLabel("<b>FOC48 Baseline Heatmaps</b>"))
+        desc = QLabel("Automatically parses .stats.xml and .xml files\nto generate baseline heatmaps.")
+        desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        l_layout.addWidget(desc)
+        
+        btn_folder = QPushButton("Select Folder for Heatmaps")
+        btn_folder.clicked.connect(self.run_heatmap_gallery)
+        l_layout.addWidget(btn_folder)
+        
+        self.heatmap_display = QLabel("No image to display")
+        self.heatmap_display.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.heatmap_display.setStyleSheet("background-color: white; border: 1px solid #ccc;")
+        l_layout.addWidget(self.heatmap_display, 1) # expand
+        
+        nav_layout = QHBoxLayout()
+        self.btn_prev = QPushButton("< Prev")
+        self.btn_prev.setEnabled(False)
+        self.btn_prev.clicked.connect(self.prev_heatmap)
+        
+        self.lbl_gallery = QLabel("0 / 0")
+        self.lbl_gallery.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        self.btn_next = QPushButton("Next >")
+        self.btn_next.setEnabled(False)
+        self.btn_next.clicked.connect(self.next_heatmap)
+        
+        nav_layout.addWidget(self.btn_prev)
+        nav_layout.addWidget(self.lbl_gallery)
+        nav_layout.addWidget(self.btn_next)
+        l_layout.addLayout(nav_layout)
+        
+        # RIGHT SIDE: Launch Dashboard
+        right_group = QGroupBox("Analyze Measurement")
+        r_layout = QVBoxLayout(right_group)
+        
+        r_layout.addWidget(QLabel("<b>Kinetic Traces & Peak Forces</b>"))
+        r_desc = QLabel("Launch the full-screen interactive dashboard\nto analyze measurements and kinetic traces.")
+        r_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        r_layout.addWidget(r_desc)
+        
+        btn_launch = QPushButton("Launch Dashboard")
+        btn_launch.clicked.connect(self.launch_analyzer_popout)
+        r_layout.addWidget(btn_launch)
+        r_layout.addStretch()
+        
+        layout.addWidget(left_group)
+        layout.addWidget(right_group)
+        
+        self.heatmap_images = []
+        self.current_heatmap_idx = 0
+
+    def run_heatmap_gallery(self):
+        import json, os, glob
+        from PyQt6.QtWidgets import QFileDialog, QMessageBox
+        from PyQt6.QtGui import QPixmap
+        from PyQt6.QtCore import Qt
+        import watchdog_pipeline
+        
+        config_path = "last_dir.json"
+        init_dir = "/"
         try:
-            watchdog_pipeline.FOC48Handler().run_pipeline(folder_path)
-            self.log(f"QC Pipeline finished. Heatmaps generated in folder.")
-        except Exception as e:
-            self.log(f"Error: {e}")
-            
-    def run_manual_ca2_plotly(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Select FOC48 CSV", filter="CSV Files (*.csv)")
-        if not file_path: return
-        self.log(f"Generating interactive Plotly for {file_path}...")
+            if os.path.exists(config_path):
+                with open(config_path, "r") as f: init_dir = json.load(f).get("heatmap", "/")
+        except Exception: pass
+        
+        folder_path = QFileDialog.getExistingDirectory(self, "Select FOC48 Data Folder", init_dir)
+        if not folder_path: return
+        
         try:
-            import numpy as np
-            import os
-            from backend_plotly import generate_interactive_html
-            data = np.loadtxt(file_path, delimiter=",")
-            time_arr = data[:, 0]
-            values_arr = data[:, 1:]
-            out_file = os.path.join(os.path.dirname(file_path), "temp_interactive.html")
-            generate_interactive_html(time_arr, values_arr, out_file, title=f"Kinetics: {os.path.basename(file_path)}")
+            data = {}
+            if os.path.exists(config_path):
+                with open(config_path, "r") as f: data = json.load(f)
+            data["heatmap"] = folder_path
+            with open(config_path, "w") as f: json.dump(data, f)
+        except Exception: pass
+        
+        stats_files = glob.glob(os.path.join(folder_path, "*.stats.xml"))
+        if not stats_files:
+            QMessageBox.information(self, "No Files", f"No .stats.xml files found in {folder_path}")
+            return
             
-            # Load into embedded Chromium WebEngine
-            self.web_view.setUrl(QUrl.fromLocalFile(out_file))
-            self.log("Plotly HTML embedded successfully.")
-        except Exception as e:
-            self.log(f"Error: {e}")
+        self.log(f"Running QC on {len(stats_files)} files in {folder_path}...")
+        
+        # We reuse the watchdog pipeline logic to generate the images
+        handler = watchdog_pipeline.FOC48Handler()
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        save_dir = os.path.join(folder_path, f"Analysis_{timestamp}")
+        os.makedirs(save_dir, exist_ok=True)
+        
+        for sf in stats_files:
+            handler.generate_heatmap(sf, save_dir)
+            
+        # Find all generated PNGs
+        self.heatmap_images = glob.glob(os.path.join(save_dir, "*_heatmap.png"))
+        if self.heatmap_images:
+            self.current_heatmap_idx = 0
+            self.update_heatmap_gallery()
+            self.log(f"Generated {len(self.heatmap_images)} heatmaps successfully.")
+        else:
+            self.log("Failed to generate heatmap images.")
+            
+    def update_heatmap_gallery(self):
+        from PyQt6.QtGui import QPixmap
+        from PyQt6.QtCore import Qt
+        if not self.heatmap_images: return
+        
+        img_path = self.heatmap_images[self.current_heatmap_idx]
+        pixmap = QPixmap(img_path)
+        # scale keeping aspect ratio
+        scaled_pixmap = pixmap.scaled(self.heatmap_display.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        self.heatmap_display.setPixmap(scaled_pixmap)
+        
+        self.lbl_gallery.setText(f"{self.current_heatmap_idx + 1} / {len(self.heatmap_images)}")
+        
+        self.btn_prev.setEnabled(self.current_heatmap_idx > 0)
+        self.btn_next.setEnabled(self.current_heatmap_idx < len(self.heatmap_images) - 1)
+        
+    def prev_heatmap(self):
+        if self.current_heatmap_idx > 0:
+            self.current_heatmap_idx -= 1
+            self.update_heatmap_gallery()
+            
+    def next_heatmap(self):
+        if self.current_heatmap_idx < len(self.heatmap_images) - 1:
+            self.current_heatmap_idx += 1
+            self.update_heatmap_gallery()
+            
+    def launch_analyzer_popout(self):
+        import subprocess, sys, os
+        gui_path = os.path.join(os.path.dirname(__file__), "gui.py")
+        subprocess.Popen([sys.executable, gui_path])
+        self.log("Launched external Matplotlib Ca2+ Analyzer.")
 
     def build_dilution_tab(self):
         layout = QVBoxLayout(self.tab_dilution)

@@ -717,3 +717,8 @@ class GUI:
             self.update_plots()
         except AttributeError:
             pass
+if __name__ == "__main__":
+    import tkinter as tk
+    root = tk.Tk()
+    app = GUI(master=root)
+    root.mainloop()
