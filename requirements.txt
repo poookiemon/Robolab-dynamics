@@ -1,0 +1,13 @@
+numpy
+scipy
+pandas
+matplotlib
+seaborn
+plotly
+ttkbootstrap
+watchdog
+PyQt6
+PyQt6-WebEngine
+pyvista
+pyvistaqt
+pythonnet
