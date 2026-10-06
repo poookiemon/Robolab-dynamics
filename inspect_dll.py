@@ -2,22 +2,29 @@ import clr
 import os
 import sys
 
-dll_path = os.path.abspath("instrumentLib.dll")
+dll_path = os.path.abspath("InstrumentLib.dll")
 if not os.path.exists(dll_path):
-    print("Cannot find instrumentLib.dll")
+    dll_path = os.path.abspath("instrumentLib.dll")
+
+if not os.path.exists(dll_path):
+    print("Cannot find InstrumentLib.dll")
     sys.exit(1)
 
 clr.AddReference(dll_path)
 import System
 
-print("--- Classes found in instrumentLib.dll ---")
-found_types = []
+print("--- ALL Classes found in the DLL ---")
+found = False
 for assembly in System.AppDomain.CurrentDomain.GetAssemblies():
-    if "instrumentLib" in assembly.FullName:
-        for type_info in assembly.GetTypes():
-            if type_info.IsPublic:
-                found_types.append(type_info.FullName)
-                print(type_info.FullName)
+    name = assembly.FullName.lower()
+    # Skip standard Microsoft/System libraries to avoid clutter
+    if "mscorlib" in name or "system" in name or "python" in name:
+        continue
+        
+    print(f"\nAssembly: {assembly.FullName}")
+    for type_info in assembly.GetTypes():
+        print(f"  -> {type_info.FullName}")
+        found = True
 
-if not found_types:
-    print("No public classes found! Are you sure this is the right DLL?")
+if not found:
+    print("Literally no classes found. Is this a native C++ DLL instead of a C# .NET DLL?")
