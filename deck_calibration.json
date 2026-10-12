@@ -3,60 +3,60 @@
         "name": "Slot_1",
         "x_abs": 134.2,
         "y_abs": 5.0,
-        "width_mm": 111.2,
-        "height_mm": 30.0,
+        "width_mm": 127.8,
+        "height_mm": 35.0,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": null
+        "labware_file": "waste_trough.json"
     },
     "Slot_2": {
         "name": "Slot_2",
         "x_abs": 0.0,
         "y_abs": 5.0,
-        "width_mm": 119.7,
-        "height_mm": 30.0,
+        "width_mm": 127.8,
+        "height_mm": 35.0,
         "z_offset": 0.0,
         "is_placed": true,
         "labware_file": null
     },
     "Slot_3": {
         "name": "Slot_3",
-        "x_abs": 134.2,
-        "y_abs": 45.2,
-        "width_mm": 111.2,
-        "height_mm": 75.0,
+        "x_abs": 139.2,
+        "y_abs": 46.5,
+        "width_mm": 127.8,
+        "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": null
+        "labware_file": "tip_rack_1000ul.json"
     },
     "Slot_4": {
         "name": "Slot_4",
         "x_abs": 0.0,
         "y_abs": 45.2,
-        "width_mm": 119.7,
-        "height_mm": 75.0,
+        "width_mm": 127.8,
+        "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": null
+        "labware_file": "myriamed_48_well.json"
     },
     "Slot_5": {
         "name": "Slot_5",
-        "x_abs": 134.2,
-        "y_abs": 124.2,
-        "width_mm": 111.2,
-        "height_mm": 90.0,
+        "x_abs": 136.2,
+        "y_abs": 129.2,
+        "width_mm": 127.8,
+        "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": null
+        "labware_file": "reservoir_6_column.json"
     },
     "Slot_6": {
         "name": "Slot_6",
         "x_abs": 0.0,
-        "y_abs": 124.2,
-        "width_mm": 119.7,
-        "height_mm": 90.0,
+        "y_abs": 139.3,
+        "width_mm": 127.8,
+        "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": null
+        "labware_file": "waste_trough.json"
     }
 }

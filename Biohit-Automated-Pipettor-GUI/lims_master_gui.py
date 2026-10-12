@@ -1563,6 +1563,8 @@ class LIMSMasterApp:
                 self.selected_slot_name = name
                 for k in ['x_abs', 'y_abs', 'width_mm', 'height_mm', 'z_offset']:
                     self.entries[k].set(str(getattr(s, k, 0.0)))
+                assigned = getattr(self.lims.deck_labware.get(name), 'source_file', '')
+                self.lw_var.set(assigned if assigned else '')
                 self.draw_deck()
                 return
         self.selected_slot_name = None
@@ -1574,13 +1576,37 @@ class LIMSMasterApp:
     def drag_end(self, e):
         pass
 
+    def get_labware_dir(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        for cand in [
+            os.path.join(script_dir, "labware"),
+            os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "labware"),
+            os.path.join(os.getcwd(), "labware"),
+        ]:
+            if os.path.isdir(cand):
+                return cand
+        return "labware"
+
+    def get_calibration_path(self, filename="deck_calibration.json"):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        for cand in [
+            os.path.join(script_dir, filename),
+            os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", filename),
+            os.path.join(os.getcwd(), filename),
+        ]:
+            if os.path.isfile(cand):
+                return cand
+        return filename
+
     def refresh_ui(self):
         self.list_unplaced.delete(0, tk.END)
         [self.list_unplaced.insert(tk.END, s) for s in self.unplaced_slots]
         self.list_placed.delete(0, tk.END)
         [self.list_placed.insert(tk.END, s) for s in self.placed_slots]
         self.cbx_slot['values'] = self.placed_slots
-        if os.path.exists("labware"): self.lw_drop['values'] = [f for f in os.listdir("labware") if f.endswith(".json")]
+        lw_dir = self.get_labware_dir()
+        if os.path.exists(lw_dir):
+            self.lw_drop['values'] = sorted([f for f in os.listdir(lw_dir) if f.endswith(".json")])
         self.draw_deck()
 
     def place_slot(self):
@@ -1596,7 +1622,8 @@ class LIMSMasterApp:
     def assign_lw(self):
         fn = self.lw_var.get()
         if fn and self.selected_slot_name:
-            self.lims.deck_labware[self.selected_slot_name] = Labware(f"labware/{fn}")
+            lw_path = os.path.join(self.get_labware_dir(), fn)
+            self.lims.deck_labware[self.selected_slot_name] = Labware(lw_path)
             self.lims.deck_labware[self.selected_slot_name].source_file = fn
             self.draw_deck()
 
@@ -1632,20 +1659,25 @@ class LIMSMasterApp:
         self.lims.deck_labware.clear()
         self.placed_slots.clear()
         self.unplaced_slots.clear()
+        lw_dir = self.get_labware_dir()
         for n, d in data.items():
             slot = DeckSlot(n, d['x_abs'], d['y_abs'], d['width_mm'], d['height_mm'])
             slot.z_offset = d.get('z_offset', 0.0)
             self.lims.deck_slots[n] = slot
             (self.placed_slots if d.get('is_placed', False) else self.unplaced_slots).append(n)
-            if d.get('labware_file') and os.path.exists(f"labware/{d['labware_file']}"):
-                self.lims.deck_labware[n] = Labware(f"labware/{d['labware_file']}")
-                self.lims.deck_labware[n].source_file = d['labware_file']
+            lab_file = d.get('labware_file')
+            if lab_file:
+                lw_path = os.path.join(lw_dir, lab_file)
+                if os.path.exists(lw_path):
+                    self.lims.deck_labware[n] = Labware(lw_path)
+                    self.lims.deck_labware[n].source_file = lab_file
         self.refresh_ui()
 
     def save_all(self):
-        self._serialize_workspace("deck_calibration.json")
-        self.logger.info("Workspace securely saved to deck_calibration.json")
-        messagebox.showinfo("Success", "Deck workspace saved securely to deck_calibration.json")
+        cal_path = self.get_calibration_path()
+        self._serialize_workspace(cal_path)
+        self.logger.info(f"Workspace securely saved to {cal_path}")
+        messagebox.showinfo("Success", f"Deck workspace saved securely to {cal_path}")
 
     def action_save_deck_as(self):
         filepath = filedialog.asksaveasfilename(title="Save Workspace As...",
@@ -1662,22 +1694,22 @@ class LIMSMasterApp:
         if p: self._deserialize_workspace(p)
 
     def emergency_reset(self):
-        self.lims.deck_labware.clear()
-        self.placed_slots.clear()
-        self.unplaced_slots.clear()
-        try:
-            self.lims.load_deck_profile("deck_calibration.json")
-            self.placed_slots = list(self.lims.deck_slots.keys())
-        except Exception:
-            grid_layout = [("Slot_1", 134.2, 5.0, 111.2, 30.0), ("Slot_2", 0.0, 5.0, 116.5, 30.0),
-                           ("Slot_3", 134.2, 45.2, 111.2, 75.0), ("Slot_4", 0.0, 45.2, 116.5, 75.0),
-                           ("Slot_5", 134.2, 124.2, 111.2, 90.0), ("Slot_6", 0.0, 139.3, 119.7, 75.0)]
+        cal_path = self.get_calibration_path()
+        if os.path.exists(cal_path):
+            self._deserialize_workspace(cal_path)
+        else:
+            self.lims.deck_labware.clear()
+            self.placed_slots.clear()
+            self.unplaced_slots.clear()
+            grid_layout = [("Slot_1", 134.2, 5.0, 127.8, 35.0), ("Slot_2", 0.0, 5.0, 127.8, 35.0),
+                           ("Slot_3", 139.2, 46.5, 127.8, 85.5), ("Slot_4", 0.0, 45.2, 127.8, 85.5),
+                           ("Slot_5", 136.2, 129.2, 127.8, 85.5), ("Slot_6", 0.0, 139.3, 127.8, 85.5)]
             for name, x, y, w, h in grid_layout:
                 slot = DeckSlot(name, x, y, w, h)
                 slot.z_offset = 0.0
                 self.lims.deck_slots[name] = slot
                 self.placed_slots.append(name)
-        self.refresh_ui()
+            self.refresh_ui()
 
     def action_save_workflow_as(self):
         if not self.workflow_sequence: return
