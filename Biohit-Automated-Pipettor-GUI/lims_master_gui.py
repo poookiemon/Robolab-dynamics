@@ -1025,7 +1025,10 @@ class LIMSMasterApp:
             self.root.after(0, lambda: self.btn_pause.config(text="⏸ PAUSE", bg="#ffc107"))
 
     def _calculate_xy(self, slot_name, well_id):
-        # --- ABSOLUTE OVERRIDE FOR SLOT 3 TIP RACK ---
+        slot_obj = self.lims.deck_slots.get(slot_name)
+        sy = slot_obj.y_abs if slot_obj else 60.0
+
+        # --- DYNAMIC PHYSICAL OVERRIDE FOR SLOT 3 TIP RACK ---
         if slot_name == "Slot_3":
             col_x = {
                 '1': 243.0, '2': 234.0, '3': 225.0, '4': 216.0,
@@ -1033,8 +1036,8 @@ class LIMSMasterApp:
                 '9': 171.0, '10': 162.0, '11': 153.0, '12': 144.0
             }
             row_y = {
-                'A': 53.0, 'B': 62.0, 'C': 71.0, 'D': 80.0,
-                'E': 89.0, 'F': 98.0, 'G': 107.0, 'H': 116.0
+                'A': sy + 6.5,  'B': sy + 15.5, 'C': sy + 24.5, 'D': sy + 33.5,
+                'E': sy + 42.5, 'F': sy + 51.5, 'G': sy + 60.5, 'H': sy + 69.5
             }
             if len(well_id) >= 2:
                 r_c = well_id[0].upper()
@@ -1046,13 +1049,12 @@ class LIMSMasterApp:
             if hasattr(self, 'logger'):
                 self.logger.warning(f"Slot 3 Override: Well {well_id} falls outside defined 96-tip grid.")
         # ---------------------------------------------
-        # --- BULLETPROOF FIX: Absolute Physical Override for Slot 4 EHM Plate ---
-        # --- ABSOLUTE OVERRIDE FOR SLOT 4 EHM PLATE ---
+        # --- BULLETPROOF FIX: Dynamic Physical Override for Slot 4 EHM Plate ---
         if slot_name == "Slot_4":
             col_x = {'1': 106.00, '2': 88.00, '3': 69.88, '4': 52.54, '5': 35.20, '6': 16.60}
             row_y = {
-                'A': 53.00, 'B': 61.00, 'C': 71.00, 'D': 81.00,
-                'E': 91.00, 'F': 99.00, 'G': 107.00, 'H': 115.00
+                'A': sy + 7.8,  'B': sy + 15.8, 'C': sy + 25.8, 'D': sy + 35.8,
+                'E': sy + 45.8, 'F': sy + 53.8, 'G': sy + 61.8, 'H': sy + 69.8
             }
             # Catch empty or malformed well IDs
             if len(well_id) >= 2:
@@ -1067,7 +1069,6 @@ class LIMSMasterApp:
         # ------------------------------------------------------------------------
 
         # Safety catch if slot is deleted mid-render
-        slot_obj = self.lims.deck_slots.get(slot_name)
         if not slot_obj: return 0.0, 0.0
 
         cx = slot_obj.x_abs + (slot_obj.width_mm / 2.0)
@@ -1701,9 +1702,9 @@ class LIMSMasterApp:
             self.lims.deck_labware.clear()
             self.placed_slots.clear()
             self.unplaced_slots.clear()
-            grid_layout = [("Slot_1", 134.2, 5.0, 127.8, 35.0), ("Slot_2", 0.0, 5.0, 127.8, 35.0),
-                           ("Slot_3", 139.2, 46.5, 127.8, 85.5), ("Slot_4", 0.0, 45.2, 127.8, 85.5),
-                           ("Slot_5", 136.2, 152.0, 127.8, 85.5), ("Slot_6", 0.0, 152.0, 127.8, 85.5)]
+            grid_layout = [("Slot_1", 136.2, 5.0, 127.8, 35.0), ("Slot_2", 0.0, 5.0, 127.8, 35.0),
+                           ("Slot_3", 136.2, 60.0, 127.8, 85.5), ("Slot_4", 0.0, 60.0, 127.8, 85.5),
+                           ("Slot_5", 136.2, 165.5, 127.8, 85.5), ("Slot_6", 0.0, 165.5, 127.8, 85.5)]
             for name, x, y, w, h in grid_layout:
                 slot = DeckSlot(name, x, y, w, h)
                 slot.z_offset = 0.0
