@@ -1703,7 +1703,7 @@ class LIMSMasterApp:
             self.unplaced_slots.clear()
             grid_layout = [("Slot_1", 134.2, 5.0, 127.8, 35.0), ("Slot_2", 0.0, 5.0, 127.8, 35.0),
                            ("Slot_3", 139.2, 46.5, 127.8, 85.5), ("Slot_4", 0.0, 45.2, 127.8, 85.5),
-                           ("Slot_5", 136.2, 129.2, 127.8, 85.5), ("Slot_6", 0.0, 139.3, 127.8, 85.5)]
+                           ("Slot_5", 136.2, 152.0, 127.8, 85.5), ("Slot_6", 0.0, 152.0, 127.8, 85.5)]
             for name, x, y, w, h in grid_layout:
                 slot = DeckSlot(name, x, y, w, h)
                 slot.z_offset = 0.0

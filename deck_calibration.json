@@ -42,7 +42,7 @@
     "Slot_5": {
         "name": "Slot_5",
         "x_abs": 136.2,
-        "y_abs": 129.2,
+        "y_abs": 152.0,
         "width_mm": 127.8,
         "height_mm": 85.5,
         "z_offset": 0.0,
@@ -52,7 +52,7 @@
     "Slot_6": {
         "name": "Slot_6",
         "x_abs": 0.0,
-        "y_abs": 139.3,
+        "y_abs": 152.0,
         "width_mm": 127.8,
         "height_mm": 85.5,
         "z_offset": 0.0,
