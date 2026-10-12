@@ -34,7 +34,7 @@ def create_initial_loading():
         steps.append({
             "action": "Aspirate Media",
             "mode": "auto",
-            "slot": "Slot_1",
+            "slot": "Slot_5",
             "well": "A1",
             "volume": 500.0,
             "extra_z": 0.0
@@ -54,7 +54,7 @@ def create_initial_loading():
         steps.append({
             "action": "Aspirate Media",
             "mode": "auto",
-            "slot": "Slot_1",
+            "slot": "Slot_5",
             "well": "A1",
             "volume": vol2,
             "extra_z": 0.0
@@ -217,7 +217,7 @@ def create_media_change():
         steps.append({
             "action": "Aspirate Media",
             "mode": "auto",
-            "slot": "Slot_1",
+            "slot": "Slot_5",
             "well": "A1",
             "volume": vol_med,
             "extra_z": 0.0
