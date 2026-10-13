@@ -118,9 +118,18 @@ class WorkflowRunner(QThread):
                     self.lims.hw.move_to(target_x, target_y, 0, speed=1500)
                     time.sleep(0.05)
                     if self.lims.pipettor.hardware:
-                        self.lims.pipettor.hardware.tip_pickup_force = 26
+                        self.lims.pipettor.hardware.z_speed = 2
+                        self.lims.pipettor.hardware.tip_pickup_force = 20
                         self.lims.pipettor.hardware.pick_tip(pickup_limit)
+                        curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
+                        if curr_z > 10.0:
+                            try:
+                                self.lims.pipettor.hardware.move_z(min(curr_z + 1.2, pickup_limit + 2.0))
+                                time.sleep(0.2)
+                            except Exception:
+                                pass
                         time.sleep(0.4)
+                        self.lims.pipettor.hardware.z_speed = 7
                         self.lims.pipettor.hardware.move_z(0)
                     self.gui.has_tip = True
                 

@@ -1171,19 +1171,39 @@ class LIMSMasterApp:
 
             self.logger.info(f"Triggering native pick_tip(120) search algorithm at {current_well}.")
             try:
+                hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                 if self.lims.pipettor.hardware:
-                    self.lims.pipettor.hardware.tip_pickup_force = 26
+                    self.lims.pipettor.hardware.z_speed = 2
+                    self.lims.pipettor.hardware.tip_pickup_force = 20
                 self.lims.pipettor.hardware.pick_tip(120.0)
                 curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
+                if curr_z > 10.0 and self.lims.pipettor.hardware:
+                    try:
+                        push_z = min(curr_z + 1.2, 122.0)
+                        self.lims.pipettor.hardware.move_z(push_z)
+                        time.sleep(0.2)
+                    except Exception:
+                        pass
                 self.logger.info(f"Tip acquired at {current_well} (Z={curr_z:.2f}mm). System state updated: HAS_TIP = True")
                 time.sleep(0.4)
                 tip_found = True
                 self.root.after(0, lambda: self.has_tip_var.set(True))
-                if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
+                if self.lims.pipettor.hardware:
+                    try:
+                        self.lims.pipettor.hardware.z_speed = hw_speed
+                        self.lims.pipettor.hardware.move_z(0)
+                    except Exception:
+                        self.lims.pipettor.hardware.move_z(0)
                 break
             except Exception as e:
                 self.logger.warning(f"Sensor exception at {current_well} (Empty). Tracking to next well...")
-                if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
+                if self.lims.pipettor.hardware:
+                    try:
+                        hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
+                        self.lims.pipettor.hardware.z_speed = hw_speed
+                        self.lims.pipettor.hardware.move_z(0)
+                    except Exception:
+                        self.lims.pipettor.hardware.move_z(0)
 
         if not tip_found:
             self.logger.error("Tip search failed. Rack is empty.")
@@ -1371,15 +1391,24 @@ class LIMSMasterApp:
                 try:
                     if action == "Pick Up Tip":
                         pickup_limit = max(115.0, 120.0 + extra_z)
+                        hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                         if mode == "manual":
                             if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
                             self.lims.hw.move_to(target_x, target_y, 0, speed=self.speed_var.get())
                             time.sleep(0.05)
                             try:
                                 if self.lims.pipettor.hardware:
-                                    self.lims.pipettor.hardware.tip_pickup_force = 26
+                                    self.lims.pipettor.hardware.z_speed = 2
+                                    self.lims.pipettor.hardware.tip_pickup_force = 20
                                 self.lims.pipettor.hardware.pick_tip(pickup_limit)
                                 curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
+                                if curr_z > 10.0 and self.lims.pipettor.hardware:
+                                    try:
+                                        push_z = min(curr_z + 1.2, pickup_limit + 2.0)
+                                        self.lims.pipettor.hardware.move_z(push_z)
+                                        time.sleep(0.2)
+                                    except Exception:
+                                        pass
                                 self.logger.info(f"Manual tip pickup at Z={curr_z:.2f}mm.")
                                 time.sleep(0.4)
                             except Exception as e:
@@ -1387,6 +1416,7 @@ class LIMSMasterApp:
                             self.root.after(0, lambda: self.has_tip_var.set(True))
                             if self.lims.pipettor.hardware:
                                 try:
+                                    self.lims.pipettor.hardware.z_speed = hw_speed
                                     self.lims.pipettor.hardware.move_z(0)
                                 except TypeError:
                                     self.lims.pipettor.hardware.move_z(0)
@@ -1411,15 +1441,24 @@ class LIMSMasterApp:
                                 self.logger.info(f"Triggering native pick_tip({pickup_limit}) algorithm at {current_well}.")
                                 try:
                                     if self.lims.pipettor.hardware:
-                                        self.lims.pipettor.hardware.tip_pickup_force = 26
+                                        self.lims.pipettor.hardware.z_speed = 2
+                                        self.lims.pipettor.hardware.tip_pickup_force = 20
                                     self.lims.pipettor.hardware.pick_tip(pickup_limit)
                                     curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
+                                    if curr_z > 10.0 and self.lims.pipettor.hardware:
+                                        try:
+                                            push_z = min(curr_z + 1.2, pickup_limit + 2.0)
+                                            self.lims.pipettor.hardware.move_z(push_z)
+                                            time.sleep(0.2)
+                                        except Exception:
+                                            pass
                                     self.logger.info(f"Tip acquired at {current_well} (Z={curr_z:.2f}mm). HAS_TIP = True")
                                     time.sleep(0.4)
                                     tip_found = True
                                     self.root.after(0, lambda: self.has_tip_var.set(True))
                                     if self.lims.pipettor.hardware:
                                         try:
+                                            self.lims.pipettor.hardware.z_speed = hw_speed
                                             self.lims.pipettor.hardware.move_z(0)
                                         except TypeError:
                                             self.lims.pipettor.hardware.move_z(0)
@@ -1429,6 +1468,7 @@ class LIMSMasterApp:
                                         f"Sensor exception at {current_well} (Empty). Tracking to next well...")
                                     if self.lims.pipettor.hardware:
                                         try:
+                                            self.lims.pipettor.hardware.z_speed = hw_speed
                                             self.lims.pipettor.hardware.move_z(0)
                                         except TypeError:
                                             self.lims.pipettor.hardware.move_z(0)
@@ -1441,9 +1481,17 @@ class LIMSMasterApp:
                             time.sleep(0.05)
                             try:
                                 if self.lims.pipettor.hardware:
-                                    self.lims.pipettor.hardware.tip_pickup_force = 26
+                                    self.lims.pipettor.hardware.z_speed = 2
+                                    self.lims.pipettor.hardware.tip_pickup_force = 20
                                 self.lims.pipettor.hardware.pick_tip(pickup_limit)
                                 curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
+                                if curr_z > 10.0 and self.lims.pipettor.hardware:
+                                    try:
+                                        push_z = min(curr_z + 1.2, pickup_limit + 2.0)
+                                        self.lims.pipettor.hardware.move_z(push_z)
+                                        time.sleep(0.2)
+                                    except Exception:
+                                        pass
                                 self.logger.info(f"Tip pickup completed at Z={curr_z:.2f}mm (limit: {pickup_limit:.1f}mm).")
                                 time.sleep(0.4)
                                 self.root.after(0, lambda: self.has_tip_var.set(True))
@@ -1452,6 +1500,7 @@ class LIMSMasterApp:
                                 raise Exception("Tip detection failed. Manifold empty.")
                             if self.lims.pipettor.hardware:
                                 try:
+                                    self.lims.pipettor.hardware.z_speed = hw_speed
                                     self.lims.pipettor.hardware.move_z(0)
                                 except TypeError:
                                     self.lims.pipettor.hardware.move_z(0)
