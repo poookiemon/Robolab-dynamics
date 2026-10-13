@@ -654,14 +654,11 @@ class LIMSMasterApp:
                 cx = s.x_abs + (s.width_mm / 2.0)
                 cy = s.y_abs + (s.height_mm / 2.0)
 
-                # --- VISUAL UI FIX: Bulletproof Render Loop with Absolute Fallbacks ---
+                # --- VISUAL UI FIX: Render all labware wells matching physical kinematics ---
                 for w in lab.wells.values():
-                    if name == "Slot_4":
-                        coords = self._calculate_xy(name, w.name)
-                        if coords:
-                            phys_wx, phys_wy = coords
-                        else:
-                            phys_wx, phys_wy = cx, cy
+                    coords = self._calculate_xy(name, w.name)
+                    if coords:
+                        phys_wx, phys_wy = coords
                     else:
                         phys_wx = cx + ((lw_w / 2.0) - w.x_rel)
                         phys_wy = cy - (lw_h / 2.0) + w.y_rel
@@ -1036,8 +1033,8 @@ class LIMSMasterApp:
                 '9': 171.0, '10': 162.0, '11': 153.0, '12': 144.0
             }
             row_y = {
-                'A': 53.0,  'B': 62.0,  'C': 71.0,  'D': 80.0,
-                'E': 89.0,  'F': 98.0,  'G': 107.0, 'H': 116.0
+                'A': 62.0,  'B': 71.0,  'C': 80.0,  'D': 89.0,
+                'E': 98.0,  'F': 107.0, 'G': 116.0, 'H': 125.0
             }
             if len(well_id) >= 2:
                 r_c = well_id[0].upper()
@@ -1053,8 +1050,8 @@ class LIMSMasterApp:
         if slot_name == "Slot_4":
             col_x = {'1': 106.00, '2': 88.00, '3': 69.88, '4': 52.54, '5': 35.20, '6': 16.60}
             row_y = {
-                'A': 53.00, 'B': 61.00, 'C': 71.00, 'D': 81.00,
-                'E': 91.00, 'F': 99.00, 'G': 107.00, 'H': 115.00
+                'A': 67.80, 'B': 75.80, 'C': 85.80, 'D': 95.80,
+                'E': 105.80, 'F': 113.80, 'G': 121.80, 'H': 129.80
             }
             # Catch empty or malformed well IDs
             if len(well_id) >= 2:
