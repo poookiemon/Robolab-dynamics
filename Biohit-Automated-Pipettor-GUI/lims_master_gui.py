@@ -1028,13 +1028,13 @@ class LIMSMasterApp:
         # --- PHYSICAL HARDWARE OVERRIDE FOR SLOT 3 TIP RACK ---
         if slot_name == "Slot_3":
             col_x = {
-                '1': 243.0, '2': 234.0, '3': 225.0, '4': 216.0,
-                '5': 207.0, '6': 198.0, '7': 189.0, '8': 180.0,
-                '9': 171.0, '10': 162.0, '11': 153.0, '12': 144.0
+                '1': 242.0, '2': 233.0, '3': 224.0, '4': 215.0,
+                '5': 206.0, '6': 197.0, '7': 188.0, '8': 179.0,
+                '9': 170.0, '10': 161.0, '11': 152.0, '12': 143.0
             }
             row_y = {
-                'A': 60.5,  'B': 69.5,  'C': 78.5,  'D': 87.5,
-                'E': 96.5,  'F': 105.5, 'G': 114.5, 'H': 123.5
+                'A': 60.0,  'B': 69.0,  'C': 78.0,  'D': 87.0,
+                'E': 96.0,  'F': 105.0, 'G': 114.0, 'H': 123.0
             }
             if len(well_id) >= 2:
                 r_c = well_id[0].upper()
@@ -1048,10 +1048,10 @@ class LIMSMasterApp:
         # ---------------------------------------------
         # --- PHYSICAL HARDWARE OVERRIDE FOR SLOT 4 EHM PLATE ---
         if slot_name == "Slot_4":
-            col_x = {'1': 106.00, '2': 88.00, '3': 69.88, '4': 52.54, '5': 35.20, '6': 16.60}
+            col_x = {'1': 105.00, '2': 87.00, '3': 68.88, '4': 51.54, '5': 34.20, '6': 15.60}
             row_y = {
-                'A': 67.80, 'B': 75.80, 'C': 85.80, 'D': 95.80,
-                'E': 105.80, 'F': 113.80, 'G': 121.80, 'H': 129.80
+                'A': 67.30, 'B': 75.30, 'C': 85.30, 'D': 95.30,
+                'E': 105.30, 'F': 113.30, 'G': 121.30, 'H': 129.30
             }
             # Catch empty or malformed well IDs
             if len(well_id) >= 2:
@@ -1066,12 +1066,12 @@ class LIMSMasterApp:
         # --- BULLETPROOF FIX: Dynamic Physical Override for Slot 5 Reagent Reservoir ---
         if slot_name == "Slot_5":
             col_x = {
-                '1': 240.0, '2': 221.0, '3': 202.0,
-                '4': 183.0, '5': 164.0, '6': 145.0
+                '1': 239.0, '2': 220.0, '3': 201.0,
+                '4': 182.0, '5': 163.0, '6': 144.0
             }
             col_char = well_id[1:] if len(well_id) >= 2 else '1'
-            target_x = col_x.get(col_char, 193.5)
-            target_y = sy + 42.75
+            target_x = col_x.get(col_char, 191.5)
+            target_y = 207.75
             return target_x, target_y
         # ------------------------------------------------------------------------
 
@@ -1721,9 +1721,9 @@ class LIMSMasterApp:
             self.lims.deck_labware.clear()
             self.placed_slots.clear()
             self.unplaced_slots.clear()
-            grid_layout = [("Slot_1", 136.2, 5.0, 127.8, 35.0), ("Slot_2", 0.0, 5.0, 127.8, 35.0),
-                           ("Slot_3", 136.2, 60.0, 127.8, 85.5), ("Slot_4", 0.0, 60.0, 127.8, 85.5),
-                           ("Slot_5", 136.2, 165.5, 127.8, 85.5), ("Slot_6", 0.0, 165.5, 127.8, 85.5)]
+            grid_layout = [("Slot_1", 135.2, 5.0, 127.8, 35.0), ("Slot_2", 0.0, 5.0, 127.8, 35.0),
+                           ("Slot_3", 135.2, 60.0, 127.8, 85.5), ("Slot_4", 0.0, 60.0, 127.8, 85.5),
+                           ("Slot_5", 135.2, 165.5, 127.8, 85.5), ("Slot_6", 0.0, 165.5, 127.8, 85.5)]
             for name, x, y, w, h in grid_layout:
                 slot = DeckSlot(name, x, y, w, h)
                 slot.z_offset = 0.0
