@@ -133,7 +133,8 @@ class WorkflowRunner(QThread):
                             self.lims.pipettor.hardware.aspirate(actual_vol)
                             time.sleep(1.5)
                         elif action == "Dispense Media":
-                            self.lims.pipettor.hardware.dispense(float(vol))
+                            actual_dispense = min(float(vol), self.lims.pipettor.tip_volume)
+                            self.lims.pipettor.hardware.dispense(actual_dispense)
                             time.sleep(0.05)
                             self.lims.pipettor.hardware.dispense(50)
                         elif action == "Discard Tip":
@@ -162,7 +163,7 @@ class LIMSPyQtApp(QMainWindow):
         self.setWindowTitle("ROBOLAB DYNAMICS // 3D LIMS")
         self.resize(1200, 800)
         
-        self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=300.0, multichannel=is_multi))
+        self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=200.0, multichannel=is_multi))
         self.workflow_sequence = []
         self.speed_var = 1500
         self.has_tip = False

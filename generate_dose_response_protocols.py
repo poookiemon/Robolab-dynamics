@@ -14,7 +14,7 @@ def create_initial_loading():
         return f"{row_char}{col_num}"
 
     # =========================================================================
-    # PHASE 1: MEDIUM LOADING (745 uL total per well, split as 300 + 300 + 145 uL)
+    # PHASE 1: MEDIUM LOADING (745 uL total per well, split as 200 + 200 + 200 + 145 uL)
     # =========================================================================
     # 1 clean tip for bulk fresh medium distribution across all 18 target wells
     med_tip = next_tip()
@@ -30,57 +30,23 @@ def create_initial_loading():
     # All 18 target wells across Rows A, B, C (replicates 1, 2, 3) and Cols 1-6
     target_wells = [f"{r}{c}" for r in ["A", "B", "C"] for c in range(1, 7)]
     for well in target_wells:
-        # Stroke 1: 300 uL Medium (max pipette capacity)
-        steps.append({
-            "action": "Aspirate Media",
-            "mode": "auto",
-            "slot": "Slot_5",
-            "well": "A1",
-            "volume": 300.0,
-            "extra_z": 0.0
-        })
-        steps.append({
-            "action": "Dispense Media",
-            "mode": "auto",
-            "slot": "Slot_4",
-            "well": well,
-            "volume": 300.0,
-            "extra_z": 0.0
-        })
-        # Stroke 2: 300 uL Medium
-        steps.append({
-            "action": "Aspirate Media",
-            "mode": "auto",
-            "slot": "Slot_5",
-            "well": "A1",
-            "volume": 300.0,
-            "extra_z": 0.0
-        })
-        steps.append({
-            "action": "Dispense Media",
-            "mode": "auto",
-            "slot": "Slot_4",
-            "well": well,
-            "volume": 300.0,
-            "extra_z": 0.0
-        })
-        # Stroke 3: 145 uL Medium (remaining medium volume for 745 uL total)
-        steps.append({
-            "action": "Aspirate Media",
-            "mode": "auto",
-            "slot": "Slot_5",
-            "well": "A1",
-            "volume": 145.0,
-            "extra_z": 0.0
-        })
-        steps.append({
-            "action": "Dispense Media",
-            "mode": "auto",
-            "slot": "Slot_4",
-            "well": well,
-            "volume": 145.0,
-            "extra_z": 0.0
-        })
+        for stroke_vol in [200.0, 200.0, 200.0, 145.0]:
+            steps.append({
+                "action": "Aspirate Media",
+                "mode": "auto",
+                "slot": "Slot_5",
+                "well": "A1",
+                "volume": stroke_vol,
+                "extra_z": 0.0
+            })
+            steps.append({
+                "action": "Dispense Media",
+                "mode": "auto",
+                "slot": "Slot_4",
+                "well": well,
+                "volume": stroke_vol,
+                "extra_z": 0.0
+            })
 
     # Discard medium tip into Waste (Slot 6)
     steps.append({
@@ -170,7 +136,7 @@ def create_media_change():
 
     # =========================================================================
     # PHASE 1: REMOVE 500 uL FROM EACH WELL TO WASTE (Leave 250 uL in well)
-    # Split into two 250 uL strokes to respect the 300 uL pipette limit
+    # Split into three strokes (200 + 200 + 100 uL) for 200 uL hardware limit
     # =========================================================================
     # Group by concentration column to prevent cross-contamination across doses
     for col in range(1, 7):
@@ -186,40 +152,23 @@ def create_media_change():
 
         for row in ["A", "B", "C"]:
             well = f"{row}{col}"
-            # Stroke 1: Remove 250 uL
-            steps.append({
-                "action": "Aspirate Media",
-                "mode": "auto",
-                "slot": "Slot_4",
-                "well": well,
-                "volume": 250.0,
-                "extra_z": 0.0
-            })
-            steps.append({
-                "action": "Dispense Media",
-                "mode": "auto",
-                "slot": "Slot_6",
-                "well": "A1",
-                "volume": 250.0,
-                "extra_z": 0.0
-            })
-            # Stroke 2: Remove 250 uL (500 uL total removed)
-            steps.append({
-                "action": "Aspirate Media",
-                "mode": "auto",
-                "slot": "Slot_4",
-                "well": well,
-                "volume": 250.0,
-                "extra_z": 0.0
-            })
-            steps.append({
-                "action": "Dispense Media",
-                "mode": "auto",
-                "slot": "Slot_6",
-                "well": "A1",
-                "volume": 250.0,
-                "extra_z": 0.0
-            })
+            for stroke_vol in [200.0, 200.0, 100.0]:
+                steps.append({
+                    "action": "Aspirate Media",
+                    "mode": "auto",
+                    "slot": "Slot_4",
+                    "well": well,
+                    "volume": stroke_vol,
+                    "extra_z": 0.0
+                })
+                steps.append({
+                    "action": "Dispense Media",
+                    "mode": "auto",
+                    "slot": "Slot_6",
+                    "well": "A1",
+                    "volume": stroke_vol,
+                    "extra_z": 0.0
+                })
 
         steps.append({
             "action": "Discard Tip",
@@ -231,7 +180,7 @@ def create_media_change():
         })
 
     # =========================================================================
-    # PHASE 2: DISPENSE 495 uL FRESH MEDIUM TO EACH WELL (250 uL + 245 uL strokes)
+    # PHASE 2: DISPENSE 495 uL FRESH MEDIUM TO EACH WELL (200 + 200 + 95 uL)
     # =========================================================================
     med_tip = next_tip()
     steps.append({
@@ -245,40 +194,23 @@ def create_media_change():
 
     target_wells = [f"{r}{c}" for r in ["A", "B", "C"] for c in range(1, 7)]
     for well in target_wells:
-        # Stroke 1: 250 uL fresh medium
-        steps.append({
-            "action": "Aspirate Media",
-            "mode": "auto",
-            "slot": "Slot_5",
-            "well": "A1",
-            "volume": 250.0,
-            "extra_z": 0.0
-        })
-        steps.append({
-            "action": "Dispense Media",
-            "mode": "auto",
-            "slot": "Slot_4",
-            "well": well,
-            "volume": 250.0,
-            "extra_z": 0.0
-        })
-        # Stroke 2: 245 uL fresh medium (total 495 uL fresh medium added; +5 uL drug in Phase 3 = 500 uL replenished)
-        steps.append({
-            "action": "Aspirate Media",
-            "mode": "auto",
-            "slot": "Slot_5",
-            "well": "A1",
-            "volume": 245.0,
-            "extra_z": 0.0
-        })
-        steps.append({
-            "action": "Dispense Media",
-            "mode": "auto",
-            "slot": "Slot_4",
-            "well": well,
-            "volume": 245.0,
-            "extra_z": 0.0
-        })
+        for stroke_vol in [200.0, 200.0, 95.0]:
+            steps.append({
+                "action": "Aspirate Media",
+                "mode": "auto",
+                "slot": "Slot_5",
+                "well": "A1",
+                "volume": stroke_vol,
+                "extra_z": 0.0
+            })
+            steps.append({
+                "action": "Dispense Media",
+                "mode": "auto",
+                "slot": "Slot_4",
+                "well": well,
+                "volume": stroke_vol,
+                "extra_z": 0.0
+            })
 
     steps.append({
         "action": "Discard Tip",

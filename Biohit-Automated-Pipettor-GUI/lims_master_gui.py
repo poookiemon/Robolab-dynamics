@@ -40,8 +40,8 @@ class LIMSMasterApp:
 
         is_multi = False  # Auto-defaulted to Single-Channel per user request
 
-        # --- SAFETY LOCK: 300uL Manifold Limitation ---
-        self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=300.0, multichannel=is_multi))
+        # --- SAFETY LOCK: 200uL Hardware Manifold Limitation ---
+        self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=200.0, multichannel=is_multi))
         self.lims.load_machine_profile()
 
         self.scale = 2.65
@@ -1466,7 +1466,8 @@ class LIMSMasterApp:
                                 self.lims.pipettor.hardware.aspirate(actual_vol)
                                 time.sleep(1.5)
                             elif action == "Dispense Media":
-                                self.lims.pipettor.hardware.dispense(float(vol))
+                                actual_dispense = min(float(vol), self.lims.pipettor.tip_volume)
+                                self.lims.pipettor.hardware.dispense(actual_dispense)
                                 time.sleep(0.05)
                                 self.lims.pipettor.hardware.dispense(50)
 

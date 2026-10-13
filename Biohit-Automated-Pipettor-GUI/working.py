@@ -100,7 +100,7 @@ class Labware:
 
 
 class Pipettor:
-    def __init__(self, tip_volume: float = 300.0, multichannel: bool = False):
+    def __init__(self, tip_volume: float = 200.0, multichannel: bool = False):
         self.tip_volume = tip_volume
         self.multichannel = multichannel
         self.channels = 8 if multichannel else 1
@@ -109,8 +109,8 @@ class Pipettor:
 
         if HAS_BIOHIT_DLL:
             try:
-                # ZERO-TRUST LOCKDOWN: Force hardware initialization strictly to 300uL logic
-                vol_literal = 300
+                # Biohit hardware driver strictly accepts 200 or 1000 uL (PipetType: 1=200uL, 2=1000uL)
+                vol_literal = 200
                 self.hardware_context = RealBiohitPipettor(
                     tip_volume=vol_literal,
                     multichannel=multichannel,
