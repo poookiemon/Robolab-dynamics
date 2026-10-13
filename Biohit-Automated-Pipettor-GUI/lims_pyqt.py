@@ -113,11 +113,13 @@ class WorkflowRunner(QThread):
                         raise Exception("Well ID mapping failed")
                 
                 if action == "Pick Up Tip":
+                    pickup_limit = max(70.0, 75.0 + step.get('extra_z', 0.0))
                     if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
                     self.lims.hw.move_to(target_x, target_y, 0, speed=1500)
                     time.sleep(0.05)
                     if self.lims.pipettor.hardware:
-                        self.lims.pipettor.hardware.pick_tip(50)
+                        self.lims.pipettor.hardware.tip_pickup_force = 22
+                        self.lims.pipettor.hardware.pick_tip(pickup_limit)
                         self.lims.pipettor.hardware.move_z(0)
                     self.gui.has_tip = True
                 
@@ -223,8 +225,8 @@ class LIMSPyQtApp(QMainWindow):
                 '9': 171.0, '10': 162.0, '11': 153.0, '12': 144.0
             }
             row_y = {
-                'A': sy + 6.5,  'B': sy + 15.5, 'C': sy + 24.5, 'D': sy + 33.5,
-                'E': sy + 42.5, 'F': sy + 51.5, 'G': sy + 60.5, 'H': sy + 69.5
+                'A': 53.0,  'B': 62.0,  'C': 71.0,  'D': 80.0,
+                'E': 89.0,  'F': 98.0,  'G': 107.0, 'H': 116.0
             }
             if len(well_id) >= 2:
                 r_c = well_id[0].upper()
@@ -235,8 +237,8 @@ class LIMSPyQtApp(QMainWindow):
         if slot_name == "Slot_4":
             col_x = {'1': 106.00, '2': 88.00, '3': 69.88, '4': 52.54, '5': 35.20, '6': 16.60}
             row_y = {
-                'A': sy + 7.8,  'B': sy + 15.8, 'C': sy + 25.8, 'D': sy + 35.8,
-                'E': sy + 45.8, 'F': sy + 53.8, 'G': sy + 61.8, 'H': sy + 69.8
+                'A': 53.00, 'B': 61.00, 'C': 71.00, 'D': 81.00,
+                'E': 91.00, 'F': 99.00, 'G': 107.00, 'H': 115.00
             }
             if len(well_id) >= 2:
                 row_char = well_id[0].upper()

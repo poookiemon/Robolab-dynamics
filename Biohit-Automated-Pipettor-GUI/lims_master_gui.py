@@ -1028,7 +1028,7 @@ class LIMSMasterApp:
         slot_obj = self.lims.deck_slots.get(slot_name)
         sy = slot_obj.y_abs if slot_obj else 60.0
 
-        # --- DYNAMIC PHYSICAL OVERRIDE FOR SLOT 3 TIP RACK ---
+        # --- PHYSICAL HARDWARE OVERRIDE FOR SLOT 3 TIP RACK ---
         if slot_name == "Slot_3":
             col_x = {
                 '1': 243.0, '2': 234.0, '3': 225.0, '4': 216.0,
@@ -1036,8 +1036,8 @@ class LIMSMasterApp:
                 '9': 171.0, '10': 162.0, '11': 153.0, '12': 144.0
             }
             row_y = {
-                'A': sy + 6.5,  'B': sy + 15.5, 'C': sy + 24.5, 'D': sy + 33.5,
-                'E': sy + 42.5, 'F': sy + 51.5, 'G': sy + 60.5, 'H': sy + 69.5
+                'A': 53.0,  'B': 62.0,  'C': 71.0,  'D': 80.0,
+                'E': 89.0,  'F': 98.0,  'G': 107.0, 'H': 116.0
             }
             if len(well_id) >= 2:
                 r_c = well_id[0].upper()
@@ -1049,12 +1049,12 @@ class LIMSMasterApp:
             if hasattr(self, 'logger'):
                 self.logger.warning(f"Slot 3 Override: Well {well_id} falls outside defined 96-tip grid.")
         # ---------------------------------------------
-        # --- BULLETPROOF FIX: Dynamic Physical Override for Slot 4 EHM Plate ---
+        # --- PHYSICAL HARDWARE OVERRIDE FOR SLOT 4 EHM PLATE ---
         if slot_name == "Slot_4":
             col_x = {'1': 106.00, '2': 88.00, '3': 69.88, '4': 52.54, '5': 35.20, '6': 16.60}
             row_y = {
-                'A': sy + 7.8,  'B': sy + 15.8, 'C': sy + 25.8, 'D': sy + 35.8,
-                'E': sy + 45.8, 'F': sy + 53.8, 'G': sy + 61.8, 'H': sy + 69.8
+                'A': 53.00, 'B': 61.00, 'C': 71.00, 'D': 81.00,
+                'E': 91.00, 'F': 99.00, 'G': 107.00, 'H': 115.00
             }
             # Catch empty or malformed well IDs
             if len(well_id) >= 2:
@@ -1172,9 +1172,11 @@ class LIMSMasterApp:
             self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
             time.sleep(0.05)
 
-            self.logger.info(f"Triggering native pick_tip(50) search algorithm at {current_well}.")
+            self.logger.info(f"Triggering native pick_tip(75) search algorithm at {current_well}.")
             try:
-                self.lims.pipettor.hardware.pick_tip(50)
+                if self.lims.pipettor.hardware:
+                    self.lims.pipettor.hardware.tip_pickup_force = 22
+                self.lims.pipettor.hardware.pick_tip(75)
                 tip_found = True
                 self.root.after(0, lambda: self.has_tip_var.set(True))
                 self.logger.info(f"Tip acquired at {current_well}. System state updated: HAS_TIP = True")
@@ -1369,12 +1371,15 @@ class LIMSMasterApp:
 
                 try:
                     if action == "Pick Up Tip":
+                        pickup_limit = max(70.0, 75.0 + extra_z)
                         if mode == "manual":
                             if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
                             self.lims.hw.move_to(target_x, target_y, 0, speed=self.speed_var.get())
                             time.sleep(0.05)
                             try:
-                                self.lims.pipettor.hardware.pick_tip(50)
+                                if self.lims.pipettor.hardware:
+                                    self.lims.pipettor.hardware.tip_pickup_force = 22
+                                self.lims.pipettor.hardware.pick_tip(pickup_limit)
                             except Exception as e:
                                 self.logger.warning(f"Ignored tip error: {e}")
                             self.root.after(0, lambda: self.has_tip_var.set(True))
@@ -1401,9 +1406,11 @@ class LIMSMasterApp:
                                 self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
                                 time.sleep(0.05)
 
-                                self.logger.info(f"Triggering native pick_tip(50) algorithm at {current_well}.")
+                                self.logger.info(f"Triggering native pick_tip({pickup_limit}) algorithm at {current_well}.")
                                 try:
-                                    self.lims.pipettor.hardware.pick_tip(50)
+                                    if self.lims.pipettor.hardware:
+                                        self.lims.pipettor.hardware.tip_pickup_force = 22
+                                    self.lims.pipettor.hardware.pick_tip(pickup_limit)
                                     tip_found = True
                                     self.root.after(0, lambda: self.has_tip_var.set(True))
                                     self.logger.info(f"Tip acquired at {current_well}. HAS_TIP = True")
@@ -1429,7 +1436,9 @@ class LIMSMasterApp:
                             self.lims.hw.move_to(target_x, target_y, 0, speed=self.speed_var.get())
                             time.sleep(0.05)
                             try:
-                                self.lims.pipettor.hardware.pick_tip(50)
+                                if self.lims.pipettor.hardware:
+                                    self.lims.pipettor.hardware.tip_pickup_force = 22
+                                self.lims.pipettor.hardware.pick_tip(pickup_limit)
                                 self.root.after(0, lambda: self.has_tip_var.set(True))
                                 self.logger.info("System state updated: HAS_TIP = True")
                             except Exception as e:
