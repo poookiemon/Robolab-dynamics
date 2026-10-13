@@ -165,20 +165,33 @@ class BiohitInterface:
     def smart_tip_pickup(self, slot_name, labware_obj, logger):
         try:
             if self.pipettor.hardware:
-                self.pipettor.hardware.z_speed = 2
-                self.pipettor.hardware.tip_pickup_force = 20
+                hw_speed = getattr(self.pipettor.hardware, 'z_speed', 8)
+                z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
+                approach_z = max(0.0, z_height - 12.0)
+                self.pipettor.hardware.z_speed = hw_speed
+                self.pipettor.hardware.move_z(approach_z)
+                self.pipettor.hardware.z_speed = 3
+                self.pipettor.hardware.tip_pickup_force = 22
                 self.pipettor.hardware.pick_tip(120.0)
                 curr_z = getattr(self.pipettor.hardware, 'z_position', 0.0)
-                if curr_z > 10.0:
+                if curr_z > 50.0:
                     try:
-                        self.pipettor.hardware.move_z(min(curr_z + 1.2, 122.0))
-                        time.sleep(0.2)
+                        self.pipettor.hardware.move_z(min(curr_z + 1.8, 122.0))
+                        time.sleep(0.3)
                     except Exception:
                         pass
                 time.sleep(0.4)
+                self.pipettor.hardware.z_speed = hw_speed
+                self.pipettor.hardware.move_z(0)
             return True, True
         except Exception as e:
             if logger: logger.warning(f"Tip pick error: {e}")
+            if self.pipettor.hardware:
+                try:
+                    self.pipettor.hardware.z_speed = 8
+                    self.pipettor.hardware.move_z(0)
+                except Exception:
+                    pass
             return False, False
 
     def move_to(self, x: float, y: float, z: float, speed: int = 50, clearance: bool = True):
