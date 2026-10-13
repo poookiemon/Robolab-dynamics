@@ -1169,11 +1169,11 @@ class LIMSMasterApp:
             self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
             time.sleep(0.05)
 
-            self.logger.info(f"Triggering native pick_tip(75) search algorithm at {current_well}.")
+            self.logger.info(f"Triggering native pick_tip(90) search algorithm at {current_well}.")
             try:
                 if self.lims.pipettor.hardware:
-                    self.lims.pipettor.hardware.tip_pickup_force = 22
-                self.lims.pipettor.hardware.pick_tip(75)
+                    self.lims.pipettor.hardware.tip_pickup_force = 24
+                self.lims.pipettor.hardware.pick_tip(90.0)
                 tip_found = True
                 self.root.after(0, lambda: self.has_tip_var.set(True))
                 self.logger.info(f"Tip acquired at {current_well}. System state updated: HAS_TIP = True")
@@ -1368,14 +1368,14 @@ class LIMSMasterApp:
 
                 try:
                     if action == "Pick Up Tip":
-                        pickup_limit = max(70.0, 75.0 + extra_z)
+                        pickup_limit = max(85.0, 90.0 + extra_z)
                         if mode == "manual":
                             if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
                             self.lims.hw.move_to(target_x, target_y, 0, speed=self.speed_var.get())
                             time.sleep(0.05)
                             try:
                                 if self.lims.pipettor.hardware:
-                                    self.lims.pipettor.hardware.tip_pickup_force = 22
+                                    self.lims.pipettor.hardware.tip_pickup_force = 24
                                 self.lims.pipettor.hardware.pick_tip(pickup_limit)
                             except Exception as e:
                                 self.logger.warning(f"Ignored tip error: {e}")
@@ -1406,7 +1406,7 @@ class LIMSMasterApp:
                                 self.logger.info(f"Triggering native pick_tip({pickup_limit}) algorithm at {current_well}.")
                                 try:
                                     if self.lims.pipettor.hardware:
-                                        self.lims.pipettor.hardware.tip_pickup_force = 22
+                                        self.lims.pipettor.hardware.tip_pickup_force = 24
                                     self.lims.pipettor.hardware.pick_tip(pickup_limit)
                                     tip_found = True
                                     self.root.after(0, lambda: self.has_tip_var.set(True))
@@ -1434,7 +1434,7 @@ class LIMSMasterApp:
                             time.sleep(0.05)
                             try:
                                 if self.lims.pipettor.hardware:
-                                    self.lims.pipettor.hardware.tip_pickup_force = 22
+                                    self.lims.pipettor.hardware.tip_pickup_force = 24
                                 self.lims.pipettor.hardware.pick_tip(pickup_limit)
                                 self.root.after(0, lambda: self.has_tip_var.set(True))
                                 self.logger.info("System state updated: HAS_TIP = True")
