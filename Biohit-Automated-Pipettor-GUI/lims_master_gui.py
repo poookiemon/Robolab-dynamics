@@ -40,8 +40,8 @@ class LIMSMasterApp:
 
         is_multi = False  # Auto-defaulted to Single-Channel per user request
 
-        # --- SAFETY LOCK: 200uL Manifold Limitation ---
-        self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=200.0, multichannel=is_multi))
+        # --- SAFETY LOCK: 300uL Manifold Limitation ---
+        self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=300.0, multichannel=is_multi))
         self.lims.load_machine_profile()
 
         self.scale = 2.65
@@ -1066,6 +1066,16 @@ class LIMSMasterApp:
             self.logger.warning(
                 f"Slot 4 Override: Well {well_id} falls outside defined EHM grid. Defaulting to center.")
         # ------------------------------------------------------------------------
+        # --- BULLETPROOF FIX: Dynamic Physical Override for Slot 5 Reagent Reservoir ---
+        if slot_name == "Slot_5":
+            col_x = {
+                '1': 240.0, '2': 221.0, '3': 202.0,
+                '4': 183.0, '5': 164.0, '6': 145.0
+            }
+            col_char = well_id[1:] if len(well_id) >= 2 else '1'
+            target_x = col_x.get(col_char, 193.5)
+            target_y = sy + 42.75
+            return target_x, target_y
         # ------------------------------------------------------------------------
 
         # Safety catch if slot is deleted mid-render
@@ -1104,13 +1114,15 @@ class LIMSMasterApp:
             # --- Z-DEPTH FIX: Force 102.0mm for Slot 4 ---
             if slot_name == "Slot_4":
                 base_z = 98.0
-            elif slot_name in ["Slot_5", "Slot_6"]:
+            elif slot_name == "Slot_5":
+                base_z = 105.0
+            elif slot_name == "Slot_6":
                 base_z = 90.0
             elif action == "Discard Tip" and slot_name == "Slot_1":
                 base_z = 90.0
             elif labware_obj and (
                     getattr(labware_obj, 'z_height_mm', 20.0) == 105.81 or "reservoir" in labware_obj.name.lower()):
-                base_z = 110.0
+                base_z = 105.0
             else:
                 base_z = 101.0
 

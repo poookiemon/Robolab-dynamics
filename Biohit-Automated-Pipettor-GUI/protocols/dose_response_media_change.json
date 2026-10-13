@@ -12,7 +12,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -20,7 +20,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A1",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -28,7 +44,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B1",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -36,7 +52,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B1",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -44,7 +76,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C1",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -52,7 +84,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C1",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -76,7 +124,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A2",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -84,7 +132,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A2",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -92,7 +156,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B2",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -100,7 +164,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B2",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -108,7 +188,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C2",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -116,7 +196,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C2",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -140,7 +236,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A3",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -148,7 +244,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A3",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -156,7 +268,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B3",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -164,7 +276,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B3",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -172,7 +300,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C3",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -180,7 +308,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C3",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -204,7 +348,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A4",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -212,7 +356,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A4",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -220,7 +380,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B4",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -228,7 +388,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B4",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -236,7 +412,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C4",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -244,7 +420,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C4",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -268,7 +460,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A5",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -276,7 +468,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A5",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -284,7 +492,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B5",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -292,7 +500,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B5",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -300,7 +524,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C5",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -308,7 +532,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C5",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -332,7 +572,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A6",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -340,7 +580,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A6",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -348,7 +604,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B6",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -356,7 +612,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B6",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -364,7 +636,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C6",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -372,7 +644,23 @@
         "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C6",
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -396,7 +684,7 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -404,7 +692,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -412,7 +700,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A1",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -420,7 +724,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A2",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -428,7 +732,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A2",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -436,7 +756,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A3",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -444,7 +764,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A3",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -452,7 +788,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A4",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -460,7 +796,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A4",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -468,7 +820,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A5",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -476,7 +828,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A5",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -484,7 +852,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A6",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -492,7 +860,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A6",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -500,7 +884,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B1",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -508,7 +892,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B1",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -516,7 +916,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B2",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -524,7 +924,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B2",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -532,7 +948,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B3",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -540,7 +956,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B3",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -548,7 +980,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B4",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -556,7 +988,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B4",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -564,7 +1012,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B5",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -572,7 +1020,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B5",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -580,7 +1044,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B6",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -588,7 +1052,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 500.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B6",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -596,7 +1076,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C1",
-        "volume": 500.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -604,7 +1084,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C1",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -612,7 +1108,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C2",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -620,7 +1116,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C2",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -628,7 +1140,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C3",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -636,7 +1148,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C3",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -644,7 +1172,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C4",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -652,7 +1180,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C4",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -660,7 +1204,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C5",
-        "volume": 495.0,
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -668,7 +1212,23 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 495.0,
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C5",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 250.0,
         "extra_z": 0.0
     },
     {
@@ -676,7 +1236,23 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C6",
-        "volume": 495.0,
+        "volume": 250.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 245.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C6",
+        "volume": 245.0,
         "extra_z": 0.0
     },
     {

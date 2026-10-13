@@ -162,7 +162,7 @@ class LIMSPyQtApp(QMainWindow):
         self.setWindowTitle("ROBOLAB DYNAMICS // 3D LIMS")
         self.resize(1200, 800)
         
-        self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=200.0, multichannel=is_multi))
+        self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=300.0, multichannel=is_multi))
         self.workflow_sequence = []
         self.speed_var = 1500
         self.has_tip = False
@@ -213,6 +213,46 @@ class LIMSPyQtApp(QMainWindow):
         
     def _calculate_xy(self, slot_name, well_id):
         slot_obj = self.lims.deck_slots.get(slot_name)
+        sy = slot_obj.y_abs if slot_obj else 60.0
+
+        if slot_name == "Slot_3":
+            col_x = {
+                '1': 243.0, '2': 234.0, '3': 225.0, '4': 216.0,
+                '5': 207.0, '6': 198.0, '7': 189.0, '8': 180.0,
+                '9': 171.0, '10': 162.0, '11': 153.0, '12': 144.0
+            }
+            row_y = {
+                'A': sy + 6.5,  'B': sy + 15.5, 'C': sy + 24.5, 'D': sy + 33.5,
+                'E': sy + 42.5, 'F': sy + 51.5, 'G': sy + 60.5, 'H': sy + 69.5
+            }
+            if len(well_id) >= 2:
+                r_c = well_id[0].upper()
+                c_c = well_id[1:]
+                if r_c in row_y and c_c in col_x:
+                    return col_x[c_c], row_y[r_c]
+
+        if slot_name == "Slot_4":
+            col_x = {'1': 106.00, '2': 88.00, '3': 69.88, '4': 52.54, '5': 35.20, '6': 16.60}
+            row_y = {
+                'A': sy + 7.8,  'B': sy + 15.8, 'C': sy + 25.8, 'D': sy + 35.8,
+                'E': sy + 45.8, 'F': sy + 53.8, 'G': sy + 61.8, 'H': sy + 69.8
+            }
+            if len(well_id) >= 2:
+                row_char = well_id[0].upper()
+                col_char = well_id[1:]
+                if row_char in row_y and col_char in col_x:
+                    return col_x[col_char], row_y[row_char]
+
+        if slot_name == "Slot_5":
+            col_x = {
+                '1': 240.0, '2': 221.0, '3': 202.0,
+                '4': 183.0, '5': 164.0, '6': 145.0
+            }
+            col_char = well_id[1:] if len(well_id) >= 2 else '1'
+            target_x = col_x.get(col_char, 193.5)
+            target_y = sy + 42.75
+            return target_x, target_y
+
         if not slot_obj: return 0.0, 0.0
         cx = slot_obj.x_abs + (slot_obj.width_mm / 2.0)
         cy = slot_obj.y_abs + (slot_obj.height_mm / 2.0)
@@ -234,8 +274,11 @@ class LIMSPyQtApp(QMainWindow):
         if action in ["Aspirate Media", "Dispense Media", "Discard Tip"]:
             base_z = 101.0
             if slot_name == "Slot_4": base_z = 98.0
-            elif slot_name in ["Slot_5", "Slot_6"]: base_z = 90.0
+            elif slot_name == "Slot_5": base_z = 105.0
+            elif slot_name == "Slot_6": base_z = 90.0
             elif action == "Discard Tip" and slot_name == "Slot_1": base_z = 90.0
+            elif labware_obj and (getattr(labware_obj, 'z_height_mm', 20.0) == 105.81 or "reservoir" in labware_obj.name.lower()):
+                base_z = 105.0
             return base_z + slot_z_offset + extra_z
         return 0.0
 

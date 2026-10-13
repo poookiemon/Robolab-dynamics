@@ -100,7 +100,7 @@ class Labware:
 
 
 class Pipettor:
-    def __init__(self, tip_volume: float = 200.0, multichannel: bool = False):
+    def __init__(self, tip_volume: float = 300.0, multichannel: bool = False):
         self.tip_volume = tip_volume
         self.multichannel = multichannel
         self.channels = 8 if multichannel else 1
@@ -109,8 +109,8 @@ class Pipettor:
 
         if HAS_BIOHIT_DLL:
             try:
-                # ZERO-TRUST LOCKDOWN: Force hardware initialization strictly to 200uL logic
-                vol_literal = 200
+                # ZERO-TRUST LOCKDOWN: Force hardware initialization strictly to 300uL logic
+                vol_literal = 300
                 self.hardware_context = RealBiohitPipettor(
                     tip_volume=vol_literal,
                     multichannel=multichannel,
@@ -255,85 +255,97 @@ class LIMSOrchestrator:
     def assign_labware_to_slot(self, slot_name: str, labware: Labware):
         self.deck_labware[slot_name] = labware
 
-        def get_target_xy(self, slot_name: str, well_id: str):
-            if slot_name not in self.deck_slots:
-                raise ValueError(f"Slot {slot_name} missing")
+    def get_target_xy(self, slot_name: str, well_id: str):
+        if slot_name not in self.deck_slots:
+            raise ValueError(f"Slot {slot_name} missing")
 
-            # --- ABSOLUTE OVERRIDE FOR SLOT 4 EHM PLATE ---
-                # --- ABSOLUTE OVERRIDE FOR SLOT 3 TIP RACK ---
-                if slot_name == "Slot_3":
-                    col_x = {
-                        '1': 243.0, '2': 234.0, '3': 225.0, '4': 216.0,
-                        '5': 207.0, '6': 198.0, '7': 189.0, '8': 180.0,
-                        '9': 171.0, '10': 162.0, '11': 153.0, '12': 144.0
-                    }
-                    row_y = {
-                        'A': 53.0, 'B': 62.0, 'C': 71.0, 'D': 80.0,
-                        'E': 89.0, 'F': 98.0, 'G': 107.0, 'H': 116.0
-                    }
-                    if len(well_id) >= 2:
-                        r_c = well_id[0].upper()
-                        c_c = well_id[1:]
-                        if r_c in row_y and c_c in col_x:
-                            return col_x[c_c], row_y[r_c]
+        slot = self.deck_slots[slot_name]
+        sy = slot.y_abs
 
-                    # Optional logging for lims_master_gui.py
-                    if hasattr(self, 'logger'):
-                        self.logger.warning(f"Slot 3 Override: Well {well_id} falls outside defined 96-tip grid.")
-                # ---------------------------------------------
+        # --- ABSOLUTE OVERRIDE FOR SLOT 3 TIP RACK ---
+        if slot_name == "Slot_3":
+            col_x = {
+                '1': 243.0, '2': 234.0, '3': 225.0, '4': 216.0,
+                '5': 207.0, '6': 198.0, '7': 189.0, '8': 180.0,
+                '9': 171.0, '10': 162.0, '11': 153.0, '12': 144.0
+            }
+            row_y = {
+                'A': sy + 6.5,  'B': sy + 15.5, 'C': sy + 24.5, 'D': sy + 33.5,
+                'E': sy + 42.5, 'F': sy + 51.5, 'G': sy + 60.5, 'H': sy + 69.5
+            }
+            if len(well_id) >= 2:
+                r_c = well_id[0].upper()
+                c_c = well_id[1:]
+                if r_c in row_y and c_c in col_x:
+                    return col_x[c_c], row_y[r_c]
 
-                if slot_name == "Slot_4":
-                    col_x = {'1': 106.00, '2': 88.00, '3': 69.88, '4': 52.54, '5': 35.20, '6': 16.60}
-                    row_y = {
-                        'A': 53.00, 'B': 61.00, 'C': 71.00, 'D': 81.00,
-                        'E': 91.00, 'F': 99.00, 'G': 107.00, 'H': 115.00
-                    }
-                if len(well_id) >= 2:
-                    r_c = well_id[0].upper()
-                    c_c = well_id[1:]
-                    if r_c in row_y and c_c in col_x:
-                        return col_x[c_c], row_y[r_c]
-            # ----------------------------------------------
-            # ----------------------------------------------
+            if hasattr(self, 'logger'):
+                self.logger.warning(f"Slot 3 Override: Well {well_id} falls outside defined 96-tip grid.")
 
-            slot = self.deck_slots[slot_name]
-            cx = slot.x_abs + (slot.width_mm / 2.0)
-            cy = slot.y_abs + (slot.height_mm / 2.0)
+        # --- ABSOLUTE OVERRIDE FOR SLOT 4 EHM PLATE ---
+        if slot_name == "Slot_4":
+            col_x = {'1': 106.00, '2': 88.00, '3': 69.88, '4': 52.54, '5': 35.20, '6': 16.60}
+            row_y = {
+                'A': sy + 7.8,  'B': sy + 15.8, 'C': sy + 25.8, 'D': sy + 35.8,
+                'E': sy + 45.8, 'F': sy + 53.8, 'G': sy + 61.8, 'H': sy + 69.8
+            }
+            if len(well_id) >= 2:
+                r_c = well_id[0].upper()
+                c_c = well_id[1:]
+                if r_c in row_y and c_c in col_x:
+                    return col_x[c_c], row_y[r_c]
 
-            # Force dead-center geometric tracking for waste trough ONLY
-            if slot_name == "Slot_6":
-                return cx, cy
+            if hasattr(self, 'logger'):
+                self.logger.warning(f"Slot 4 Override: Well {well_id} falls outside defined EHM grid.")
 
-            if slot_name not in self.deck_labware:
-                raise ValueError(f"Labware missing at {slot_name}")
-
-            labware = self.deck_labware[slot_name]
-
-            if well_id not in labware.wells:
-                raise ValueError(f"Well {well_id} missing.")
-
-            first_w = list(labware.wells.values())[0]
-            lw_w = max(w.x_rel for w in labware.wells.values()) + first_w.x_rel
-            lw_h = max(w.y_rel for w in labware.wells.values()) + first_w.y_rel
-            well_obj = labware.wells[well_id]
-
-            target_x = cx + ((lw_w / 2.0) - well_obj.x_rel)
-
-            if self.pipettor.multichannel:
-                col_str = well_id[1:]
-                row_char_first = 'A'
-                row_char_last = chr(ord('A') + labware.rows - 1)
-
-                w_first = labware.wells.get(f"{row_char_first}{col_str}", well_obj)
-                w_last = labware.wells.get(f"{row_char_last}{col_str}", well_obj)
-
-                target_y_first = slot.y_abs + w_first.y_rel
-                target_y_last = slot.y_abs + w_last.y_rel
-                target_y = (target_y_first + target_y_last) / 2.0
-            else:
-                target_y = cy - (lw_h / 2.0) + well_obj.y_rel
-
+        # --- ABSOLUTE OVERRIDE FOR SLOT 5 REAGENT RESERVOIR ---
+        if slot_name == "Slot_5":
+            col_x = {
+                '1': 240.0, '2': 221.0, '3': 202.0,
+                '4': 183.0, '5': 164.0, '6': 145.0
+            }
+            col_char = well_id[1:] if len(well_id) >= 2 else '1'
+            target_x = col_x.get(col_char, 193.5)
+            target_y = sy + 42.75
             return target_x, target_y
+
+        cx = slot.x_abs + (slot.width_mm / 2.0)
+        cy = slot.y_abs + (slot.height_mm / 2.0)
+
+        # Force dead-center geometric tracking for waste trough ONLY
+        if slot_name == "Slot_6":
+            return cx, cy
+
+        if slot_name not in self.deck_labware:
+            raise ValueError(f"Labware missing at {slot_name}")
+
+        labware = self.deck_labware[slot_name]
+
+        if well_id not in labware.wells:
+            raise ValueError(f"Well {well_id} missing.")
+
+        first_w = list(labware.wells.values())[0]
+        lw_w = max(w.x_rel for w in labware.wells.values()) + first_w.x_rel
+        lw_h = max(w.y_rel for w in labware.wells.values()) + first_w.y_rel
+        well_obj = labware.wells[well_id]
+
+        target_x = cx + ((lw_w / 2.0) - well_obj.x_rel)
+
+        if self.pipettor.multichannel:
+            col_str = well_id[1:]
+            row_char_first = 'A'
+            row_char_last = chr(ord('A') + labware.rows - 1)
+
+            w_first = labware.wells.get(f"{row_char_first}{col_str}", well_obj)
+            w_last = labware.wells.get(f"{row_char_last}{col_str}", well_obj)
+
+            target_y_first = slot.y_abs + w_first.y_rel
+            target_y_last = slot.y_abs + w_last.y_rel
+            target_y = (target_y_first + target_y_last) / 2.0
+        else:
+            target_y = cy - (lw_h / 2.0) + well_obj.y_rel
+
+        return target_x, target_y
 
     def get_target_z(self, action: str, slot_name: str, well_id: str, has_tips: bool = True,
                      extra_z: float = 0.0) -> float:
@@ -348,13 +360,15 @@ class LIMSOrchestrator:
             # --- Z-DEPTH FIX: Force 102.0mm for EHM plates to prevent air-drawing ---
             if slot_name == "Slot_4" or (labware_obj and "ehm" in labware_obj.name.lower()):
                 base_z = 98.0
-            elif slot_name in ["Slot_5", "Slot_6"]:
+            elif slot_name == "Slot_5":
+                base_z = 105.0
+            elif slot_name == "Slot_6":
                 base_z = 90.0
             elif action == "Discard Tip" and slot_name == "Slot_1":
                 base_z = 90.0
             elif labware_obj and (
                     getattr(labware_obj, 'z_height_mm', 20.0) == 105.81 or "reservoir" in labware_obj.name.lower()):
-                base_z = 110.0
+                base_z = 105.0
             else:
                 base_z = 101.0
 
