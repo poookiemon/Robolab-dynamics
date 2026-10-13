@@ -113,27 +113,32 @@ class WorkflowRunner(QThread):
                         raise Exception("Well ID mapping failed")
                 
                 if action == "Pick Up Tip":
-                    pickup_limit = max(115.0, 120.0 + step.get('extra_z', 0.0))
+                    pickup_limit = min(88.0, max(82.0, 86.0 + step.get('extra_z', 0.0)))
                     if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
                     self.lims.hw.move_to(target_x, target_y, 0, speed=1500)
                     time.sleep(0.05)
                     if self.lims.pipettor.hardware:
                         labware_obj = self.lims.deck_labware.get(slot_name)
                         z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
-                        approach_z = max(0.0, z_height - 12.0)
+                        approach_z = max(0.0, z_height - 18.0)
                         self.lims.pipettor.hardware.z_speed = 7
                         self.lims.pipettor.hardware.move_z(approach_z)
                         self.lims.pipettor.hardware.z_speed = 3
                         self.lims.pipettor.hardware.tip_pickup_force = 26
-                        self.lims.pipettor.hardware.pick_tip(pickup_limit)
+                        try:
+                            self.lims.pipettor.hardware.pick_tip(pickup_limit)
+                        except Exception as p_err:
+                            curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
+                            if curr_z < 76.0:
+                                raise p_err
                         curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                        if curr_z > 50.0:
+                        if curr_z >= 76.0:
                             try:
-                                self.lims.pipettor.hardware.move_z(min(curr_z + 3.6, pickup_limit + 1.0))
-                                time.sleep(0.35)
+                                self.lims.pipettor.hardware.move_z(min(curr_z + 2.0, 86.5))
+                                time.sleep(0.3)
                             except Exception:
                                 pass
-                        time.sleep(0.4)
+                        time.sleep(0.35)
                         self.lims.pipettor.hardware.z_speed = 7
                         self.lims.pipettor.hardware.move_z(0)
                     self.gui.has_tip = True
