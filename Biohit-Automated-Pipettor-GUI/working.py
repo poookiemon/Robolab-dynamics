@@ -165,8 +165,9 @@ class BiohitInterface:
     def smart_tip_pickup(self, slot_name, labware_obj, logger):
         try:
             if self.pipettor.hardware:
-                self.pipettor.hardware.tip_pickup_force = 24
-                self.pipettor.hardware.pick_tip(90.0)
+                self.pipettor.hardware.tip_pickup_force = 26
+                self.pipettor.hardware.pick_tip(120.0)
+                time.sleep(0.4)
             return True, True
         except Exception as e:
             if logger: logger.warning(f"Tip pick error: {e}")
@@ -183,7 +184,7 @@ class BiohitInterface:
                 self.pipettor.hardware.x_speed = hw_speed
                 self.pipettor.hardware.y_speed = hw_speed
                 self.pipettor.hardware.z_speed = hw_speed
-                self.pipettor.hardware.tip_pickup_force = 20
+                self.pipettor.hardware.tip_pickup_force = 26
 
                 self.pipettor.hardware.aspirate_speed = 1
                 try:

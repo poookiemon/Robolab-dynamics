@@ -113,13 +113,14 @@ class WorkflowRunner(QThread):
                         raise Exception("Well ID mapping failed")
                 
                 if action == "Pick Up Tip":
-                    pickup_limit = max(85.0, 90.0 + step.get('extra_z', 0.0))
+                    pickup_limit = max(115.0, 120.0 + step.get('extra_z', 0.0))
                     if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
                     self.lims.hw.move_to(target_x, target_y, 0, speed=1500)
                     time.sleep(0.05)
                     if self.lims.pipettor.hardware:
-                        self.lims.pipettor.hardware.tip_pickup_force = 24
+                        self.lims.pipettor.hardware.tip_pickup_force = 26
                         self.lims.pipettor.hardware.pick_tip(pickup_limit)
+                        time.sleep(0.4)
                         self.lims.pipettor.hardware.move_z(0)
                     self.gui.has_tip = True
                 
