@@ -1179,16 +1179,16 @@ class LIMSMasterApp:
                     self.lims.pipettor.hardware.z_speed = hw_speed
                     self.lims.pipettor.hardware.move_z(approach_z)
                     self.lims.pipettor.hardware.z_speed = 3
-                    self.lims.pipettor.hardware.tip_pickup_force = 22
+                    self.lims.pipettor.hardware.tip_pickup_force = 26
                     self.lims.pipettor.hardware.pick_tip(120.0)
                     curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
                     if curr_z > 50.0:
                         try:
-                            push_z = min(curr_z + 1.8, 122.0)
+                            push_z = min(curr_z + 3.6, 122.0)
                             self.lims.pipettor.hardware.move_z(push_z)
-                            time.sleep(0.3)
-                        except Exception:
-                            pass
+                            time.sleep(0.35)
+                        except Exception as pe:
+                            self.logger.warning(f"Pushback seating completed with resistance: {pe}")
                 else:
                     curr_z = 78.0
                 self.logger.info(f"Tip acquired at {current_well} (Z={curr_z:.2f}mm). System state updated: HAS_TIP = True")
@@ -1411,16 +1411,16 @@ class LIMSMasterApp:
                                     self.lims.pipettor.hardware.z_speed = hw_speed
                                     self.lims.pipettor.hardware.move_z(approach_z)
                                     self.lims.pipettor.hardware.z_speed = 3
-                                    self.lims.pipettor.hardware.tip_pickup_force = 22
+                                    self.lims.pipettor.hardware.tip_pickup_force = 26
                                     self.lims.pipettor.hardware.pick_tip(pickup_limit)
                                     curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
                                     if curr_z > 50.0:
                                         try:
-                                            push_z = min(curr_z + 1.8, pickup_limit + 2.0)
+                                            push_z = min(curr_z + 3.6, pickup_limit + 1.0)
                                             self.lims.pipettor.hardware.move_z(push_z)
-                                            time.sleep(0.3)
-                                        except Exception:
-                                            pass
+                                            time.sleep(0.35)
+                                        except Exception as pe:
+                                            self.logger.warning(f"Pushback seating completed with resistance: {pe}")
                                 else:
                                     curr_z = 78.0
                                 self.logger.info(f"Manual tip pickup at Z={curr_z:.2f}mm.")
@@ -1457,16 +1457,16 @@ class LIMSMasterApp:
                                         self.lims.pipettor.hardware.z_speed = hw_speed
                                         self.lims.pipettor.hardware.move_z(approach_z)
                                         self.lims.pipettor.hardware.z_speed = 3
-                                        self.lims.pipettor.hardware.tip_pickup_force = 22
+                                        self.lims.pipettor.hardware.tip_pickup_force = 26
                                         self.lims.pipettor.hardware.pick_tip(pickup_limit)
                                         curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
                                         if curr_z > 50.0:
                                             try:
-                                                push_z = min(curr_z + 1.8, pickup_limit + 2.0)
+                                                push_z = min(curr_z + 3.6, pickup_limit + 1.0)
                                                 self.lims.pipettor.hardware.move_z(push_z)
-                                                time.sleep(0.3)
-                                            except Exception:
-                                                pass
+                                                time.sleep(0.35)
+                                            except Exception as pe:
+                                                self.logger.warning(f"Pushback seating completed with resistance: {pe}")
                                     else:
                                         curr_z = 78.0
                                     self.logger.info(f"Tip acquired at {current_well} (Z={curr_z:.2f}mm). HAS_TIP = True")
@@ -1501,16 +1501,16 @@ class LIMSMasterApp:
                                     self.lims.pipettor.hardware.z_speed = hw_speed
                                     self.lims.pipettor.hardware.move_z(approach_z)
                                     self.lims.pipettor.hardware.z_speed = 3
-                                    self.lims.pipettor.hardware.tip_pickup_force = 22
+                                    self.lims.pipettor.hardware.tip_pickup_force = 26
                                     self.lims.pipettor.hardware.pick_tip(pickup_limit)
                                     curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
                                     if curr_z > 50.0:
                                         try:
-                                            push_z = min(curr_z + 1.8, pickup_limit + 2.0)
+                                            push_z = min(curr_z + 3.6, pickup_limit + 1.0)
                                             self.lims.pipettor.hardware.move_z(push_z)
-                                            time.sleep(0.3)
-                                        except Exception:
-                                            pass
+                                            time.sleep(0.35)
+                                        except Exception as pe:
+                                            self.logger.warning(f"Pushback seating completed with resistance: {pe}")
                                 else:
                                     curr_z = 78.0
                                 self.logger.info(f"Tip pickup completed at Z={curr_z:.2f}mm (limit: {pickup_limit:.1f}mm).")

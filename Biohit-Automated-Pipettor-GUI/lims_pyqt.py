@@ -124,13 +124,13 @@ class WorkflowRunner(QThread):
                         self.lims.pipettor.hardware.z_speed = 7
                         self.lims.pipettor.hardware.move_z(approach_z)
                         self.lims.pipettor.hardware.z_speed = 3
-                        self.lims.pipettor.hardware.tip_pickup_force = 22
+                        self.lims.pipettor.hardware.tip_pickup_force = 26
                         self.lims.pipettor.hardware.pick_tip(pickup_limit)
                         curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
                         if curr_z > 50.0:
                             try:
-                                self.lims.pipettor.hardware.move_z(min(curr_z + 1.8, pickup_limit + 2.0))
-                                time.sleep(0.3)
+                                self.lims.pipettor.hardware.move_z(min(curr_z + 3.6, pickup_limit + 1.0))
+                                time.sleep(0.35)
                             except Exception:
                                 pass
                         time.sleep(0.4)
