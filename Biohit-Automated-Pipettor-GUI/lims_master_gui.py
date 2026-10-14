@@ -942,6 +942,8 @@ class LIMSMasterApp:
         if not z_limits:
             if slot == "Slot_4" or (labware_obj and ("ehm" in labware_obj.name.lower() or "48" in labware_obj.name.lower())):
                 z_limits = {"recommended_aspirate_z": 98.0, "max_safe_bottom_z": 99.5}
+            elif (slot == "Slot_5" and labware_obj and "96" in labware_obj.name.lower()) or (labware_obj and "96" in labware_obj.name.lower() and "tip" not in labware_obj.name.lower()):
+                z_limits = {"recommended_aspirate_z": 76.0, "max_safe_bottom_z": 78.0}
             elif slot == "Slot_5" or (labware_obj and "reservoir" in labware_obj.name.lower()):
                 z_limits = {"recommended_aspirate_z": 101.5, "max_safe_bottom_z": 103.0}
             elif slot == "Slot_3":
@@ -1078,6 +1080,14 @@ class LIMSMasterApp:
             except ValueError:
                 step_data["extra_z"] = 0.0
 
+            # Row H Travel Limit Guardrail Check on Slot 5
+            if slot == "Slot_5" and well and well.strip().upper().startswith("H"):
+                messagebox.showwarning(
+                    "⚠️ Physical Travel Limit Warning",
+                    f"Warning: Well '{well}' is in Row H on Slot 5 (Y ≈ 218.0mm), which exceeds the physical travel limit of the pipette head.\n\n"
+                    f"Wells A1 through G12 are fully usable on Slot 5."
+                )
+
             # Safe Z-Depth Guardrail Check
             if action in ["Aspirate Media", "Dispense Media"]:
                 labware_obj = self.lims.deck_labware.get(slot)
@@ -1196,18 +1206,35 @@ class LIMSMasterApp:
         # 5. 96-WELL FORMAT (Tip Rack or 96-Well Microplate on any slot!)
         if ("96" in lw_name or "tip" in lw_name or "tip_rack" in lw_src or "96" in lw_src or
             (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12)) or (not labware_obj and slot_name == "Slot_3"):
-            origin_x = 242.0 if slot_obj.x_abs >= 70.0 else 106.8
-            origin_y = slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0
-            if len(well_id) >= 2:
-                r_c = well_id[0].upper()
-                c_str = well_id[1:]
-                try:
-                    c_idx = int(c_str) - 1
+            if slot_name == "Slot_5":
+                col_x = {
+                    '1': 243.0, '2': 234.0, '3': 225.0, '4': 216.0,
+                    '5': 207.0, '6': 198.0, '7': 189.0, '8': 180.0,
+                    '9': 171.0, '10': 162.0, '11': 153.0, '12': 143.0
+                }
+                origin_y = 155.0
+                if len(well_id) >= 2:
+                    r_c = well_id[0].upper()
+                    c_str = well_id[1:]
                     r_idx = ord(r_c) - ord('A')
-                    if 0 <= c_idx < 12 and 0 <= r_idx < 8:
-                        return origin_x - (c_idx * 9.0), origin_y + (r_idx * 9.0)
-                except ValueError:
-                    pass
+                    if r_c == 'H':
+                        if hasattr(self, 'logger') and self.logger:
+                            self.logger.warning(f"Slot 5 Warning: Well {well_id} in Row H exceeds pipette travel limit (Y=218.0mm). Usable range: A1-G12.")
+                    if c_str in col_x and 0 <= r_idx < 8:
+                        return col_x[c_str], origin_y + (r_idx * 9.0)
+            else:
+                origin_x = 242.0 if slot_obj.x_abs >= 70.0 else 106.8
+                origin_y = slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0
+                if len(well_id) >= 2:
+                    r_c = well_id[0].upper()
+                    c_str = well_id[1:]
+                    try:
+                        c_idx = int(c_str) - 1
+                        r_idx = ord(r_c) - ord('A')
+                        if 0 <= c_idx < 12 and 0 <= r_idx < 8:
+                            return origin_x - (c_idx * 9.0), origin_y + (r_idx * 9.0)
+                    except ValueError:
+                        pass
 
         # 6. Fallback Generic Labware
         if labware_obj and labware_obj.wells:
@@ -1236,11 +1263,13 @@ class LIMSMasterApp:
                 base_z = 90.0
             elif "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
                 base_z = 98.0
+            elif ("96" in lw_name or "96" in lw_src) and ("tip" not in lw_name and "tip" not in lw_src):
+                base_z = 76.0
             elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name == "Slot_5"):
                 base_z = 101.5
             elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or (not labware_obj and slot_name == "Slot_4"):
                 base_z = 98.0
-            elif "96" in lw_name or "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
+            elif "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
                 base_z = 98.0
             elif action == "Discard Tip" and slot_name == "Slot_1":
                 base_z = 90.0
