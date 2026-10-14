@@ -167,8 +167,8 @@ class BiohitInterface:
             if self.pipettor.hardware:
                 hw_speed = getattr(self.pipettor.hardware, 'z_speed', 8)
                 z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
-                approach_z = max(0.0, z_height - 18.0)
-                pickup_limit = 106.0
+                approach_z = max(0.0, min(55.0, z_height - 18.0))
+                pickup_limit = 87.0
                 self.pipettor.hardware.z_speed = hw_speed
                 self.pipettor.hardware.move_z(approach_z)
                 self.pipettor.hardware.z_speed = 3
@@ -177,14 +177,14 @@ class BiohitInterface:
                     self.pipettor.hardware.pick_tip(pickup_limit)
                 except Exception as p_err:
                     curr_z = getattr(self.pipettor.hardware, 'z_position', 0.0)
-                    if curr_z < 76.0:
+                    if curr_z < 60.0:
                         raise p_err
                 curr_z = getattr(self.pipettor.hardware, 'z_position', 0.0)
-                if curr_z >= 76.0 and curr_z < 103.0:
+                if curr_z >= 60.0:
                     try:
-                        push_z = min(curr_z + 2.0, 103.7)
+                        push_z = min(curr_z + 2.5, 89.0)
                         self.pipettor.hardware.move_z(push_z)
-                        time.sleep(0.3)
+                        time.sleep(0.35)
                     except Exception as pe:
                         if logger: logger.warning(f"Pushback seating resistance: {pe}")
                 time.sleep(0.35)
