@@ -272,9 +272,22 @@ class LIMSOrchestrator:
         with open(filepath, 'r') as f:
             data = json.load(f)
         self.deck_slots.clear()
+        self.deck_labware.clear()
+        lw_dir = "labware"
+        for cand in ["labware", "Biohit-Automated-Pipettor-GUI/labware", os.path.join(os.path.dirname(os.path.abspath(__file__)), "labware")]:
+            if os.path.isdir(cand):
+                lw_dir = cand
+                break
         for s in data.values():
-            self.deck_slots[s['name']] = DeckSlot(s['name'], s['x_abs'], s['y_abs'], s['width_mm'], s['height_mm'],
+            name = s['name']
+            self.deck_slots[name] = DeckSlot(name, s['x_abs'], s['y_abs'], s['width_mm'], s['height_mm'],
                                                   s.get('z_offset', 0.0))
+            lab_file = s.get('labware_file')
+            if lab_file:
+                lw_path = os.path.join(lw_dir, lab_file)
+                if os.path.exists(lw_path):
+                    self.deck_labware[name] = Labware(lw_path)
+                    self.deck_labware[name].source_file = lab_file
 
     def save_deck_profile(self, filepath: str = "deck_calibration.json"):
         data = {
