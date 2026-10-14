@@ -836,6 +836,7 @@ class LIMSMasterApp:
         ttk.Separator(pane_ctrl, orient="horizontal").pack(fill=tk.X, pady=8)
         ttk.Button(pane_ctrl, text="⚡ Load Quick 5-Slot Mock", command=self.action_load_quick_mock_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="🧪 Load EHM 48-Well Test", command=self.action_load_ehm_test_protocol).pack(fill=tk.X, pady=2)
+        ttk.Button(pane_ctrl, text="🎯 Load 96-Well Row A (A1-A12)", command=self.action_load_slot5_rowA_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="📥 Convert & Import Python (.py)", command=self.action_import_python_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="📂 Load JSON Protocol", command=self.action_load_workflow).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="💾 Save Protocol As JSON...", command=self.action_save_workflow_as).pack(fill=tk.X, pady=2)
@@ -1016,6 +1017,35 @@ class LIMSMasterApp:
             self.logger.info(f"Loaded Quick 5-Slot Mock Protocol ({len(loaded_sequence)} steps).")
         else:
             messagebox.showerror("File Not Found", "Could not locate quick_mock_5slots.json")
+
+    def action_load_slot5_rowA_protocol(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        cand_paths = [
+            os.path.join(script_dir, "protocols", "slot5_96well_rowA_test.json"),
+            os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "protocols", "slot5_96well_rowA_test.json"),
+            os.path.join(os.getcwd(), "protocols", "slot5_96well_rowA_test.json"),
+        ]
+        target_path = None
+        for p in cand_paths:
+            if os.path.exists(p):
+                target_path = p
+                break
+        if target_path:
+            with open(target_path, 'r') as f:
+                loaded_sequence = json.load(f)
+            self.workflow_sequence.clear()
+            self.wf_box.delete(0, tk.END)
+            self.has_tip_var.set(True)
+            for step in loaded_sequence:
+                self.workflow_sequence.append(step)
+                act = step['action']
+                slot = step.get('slot', '')
+                well = step.get('well', '')
+                msg = f"[{act.upper()}] at {slot}, Well {well}"
+                self.wf_box.insert(tk.END, msg)
+            self.logger.info(f"Loaded Slot 5 96-Well Row A Test Protocol ({len(loaded_sequence)} steps). Tip state marked ATTACHED.")
+        else:
+            messagebox.showerror("File Not Found", "Could not locate slot5_96well_rowA_test.json")
 
     def add_wf_step(self):
         action = self.wf_action.get()

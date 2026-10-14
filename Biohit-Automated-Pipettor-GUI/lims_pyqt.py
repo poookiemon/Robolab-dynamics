@@ -658,6 +658,14 @@ class LIMSPyQtApp(QMainWindow):
         btn_add.clicked.connect(self.add_wf_step)
         l_ctrl.addWidget(btn_add)
         
+        btn_mock = QPushButton("⚡ Load Quick 5-Slot Mock")
+        btn_mock.clicked.connect(self.action_load_quick_mock)
+        l_ctrl.addWidget(btn_mock)
+
+        btn_row_a = QPushButton("🎯 Load 96-Well Row A Test (A1-A12)")
+        btn_row_a.clicked.connect(self.action_load_slot5_rowA_protocol)
+        l_ctrl.addWidget(btn_row_a)
+        
         l_ctrl.addStretch()
         layout.addWidget(pane_ctrl, 1)
         
@@ -738,6 +746,61 @@ class LIMSPyQtApp(QMainWindow):
                 
         self.wf_box.addItem(msg)
         self.workflow_sequence.append(step_data)
+
+    def action_load_quick_mock(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        cand_paths = [
+            os.path.join(script_dir, "protocols", "quick_mock_5slots.json"),
+            os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "protocols", "quick_mock_5slots.json"),
+            os.path.join(os.getcwd(), "protocols", "quick_mock_5slots.json"),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if target_path:
+            with open(target_path, 'r') as f:
+                loaded = json.load(f)
+            self.workflow_sequence.clear()
+            self.wf_box.clear()
+            for step in loaded:
+                self.workflow_sequence.append(step)
+                act = step['action']
+                slot = step.get('slot', '')
+                well = step.get('well', '')
+                vol = step.get('volume', 0.0)
+                if act == "Pick Up Tip":
+                    msg = f"[{act.upper()}] from {slot}, Well {well}"
+                elif act == "Discard Tip":
+                    msg = f"[{act.upper()}] into {slot} (Waste Trough)"
+                else:
+                    msg = f"[{act.upper()}] {vol}uL at {slot}, Well {well}"
+                self.wf_box.addItem(msg)
+            self.log(f"Loaded Quick 5-Slot Mock Protocol ({len(loaded)} steps).")
+        else:
+            QMessageBox.critical(self, "Error", "Could not locate quick_mock_5slots.json")
+
+    def action_load_slot5_rowA_protocol(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        cand_paths = [
+            os.path.join(script_dir, "protocols", "slot5_96well_rowA_test.json"),
+            os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "protocols", "slot5_96well_rowA_test.json"),
+            os.path.join(os.getcwd(), "protocols", "slot5_96well_rowA_test.json"),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if target_path:
+            with open(target_path, 'r') as f:
+                loaded = json.load(f)
+            self.workflow_sequence.clear()
+            self.wf_box.clear()
+            self.has_tip = True
+            for step in loaded:
+                self.workflow_sequence.append(step)
+                act = step['action']
+                slot = step.get('slot', '')
+                well = step.get('well', '')
+                msg = f"[{act.upper()}] at {slot}, Well {well}"
+                self.wf_box.addItem(msg)
+            self.log(f"Loaded Slot 5 96-Well Row A Test Protocol ({len(loaded)} steps). Tip state marked ATTACHED.")
+        else:
+            QMessageBox.critical(self, "Error", "Could not locate slot5_96well_rowA_test.json")
 
     def run_sequence(self):
         if not self.workflow_sequence: return
