@@ -236,29 +236,45 @@ class LIMSPyQtApp(QMainWindow):
         
     def _calculate_xy(self, slot_name, well_id):
         slot_obj = self.lims.deck_slots.get(slot_name)
-        sy = slot_obj.y_abs if slot_obj else 60.0
+        if not slot_obj: return 0.0, 0.0
 
-        if slot_name == "Slot_3":
+        cx = slot_obj.x_abs + (slot_obj.width_mm / 2.0)
+        cy = slot_obj.y_abs + (slot_obj.height_mm / 2.0)
+
+        labware_obj = self.lims.deck_labware.get(slot_name)
+        lw_name = (getattr(labware_obj, 'name', '') or '').lower()
+        lw_src = (getattr(labware_obj, 'source_file', '') or '').lower()
+
+        # 1. WASTE TROUGH
+        if ("waste" in lw_name or "waste" in lw_src) or (not labware_obj and slot_name in ["Slot_6", "Slot_1"]):
+            return cx, cy
+
+        # 2. 3-WELL RESERVOIR (Option A: Fits in Slot_1 or Slot_2, 3 wells along X)
+        if "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
+            base_x = slot_obj.x_abs
+            col_x_map = {'1': base_x + 106.5, '2': base_x + 63.9, '3': base_x + 21.3}
+            c_c = well_id[1:] if len(well_id) >= 2 else (well_id if well_id in col_x_map else '1')
+            return col_x_map.get(c_c, base_x + 63.9), cy
+
+        # 3. 6-COLUMN RESERVOIR
+        if ("6-column" in lw_name or "reservoir_6" in lw_src or "6_column" in lw_src) or (not labware_obj and slot_name == "Slot_5"):
             col_x = {
-                '1': 242.0, '2': 233.0, '3': 224.0, '4': 215.0,
-                '5': 206.0, '6': 197.0, '7': 188.0, '8': 179.0,
-                '9': 170.0, '10': 161.0, '11': 152.0, '12': 143.0
+                '1': 239.0, '2': 220.0, '3': 201.0,
+                '4': 182.0, '5': 163.0, '6': 144.0
             }
-            row_y = {
-                'A': 60.0,  'B': 69.0,  'C': 78.0,  'D': 87.0,
-                'E': 96.0,  'F': 105.0, 'G': 114.0, 'H': 123.0
-            }
-            if len(well_id) >= 2:
-                r_c = well_id[0].upper()
-                c_c = well_id[1:]
-                if r_c in row_y and c_c in col_x:
-                    return col_x[c_c], row_y[r_c]
+            if slot_obj.x_abs < 70.0:
+                col_x = {k: v - 135.2 for k, v in col_x.items()}
+            col_char = well_id[1:] if len(well_id) >= 2 else '1'
+            target_x = col_x.get(col_char, 191.5 if slot_obj.x_abs >= 70.0 else 56.3)
+            target_y = 207.75 if slot_name == "Slot_5" else cy
+            return target_x, target_y
 
-        if slot_name == "Slot_4":
-            col_x = {'1': 105.00, '2': 87.00, '3': 68.88, '4': 51.54, '5': 34.20, '6': 15.60}
+        # 4. MYRIAMED 48-WELL EHM PLATE
+        if ("myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "ehm" in lw_src or "myriamed" in lw_src) or (not labware_obj and slot_name == "Slot_4"):
+            col_x = {'1': 106.00, '2': 88.00, '3': 70.00, '4': 52.00, '5': 34.00, '6': 16.00}
             row_y = {
-                'A': 67.30, 'B': 75.30, 'C': 85.30, 'D': 95.30,
-                'E': 105.30, 'F': 113.30, 'G': 121.30, 'H': 129.30
+                'A': 60.0, 'B': 70.0, 'C': 80.0, 'D': 90.0,
+                'E': 100.0, 'F': 110.0, 'G': 120.0, 'H': 130.0
             }
             if len(well_id) >= 2:
                 row_char = well_id[0].upper()
@@ -266,42 +282,57 @@ class LIMSPyQtApp(QMainWindow):
                 if row_char in row_y and col_char in col_x:
                     return col_x[col_char], row_y[row_char]
 
-        if slot_name == "Slot_5":
-            col_x = {
-                '1': 239.0, '2': 220.0, '3': 201.0,
-                '4': 182.0, '5': 163.0, '6': 144.0
-            }
-            col_char = well_id[1:] if len(well_id) >= 2 else '1'
-            target_x = col_x.get(col_char, 191.5)
-            target_y = 207.75
-            return target_x, target_y
+        # 5. 96-WELL FORMAT
+        if ("96" in lw_name or "tip" in lw_name or "tip_rack" in lw_src or "96" in lw_src or
+            (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12)) or (not labware_obj and slot_name == "Slot_3"):
+            origin_x = 242.0 if slot_obj.x_abs >= 70.0 else 106.8
+            origin_y = slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0
+            if len(well_id) >= 2:
+                r_c = well_id[0].upper()
+                c_str = well_id[1:]
+                try:
+                    c_idx = int(c_str) - 1
+                    r_idx = ord(r_c) - ord('A')
+                    if 0 <= c_idx < 12 and 0 <= r_idx < 8:
+                        return origin_x - (c_idx * 9.0), origin_y + (r_idx * 9.0)
+                except ValueError:
+                    pass
 
-        if not slot_obj: return 0.0, 0.0
-        cx = slot_obj.x_abs + (slot_obj.width_mm / 2.0)
-        cy = slot_obj.y_abs + (slot_obj.height_mm / 2.0)
-        if slot_name == "Slot_6": return cx, cy
-        labware_obj = self.lims.deck_labware.get(slot_name)
-        if not labware_obj or not labware_obj.wells: return cx, cy
-        first_w = list(labware_obj.wells.values())[0]
-        lw_w = max(w.x_rel for w in labware_obj.wells.values()) + first_w.x_rel
-        lw_h = max(w.y_rel for w in labware_obj.wells.values()) + first_w.y_rel
-        well_obj = labware_obj.wells.get(well_id)
-        if not well_obj: return cx, cy
-        return cx + ((lw_w / 2.0) - well_obj.x_rel), cy - (lw_h / 2.0) + well_obj.y_rel
+        # 6. Fallback Generic Labware
+        if labware_obj and labware_obj.wells:
+            first_w = list(labware_obj.wells.values())[0]
+            lw_w = max(w.x_rel for w in labware_obj.wells.values()) + first_w.x_rel
+            lw_h = max(w.y_rel for w in labware_obj.wells.values()) + first_w.y_rel
+            well_obj = labware_obj.wells.get(well_id)
+            if well_obj:
+                return cx + ((lw_w / 2.0) - well_obj.x_rel), cy - (lw_h / 2.0) + well_obj.y_rel
+
+        return cx, cy
 
     def _calculate_z(self, action, labware_obj, well_id, mode, manual_z, slot_name, extra_z=0.0):
         if action == "Pick Up Tip": return 0.0
         if mode == "manual": return manual_z
         slot_obj = self.lims.deck_slots.get(slot_name)
         slot_z_offset = getattr(slot_obj, 'z_offset', 0.0) if slot_obj else 0.0
+        lw_name = (getattr(labware_obj, 'name', '') or '').lower()
+        lw_src = (getattr(labware_obj, 'source_file', '') or '').lower()
+
         if action in ["Aspirate Media", "Dispense Media", "Discard Tip"]:
-            base_z = 101.0
-            if slot_name == "Slot_4": base_z = 98.0
-            elif slot_name == "Slot_5": base_z = 101.5
-            elif slot_name == "Slot_6": base_z = 90.0
-            elif action == "Discard Tip" and slot_name == "Slot_1": base_z = 90.0
-            elif labware_obj and (getattr(labware_obj, 'z_height_mm', 20.0) == 105.81 or "reservoir" in labware_obj.name.lower()):
+            if "waste" in lw_name or "waste" in lw_src or (not labware_obj and slot_name in ["Slot_6", "Slot_1"]):
+                base_z = 90.0
+            elif "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
+                base_z = 98.0
+            elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name == "Slot_5"):
                 base_z = 101.5
+            elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or (not labware_obj and slot_name == "Slot_4"):
+                base_z = 98.0
+            elif "96" in lw_name or "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
+                base_z = 98.0
+            elif action == "Discard Tip" and slot_name == "Slot_1":
+                base_z = 90.0
+            else:
+                base_z = 101.0
+
             return min(base_z + slot_z_offset + extra_z, 103.5)
         return 0.0
 

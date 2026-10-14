@@ -819,12 +819,14 @@ class LIMSMasterApp:
         self.input_frame.pack(fill=tk.X, expand=True)
         self.lbl_1 = ttk.Label(self.input_frame, text="")
         self.cbx_slot = ttk.Combobox(self.input_frame, state="readonly")
+        self.cbx_slot.bind("<<ComboboxSelected>>", self.update_safe_z_hint)
         self.ent_x = ttk.Entry(self.input_frame)
         self.lbl_2 = ttk.Label(self.input_frame, text="")
         self.ent_well = ttk.Entry(self.input_frame)
         self.ent_y = ttk.Entry(self.input_frame)
         self.lbl_3 = ttk.Label(self.input_frame, text="")
         self.ent_z = ttk.Entry(self.input_frame)
+        self.lbl_safe_z = ttk.Label(self.input_frame, text="", font=("Arial", 9, "italic"), foreground="#0d6efd", wraplength=200)
         self.lbl_4 = ttk.Label(self.input_frame, text="")
         self.ent_vol = ttk.Entry(self.input_frame)
 
@@ -832,6 +834,7 @@ class LIMSMasterApp:
         ttk.Button(pane_ctrl, text="Clear Protocol",
                    command=lambda: [self.wf_box.delete(0, tk.END), self.workflow_sequence.clear()]).pack(fill=tk.X)
         ttk.Separator(pane_ctrl, orient="horizontal").pack(fill=tk.X, pady=8)
+        ttk.Button(pane_ctrl, text="🧪 Load EHM 48-Well Test", command=self.action_load_ehm_test_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="📥 Convert & Import Python (.py)", command=self.action_import_python_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="📂 Load JSON Protocol", command=self.action_load_workflow).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="💾 Save Protocol As JSON...", command=self.action_save_workflow_as).pack(fill=tk.X, pady=2)
@@ -921,7 +924,61 @@ class LIMSMasterApp:
                     self.ent_vol.pack(fill=tk.X, pady=(0, 5))
                     self.lbl_3.config(text="Extra Z-Depth (+mm) [Optional]:")
                     self.lbl_3.pack(anchor="w")
-                    self.ent_z.pack(fill=tk.X, pady=(0, 5))
+                    self.ent_z.pack(fill=tk.X, pady=(0, 2))
+                    self.lbl_safe_z.pack(fill=tk.X, pady=(0, 5))
+                    self.update_safe_z_hint()
+
+    def update_safe_z_hint(self, *args):
+        slot = self.cbx_slot.get()
+        if not slot:
+            self.lbl_safe_z.config(text="")
+            return
+        labware_obj = self.lims.deck_labware.get(slot)
+        z_limits = getattr(labware_obj, 'z_limits', {}) if labware_obj else {}
+        if not z_limits and labware_obj and hasattr(labware_obj, 'raw_data'):
+            z_limits = labware_obj.raw_data.get('z_limits', {})
+
+        if not z_limits:
+            if slot == "Slot_4" or (labware_obj and ("ehm" in labware_obj.name.lower() or "48" in labware_obj.name.lower())):
+                z_limits = {"recommended_aspirate_z": 98.0, "max_safe_bottom_z": 99.5}
+            elif slot == "Slot_5" or (labware_obj and "reservoir" in labware_obj.name.lower()):
+                z_limits = {"recommended_aspirate_z": 101.5, "max_safe_bottom_z": 103.0}
+            elif slot == "Slot_3":
+                z_limits = {"recommended_pickup_z": 87.0, "max_safe_bottom_z": 92.0}
+            else:
+                z_limits = {"recommended_aspirate_z": 98.0, "max_safe_bottom_z": 100.0}
+
+        rec = z_limits.get('recommended_aspirate_z', z_limits.get('recommended_pickup_z', 98.0))
+        max_b = z_limits.get('max_safe_bottom_z', 100.0)
+        self.lbl_safe_z.config(text=f"💡 Rec: {rec:.1f}mm | ⚠️ Max Safe: {max_b:.1f}mm")
+
+    def action_load_ehm_test_protocol(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        cand_paths = [
+            os.path.join(script_dir, "protocols", "ehm_48_well_test.json"),
+            os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "protocols", "ehm_48_well_test.json"),
+            os.path.join(os.getcwd(), "protocols", "ehm_48_well_test.json"),
+        ]
+        target_path = None
+        for p in cand_paths:
+            if os.path.exists(p):
+                target_path = p
+                break
+        if target_path:
+            with open(target_path, 'r') as f:
+                loaded_sequence = json.load(f)
+            self.workflow_sequence.clear()
+            self.wf_box.delete(0, tk.END)
+            for step in loaded_sequence:
+                self.workflow_sequence.append(step)
+                if step['action'] == "Pick Up Tip":
+                    msg = f"[{step['action'].upper()}] from {step.get('slot', '')}, Well {step.get('well', '')}"
+                else:
+                    msg = f"[{step['action'].upper()}] at {step.get('slot', '')}, Well {step.get('well', '')}"
+                self.wf_box.insert(tk.END, msg)
+            self.logger.info(f"Loaded EHM 48-Well Mock Test Protocol ({len(loaded_sequence)} steps).")
+        else:
+            messagebox.showerror("File Not Found", "Could not locate ehm_48_well_test.json")
 
     def add_wf_step(self):
         action = self.wf_action.get()
@@ -956,6 +1013,16 @@ class LIMSMasterApp:
                 step_data["y"] = 0.0
                 step_data["z"] = 0.0
                 step_data["volume"] = 0.0
+
+            if step_data["z"] > 103.5:
+                if not messagebox.askyesno(
+                    "⚠️ Hardware Z Limit Warning",
+                    f"Warning: Commanded Z={step_data['z']}mm exceeds safe machine limit (103.5mm).\n"
+                    f"Instrument firmware hard limit is 103.8mm and will trigger CommandFailed.\n"
+                    f"Do you want to proceed anyway?"
+                ):
+                    return
+
             if action in ["Pick Up Tip", "Discard Tip"]:
                 msg = f"[{action.upper()} MANUAL] X:{step_data['x']} Y:{step_data['y']} Z:{step_data['z']}"
             else:
@@ -975,6 +1042,21 @@ class LIMSMasterApp:
                 step_data["extra_z"] = float(extra_z_val) if extra_z_val else 0.0
             except ValueError:
                 step_data["extra_z"] = 0.0
+
+            # Safe Z-Depth Guardrail Check
+            if action in ["Aspirate Media", "Dispense Media"]:
+                labware_obj = self.lims.deck_labware.get(slot)
+                calc_z = self._calculate_z(action, labware_obj, well, "auto", 0.0, slot, step_data["extra_z"])
+                z_limits = getattr(labware_obj, 'z_limits', {}) if labware_obj else {}
+                max_b = z_limits.get('max_safe_bottom_z', 103.0)
+                if calc_z > max_b:
+                    if not messagebox.askyesno(
+                        "⚠️ Safe Z-Depth Warning",
+                        f"Warning: Resulting Z-Depth ({calc_z:.1f}mm) exceeds safe limit ({max_b:.1f}mm) for {slot} ({getattr(labware_obj, 'name', 'Labware')})!\n\n"
+                        f"This might bend the tip or damage the labware.\n"
+                        f"Do you want to proceed and add this step anyway?"
+                    ):
+                        return
 
             if action in ["Pick Up Tip", "Discard Tip"]:
                 msg = f"[{action.upper()}] from {slot}, Well {well}" if action == "Pick Up Tip" else f"[{action.upper()}] into {slot} (Waste Trough)"
@@ -1028,80 +1110,80 @@ class LIMSMasterApp:
 
     def _calculate_xy(self, slot_name, well_id):
         slot_obj = self.lims.deck_slots.get(slot_name)
-        sy = slot_obj.y_abs if slot_obj else 60.0
-
-        # --- PHYSICAL HARDWARE OVERRIDE FOR SLOT 3 TIP RACK ---
-        if slot_name == "Slot_3":
-            col_x = {
-                '1': 242.0, '2': 233.0, '3': 224.0, '4': 215.0,
-                '5': 206.0, '6': 197.0, '7': 188.0, '8': 179.0,
-                '9': 170.0, '10': 161.0, '11': 152.0, '12': 143.0
-            }
-            row_y = {
-                'A': 60.0,  'B': 69.0,  'C': 78.0,  'D': 87.0,
-                'E': 96.0,  'F': 105.0, 'G': 114.0, 'H': 123.0
-            }
-            if len(well_id) >= 2:
-                r_c = well_id[0].upper()
-                c_c = well_id[1:]
-                if r_c in row_y and c_c in col_x:
-                    return col_x[c_c], row_y[r_c]
-
-            # Optional logging for lims_master_gui.py
-            if hasattr(self, 'logger'):
-                self.logger.warning(f"Slot 3 Override: Well {well_id} falls outside defined 96-tip grid.")
-        # ---------------------------------------------
-        # --- PHYSICAL HARDWARE OVERRIDE FOR SLOT 4 EHM PLATE ---
-        if slot_name == "Slot_4":
-            col_x = {'1': 105.00, '2': 87.00, '3': 68.88, '4': 51.54, '5': 34.20, '6': 15.60}
-            row_y = {
-                'A': 67.30, 'B': 75.30, 'C': 85.30, 'D': 95.30,
-                'E': 105.30, 'F': 113.30, 'G': 121.30, 'H': 129.30
-            }
-            # Catch empty or malformed well IDs
-            if len(well_id) >= 2:
-                row_char = well_id[0].upper()
-                col_char = well_id[1:]
-                if row_char in row_y and col_char in col_x:
-                    return col_x[col_char], row_y[row_char]
-
-            self.logger.warning(
-                f"Slot 4 Override: Well {well_id} falls outside defined EHM grid. Defaulting to center.")
-        # ------------------------------------------------------------------------
-        # --- BULLETPROOF FIX: Dynamic Physical Override for Slot 5 Reagent Reservoir ---
-        if slot_name == "Slot_5":
-            col_x = {
-                '1': 239.0, '2': 220.0, '3': 201.0,
-                '4': 182.0, '5': 163.0, '6': 144.0
-            }
-            col_char = well_id[1:] if len(well_id) >= 2 else '1'
-            target_x = col_x.get(col_char, 191.5)
-            target_y = 207.75
-            return target_x, target_y
-        # ------------------------------------------------------------------------
-
-        # Safety catch if slot is deleted mid-render
         if not slot_obj: return 0.0, 0.0
 
         cx = slot_obj.x_abs + (slot_obj.width_mm / 2.0)
         cy = slot_obj.y_abs + (slot_obj.height_mm / 2.0)
 
-        if slot_name == "Slot_6":
-            return cx, cy
-
-        # Safety catch if labware is unassigned mid-render
         labware_obj = self.lims.deck_labware.get(slot_name)
-        if not labware_obj or not labware_obj.wells:
+        lw_name = (getattr(labware_obj, 'name', '') or '').lower()
+        lw_src = (getattr(labware_obj, 'source_file', '') or '').lower()
+
+        # 1. WASTE TROUGH (Slot_6 or Slot_1 when used as waste, or waste labware)
+        if ("waste" in lw_name or "waste" in lw_src) or (not labware_obj and slot_name in ["Slot_6", "Slot_1"]):
             return cx, cy
 
-        first_w = list(labware_obj.wells.values())[0]
-        lw_w = max(w.x_rel for w in labware_obj.wells.values()) + first_w.x_rel
-        lw_h = max(w.y_rel for w in labware_obj.wells.values()) + first_w.y_rel
-        well_obj = labware_obj.wells.get(well_id)
+        # 2. 3-WELL RESERVOIR (Option A: Fits in Slot_1 or Slot_2, 3 wells along X)
+        if "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
+            base_x = slot_obj.x_abs
+            col_x_map = {'1': base_x + 106.5, '2': base_x + 63.9, '3': base_x + 21.3}
+            c_c = well_id[1:] if len(well_id) >= 2 else (well_id if well_id in col_x_map else '1')
+            return col_x_map.get(c_c, base_x + 63.9), cy
 
-        if not well_obj: return cx, cy
+        # 3. 6-COLUMN RESERVOIR (Slot_5 default or reservoir_6 labware)
+        if ("6-column" in lw_name or "reservoir_6" in lw_src or "6_column" in lw_src) or (not labware_obj and slot_name == "Slot_5"):
+            col_x = {
+                '1': 239.0, '2': 220.0, '3': 201.0,
+                '4': 182.0, '5': 163.0, '6': 144.0
+            }
+            if slot_obj.x_abs < 70.0:
+                col_x = {k: v - 135.2 for k, v in col_x.items()}
+            col_char = well_id[1:] if len(well_id) >= 2 else '1'
+            target_x = col_x.get(col_char, 191.5 if slot_obj.x_abs >= 70.0 else 56.3)
+            target_y = 207.75 if slot_name == "Slot_5" else cy
+            return target_x, target_y
 
-        return cx + ((lw_w / 2.0) - well_obj.x_rel), cy - (lw_h / 2.0) + well_obj.y_rel
+        # 4. MYRIAMED 48-WELL EHM PLATE (Slot_4 default or myriamed/ehm labware)
+        if ("myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "ehm" in lw_src or "myriamed" in lw_src) or (not labware_obj and slot_name == "Slot_4"):
+            col_x = {'1': 106.00, '2': 88.00, '3': 70.00, '4': 52.00, '5': 34.00, '6': 16.00}
+            row_y = {
+                'A': 60.0, 'B': 70.0, 'C': 80.0, 'D': 90.0,
+                'E': 100.0, 'F': 110.0, 'G': 120.0, 'H': 130.0
+            }
+            if len(well_id) >= 2:
+                row_char = well_id[0].upper()
+                col_char = well_id[1:]
+                if row_char in row_y and col_char in col_x:
+                    return col_x[col_char], row_y[row_char]
+            if hasattr(self, 'logger'):
+                self.logger.warning(f"Slot 4 Override: Well {well_id} falls outside defined EHM grid.")
+
+        # 5. 96-WELL FORMAT (Tip Rack or 96-Well Microplate on any slot!)
+        if ("96" in lw_name or "tip" in lw_name or "tip_rack" in lw_src or "96" in lw_src or
+            (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12)) or (not labware_obj and slot_name == "Slot_3"):
+            origin_x = 242.0 if slot_obj.x_abs >= 70.0 else 106.8
+            origin_y = slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0
+            if len(well_id) >= 2:
+                r_c = well_id[0].upper()
+                c_str = well_id[1:]
+                try:
+                    c_idx = int(c_str) - 1
+                    r_idx = ord(r_c) - ord('A')
+                    if 0 <= c_idx < 12 and 0 <= r_idx < 8:
+                        return origin_x - (c_idx * 9.0), origin_y + (r_idx * 9.0)
+                except ValueError:
+                    pass
+
+        # 6. Fallback Generic Labware
+        if labware_obj and labware_obj.wells:
+            first_w = list(labware_obj.wells.values())[0]
+            lw_w = max(w.x_rel for w in labware_obj.wells.values()) + first_w.x_rel
+            lw_h = max(w.y_rel for w in labware_obj.wells.values()) + first_w.y_rel
+            well_obj = labware_obj.wells.get(well_id)
+            if well_obj:
+                return cx + ((lw_w / 2.0) - well_obj.x_rel), cy - (lw_h / 2.0) + well_obj.y_rel
+
+        return cx, cy
 
     def _calculate_z(self, action, labware_obj, well_id, mode, manual_z, slot_name, extra_z=0.0):
         if action == "Pick Up Tip":
@@ -1111,20 +1193,22 @@ class LIMSMasterApp:
 
         slot_obj = self.lims.deck_slots.get(slot_name)
         slot_z_offset = getattr(slot_obj, 'z_offset', 0.0)
+        lw_name = (getattr(labware_obj, 'name', '') or '').lower()
+        lw_src = (getattr(labware_obj, 'source_file', '') or '').lower()
 
         if action in ["Aspirate Media", "Dispense Media", "Discard Tip"]:
-            # --- Z-DEPTH FIX: Force 102.0mm for Slot 4 ---
-            if slot_name == "Slot_4":
-                base_z = 98.0
-            elif slot_name == "Slot_5":
-                base_z = 101.5
-            elif slot_name == "Slot_6":
+            if "waste" in lw_name or "waste" in lw_src or (not labware_obj and slot_name in ["Slot_6", "Slot_1"]):
                 base_z = 90.0
+            elif "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
+                base_z = 98.0
+            elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name == "Slot_5"):
+                base_z = 101.5
+            elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or (not labware_obj and slot_name == "Slot_4"):
+                base_z = 98.0
+            elif "96" in lw_name or "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
+                base_z = 98.0
             elif action == "Discard Tip" and slot_name == "Slot_1":
                 base_z = 90.0
-            elif labware_obj and (
-                    getattr(labware_obj, 'z_height_mm', 20.0) == 105.81 or "reservoir" in labware_obj.name.lower()):
-                base_z = 101.5
             else:
                 base_z = 101.0
 

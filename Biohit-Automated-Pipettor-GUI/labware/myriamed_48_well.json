@@ -1,7 +1,7 @@
 {
   "labware_name": "Myriamed 48-Well Plate (3D cell/tissue culture, EHM)",
   "placement": "slot_origin",
-  "_comment": "col_x / row_y = mm offsets from the slot corner (slot x_abs/y_abs), robot axes. One number per column (1..6) and row (A..H). Converted from the previously hardcoded absolute Slot_4 coordinates.",
+  "_comment": "Calibrated coordinates: A1=(106.0, 60.0), A2=(88.0, 60.0), B1=(106.0, 70.0), C1=(106.0, 80.0)",
   "z_height_mm": 78.42,
   "grid": {
     "rows": 8,
@@ -10,20 +10,20 @@
   "col_x": [
     106.0,
     88.0,
-    69.88,
-    52.54,
-    35.2,
-    16.6
+    70.0,
+    52.0,
+    34.0,
+    16.0
   ],
   "row_y": [
-    7.8,
-    15.8,
-    25.8,
-    35.8,
-    45.8,
-    53.8,
-    61.8,
-    69.8
+    60.0,
+    70.0,
+    80.0,
+    90.0,
+    100.0,
+    110.0,
+    120.0,
+    130.0
   ],
   "well_properties": {
     "depth_mm": 16.9,
@@ -33,5 +33,10 @@
     "aspirate": 98.0,
     "dispense": 98.0,
     "discard_tip": 98.0
+  },
+  "z_limits": {
+    "recommended_aspirate_z": 98.0,
+    "recommended_dispense_z": 95.0,
+    "max_safe_bottom_z": 99.5
   }
 }

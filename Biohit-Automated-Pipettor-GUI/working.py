@@ -54,6 +54,8 @@ class Labware:
         self.rows = grid.get('rows', 8)
 
         self.z_height_mm = data.get('z_height_mm', 20.0)
+        self.z_limits = data.get('z_limits', {})
+        self.raw_data = data
         self.wells: Dict[str, Well] = self._generate_wells(data)
 
         # --- NEW: Inject Explicit JSON UI Coordinates ---
@@ -81,6 +83,9 @@ class Labware:
 
     def _generate_wells(self, data) -> Dict[str, Well]:
         wells = {}
+        col_x_list = data.get('col_x')
+        row_y_list = data.get('row_y')
+
         offset = data.get('well_a1_offset', {"x": 0, "y": 0})
         start_x, start_y = offset.get('x', 0), offset.get('y', 0)
 
@@ -95,7 +100,13 @@ class Labware:
             row_label = chr(65 + r)
             for c in range(self.columns):
                 well_id = f"{row_label}{c + 1}"
-                wells[well_id] = Well(well_id, start_x + (c * pitch_x), start_y + (r * pitch_y), radius, depth)
+                if col_x_list and c < len(col_x_list) and row_y_list and r < len(row_y_list):
+                    wx = col_x_list[c]
+                    wy = row_y_list[r]
+                else:
+                    wx = start_x + (c * pitch_x)
+                    wy = start_y + (r * pitch_y)
+                wells[well_id] = Well(well_id, wx, wy, radius, depth)
         return wells
 
 
@@ -291,92 +302,76 @@ class LIMSOrchestrator:
             raise ValueError(f"Slot {slot_name} missing")
 
         slot = self.deck_slots[slot_name]
-        sy = slot.y_abs
+        cx = slot.x_abs + (slot.width_mm / 2.0)
+        cy = slot.y_abs + (slot.height_mm / 2.0)
 
-        # --- ABSOLUTE OVERRIDE FOR SLOT 3 TIP RACK ---
-        if slot_name == "Slot_3":
-            col_x = {
-                '1': 242.0, '2': 233.0, '3': 224.0, '4': 215.0,
-                '5': 206.0, '6': 197.0, '7': 188.0, '8': 179.0,
-                '9': 170.0, '10': 161.0, '11': 152.0, '12': 143.0
-            }
-            row_y = {
-                'A': 60.0,  'B': 69.0,  'C': 78.0,  'D': 87.0,
-                'E': 96.0,  'F': 105.0, 'G': 114.0, 'H': 123.0
-            }
-            if len(well_id) >= 2:
-                r_c = well_id[0].upper()
-                c_c = well_id[1:]
-                if r_c in row_y and c_c in col_x:
-                    return col_x[c_c], row_y[r_c]
+        labware = self.deck_labware.get(slot_name)
+        lw_name = (getattr(labware, 'name', '') or '').lower()
+        lw_src = (getattr(labware, 'source_file', '') or '').lower()
 
-            if hasattr(self, 'logger'):
-                self.logger.warning(f"Slot 3 Override: Well {well_id} falls outside defined 96-tip grid.")
+        # 1. WASTE TROUGH (Slot_6 or Slot_1 when used as waste, or waste labware)
+        if ("waste" in lw_name or "waste" in lw_src) or (not labware and slot_name in ["Slot_6", "Slot_1"]):
+            return cx, cy
 
-        # --- ABSOLUTE OVERRIDE FOR SLOT 4 EHM PLATE ---
-        if slot_name == "Slot_4":
-            col_x = {'1': 105.00, '2': 87.00, '3': 68.88, '4': 51.54, '5': 34.20, '6': 15.60}
-            row_y = {
-                'A': 67.30, 'B': 75.30, 'C': 85.30, 'D': 95.30,
-                'E': 105.30, 'F': 113.30, 'G': 121.30, 'H': 129.30
-            }
-            if len(well_id) >= 2:
-                r_c = well_id[0].upper()
-                c_c = well_id[1:]
-                if r_c in row_y and c_c in col_x:
-                    return col_x[c_c], row_y[r_c]
+        # 2. 3-WELL RESERVOIR (Option A: Fits in Slot_1 or Slot_2, 3 wells along X)
+        if "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
+            base_x = slot.x_abs
+            col_x_map = {'1': base_x + 106.5, '2': base_x + 63.9, '3': base_x + 21.3}
+            c_c = well_id[1:] if len(well_id) >= 2 else (well_id if well_id in col_x_map else '1')
+            return col_x_map.get(c_c, base_x + 63.9), cy
 
-            if hasattr(self, 'logger'):
-                self.logger.warning(f"Slot 4 Override: Well {well_id} falls outside defined EHM grid.")
-
-        # --- ABSOLUTE OVERRIDE FOR SLOT 5 REAGENT RESERVOIR ---
-        if slot_name == "Slot_5":
+        # 3. 6-COLUMN RESERVOIR (Slot_5 default or reservoir_6 labware)
+        if ("6-column" in lw_name or "reservoir_6" in lw_src or "6_column" in lw_src) or (not labware and slot_name == "Slot_5"):
             col_x = {
                 '1': 239.0, '2': 220.0, '3': 201.0,
                 '4': 182.0, '5': 163.0, '6': 144.0
             }
+            if slot.x_abs < 70.0:
+                col_x = {k: v - 135.2 for k, v in col_x.items()}
             col_char = well_id[1:] if len(well_id) >= 2 else '1'
-            target_x = col_x.get(col_char, 191.5)
-            target_y = 207.75
+            target_x = col_x.get(col_char, 191.5 if slot.x_abs >= 70.0 else 56.3)
+            target_y = 207.75 if slot_name == "Slot_5" else cy
             return target_x, target_y
 
-        cx = slot.x_abs + (slot.width_mm / 2.0)
-        cy = slot.y_abs + (slot.height_mm / 2.0)
+        # 4. MYRIAMED 48-WELL EHM PLATE (Slot_4 default or myriamed/ehm labware)
+        if ("myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "ehm" in lw_src or "myriamed" in lw_src) or (not labware and slot_name == "Slot_4"):
+            col_x = {'1': 106.00, '2': 88.00, '3': 70.00, '4': 52.00, '5': 34.00, '6': 16.00}
+            row_y = {
+                'A': 60.0, 'B': 70.0, 'C': 80.0, 'D': 90.0,
+                'E': 100.0, 'F': 110.0, 'G': 120.0, 'H': 130.0
+            }
+            if len(well_id) >= 2:
+                r_c = well_id[0].upper()
+                c_c = well_id[1:]
+                if r_c in row_y and c_c in col_x:
+                    return col_x[c_c], row_y[r_c]
+            if hasattr(self, 'logger'):
+                self.logger.warning(f"Slot 4 Override: Well {well_id} falls outside defined EHM grid.")
 
-        # Force dead-center geometric tracking for waste trough ONLY
-        if slot_name == "Slot_6":
-            return cx, cy
+        # 5. 96-WELL FORMAT (Tip Rack or 96-Well Microplate on any slot!)
+        if ("96" in lw_name or "tip" in lw_name or "tip_rack" in lw_src or "96" in lw_src or
+            (labware and getattr(labware, 'rows', 0) == 8 and getattr(labware, 'columns', 0) == 12)) or (not labware and slot_name == "Slot_3"):
+            origin_x = 242.0 if slot.x_abs >= 70.0 else 106.8
+            origin_y = slot.y_abs if slot.y_abs >= 40.0 else 60.0
+            if len(well_id) >= 2:
+                r_c = well_id[0].upper()
+                c_str = well_id[1:]
+                try:
+                    c_idx = int(c_str) - 1
+                    r_idx = ord(r_c) - ord('A')
+                    if 0 <= c_idx < 12 and 0 <= r_idx < 8:
+                        return origin_x - (c_idx * 9.0), origin_y + (r_idx * 9.0)
+                except ValueError:
+                    pass
 
-        if slot_name not in self.deck_labware:
-            raise ValueError(f"Labware missing at {slot_name}")
+        # 6. Fallback Generic Labware
+        if labware and well_id in labware.wells:
+            well_obj = labware.wells[well_id]
+            target_x = (slot.x_abs + slot.width_mm) - well_obj.x_rel
+            target_y = slot.y_abs + well_obj.y_rel
+            return target_x, target_y
 
-        labware = self.deck_labware[slot_name]
-
-        if well_id not in labware.wells:
-            raise ValueError(f"Well {well_id} missing.")
-
-        first_w = list(labware.wells.values())[0]
-        lw_w = max(w.x_rel for w in labware.wells.values()) + first_w.x_rel
-        lw_h = max(w.y_rel for w in labware.wells.values()) + first_w.y_rel
-        well_obj = labware.wells[well_id]
-
-        target_x = cx + ((lw_w / 2.0) - well_obj.x_rel)
-
-        if self.pipettor.multichannel:
-            col_str = well_id[1:]
-            row_char_first = 'A'
-            row_char_last = chr(ord('A') + labware.rows - 1)
-
-            w_first = labware.wells.get(f"{row_char_first}{col_str}", well_obj)
-            w_last = labware.wells.get(f"{row_char_last}{col_str}", well_obj)
-
-            target_y_first = slot.y_abs + w_first.y_rel
-            target_y_last = slot.y_abs + w_last.y_rel
-            target_y = (target_y_first + target_y_last) / 2.0
-        else:
-            target_y = cy - (lw_h / 2.0) + well_obj.y_rel
-
-        return target_x, target_y
+        return cx, cy
 
     def get_target_z(self, action: str, slot_name: str, well_id: str, has_tips: bool = True,
                      extra_z: float = 0.0) -> float:
@@ -386,20 +381,22 @@ class LIMSOrchestrator:
         slot_obj = self.deck_slots.get(slot_name)
         slot_z_offset = slot_obj.z_offset if slot_obj else 0.0
         labware_obj = self.deck_labware.get(slot_name)
+        lw_name = (getattr(labware_obj, 'name', '') or '').lower()
+        lw_src = (getattr(labware_obj, 'source_file', '') or '').lower()
 
         if action in ["Aspirate Media", "Dispense Media", "Discard Tip"]:
-            # --- Z-DEPTH FIX: Force 102.0mm for EHM plates to prevent air-drawing ---
-            if slot_name == "Slot_4" or (labware_obj and "ehm" in labware_obj.name.lower()):
-                base_z = 98.0
-            elif slot_name == "Slot_5":
-                base_z = 101.5
-            elif slot_name == "Slot_6":
+            if "waste" in lw_name or "waste" in lw_src or (not labware_obj and slot_name in ["Slot_6", "Slot_1"]):
                 base_z = 90.0
+            elif "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
+                base_z = 98.0
+            elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name == "Slot_5"):
+                base_z = 101.5
+            elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or (not labware_obj and slot_name == "Slot_4"):
+                base_z = 98.0
+            elif "96" in lw_name or "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
+                base_z = 98.0
             elif action == "Discard Tip" and slot_name == "Slot_1":
                 base_z = 90.0
-            elif labware_obj and (
-                    getattr(labware_obj, 'z_height_mm', 20.0) == 105.81 or "reservoir" in labware_obj.name.lower()):
-                base_z = 101.5
             else:
                 base_z = 101.0
 
