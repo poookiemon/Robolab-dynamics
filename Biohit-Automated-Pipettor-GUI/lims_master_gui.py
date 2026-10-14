@@ -88,9 +88,10 @@ class LIMSMasterApp:
         filemenu.add_command(label="New Deck Layout", command=self.action_new_deck)
         filemenu.add_command(label="Load Workspace...", command=self.action_load_deck)
         filemenu.add_command(label="Save Workspace As...", command=self.action_save_deck_as)
-        filemenu.add_separator()
         filemenu.add_command(label="Load JSON Protocol...", command=self.action_load_workflow)
         filemenu.add_command(label="Save JSON Protocol As...", command=self.action_save_workflow_as)
+        filemenu.add_separator()
+        filemenu.add_command(label="Import Python Protocol (.py)...", command=self.action_import_python_protocol)
         filemenu.add_separator()
         filemenu.add_command(label="Machine Chassis Settings...", command=self.action_edit_machine_limits)
         filemenu.add_separator()
@@ -830,6 +831,10 @@ class LIMSMasterApp:
         ttk.Button(pane_ctrl, text="+ Add Step to Protocol", command=self.add_wf_step).pack(fill=tk.X, pady=10)
         ttk.Button(pane_ctrl, text="Clear Protocol",
                    command=lambda: [self.wf_box.delete(0, tk.END), self.workflow_sequence.clear()]).pack(fill=tk.X)
+        ttk.Separator(pane_ctrl, orient="horizontal").pack(fill=tk.X, pady=8)
+        ttk.Button(pane_ctrl, text="📥 Convert & Import Python (.py)", command=self.action_import_python_protocol).pack(fill=tk.X, pady=2)
+        ttk.Button(pane_ctrl, text="📂 Load JSON Protocol", command=self.action_load_workflow).pack(fill=tk.X, pady=2)
+        ttk.Button(pane_ctrl, text="💾 Save Protocol As JSON...", command=self.action_save_workflow_as).pack(fill=tk.X, pady=2)
 
         self.wf_box = tk.Listbox(pane_list, font=("Consolas", 11), bg="#f8f9fa", fg="black", selectbackground="#007bff")
         self.wf_box.pack(fill=tk.BOTH, expand=True)
@@ -1889,6 +1894,109 @@ class LIMSMasterApp:
             except Exception as e:
                 self.logger.error(f"Import Exception: {str(e)}")
                 messagebox.showerror("Import Exception", f"Failed to parse protocol file.\n\nTraceback: {str(e)}")
+
+    def action_import_python_protocol(self):
+        filepath = filedialog.askopenfilename(
+            title="Import Opentrons Python Protocol (.py)",
+            filetypes=[("Python Script", "*.py"), ("All Files", "*.*")]
+        )
+        if not filepath:
+            return
+
+        try:
+            from opentrons_python_converter import detect_opentrons_labware, convert_opentrons_py_to_biohit
+
+            detected_lw = detect_opentrons_labware(filepath)
+
+            top = tk.Toplevel(self.root)
+            top.title("Opentrons to Biohit Slot Mapping")
+            top.geometry("520x420")
+            top.resizable(False, False)
+            top.transient(self.root)
+            top.grab_set()
+
+            ttk.Label(top, text="Import Opentrons Python Protocol", font=("Arial", 12, "bold")).pack(pady=(12, 4))
+            ttk.Label(top, text=f"File: {os.path.basename(filepath)}", font=("Arial", 9, "italic"), foreground="gray").pack(pady=(0, 10))
+
+            frame_mappings = ttk.LabelFrame(top, text="Detected Labware & Slot Assignments", padding=10)
+            frame_mappings.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
+
+            biohit_slots = ["Slot_1", "Slot_2", "Slot_3", "Slot_4", "Slot_5", "Slot_6"]
+            combos = {}
+
+            if detected_lw:
+                for idx, item in enumerate(detected_lw):
+                    row = ttk.Frame(frame_mappings)
+                    row.pack(fill=tk.X, pady=4)
+
+                    lbl_text = f"{item['name'][:24]} (OT Slot {item['opentrons_slot']}):"
+                    ttk.Label(row, text=lbl_text, width=32, anchor="w").pack(side=tk.LEFT)
+
+                    cb = ttk.Combobox(row, values=biohit_slots, state="readonly", width=12)
+                    suggested = item.get("suggested_biohit_slot", "Slot_4")
+                    cb.set(suggested)
+                    cb.pack(side=tk.RIGHT)
+                    combos[item['opentrons_slot']] = cb
+            else:
+                ttk.Label(frame_mappings, text="No explicit labware definitions detected.\nDefault slot layout will be used.", justify="center").pack(pady=20)
+
+            frame_stroke = ttk.Frame(top)
+            frame_stroke.pack(fill=tk.X, padx=15, pady=8)
+            ttk.Label(frame_stroke, text="Max Pipette Stroke (µL):").pack(side=tk.LEFT)
+            ent_stroke = ttk.Entry(frame_stroke, width=8)
+            current_tip_vol = getattr(getattr(self.lims, 'pipettor', None), 'tip_volume', 200.0)
+            ent_stroke.insert(0, str(float(current_tip_vol)))
+            ent_stroke.pack(side=tk.LEFT, padx=5)
+
+            def do_convert():
+                try:
+                    slot_map = {ot_s: cb.get() for ot_s, cb in combos.items()}
+                    try:
+                        max_vol = float(ent_stroke.get())
+                    except ValueError:
+                        max_vol = 200.0
+
+                    converted_steps = convert_opentrons_py_to_biohit(filepath, slot_mapping=slot_map, max_volume=max_vol)
+
+                    if not converted_steps:
+                        messagebox.showwarning("Empty Protocol", "No pipetting steps were generated from this script.")
+                        top.destroy()
+                        return
+
+                    self.workflow_sequence.clear()
+                    self.wf_box.delete(0, tk.END)
+
+                    for step in converted_steps:
+                        self.workflow_sequence.append(step)
+                        action = step['action']
+                        m = step.get('mode', 'auto')
+                        if action == "Pick Up Tip":
+                            msg = f"[{action.upper()}] from {step.get('slot', '')}, Well {step.get('well', '')}"
+                        elif action == "Discard Tip":
+                            msg = f"[{action.upper()}] into {step.get('slot', '')} (Waste Trough)"
+                        else:
+                            z_msg = f" (Z+{step.get('extra_z', 0.0)}mm)" if step.get('extra_z', 0.0) > 0 else ""
+                            msg = f"[{action.upper()}] {step.get('volume', 0.0)}\u03bcL at {step.get('slot', '')}, Well {step.get('well', '')}{z_msg}"
+                        self.wf_box.insert(tk.END, msg)
+
+                    top.destroy()
+                    self.logger.info(f"Imported {len(converted_steps)} steps from Python script {os.path.basename(filepath)}.")
+                    messagebox.showinfo(
+                        "Conversion Complete",
+                        f"Successfully converted and loaded {len(converted_steps)} steps from:\n{os.path.basename(filepath)}\n\nYou can now run the workflow or export it via 'Save JSON Protocol As...'."
+                    )
+                except Exception as ce:
+                    self.logger.error(f"Conversion error: {ce}")
+                    messagebox.showerror("Conversion Error", f"Failed to convert Python script:\n{ce}")
+
+            btn_frame = ttk.Frame(top)
+            btn_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
+            ttk.Button(btn_frame, text="Cancel", command=top.destroy).pack(side=tk.RIGHT, padx=5)
+            ttk.Button(btn_frame, text="✔ Convert & Load Protocol", command=do_convert).pack(side=tk.RIGHT, padx=5)
+
+        except Exception as e:
+            self.logger.error(f"Python script parse error: {e}")
+            messagebox.showerror("Import Error", f"Could not inspect Python protocol:\n{e}")
 
 
 if __name__ == "__main__":
