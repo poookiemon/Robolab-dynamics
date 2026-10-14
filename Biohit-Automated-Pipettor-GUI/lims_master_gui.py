@@ -1652,19 +1652,28 @@ class LIMSMasterApp:
                             if action == "Aspirate Media":
                                 # --- GUI SAFETY MANIFOLD CAP & EQUILIBRATION ---
                                 requested_vol = float(vol)
-                                actual_vol = min(requested_vol, self.lims.pipettor.tip_volume)
+                                if requested_vol > 0:
+                                    actual_vol = min(requested_vol, self.lims.pipettor.tip_volume)
 
-                                if requested_vol > self.lims.pipettor.tip_volume:
-                                    self.logger.warning(
-                                        f"MANIFOLD FLOOD PREVENTED: {requested_vol}uL requested, but tip limit is {self.lims.pipettor.tip_volume}uL. Automatically capped to {actual_vol}uL.")
+                                    if requested_vol > self.lims.pipettor.tip_volume:
+                                        self.logger.warning(
+                                            f"MANIFOLD FLOOD PREVENTED: {requested_vol}uL requested, but tip limit is {self.lims.pipettor.tip_volume}uL. Automatically capped to {actual_vol}uL.")
 
-                                self.lims.pipettor.hardware.aspirate(actual_vol)
-                                time.sleep(1.5)
+                                    self.lims.pipettor.hardware.aspirate(actual_vol)
+                                    time.sleep(1.5)
+                                else:
+                                    time.sleep(0.3)
                             elif action == "Dispense Media":
                                 actual_dispense = min(float(vol), self.lims.pipettor.tip_volume)
-                                self.lims.pipettor.hardware.dispense(actual_dispense)
-                                time.sleep(0.05)
-                                self.lims.pipettor.hardware.dispense(50)
+                                if actual_dispense > 0:
+                                    try:
+                                        self.lims.pipettor.hardware.dispense(actual_dispense)
+                                        time.sleep(0.05)
+                                        self.lims.pipettor.hardware.dispense(50)
+                                    except Exception as d_err:
+                                        self.logger.warning(f"Dispense blowout exception ignored: {d_err}")
+                                else:
+                                    time.sleep(0.3)
 
                             elif action == "Discard Tip":
                                 self.lims.pipettor.hardware.eject_tip()

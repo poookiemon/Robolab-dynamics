@@ -151,14 +151,24 @@ class WorkflowRunner(QThread):
                     if self.lims.pipettor.hardware:
                         self.lims.pipettor.hardware.move_z(tz)
                         if action == "Aspirate Media":
-                            actual_vol = min(float(vol), self.lims.pipettor.tip_volume)
-                            self.lims.pipettor.hardware.aspirate(actual_vol)
-                            time.sleep(1.5)
+                            requested_vol = float(vol)
+                            if requested_vol > 0:
+                                actual_vol = min(requested_vol, self.lims.pipettor.tip_volume)
+                                self.lims.pipettor.hardware.aspirate(actual_vol)
+                                time.sleep(1.5)
+                            else:
+                                time.sleep(0.3)
                         elif action == "Dispense Media":
                             actual_dispense = min(float(vol), self.lims.pipettor.tip_volume)
-                            self.lims.pipettor.hardware.dispense(actual_dispense)
-                            time.sleep(0.05)
-                            self.lims.pipettor.hardware.dispense(50)
+                            if actual_dispense > 0:
+                                try:
+                                    self.lims.pipettor.hardware.dispense(actual_dispense)
+                                    time.sleep(0.05)
+                                    self.lims.pipettor.hardware.dispense(50)
+                                except Exception as d_err:
+                                    pass
+                            else:
+                                time.sleep(0.3)
                         elif action == "Discard Tip":
                             self.lims.pipettor.hardware.eject_tip()
                             self.gui.has_tip = False
