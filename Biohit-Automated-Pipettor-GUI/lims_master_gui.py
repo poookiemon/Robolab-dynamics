@@ -1169,7 +1169,7 @@ class LIMSMasterApp:
             self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
             time.sleep(0.05)
 
-            self.logger.info(f"Triggering native pick_tip(86.0) search algorithm at {current_well}.")
+            self.logger.info(f"Triggering native pick_tip(96.0) search algorithm at {current_well}.")
             try:
                 hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                 labware_obj = self.lims.deck_labware.get(slot_name)
@@ -1181,7 +1181,7 @@ class LIMSMasterApp:
                     self.lims.pipettor.hardware.z_speed = 3
                     self.lims.pipettor.hardware.tip_pickup_force = 26
                     try:
-                        self.lims.pipettor.hardware.pick_tip(86.0)
+                        self.lims.pipettor.hardware.pick_tip(96.0)
                     except Exception as p_err:
                         curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
                         if curr_z < 76.0:
@@ -1189,7 +1189,7 @@ class LIMSMasterApp:
                     curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
                     if curr_z >= 76.0:
                         try:
-                            push_z = min(curr_z + 2.0, 86.5)
+                            push_z = min(curr_z + 2.0, 96.5)
                             self.lims.pipettor.hardware.move_z(push_z)
                             time.sleep(0.3)
                         except Exception as pe:
@@ -1402,7 +1402,7 @@ class LIMSMasterApp:
 
                 try:
                     if action == "Pick Up Tip":
-                        pickup_limit = min(88.0, max(82.0, 86.0 + extra_z))
+                        pickup_limit = min(98.0, max(92.0, 96.0 + extra_z))
                         hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                         labware_obj = self.lims.deck_labware.get(slot_name)
                         z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
@@ -1426,7 +1426,7 @@ class LIMSMasterApp:
                                     curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
                                     if curr_z >= 76.0:
                                         try:
-                                            push_z = min(curr_z + 2.0, 86.5)
+                                            push_z = min(curr_z + 2.0, 96.5)
                                             self.lims.pipettor.hardware.move_z(push_z)
                                             time.sleep(0.3)
                                         except Exception as pe:
@@ -1477,7 +1477,7 @@ class LIMSMasterApp:
                                         curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
                                         if curr_z >= 76.0:
                                             try:
-                                                push_z = min(curr_z + 2.0, 86.5)
+                                                push_z = min(curr_z + 2.0, 96.5)
                                                 self.lims.pipettor.hardware.move_z(push_z)
                                                 time.sleep(0.3)
                                             except Exception as pe:
@@ -1526,7 +1526,7 @@ class LIMSMasterApp:
                                     curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
                                     if curr_z >= 76.0:
                                         try:
-                                            push_z = min(curr_z + 2.0, 86.5)
+                                            push_z = min(curr_z + 2.0, 96.5)
                                             self.lims.pipettor.hardware.move_z(push_z)
                                             time.sleep(0.3)
                                         except Exception as pe:
