@@ -7,9 +7,14 @@ from working import LIMSOrchestrator, Labware, DeckSlot, Pipettor
 from gui import GUI as AnalyzerGUI
 
 import xml.etree.ElementTree as ET
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
+try:
+    import pandas as pd
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+except ImportError:
+    pd = None
+    sns = None
+    plt = None
 import re
 
 
@@ -973,6 +978,12 @@ class LIMSMasterApp:
                 loaded_sequence = json.load(f)
             self.workflow_sequence.clear()
             self.wf_box.delete(0, tk.END)
+            lw_dir = self.get_labware_dir()
+            ehm_path = os.path.join(lw_dir, "myriamed_48_well.json")
+            if os.path.exists(ehm_path):
+                self.lims.deck_labware["Slot_4"] = Labware(ehm_path)
+                self.lims.deck_labware["Slot_4"].source_file = "myriamed_48_well.json"
+            if "Slot_4" not in self.placed_slots: self.placed_slots.append("Slot_4")
             for step in loaded_sequence:
                 self.workflow_sequence.append(step)
                 if step['action'] == "Pick Up Tip":
@@ -980,7 +991,8 @@ class LIMSMasterApp:
                 else:
                     msg = f"[{step['action'].upper()}] at {step.get('slot', '')}, Well {step.get('well', '')}"
                 self.wf_box.insert(tk.END, msg)
-            self.logger.info(f"Loaded EHM 48-Well Mock Test Protocol ({len(loaded_sequence)} steps).")
+            if hasattr(self, 'draw_deck'): self.draw_deck()
+            self.logger.info(f"Loaded EHM 48-Well Mock Test Protocol ({len(loaded_sequence)} steps). Labware auto-assigned.")
         else:
             messagebox.showerror("File Not Found", "Could not locate ehm_48_well_test.json")
 
@@ -1001,6 +1013,20 @@ class LIMSMasterApp:
                 loaded_sequence = json.load(f)
             self.workflow_sequence.clear()
             self.wf_box.delete(0, tk.END)
+            lw_dir = self.get_labware_dir()
+            deck_setup = {
+                "Slot_2": "reservoir_3_well.json",
+                "Slot_3": "reservoir_6_column.json",
+                "Slot_4": "tip_rack_1000ul.json",
+                "Slot_5": "generic_96_well_plate.json",
+                "Slot_6": "waste_trough.json"
+            }
+            for s_name, lw_file in deck_setup.items():
+                lp = os.path.join(lw_dir, lw_file)
+                if os.path.exists(lp):
+                    self.lims.deck_labware[s_name] = Labware(lp)
+                    self.lims.deck_labware[s_name].source_file = lw_file
+                if s_name not in self.placed_slots: self.placed_slots.append(s_name)
             for step in loaded_sequence:
                 self.workflow_sequence.append(step)
                 act = step['action']
@@ -1014,7 +1040,8 @@ class LIMSMasterApp:
                 else:
                     msg = f"[{act.upper()}] {vol}\u03bcL at {slot}, Well {well}"
                 self.wf_box.insert(tk.END, msg)
-            self.logger.info(f"Loaded Quick 5-Slot Mock Protocol ({len(loaded_sequence)} steps).")
+            if hasattr(self, 'draw_deck'): self.draw_deck()
+            self.logger.info(f"Loaded Quick 5-Slot Mock Protocol ({len(loaded_sequence)} steps). Labware auto-assigned.")
         else:
             messagebox.showerror("File Not Found", "Could not locate quick_mock_5slots.json")
 
@@ -1036,6 +1063,13 @@ class LIMSMasterApp:
             self.workflow_sequence.clear()
             self.wf_box.delete(0, tk.END)
             self.has_tip_var.set(True)
+            lw_dir = self.get_labware_dir()
+            plate_file = "generic_96_well_plate.json"
+            plate_path = os.path.join(lw_dir, plate_file)
+            if os.path.exists(plate_path):
+                self.lims.deck_labware["Slot_5"] = Labware(plate_path)
+                self.lims.deck_labware["Slot_5"].source_file = plate_file
+            if "Slot_5" not in self.placed_slots: self.placed_slots.append("Slot_5")
             for step in loaded_sequence:
                 self.workflow_sequence.append(step)
                 act = step['action']
@@ -1043,7 +1077,8 @@ class LIMSMasterApp:
                 well = step.get('well', '')
                 msg = f"[{act.upper()}] at {slot}, Well {well}"
                 self.wf_box.insert(tk.END, msg)
-            self.logger.info(f"Loaded Slot 5 96-Well Row A Test Protocol ({len(loaded_sequence)} steps). Tip state marked ATTACHED.")
+            if hasattr(self, 'draw_deck'): self.draw_deck()
+            self.logger.info(f"Loaded Slot 5 96-Well Row A Test Protocol ({len(loaded_sequence)} steps). Labware auto-assigned and Tip state marked ATTACHED.")
         else:
             messagebox.showerror("File Not Found", "Could not locate slot5_96well_rowA_test.json")
 
@@ -1155,13 +1190,17 @@ class LIMSMasterApp:
     def stop_run(self):
         self.is_aborted = True
         self.pause_event.set()
-        self.logger.info("Protocol Abort Signal Sent.")
+        self.logger.info("Protocol Abort Signal Sent. Halting sequence...")
+        try:
+            self.btn_stop.config(state=tk.DISABLED, text="Stopping...")
+        except Exception:
+            pass
 
     def update_ui_state(self, running):
         state = tk.DISABLED if running else tk.NORMAL
         self.btn_play.config(state=state)
         self.btn_pause.config(state=tk.NORMAL if running else tk.DISABLED)
-        self.btn_stop.config(state=tk.NORMAL if running else tk.DISABLED)
+        self.btn_stop.config(state=tk.NORMAL if running else tk.DISABLED, text="■ STOP")
 
     def ask_error_resolution(self, error_msg, step_idx):
         self.pause_event.clear()
@@ -1205,8 +1244,8 @@ class LIMSMasterApp:
             c_c = well_id[1:] if len(well_id) >= 2 else (well_id if well_id in col_x_map else '1')
             return col_x_map.get(c_c, base_x + 63.9), cy
 
-        # 3. 6-COLUMN RESERVOIR (Slot_5 default or reservoir_6 labware)
-        if ("6-column" in lw_name or "reservoir_6" in lw_src or "6_column" in lw_src) or (not labware_obj and slot_name == "Slot_5"):
+        # 3. 6-COLUMN RESERVOIR (reservoir_6 labware)
+        if "6-column" in lw_name or "reservoir_6" in lw_src or "6_column" in lw_src:
             col_x = {
                 '1': 239.0, '2': 220.0, '3': 201.0,
                 '4': 182.0, '5': 163.0, '6': 144.0
@@ -1235,7 +1274,7 @@ class LIMSMasterApp:
 
         # 5. 96-WELL FORMAT (Tip Rack or 96-Well Microplate on any slot!)
         if ("96" in lw_name or "tip" in lw_name or "tip_rack" in lw_src or "96" in lw_src or
-            (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12)) or (not labware_obj and slot_name == "Slot_3"):
+            (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12)) or (not labware_obj and slot_name in ["Slot_3", "Slot_4", "Slot_5"]):
             if slot_name == "Slot_5":
                 col_x = {
                     '1': 243.0, '2': 234.0, '3': 225.0, '4': 216.0,
@@ -1293,9 +1332,9 @@ class LIMSMasterApp:
                 base_z = 90.0
             elif "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
                 base_z = 98.0
-            elif ("96" in lw_name or "96" in lw_src) and ("tip" not in lw_name and "tip" not in lw_src):
+            elif ("96" in lw_name or "96" in lw_src or (not labware_obj and slot_name == "Slot_5")) and ("tip" not in lw_name and "tip" not in lw_src):
                 base_z = 76.0
-            elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name == "Slot_5"):
+            elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name == "Slot_3"):
                 base_z = 101.5
             elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or (not labware_obj and slot_name == "Slot_4"):
                 base_z = 98.0
@@ -1426,11 +1465,15 @@ class LIMSMasterApp:
             self.root.after(1000, self.update_timer)
 
     def execute_protocol(self):
+        if getattr(self, 'is_running', False):
+            self.logger.warning("Protocol sequence is already active or stopping. Please wait.")
+            return
         if not self.lims.hw.is_initialized:
             messagebox.showerror("Safety Interlock",
                                  "Hardware must be homed via 'Connect & Initialize' before executing automated workflows.")
             return
         if not self.workflow_sequence: return
+        self.is_running = True
 
         # --- AUTO SAVE FUNCTIONALITY INJECTED HERE ---
         export_dir = os.path.join(os.path.expanduser("~"), "Desktop", "pipette trials export")
@@ -1564,23 +1607,35 @@ class LIMSMasterApp:
 
                 if mode == "manual":
                     target_x, target_y, target_z = step.get('x', 0.0), step.get('y', 0.0), step.get('z', 0.0)
-                elif slot_name in self.lims.deck_slots and (
-                        slot_name in self.lims.deck_labware or slot_name == "Slot_6"):
-                    if slot_name == "Slot_6" or well_id in self.lims.deck_labware[slot_name].wells:
+                elif slot_name in self.lims.deck_slots:
+                    # Auto-assign labware fallback if missing from deck_labware
+                    if slot_name not in self.lims.deck_labware:
+                        lw_dir = self.get_labware_dir()
+                        default_lw_map = {
+                            "Slot_2": "reservoir_3_well.json",
+                            "Slot_3": "reservoir_6_column.json",
+                            "Slot_4": "tip_rack_1000ul.json" if (well_id and well_id[0] in "ABCDEFGH") else "myriamed_48_well.json",
+                            "Slot_5": "generic_96_well_plate.json",
+                            "Slot_6": "waste_trough.json"
+                        }
+                        def_file = default_lw_map.get(slot_name)
+                        if def_file:
+                            def_path = os.path.join(lw_dir, def_file)
+                            if os.path.exists(def_path):
+                                self.lims.deck_labware[slot_name] = Labware(def_path)
+                                self.lims.deck_labware[slot_name].source_file = def_file
+                                if slot_name not in self.placed_slots: self.placed_slots.append(slot_name)
+                                self.logger.info(f"Auto-assigned {def_file} to {slot_name} for protocol execution.")
 
-                        # Safe Tuple Unpacking during automated run
-                        coords = self._calculate_xy(slot_name, well_id)
-                        if coords:
-                            target_x, target_y = coords
-                        else:
-                            self.ask_error_resolution("Well ID mapping failed.", i)
-                            continue
-
+                    # Calculate XY coordinates
+                    coords = self._calculate_xy(slot_name, well_id)
+                    if coords and (coords[0] != 0.0 or coords[1] != 0.0):
+                        target_x, target_y = coords
                     else:
-                        self.ask_error_resolution("Well ID mapping failed.", i)
+                        self.ask_error_resolution(f"Coordinate mapping failed for {slot_name} Well {well_id}.", i)
                         continue
                 else:
-                    self.ask_error_resolution("Coordinate mapping failed. Is Labware assigned?", i)
+                    self.ask_error_resolution(f"Unknown slot '{slot_name}'. Coordinate mapping failed.", i)
                     continue
 
                 try:
@@ -2077,6 +2132,28 @@ class LIMSMasterApp:
                             msg = f"[{step['action'].upper()}] {step.get('volume', 0.0)}\u03bcL at {step.get('slot', '')}, Well {step.get('well', '')}{z_msg}"
 
                     self.wf_box.insert(tk.END, msg)
+
+                # Auto-mount labware for any referenced slots not currently mounted
+                lw_dir = self.get_labware_dir()
+                for step in loaded_sequence:
+                    s_name = step.get('slot', '')
+                    w_name = step.get('well', '')
+                    if s_name and s_name.startswith('Slot_') and s_name not in self.lims.deck_labware:
+                        default_map = {
+                            "Slot_2": "reservoir_3_well.json",
+                            "Slot_3": "reservoir_6_column.json",
+                            "Slot_4": "tip_rack_1000ul.json" if (w_name and w_name[0] in "ABCDEFGH") else "myriamed_48_well.json",
+                            "Slot_5": "generic_96_well_plate.json",
+                            "Slot_6": "waste_trough.json"
+                        }
+                        lw_file = default_map.get(s_name)
+                        if lw_file:
+                            lp = os.path.join(lw_dir, lw_file)
+                            if os.path.exists(lp):
+                                self.lims.deck_labware[s_name] = Labware(lp)
+                                self.lims.deck_labware[s_name].source_file = lw_file
+                            if s_name not in self.placed_slots: self.placed_slots.append(s_name)
+                if hasattr(self, 'draw_deck'): self.draw_deck()
 
             except Exception as e:
                 self.logger.error(f"Import Exception: {str(e)}")

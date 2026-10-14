@@ -267,7 +267,7 @@ class LIMSPyQtApp(QMainWindow):
             return col_x_map.get(c_c, base_x + 63.9), cy
 
         # 3. 6-COLUMN RESERVOIR
-        if ("6-column" in lw_name or "reservoir_6" in lw_src or "6_column" in lw_src) or (not labware_obj and slot_name == "Slot_5"):
+        if "6-column" in lw_name or "reservoir_6" in lw_src or "6_column" in lw_src:
             col_x = {
                 '1': 239.0, '2': 220.0, '3': 201.0,
                 '4': 182.0, '5': 163.0, '6': 144.0
@@ -294,7 +294,7 @@ class LIMSPyQtApp(QMainWindow):
 
         # 5. 96-WELL FORMAT
         if ("96" in lw_name or "tip" in lw_name or "tip_rack" in lw_src or "96" in lw_src or
-            (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12)) or (not labware_obj and slot_name == "Slot_3"):
+            (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12)) or (not labware_obj and slot_name in ["Slot_3", "Slot_4", "Slot_5"]):
             if slot_name == "Slot_5":
                 col_x = {
                     '1': 243.0, '2': 234.0, '3': 225.0, '4': 216.0,
@@ -348,9 +348,9 @@ class LIMSPyQtApp(QMainWindow):
                 base_z = 90.0
             elif "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
                 base_z = 98.0
-            elif ("96" in lw_name or "96" in lw_src) and ("tip" not in lw_name and "tip" not in lw_src):
+            elif ("96" in lw_name or "96" in lw_src or (not labware_obj and slot_name == "Slot_5")) and ("tip" not in lw_name and "tip" not in lw_src):
                 base_z = 76.0
-            elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name == "Slot_5"):
+            elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name == "Slot_3"):
                 base_z = 101.5
             elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or (not labware_obj and slot_name == "Slot_4"):
                 base_z = 98.0
