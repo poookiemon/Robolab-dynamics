@@ -574,16 +574,39 @@ class LIMSMasterApp:
             self.jog_sliders[axis] = e
 
             btn = tk.Button(f, text="MOVE", bg="#007bff", fg="white", font=("Arial", 9, "bold"), state='disabled',
-                            command=lambda ax=axis: self.lims.hw.move_to(self.jog_vars["X"].get(),
-                                                                         self.jog_vars["Y"].get(),
-                                                                         self.jog_vars["Z"].get(),
-                                                                         speed=self.speed_var.get()))
+                            command=lambda ax=axis: self._execute_jog_move(ax))
             btn.pack(side=tk.LEFT, padx=5)
             self.jog_btns[axis] = btn
 
-            e.bind('<Return>',
-                   lambda event, ax=axis: self.lims.hw.move_to(self.jog_vars["X"].get(), self.jog_vars["Y"].get(),
-                                                               self.jog_vars["Z"].get(), speed=self.speed_var.get()))
+            e.bind('<Return>', lambda event, ax=axis: self._execute_jog_move(ax))
+
+    def _safe_get_jog(self, axis):
+        try:
+            val = self.jog_vars[axis].get()
+            return float(val)
+        except Exception:
+            cur = self.current_pos.get(axis, 0.0)
+            try:
+                self.jog_vars[axis].set(cur)
+            except Exception:
+                pass
+            return cur
+
+    def _safe_get_speed(self):
+        try:
+            return float(self.speed_var.get())
+        except Exception:
+            return 1500.0
+
+    def _execute_jog_move(self, ax=None):
+        x = self._safe_get_jog("X")
+        y = self._safe_get_jog("Y")
+        z = self._safe_get_jog("Z")
+        speed = self._safe_get_speed()
+        try:
+            self.lims.hw.move_to(x, y, z, speed=speed)
+        except Exception as e:
+            self.logger.error(f"Jog move failed: {e}")
 
     def start_telemetry(self):
         if not self.telemetry_active:
@@ -728,16 +751,11 @@ class LIMSMasterApp:
             self.deck_jog_sliders[axis] = e
 
             btn = tk.Button(f, text="MOVE", bg="#007bff", fg="white", font=("Arial", 8, "bold"), state='disabled',
-                            command=lambda ax=axis: self.lims.hw.move_to(self.jog_vars["X"].get(),
-                                                                         self.jog_vars["Y"].get(),
-                                                                         self.jog_vars["Z"].get(),
-                                                                         speed=self.speed_var.get()))
+                            command=lambda ax=axis: self._execute_jog_move(ax))
             btn.pack(side=tk.LEFT, padx=5)
             self.deck_jog_btns[axis] = btn
 
-            e.bind('<Return>',
-                   lambda event, ax=axis: self.lims.hw.move_to(self.jog_vars["X"].get(), self.jog_vars["Y"].get(),
-                                                               self.jog_vars["Z"].get(), speed=self.speed_var.get()))
+            e.bind('<Return>', lambda event, ax=axis: self._execute_jog_move(ax))
 
         ttk.Label(pane_l, text="Inventory", font=("Arial", 10, "bold")).pack(pady=5)
         self.list_unplaced = tk.Listbox(pane_l, height=10, bg="white")
@@ -2020,15 +2038,30 @@ class LIMSMasterApp:
 
     def _deserialize_workspace(self, path):
         if not os.path.exists(path): return
-        with open(path, 'r') as f:
-            data = json.load(f)
+        try:
+            with open(path, 'r') as f:
+                data = json.load(f)
+        except Exception as e:
+            messagebox.showerror("Read Error", f"Could not read workspace file:\n{e}")
+            return
+
+        if not isinstance(data, dict):
+            messagebox.showerror(
+                "File Format Mismatch",
+                "The selected file is a Protocol (sequence of steps), not a Deck Workspace layout.\n\n"
+                "To load a Protocol, click '📂 Load JSON Protocol' on the left panel.\n"
+                "Your current deck workspace has been kept safe."
+            )
+            return
+
         self.lims.deck_slots.clear()
         self.lims.deck_labware.clear()
         self.placed_slots.clear()
         self.unplaced_slots.clear()
         lw_dir = self.get_labware_dir()
         for n, d in data.items():
-            slot = DeckSlot(n, d['x_abs'], d['y_abs'], d['width_mm'], d['height_mm'])
+            if not isinstance(d, dict): continue
+            slot = DeckSlot(n, d.get('x_abs', 0.0), d.get('y_abs', 0.0), d.get('width_mm', 127.8), d.get('height_mm', 85.5))
             slot.z_offset = d.get('z_offset', 0.0)
             self.lims.deck_slots[n] = slot
             (self.placed_slots if d.get('is_placed', False) else self.unplaced_slots).append(n)
@@ -2053,18 +2086,19 @@ class LIMSMasterApp:
         if filepath:
             self._serialize_workspace(filepath)
             self.logger.info(f"Workspace successfully exported to {filepath}")
-        if filepath:
-            with open(filepath, 'w') as f: json.dump(self.workflow_sequence, f, indent=4)
 
     def action_load_deck(self):
-        p = filedialog.askopenfilename()
+        p = filedialog.askopenfilename(
+            title="Load Deck Workspace",
+            filetypes=[("JSON Workspace", "*.json"), ("All Files", "*.*")]
+        )
         if p: self._deserialize_workspace(p)
 
     def emergency_reset(self):
         cal_path = self.get_calibration_path()
         if os.path.exists(cal_path):
             self._deserialize_workspace(cal_path)
-        else:
+        if not self.lims.deck_slots:
             self.lims.deck_labware.clear()
             self.placed_slots.clear()
             self.unplaced_slots.clear()
