@@ -297,12 +297,12 @@ class LIMSPyQtApp(QMainWindow):
         if action in ["Aspirate Media", "Dispense Media", "Discard Tip"]:
             base_z = 101.0
             if slot_name == "Slot_4": base_z = 98.0
-            elif slot_name == "Slot_5": base_z = 105.0
+            elif slot_name == "Slot_5": base_z = 101.5
             elif slot_name == "Slot_6": base_z = 90.0
             elif action == "Discard Tip" and slot_name == "Slot_1": base_z = 90.0
             elif labware_obj and (getattr(labware_obj, 'z_height_mm', 20.0) == 105.81 or "reservoir" in labware_obj.name.lower()):
-                base_z = 105.0
-            return base_z + slot_z_offset + extra_z
+                base_z = 101.5
+            return min(base_z + slot_z_offset + extra_z, 103.5)
         return 0.0
 
     def build_jog_tab(self):
