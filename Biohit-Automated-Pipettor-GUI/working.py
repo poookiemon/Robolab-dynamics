@@ -168,7 +168,7 @@ class BiohitInterface:
                 hw_speed = getattr(self.pipettor.hardware, 'z_speed', 8)
                 z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
                 approach_z = max(0.0, z_height - 18.0)
-                pickup_limit = 101.0
+                pickup_limit = 106.0
                 self.pipettor.hardware.z_speed = hw_speed
                 self.pipettor.hardware.move_z(approach_z)
                 self.pipettor.hardware.z_speed = 3
@@ -180,9 +180,9 @@ class BiohitInterface:
                     if curr_z < 76.0:
                         raise p_err
                 curr_z = getattr(self.pipettor.hardware, 'z_position', 0.0)
-                if curr_z >= 76.0:
+                if curr_z >= 76.0 and curr_z < 103.0:
                     try:
-                        push_z = min(curr_z + 2.0, 101.5)
+                        push_z = min(curr_z + 2.0, 103.7)
                         self.pipettor.hardware.move_z(push_z)
                         time.sleep(0.3)
                     except Exception as pe:
