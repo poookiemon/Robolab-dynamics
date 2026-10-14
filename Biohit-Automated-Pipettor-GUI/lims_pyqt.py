@@ -113,7 +113,7 @@ class WorkflowRunner(QThread):
                         raise Exception("Well ID mapping failed")
                 
                 if action == "Pick Up Tip":
-                    pickup_limit = min(98.0, max(92.0, 96.0 + step.get('extra_z', 0.0)))
+                    pickup_limit = min(102.5, max(97.0, 101.0 + step.get('extra_z', 0.0)))
                     if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
                     self.lims.hw.move_to(target_x, target_y, 0, speed=1500)
                     time.sleep(0.05)
@@ -134,7 +134,7 @@ class WorkflowRunner(QThread):
                         curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
                         if curr_z >= 76.0:
                             try:
-                                self.lims.pipettor.hardware.move_z(min(curr_z + 2.0, 96.5))
+                                self.lims.pipettor.hardware.move_z(min(curr_z + 2.0, 101.5))
                                 time.sleep(0.3)
                             except Exception:
                                 pass
