@@ -17,7 +17,7 @@
         "height_mm": 35.0,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "reservoir_3_well.json"
+        "labware_file": null
     },
     "Slot_3": {
         "name": "Slot_3",
@@ -27,7 +27,7 @@
         "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "reservoir_6_column.json"
+        "labware_file": "tip_rack_1000ul.json"
     },
     "Slot_4": {
         "name": "Slot_4",
@@ -37,7 +37,7 @@
         "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "tip_rack_1000ul.json"
+        "labware_file": "myriamed_48_well.json"
     },
     "Slot_5": {
         "name": "Slot_5",
@@ -47,7 +47,7 @@
         "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "generic_96_well_plate.json"
+        "labware_file": "reservoir_6_column.json"
     },
     "Slot_6": {
         "name": "Slot_6",

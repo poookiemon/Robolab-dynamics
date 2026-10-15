@@ -1265,22 +1265,22 @@ class LIMSMasterApp:
         # 3. 6-COLUMN RESERVOIR (reservoir_6 labware)
         if "6-column" in lw_name or "reservoir_6" in lw_src or "6_column" in lw_src:
             col_x = {
-                '1': 239.0, '2': 220.0, '3': 201.0,
-                '4': 182.0, '5': 163.0, '6': 144.0
+                '1': 245.0, '2': 230.0, '3': 212.0,
+                '4': 195.5, '5': 179.0, '6': 162.5
             }
             if slot_obj.x_abs < 70.0:
                 col_x = {k: v - 135.2 for k, v in col_x.items()}
             col_char = well_id[1:] if len(well_id) >= 2 else '1'
-            target_x = col_x.get(col_char, 191.5 if slot_obj.x_abs >= 70.0 else 56.3)
-            target_y = 207.75 if slot_name == "Slot_5" else cy
+            target_x = col_x.get(col_char, 195.5 if slot_obj.x_abs >= 70.0 else 60.3)
+            target_y = 200.0 if slot_name == "Slot_5" else cy
             return target_x, target_y
 
         # 4. MYRIAMED 48-WELL EHM PLATE (Slot_4 default or myriamed/ehm labware)
         if ("myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "ehm" in lw_src or "myriamed" in lw_src) or (not labware_obj and slot_name == "Slot_4"):
             col_x = {'1': 106.00, '2': 88.00, '3': 70.00, '4': 52.00, '5': 34.00, '6': 16.00}
             row_y = {
-                'A': 60.0, 'B': 70.0, 'C': 80.0, 'D': 90.0,
-                'E': 100.0, 'F': 110.0, 'G': 120.0, 'H': 130.0
+                'A': 60.0, 'B': 69.0, 'C': 78.0, 'D': 87.0,
+                'E': 96.0, 'F': 105.0, 'G': 114.0, 'H': 123.0
             }
             if len(well_id) >= 2:
                 row_char = well_id[0].upper()
@@ -1352,8 +1352,8 @@ class LIMSMasterApp:
                 base_z = 98.0
             elif ("96" in lw_name or "96" in lw_src or (not labware_obj and slot_name == "Slot_5")) and ("tip" not in lw_name and "tip" not in lw_src):
                 base_z = 76.0
-            elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name == "Slot_3"):
-                base_z = 101.5
+            elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name in ["Slot_3", "Slot_5"]):
+                base_z = 103.0
             elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or (not labware_obj and slot_name == "Slot_4"):
                 base_z = 98.0
             elif "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):

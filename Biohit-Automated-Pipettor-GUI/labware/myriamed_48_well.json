@@ -1,7 +1,7 @@
 {
   "labware_name": "Myriamed 48-Well Plate (3D cell/tissue culture, EHM)",
   "placement": "slot_origin",
-  "_comment": "Calibrated coordinates: A1=(106.0, 60.0), A2=(88.0, 60.0), B1=(106.0, 70.0), C1=(106.0, 80.0)",
+  "_comment": "Calibrated coordinates: A1=(106.0, 60.0), A2=(88.0, 60.0), B1=(106.0, 69.0), C1=(106.0, 78.0). Row pitch = 9.0mm.",
   "z_height_mm": 78.42,
   "grid": {
     "rows": 8,
@@ -17,13 +17,13 @@
   ],
   "row_y": [
     60.0,
-    70.0,
-    80.0,
-    90.0,
-    100.0,
-    110.0,
-    120.0,
-    130.0
+    69.0,
+    78.0,
+    87.0,
+    96.0,
+    105.0,
+    114.0,
+    123.0
   ],
   "well_properties": {
     "depth_mm": 16.9,
