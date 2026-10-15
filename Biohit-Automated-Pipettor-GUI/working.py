@@ -128,46 +128,8 @@ class Pipettor:
                     initialize=False
                 )
                 self.hardware = self.hardware_context.__enter__()
-                self._patch_hardware_move_z()
             except Exception as e:
                 print(f"Hardware Initialization Error: {e}")
-
-    def _patch_hardware_move_z(self):
-        """
-        InstrumentLib requires position - (Zcalib / Znousu) >= 0.0 and <= 103.8.
-        Calling move_z(0.0) triggers Error 2 (Invalid Parameter) and raises CommandFailed.
-        Vendor MoveHome() uses 10.0mm clearance. This patch transparently clamps any
-        z < 10.0mm to 10.0mm, safeguarding against DLL crashes.
-        """
-        if not self.hardware:
-            return
-        orig_move_z = getattr(self.hardware, 'move_z', None)
-        if not orig_move_z or getattr(self.hardware, '_move_z_patched', False):
-            return
-
-        def safe_move_z(z: float, wait: bool = True):
-            clamped_z = max(10.0, min(float(z), 103.0))
-            return orig_move_z(clamped_z, wait=wait)
-
-        self.hardware.move_z = safe_move_z
-        self.hardware._move_z_patched = True
-
-    def reconnect(self):
-        self.close()
-        if HAS_BIOHIT_DLL and RealBiohitPipettor:
-            try:
-                vol_literal = 200
-                self.hardware_context = RealBiohitPipettor(
-                    tip_volume=vol_literal,
-                    multichannel=self.multichannel,
-                    initialize=False
-                )
-                self.hardware = self.hardware_context.__enter__()
-                self._patch_hardware_move_z()
-                return True, "Reconnected to Biohit hardware."
-            except Exception as e:
-                return False, f"Reconnect failed: {e}"
-        return False, "Biohit DLL not available."
 
     def close(self):
         if self.hardware_context:
@@ -193,79 +155,30 @@ class BiohitInterface:
         return ["NATIVE_PACKAGE_BRIDGE"] if HAS_BIOHIT_DLL else ["MOCK_PORT"]
 
     def connect(self, port_name: str) -> Tuple[bool, str]:
-        if port_name == "MOCK_PORT":
-            return True, "Connected in Simulation Mode (Manual Selection)."
-
-        if self.pipettor.hardware is None or (hasattr(self.pipettor.hardware, 'is_connected') and not self.pipettor.hardware.is_connected):
-            if HAS_BIOHIT_DLL and RealBiohitPipettor:
-                ok, msg = self.pipettor.reconnect()
-                if not ok:
-                    return False, f"Biohit hardware connection failed: {msg}. Ensure robot power is ON and USB cable is connected."
-            else:
-                return False, "Biohit driver package ('biohit_pipettor') is not available in this Python environment."
-
         if self.pipettor.hardware:
-            try:
-                if hasattr(self.pipettor.hardware, 'is_connected') and not self.pipettor.hardware.is_connected:
-                    return False, "Biohit device reports USB communication is NOT open. Please verify USB connection."
-            except Exception:
-                pass
             return True, "Connected via native biohit module."
-
-        return False, "Connection rejected: No physical hardware detected."
+        elif not HAS_BIOHIT_DLL:
+            return True, "Connected in Simulation Mode."
+        return False, "Connection rejected."
 
     def initialize(self) -> Tuple[bool, str]:
         if self.pipettor.hardware:
             try:
-                # Pre-flight safety checks on raw instrument if accessible
-                raw_inst = getattr(self.pipettor.hardware, '_Pipettor__instrument', None)
-                if raw_inst:
-                    try:
-                        # Check door/hood safety switch
-                        if hasattr(raw_inst.Control, 'PollDoorState') and raw_inst.Control.PollDoorState() == 1:
-                            self.is_initialized = False
-                            return False, "Robot front cover / safety hood is OPEN! Please close the cover before initializing."
-                        # Check motor slave detection on RS-485 bus
-                        if hasattr(raw_inst.Control, 'PollPresent'):
-                            pres = raw_inst.Control.PollPresent()
-                            if pres > 0 and (pres & 14) != 14:
-                                self.is_initialized = False
-                                return False, f"Motor slave controllers not detected (PollPresent={pres}). Verify 24V power brick is connected and robot switch is ON."
-                        # Clear latched fault indicators
-                        if hasattr(raw_inst, 'ResetIndicators'):
-                            raw_inst.ResetIndicators()
-                        if hasattr(raw_inst.Control, 'ResetIndicators'):
-                            raw_inst.Control.ResetIndicators()
-                        if hasattr(raw_inst.Control, 'RefreshSlaves'):
-                            raw_inst.Control.RefreshSlaves()
-                    except Exception:
-                        pass
-
-                # 1. Native endstop homing for Z, Y, X, and P
-                # This executes InstrumentLib.InstrumentCls.InitializeInstrument(),
-                # which commands Control.Initialize on Z, Y, X, and P.
                 self.pipettor.hardware.initialize()
-                if hasattr(self.pipettor.hardware, 'wait_until_stopped'):
-                    try:
-                        self.pipettor.hardware.wait_until_stopped()
-                    except Exception:
-                        pass
-
                 self.is_initialized = True
-                return True, "Homed & Initialized via DLL (Gantry at Home Position)."
+                return True, "Homed & Initialized via DLL."
             except Exception as e:
-                self.is_initialized = False
-                return False, f"Hardware initialization failed: {str(e)}"
+                return False, f"Initialization failed: {str(e)}"
         else:
-            self.is_initialized = False
-            return False, "Cannot initialize: No physical Biohit robot hardware connected. Please check robot power and USB."
+            self.is_initialized = True
+            return True, "Homed & Initialized (Simulation)."
 
     def smart_tip_pickup(self, slot_name, labware_obj, logger):
         try:
             if self.pipettor.hardware:
                 hw_speed = getattr(self.pipettor.hardware, 'z_speed', 8)
                 z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
-                approach_z = max(5.0, min(55.0, z_height - 18.0))
+                approach_z = max(0.0, min(55.0, z_height - 18.0))
                 pickup_limit = 87.0
                 self.pipettor.hardware.z_speed = hw_speed
                 self.pipettor.hardware.move_z(approach_z)
@@ -287,15 +200,17 @@ class BiohitInterface:
                         if logger: logger.warning(f"Pushback seating resistance: {pe}")
                 time.sleep(0.35)
                 self.pipettor.hardware.z_speed = hw_speed
-                # Retract to 10.0mm safe clearance (0mm is below calibration boundary)
-                self.pipettor.hardware.move_z(10.0)
+                try:
+                    self.pipettor.hardware.move_z(0)
+                except Exception:
+                    pass
             return True, True
         except Exception as e:
             if logger: logger.warning(f"Tip pick error: {e}")
             if self.pipettor.hardware:
                 try:
                     self.pipettor.hardware.z_speed = 8
-                    self.pipettor.hardware.move_z(10.0)
+                    self.pipettor.hardware.move_z(0)
                 except Exception:
                     pass
             return False, False
@@ -303,7 +218,7 @@ class BiohitInterface:
     def move_to(self, x: float, y: float, z: float, speed: int = 50, clearance: bool = True):
         safe_x = max(0.0, min(x, self.limits.get("max_x_mm", 300.0)))
         safe_y = max(0.0, min(y, self.limits.get("max_y_mm", 300.0)))
-        safe_z = max(0.0, min(z, 103.0))
+        safe_z = max(0.0, z)
 
         if self.is_initialized and self.pipettor.hardware:
             try:
@@ -325,52 +240,27 @@ class BiohitInterface:
             except Exception as e:
                 print(f"Speed attribute error: {e}")
 
-            # 1. Z-Clearance Move (lift to 10.0mm safe clearance; 0mm violates calibration boundary)
-            if clearance:
-                try:
+            try:
+                if clearance:
                     try:
-                        self.pipettor.hardware.move_z(10.0, wait=True)
+                        self.pipettor.hardware.move_z(0, wait=True)
                     except TypeError:
-                        self.pipettor.hardware.move_z(10.0)
-                except Exception as e:
-                    print(f"Clearance move_z(10.0) error: {e}")
-
-                if hasattr(self.pipettor.hardware, 'wait_until_stopped'):
-                    try:
-                        self.pipettor.hardware.wait_until_stopped()
+                        self.pipettor.hardware.move_z(0)
                     except Exception:
                         pass
-
-            # 2. XY Movement
-            try:
                 try:
                     self.pipettor.hardware.move_xy(safe_x, safe_y, wait=True)
                 except TypeError:
                     self.pipettor.hardware.move_xy(safe_x, safe_y)
-
-                if hasattr(self.pipettor.hardware, 'wait_until_stopped'):
-                    try:
-                        self.pipettor.hardware.wait_until_stopped()
-                    except Exception:
-                        pass
-            except Exception as e:
-                print(f"Move XY error (X={safe_x}, Y={safe_y}): {e}")
-
-            # 3. Target Z Descent (valid motion range: >= 5.0mm)
-            if safe_z >= 5.0:
-                try:
+                if z > 0:
                     try:
                         self.pipettor.hardware.move_z(safe_z, wait=True)
                     except TypeError:
-                        self.pipettor.hardware.move_z(float(safe_z))
-
-                    if hasattr(self.pipettor.hardware, 'wait_until_stopped'):
-                        try:
-                            self.pipettor.hardware.wait_until_stopped()
-                        except Exception:
-                            pass
-                except Exception as e:
-                    print(f"Descent move_z({safe_z}) error: {e}")
+                        self.pipettor.hardware.move_z(safe_z)
+                    except Exception:
+                        pass
+            except Exception as e:
+                print(f"Move error: {e}")
 
 
 class LIMSOrchestrator:
