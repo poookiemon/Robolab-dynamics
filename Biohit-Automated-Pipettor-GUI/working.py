@@ -131,6 +131,22 @@ class Pipettor:
             except Exception as e:
                 print(f"Hardware Initialization Error: {e}")
 
+    def reconnect(self):
+        self.close()
+        if HAS_BIOHIT_DLL and RealBiohitPipettor:
+            try:
+                vol_literal = 200
+                self.hardware_context = RealBiohitPipettor(
+                    tip_volume=vol_literal,
+                    multichannel=self.multichannel,
+                    initialize=False
+                )
+                self.hardware = self.hardware_context.__enter__()
+                return True, "Reconnected to Biohit hardware."
+            except Exception as e:
+                return False, f"Reconnect failed: {e}"
+        return False, "Biohit DLL not available."
+
     def close(self):
         if self.hardware_context:
             try:
@@ -155,23 +171,78 @@ class BiohitInterface:
         return ["NATIVE_PACKAGE_BRIDGE"] if HAS_BIOHIT_DLL else ["MOCK_PORT"]
 
     def connect(self, port_name: str) -> Tuple[bool, str]:
+        if self.pipettor.hardware is not None:
+            try:
+                if hasattr(self.pipettor.hardware, 'is_connected') and not self.pipettor.hardware.is_connected:
+                    ok, msg = self.pipettor.reconnect()
+                    if not ok:
+                        return False, f"Hardware reconnection failed: {msg}"
+            except Exception:
+                pass
+        elif HAS_BIOHIT_DLL and RealBiohitPipettor:
+            ok, msg = self.pipettor.reconnect()
+            if ok:
+                return True, "Connected via native biohit module."
+            else:
+                return False, f"Hardware connection failed: {msg}"
+
         if self.pipettor.hardware:
             return True, "Connected via native biohit module."
         elif not HAS_BIOHIT_DLL:
-            return True, "Connected in Simulation Mode."
+            return True, "Connected in Simulation Mode (No hardware driver)."
         return False, "Connection rejected."
 
     def initialize(self) -> Tuple[bool, str]:
         if self.pipettor.hardware:
             try:
+                # 1. Initialize pipettor plunger firmware & clear errors
                 self.pipettor.hardware.initialize()
+                if hasattr(self.pipettor.hardware, 'wait_until_stopped'):
+                    try:
+                        self.pipettor.hardware.wait_until_stopped()
+                    except Exception:
+                        pass
+
+                # 2. Physically home axes: lift Z to clearance, then home XY to origin
+                try:
+                    self.pipettor.hardware.move_z(0.0, wait=True)
+                except TypeError:
+                    try:
+                        self.pipettor.hardware.move_z(0.0)
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
+
+                if hasattr(self.pipettor.hardware, 'wait_until_stopped'):
+                    try:
+                        self.pipettor.hardware.wait_until_stopped()
+                    except Exception:
+                        pass
+
+                try:
+                    self.pipettor.hardware.move_xy(0.0, 0.0, wait=True)
+                except TypeError:
+                    try:
+                        self.pipettor.hardware.move_xy(0.0, 0.0)
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
+
+                if hasattr(self.pipettor.hardware, 'wait_until_stopped'):
+                    try:
+                        self.pipettor.hardware.wait_until_stopped()
+                    except Exception:
+                        pass
+
                 self.is_initialized = True
-                return True, "Homed & Initialized via DLL."
+                return True, "Homed & Initialized via DLL (Gantry at 0,0,0)."
             except Exception as e:
                 return False, f"Initialization failed: {str(e)}"
         else:
             self.is_initialized = True
-            return True, "Homed & Initialized (Simulation)."
+            return True, "Homed & Initialized (Simulation - No Physical Hardware)."
 
     def smart_tip_pickup(self, slot_name, labware_obj, logger):
         try:
@@ -218,7 +289,11 @@ class BiohitInterface:
         safe_z = max(0.0, z)
 
         if self.is_initialized and self.pipettor.hardware:
-            hw_speed = max(1, min(9, int((speed / 100.0) * 9)))
+            try:
+                hw_speed = max(1, min(9, int((speed / 100.0) * 9)))
+            except Exception:
+                hw_speed = 5
+
             try:
                 self.pipettor.hardware.x_speed = hw_speed
                 self.pipettor.hardware.y_speed = hw_speed
@@ -233,15 +308,52 @@ class BiohitInterface:
             except Exception as e:
                 print(f"Speed attribute error: {e}")
 
-            try:
-                if clearance: self.pipettor.hardware.move_z(0, wait=True)
+            # 1. Z-Clearance Move (Never block XY if Z clearance fails)
+            if clearance:
                 try:
-                    self.pipettor.hardware.move_xy(safe_x, safe_y, speed=hw_speed, wait=True)
-                except TypeError:
+                    try:
+                        self.pipettor.hardware.move_z(0.0, wait=True)
+                    except TypeError:
+                        self.pipettor.hardware.move_z(0.0)
+                except Exception as e:
+                    print(f"Clearance move_z(0) error: {e}")
+
+                if hasattr(self.pipettor.hardware, 'wait_until_stopped'):
+                    try:
+                        self.pipettor.hardware.wait_until_stopped()
+                    except Exception:
+                        pass
+
+            # 2. XY Movement
+            try:
+                try:
                     self.pipettor.hardware.move_xy(safe_x, safe_y, wait=True)
-                if z > 0: self.pipettor.hardware.move_z(safe_z, wait=True)
+                except TypeError:
+                    self.pipettor.hardware.move_xy(safe_x, safe_y)
+
+                if hasattr(self.pipettor.hardware, 'wait_until_stopped'):
+                    try:
+                        self.pipettor.hardware.wait_until_stopped()
+                    except Exception:
+                        pass
             except Exception as e:
-                print(f"Move error: {e}")
+                print(f"Move XY error (X={safe_x}, Y={safe_y}): {e}")
+
+            # 3. Target Z Descent
+            if safe_z > 0:
+                try:
+                    try:
+                        self.pipettor.hardware.move_z(safe_z, wait=True)
+                    except TypeError:
+                        self.pipettor.hardware.move_z(float(safe_z))
+
+                    if hasattr(self.pipettor.hardware, 'wait_until_stopped'):
+                        try:
+                            self.pipettor.hardware.wait_until_stopped()
+                        except Exception:
+                            pass
+                except Exception as e:
+                    print(f"Descent move_z({safe_z}) error: {e}")
 
 
 class LIMSOrchestrator:

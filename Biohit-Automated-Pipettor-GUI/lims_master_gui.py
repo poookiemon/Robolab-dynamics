@@ -1860,8 +1860,12 @@ class LIMSMasterApp:
         if ok:
             ok2, m2 = self.lims.hw.initialize()
             if ok2:
-                self.hw_stat_can.itemconfig(self.hw_led, fill="green")
-                self.lbl_hw_stat.config(text="ONLINE", foreground="green")
+                if self.lims.pipettor.hardware:
+                    self.hw_stat_can.itemconfig(self.hw_led, fill="green")
+                    self.lbl_hw_stat.config(text="ONLINE", foreground="green")
+                else:
+                    self.hw_stat_can.itemconfig(self.hw_led, fill="orange")
+                    self.lbl_hw_stat.config(text="SIMULATION (NO HARDWARE)", foreground="orange")
                 self.logger.info(m2)
 
                 # --- STARTUP INTERLOCK: Speed and Force Integration ---
@@ -1882,7 +1886,13 @@ class LIMSMasterApp:
                     if hasattr(self, 'deck_jog_btns') and axis in self.deck_jog_btns:
                         self.deck_jog_btns[axis].config(state='normal')
                 self.start_telemetry()
+            else:
+                self.hw_stat_can.itemconfig(self.hw_led, fill="red")
+                self.lbl_hw_stat.config(text="ERROR", foreground="red")
+                self.logger.error(f"Initialization failed: {m2}")
         else:
+            self.hw_stat_can.itemconfig(self.hw_led, fill="red")
+            self.lbl_hw_stat.config(text="DISCONNECTED", foreground="red")
             self.logger.error(f"Connection failed: {m}")
 
     def run_direct_op(self, c):

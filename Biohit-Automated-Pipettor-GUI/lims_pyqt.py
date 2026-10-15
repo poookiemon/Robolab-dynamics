@@ -392,9 +392,21 @@ class LIMSPyQtApp(QMainWindow):
         if ok:
             ok2, m2 = self.lims.hw.initialize()
             if ok2:
-                self.lbl_hw_stat.setText("ONLINE")
-                self.lbl_hw_stat.setStyleSheet("color: green; font-weight: bold;")
+                if self.lims.pipettor.hardware:
+                    self.lbl_hw_stat.setText("ONLINE")
+                    self.lbl_hw_stat.setStyleSheet("color: green; font-weight: bold;")
+                else:
+                    self.lbl_hw_stat.setText("SIMULATION (NO HARDWARE)")
+                    self.lbl_hw_stat.setStyleSheet("color: orange; font-weight: bold;")
                 self.log(m2)
+            else:
+                self.lbl_hw_stat.setText("ERROR")
+                self.lbl_hw_stat.setStyleSheet("color: red; font-weight: bold;")
+                self.log(f"Initialization failed: {m2}")
+        else:
+            self.lbl_hw_stat.setText("DISCONNECTED")
+            self.lbl_hw_stat.setStyleSheet("color: red; font-weight: bold;")
+            self.log(f"Connection failed: {m}")
 
     def move_from_jog(self):
         x = float(self.jog_sliders["X"].text())
