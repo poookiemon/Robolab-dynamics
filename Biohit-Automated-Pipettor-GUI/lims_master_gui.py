@@ -1856,8 +1856,10 @@ class LIMSMasterApp:
         self.port_drop['values'] = ports
 
     def hw_init(self):
+        self.logger.info("Connecting to Biohit hardware...")
         ok, m = self.lims.hw.connect(self.port_var.get())
         if ok:
+            self.logger.info(f"Handshake: {m}. Starting homing routine...")
             ok2, m2 = self.lims.hw.initialize()
             if ok2:
                 if self.lims.pipettor.hardware:
@@ -1890,10 +1892,12 @@ class LIMSMasterApp:
                 self.hw_stat_can.itemconfig(self.hw_led, fill="red")
                 self.lbl_hw_stat.config(text="ERROR", foreground="red")
                 self.logger.error(f"Initialization failed: {m2}")
+                messagebox.showerror("Initialization Error", f"Biohit Homing Failed:\n\n{m2}\n\nPlease check that the robot arm is not mechanically obstructed and power is on.")
         else:
             self.hw_stat_can.itemconfig(self.hw_led, fill="red")
             self.lbl_hw_stat.config(text="DISCONNECTED", foreground="red")
             self.logger.error(f"Connection failed: {m}")
+            messagebox.showerror("Connection Error", f"Biohit Robot Connection Failed:\n\n{m}\n\nPlease verify:\n1. Robot power switch is ON.\n2. USB cable is firmly plugged into PC.\n3. Close any other software using the robot.")
 
     def run_direct_op(self, c):
         if not self.lims.hw.is_initialized: return

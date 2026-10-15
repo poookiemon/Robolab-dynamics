@@ -171,31 +171,33 @@ class BiohitInterface:
         return ["NATIVE_PACKAGE_BRIDGE"] if HAS_BIOHIT_DLL else ["MOCK_PORT"]
 
     def connect(self, port_name: str) -> Tuple[bool, str]:
-        if self.pipettor.hardware is not None:
-            try:
-                if hasattr(self.pipettor.hardware, 'is_connected') and not self.pipettor.hardware.is_connected:
-                    ok, msg = self.pipettor.reconnect()
-                    if not ok:
-                        return False, f"Hardware reconnection failed: {msg}"
-            except Exception:
-                pass
-        elif HAS_BIOHIT_DLL and RealBiohitPipettor:
-            ok, msg = self.pipettor.reconnect()
-            if ok:
-                return True, "Connected via native biohit module."
+        if port_name == "MOCK_PORT":
+            return True, "Connected in Simulation Mode (Manual Selection)."
+
+        if self.pipettor.hardware is None or (hasattr(self.pipettor.hardware, 'is_connected') and not self.pipettor.hardware.is_connected):
+            if HAS_BIOHIT_DLL and RealBiohitPipettor:
+                ok, msg = self.pipettor.reconnect()
+                if not ok:
+                    return False, f"Biohit hardware connection failed: {msg}. Ensure robot power is ON and USB cable is connected."
             else:
-                return False, f"Hardware connection failed: {msg}"
+                return False, "Biohit driver package ('biohit_pipettor') is not available in this Python environment."
 
         if self.pipettor.hardware:
+            try:
+                if hasattr(self.pipettor.hardware, 'is_connected') and not self.pipettor.hardware.is_connected:
+                    return False, "Biohit device reports USB communication is NOT open. Please verify USB connection."
+            except Exception:
+                pass
             return True, "Connected via native biohit module."
-        elif not HAS_BIOHIT_DLL:
-            return True, "Connected in Simulation Mode (No hardware driver)."
-        return False, "Connection rejected."
+
+        return False, "Connection rejected: No physical hardware detected."
 
     def initialize(self) -> Tuple[bool, str]:
         if self.pipettor.hardware:
             try:
                 # 1. Initialize pipettor plunger firmware & clear errors
+                # This executes InstrumentLib.InstrumentCls.InitializeInstrument(),
+                # which commands Control.Initialize on Z, Y, X, and P (native endstop homing).
                 self.pipettor.hardware.initialize()
                 if hasattr(self.pipettor.hardware, 'wait_until_stopped'):
                     try:
@@ -239,10 +241,11 @@ class BiohitInterface:
                 self.is_initialized = True
                 return True, "Homed & Initialized via DLL (Gantry at 0,0,0)."
             except Exception as e:
-                return False, f"Initialization failed: {str(e)}"
+                self.is_initialized = False
+                return False, f"Hardware initialization failed: {str(e)}"
         else:
-            self.is_initialized = True
-            return True, "Homed & Initialized (Simulation - No Physical Hardware)."
+            self.is_initialized = False
+            return False, "Cannot initialize: No physical Biohit robot hardware connected. Please check robot power and USB."
 
     def smart_tip_pickup(self, slot_name, labware_obj, logger):
         try:

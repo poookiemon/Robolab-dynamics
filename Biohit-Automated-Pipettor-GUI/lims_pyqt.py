@@ -388,8 +388,10 @@ class LIMSPyQtApp(QMainWindow):
         layout.addStretch()
 
     def hw_init(self):
+        self.log("Connecting to Biohit hardware...")
         ok, m = self.lims.hw.connect(self.port_drop.currentText())
         if ok:
+            self.log(f"Handshake: {m}. Starting homing routine...")
             ok2, m2 = self.lims.hw.initialize()
             if ok2:
                 if self.lims.pipettor.hardware:
@@ -403,10 +405,12 @@ class LIMSPyQtApp(QMainWindow):
                 self.lbl_hw_stat.setText("ERROR")
                 self.lbl_hw_stat.setStyleSheet("color: red; font-weight: bold;")
                 self.log(f"Initialization failed: {m2}")
+                QMessageBox.critical(self, "Initialization Error", f"Biohit Homing Failed:\n\n{m2}\n\nPlease check that robot arm is not obstructed and power is on.")
         else:
             self.lbl_hw_stat.setText("DISCONNECTED")
             self.lbl_hw_stat.setStyleSheet("color: red; font-weight: bold;")
             self.log(f"Connection failed: {m}")
+            QMessageBox.critical(self, "Connection Error", f"Biohit Robot Connection Failed:\n\n{m}\n\nPlease verify:\n1. Robot power switch is ON.\n2. USB cable is firmly plugged into PC.\n3. Close any other software using the robot.")
 
     def move_from_jog(self):
         x = float(self.jog_sliders["X"].text())
