@@ -1573,35 +1573,11 @@ class LIMSMasterApp:
                             time.sleep(vol)
                         elif "FOC48" in action:
                             self.lims.hw.move_to(0, 0, 0, speed=self.speed_var.get())
-
-                            # Launch the executable in the background
-                            p = subprocess.Popen(
-                                [r'C:\Labhub\Import\FOC48_20240227.exe', r'C:\Labhub\Import\myrPlate_Stim_0.xml',
-                                 str(step.get('well', ''))])
-
-                            self.logger.info("Waiting for FOC48 window to load...")
-                            time.sleep(7.0)
-
-                            self.logger.info("Executing ghost mouse clicks...")
-                            # 1. Click First Experiment
-                            ctypes.windll.user32.SetCursorPos(404, 168)
-                            ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
-                            ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
-                            time.sleep(1.0)
-
-                            # 2. Click First Measurement
-                            ctypes.windll.user32.SetCursorPos(690, 168)
-                            ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
-                            ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
-                            time.sleep(1.0)
-
-                            # 3. Click Save all
-                            ctypes.windll.user32.SetCursorPos(1021, 531)
-                            ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
-                            ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
-
-                            self.logger.info("Optical reading in progress. Waiting for FOC48 task to finish...")
-                            p.wait()
+                            try:
+                                import foc_automation
+                                foc_automation.execute_foc48_measurement(plate_name=step.get('well', ''), logger=self.logger)
+                            except Exception as foc_err:
+                                self.logger.error(f"FOC48 Automation Error: {foc_err}")
                         elif "Data Analysis" in action:
                             self.logger.info("Launching Analysis Subsystem (Hill Equations)...")
                             time.sleep(1.5)
@@ -1868,8 +1844,8 @@ class LIMSMasterApp:
             if self.lims.pipettor.hardware:
                 try:
                     self.lims.pipettor.hardware.move_z(0)
-                except TypeError:
-                    self.lims.pipettor.hardware.move_z(0)
+                except Exception as ze:
+                    self.logger.warning(f"Z clearance move warning: {ze}")
             self.root.after(0, lambda: self.update_ui_state(False))
             self.root.after(0, lambda: self.progress_var.set(0))
 
@@ -1918,15 +1894,18 @@ class LIMSMasterApp:
             if hw_instance:
                 try:
                     hw_instance.move_z(90.0)
-                except TypeError:
-                    hw_instance.move_z(90.0)
-                hw_instance.eject_tip()
+                except Exception as ze:
+                    self.logger.warning(f"Discard move_z(90) error: {ze}")
+                try:
+                    hw_instance.eject_tip()
+                except Exception as ee:
+                    self.logger.warning(f"Eject tip error: {ee}")
                 self.root.after(0, lambda: self.has_tip_var.set(False))
                 self.logger.info("Direct Op: Tips discarded. HAS_TIP = False")
                 try:
                     hw_instance.move_z(0)
-                except TypeError:
-                    pass
+                except Exception as ze2:
+                    self.logger.warning(f"Discard return move_z(0) error: {ze2}")
         elif c == "FIND_TIP":
             self.prompt_for_tip_slot()
         elif c == "CHECK":
