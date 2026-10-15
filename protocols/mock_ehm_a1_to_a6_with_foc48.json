@@ -1,0 +1,101 @@
+[
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A1",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A1",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "System: Incubate (Wait)",
+        "mode": "auto",
+        "volume": 2.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A2",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "System: Incubate (Wait)",
+        "mode": "auto",
+        "volume": 2.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A3",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "System: Incubate (Wait)",
+        "mode": "auto",
+        "volume": 2.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A4",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "System: Incubate (Wait)",
+        "mode": "auto",
+        "volume": 2.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A5",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "System: Incubate (Wait)",
+        "mode": "auto",
+        "volume": 2.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A6",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "System: Incubate (Wait)",
+        "mode": "auto",
+        "volume": 2.0
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "System: FOC48 Measurement",
+        "mode": "auto",
+        "well": "A1"
+    }
+]

@@ -1573,35 +1573,11 @@ class LIMSMasterApp:
                             time.sleep(vol)
                         elif "FOC48" in action:
                             self.lims.hw.move_to(0, 0, 0, speed=self.speed_var.get())
-
-                            # Launch the executable in the background
-                            p = subprocess.Popen(
-                                [r'C:\Labhub\Import\FOC48_20240227.exe', r'C:\Labhub\Import\myrPlate_Stim_0.xml',
-                                 str(step.get('well', ''))])
-
-                            self.logger.info("Waiting for FOC48 window to load...")
-                            time.sleep(7.0)
-
-                            self.logger.info("Executing ghost mouse clicks...")
-                            # 1. Click First Experiment
-                            ctypes.windll.user32.SetCursorPos(404, 168)
-                            ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
-                            ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
-                            time.sleep(1.0)
-
-                            # 2. Click First Measurement
-                            ctypes.windll.user32.SetCursorPos(690, 168)
-                            ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
-                            ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
-                            time.sleep(1.0)
-
-                            # 3. Click Save all
-                            ctypes.windll.user32.SetCursorPos(1021, 531)
-                            ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
-                            ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
-
-                            self.logger.info("Optical reading in progress. Waiting for FOC48 task to finish...")
-                            p.wait()
+                            try:
+                                import foc_automation
+                                foc_automation.execute_foc48_measurement(plate_name=step.get('well', ''), logger=self.logger)
+                            except Exception as foc_err:
+                                self.logger.error(f"FOC48 Automation Error: {foc_err}")
                         elif "Data Analysis" in action:
                             self.logger.info("Launching Analysis Subsystem (Hill Equations)...")
                             time.sleep(1.5)
