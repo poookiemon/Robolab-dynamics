@@ -1844,8 +1844,8 @@ class LIMSMasterApp:
             if self.lims.pipettor.hardware:
                 try:
                     self.lims.pipettor.hardware.move_z(0)
-                except TypeError:
-                    self.lims.pipettor.hardware.move_z(0)
+                except Exception as ze:
+                    self.logger.warning(f"Z clearance move warning: {ze}")
             self.root.after(0, lambda: self.update_ui_state(False))
             self.root.after(0, lambda: self.progress_var.set(0))
 
@@ -1908,15 +1908,18 @@ class LIMSMasterApp:
             if hw_instance:
                 try:
                     hw_instance.move_z(90.0)
-                except TypeError:
-                    hw_instance.move_z(90.0)
-                hw_instance.eject_tip()
+                except Exception as ze:
+                    self.logger.warning(f"Discard move_z(90) error: {ze}")
+                try:
+                    hw_instance.eject_tip()
+                except Exception as ee:
+                    self.logger.warning(f"Eject tip error: {ee}")
                 self.root.after(0, lambda: self.has_tip_var.set(False))
                 self.logger.info("Direct Op: Tips discarded. HAS_TIP = False")
                 try:
                     hw_instance.move_z(0)
-                except TypeError:
-                    pass
+                except Exception as ze2:
+                    self.logger.warning(f"Discard return move_z(0) error: {ze2}")
         elif c == "FIND_TIP":
             self.prompt_for_tip_slot()
         elif c == "CHECK":
