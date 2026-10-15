@@ -200,10 +200,7 @@ class BiohitInterface:
                         if logger: logger.warning(f"Pushback seating resistance: {pe}")
                 time.sleep(0.35)
                 self.pipettor.hardware.z_speed = hw_speed
-                try:
-                    self.pipettor.hardware.move_z(0)
-                except Exception:
-                    pass
+                self.pipettor.hardware.move_z(0)
             return True, True
         except Exception as e:
             if logger: logger.warning(f"Tip pick error: {e}")
@@ -221,11 +218,7 @@ class BiohitInterface:
         safe_z = max(0.0, z)
 
         if self.is_initialized and self.pipettor.hardware:
-            try:
-                hw_speed = max(1, min(9, int((speed / 100.0) * 9)))
-            except Exception:
-                hw_speed = 5
-
+            hw_speed = max(1, min(9, int((speed / 100.0) * 9)))
             try:
                 self.pipettor.hardware.x_speed = hw_speed
                 self.pipettor.hardware.y_speed = hw_speed
@@ -241,24 +234,12 @@ class BiohitInterface:
                 print(f"Speed attribute error: {e}")
 
             try:
-                if clearance:
-                    try:
-                        self.pipettor.hardware.move_z(0, wait=True)
-                    except TypeError:
-                        self.pipettor.hardware.move_z(0)
-                    except Exception:
-                        pass
+                if clearance: self.pipettor.hardware.move_z(0, wait=True)
                 try:
-                    self.pipettor.hardware.move_xy(safe_x, safe_y, wait=True)
+                    self.pipettor.hardware.move_xy(safe_x, safe_y, speed=hw_speed, wait=True)
                 except TypeError:
-                    self.pipettor.hardware.move_xy(safe_x, safe_y)
-                if z > 0:
-                    try:
-                        self.pipettor.hardware.move_z(safe_z, wait=True)
-                    except TypeError:
-                        self.pipettor.hardware.move_z(safe_z)
-                    except Exception:
-                        pass
+                    self.pipettor.hardware.move_xy(safe_x, safe_y, wait=True)
+                if z > 0: self.pipettor.hardware.move_z(safe_z, wait=True)
             except Exception as e:
                 print(f"Move error: {e}")
 

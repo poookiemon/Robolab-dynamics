@@ -68,11 +68,23 @@ class WorkflowRunner(QThread):
                         time.sleep(vol)
                     elif "FOC48" in action:
                         self.lims.hw.move_to(0, 0, 0, speed=1500)
-                        try:
-                            import foc_automation
-                            foc_automation.execute_foc48_measurement(plate_name=step.get('well', ''), logger=self.log)
-                        except Exception as foc_err:
-                            self.log(f"FOC48 Automation Error: {foc_err}")
+                        p = subprocess.Popen([r'C:\Labhub\Import\FOC48_20240227.exe', r'C:\Labhub\Import\myrPlate_Stim_0.xml', str(step.get('well', ''))])
+                        self.log("Waiting for FOC48 window to load...")
+                        time.sleep(7.0)
+                        self.log("Executing ghost mouse clicks...")
+                        ctypes.windll.user32.SetCursorPos(404, 168)
+                        ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
+                        ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
+                        time.sleep(1.0)
+                        ctypes.windll.user32.SetCursorPos(690, 168)
+                        ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
+                        ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
+                        time.sleep(1.0)
+                        ctypes.windll.user32.SetCursorPos(1021, 531)
+                        ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
+                        ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
+                        self.log("Optical reading in progress. Waiting for FOC48 task to finish...")
+                        p.wait()
                     elif "Data Analysis" in action:
                         self.log("Launching Analysis Subsystem (Hill Equations)...")
                         time.sleep(1.5)
@@ -388,29 +400,13 @@ class LIMSPyQtApp(QMainWindow):
         layout.addStretch()
 
     def hw_init(self):
-        self.log("Connecting to Biohit hardware...")
         ok, m = self.lims.hw.connect(self.port_drop.currentText())
         if ok:
-            self.log(f"Handshake: {m}. Starting homing routine...")
             ok2, m2 = self.lims.hw.initialize()
             if ok2:
-                if self.lims.pipettor.hardware:
-                    self.lbl_hw_stat.setText("ONLINE")
-                    self.lbl_hw_stat.setStyleSheet("color: green; font-weight: bold;")
-                else:
-                    self.lbl_hw_stat.setText("SIMULATION (NO HARDWARE)")
-                    self.lbl_hw_stat.setStyleSheet("color: orange; font-weight: bold;")
+                self.lbl_hw_stat.setText("ONLINE")
+                self.lbl_hw_stat.setStyleSheet("color: green; font-weight: bold;")
                 self.log(m2)
-            else:
-                self.lbl_hw_stat.setText("ERROR")
-                self.lbl_hw_stat.setStyleSheet("color: red; font-weight: bold;")
-                self.log(f"Initialization failed: {m2}")
-                QMessageBox.critical(self, "Initialization Error", f"Biohit Homing Failed:\n\n{m2}\n\nPlease check that robot arm is not obstructed and power is on.")
-        else:
-            self.lbl_hw_stat.setText("DISCONNECTED")
-            self.lbl_hw_stat.setStyleSheet("color: red; font-weight: bold;")
-            self.log(f"Connection failed: {m}")
-            QMessageBox.critical(self, "Connection Error", f"Biohit Robot Connection Failed:\n\n{m}\n\nPlease verify:\n1. Robot power switch is ON.\n2. USB cable is firmly plugged into PC.\n3. Close any other software using the robot.")
 
     def move_from_jog(self):
         x = float(self.jog_sliders["X"].text())

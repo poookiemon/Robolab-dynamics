@@ -1573,11 +1573,35 @@ class LIMSMasterApp:
                             time.sleep(vol)
                         elif "FOC48" in action:
                             self.lims.hw.move_to(0, 0, 0, speed=self.speed_var.get())
-                            try:
-                                import foc_automation
-                                foc_automation.execute_foc48_measurement(plate_name=step.get('well', ''), logger=self.logger)
-                            except Exception as foc_err:
-                                self.logger.error(f"FOC48 Automation Error: {foc_err}")
+
+                            # Launch the executable in the background
+                            p = subprocess.Popen(
+                                [r'C:\Labhub\Import\FOC48_20240227.exe', r'C:\Labhub\Import\myrPlate_Stim_0.xml',
+                                 str(step.get('well', ''))])
+
+                            self.logger.info("Waiting for FOC48 window to load...")
+                            time.sleep(7.0)
+
+                            self.logger.info("Executing ghost mouse clicks...")
+                            # 1. Click First Experiment
+                            ctypes.windll.user32.SetCursorPos(404, 168)
+                            ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
+                            ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
+                            time.sleep(1.0)
+
+                            # 2. Click First Measurement
+                            ctypes.windll.user32.SetCursorPos(690, 168)
+                            ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
+                            ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
+                            time.sleep(1.0)
+
+                            # 3. Click Save all
+                            ctypes.windll.user32.SetCursorPos(1021, 531)
+                            ctypes.windll.user32.mouse_event(2, 0, 0, 0, 0)
+                            ctypes.windll.user32.mouse_event(4, 0, 0, 0, 0)
+
+                            self.logger.info("Optical reading in progress. Waiting for FOC48 task to finish...")
+                            p.wait()
                         elif "Data Analysis" in action:
                             self.logger.info("Launching Analysis Subsystem (Hill Equations)...")
                             time.sleep(1.5)
@@ -1844,8 +1868,8 @@ class LIMSMasterApp:
             if self.lims.pipettor.hardware:
                 try:
                     self.lims.pipettor.hardware.move_z(0)
-                except Exception as ze:
-                    self.logger.warning(f"Z clearance move warning: {ze}")
+                except TypeError:
+                    self.lims.pipettor.hardware.move_z(0)
             self.root.after(0, lambda: self.update_ui_state(False))
             self.root.after(0, lambda: self.progress_var.set(0))
 
@@ -1856,18 +1880,12 @@ class LIMSMasterApp:
         self.port_drop['values'] = ports
 
     def hw_init(self):
-        self.logger.info("Connecting to Biohit hardware...")
         ok, m = self.lims.hw.connect(self.port_var.get())
         if ok:
-            self.logger.info(f"Handshake: {m}. Starting homing routine...")
             ok2, m2 = self.lims.hw.initialize()
             if ok2:
-                if self.lims.pipettor.hardware:
-                    self.hw_stat_can.itemconfig(self.hw_led, fill="green")
-                    self.lbl_hw_stat.config(text="ONLINE", foreground="green")
-                else:
-                    self.hw_stat_can.itemconfig(self.hw_led, fill="orange")
-                    self.lbl_hw_stat.config(text="SIMULATION (NO HARDWARE)", foreground="orange")
+                self.hw_stat_can.itemconfig(self.hw_led, fill="green")
+                self.lbl_hw_stat.config(text="ONLINE", foreground="green")
                 self.logger.info(m2)
 
                 # --- STARTUP INTERLOCK: Speed and Force Integration ---
@@ -1888,16 +1906,8 @@ class LIMSMasterApp:
                     if hasattr(self, 'deck_jog_btns') and axis in self.deck_jog_btns:
                         self.deck_jog_btns[axis].config(state='normal')
                 self.start_telemetry()
-            else:
-                self.hw_stat_can.itemconfig(self.hw_led, fill="red")
-                self.lbl_hw_stat.config(text="ERROR", foreground="red")
-                self.logger.error(f"Initialization failed: {m2}")
-                messagebox.showerror("Initialization Error", f"Biohit Homing Failed:\n\n{m2}\n\nPlease check that the robot arm is not mechanically obstructed and power is on.")
         else:
-            self.hw_stat_can.itemconfig(self.hw_led, fill="red")
-            self.lbl_hw_stat.config(text="DISCONNECTED", foreground="red")
             self.logger.error(f"Connection failed: {m}")
-            messagebox.showerror("Connection Error", f"Biohit Robot Connection Failed:\n\n{m}\n\nPlease verify:\n1. Robot power switch is ON.\n2. USB cable is firmly plugged into PC.\n3. Close any other software using the robot.")
 
     def run_direct_op(self, c):
         if not self.lims.hw.is_initialized: return
@@ -1908,18 +1918,15 @@ class LIMSMasterApp:
             if hw_instance:
                 try:
                     hw_instance.move_z(90.0)
-                except Exception as ze:
-                    self.logger.warning(f"Discard move_z(90) error: {ze}")
-                try:
-                    hw_instance.eject_tip()
-                except Exception as ee:
-                    self.logger.warning(f"Eject tip error: {ee}")
+                except TypeError:
+                    hw_instance.move_z(90.0)
+                hw_instance.eject_tip()
                 self.root.after(0, lambda: self.has_tip_var.set(False))
                 self.logger.info("Direct Op: Tips discarded. HAS_TIP = False")
                 try:
                     hw_instance.move_z(0)
-                except Exception as ze2:
-                    self.logger.warning(f"Discard return move_z(0) error: {ze2}")
+                except TypeError:
+                    pass
         elif c == "FIND_TIP":
             self.prompt_for_tip_slot()
         elif c == "CHECK":
