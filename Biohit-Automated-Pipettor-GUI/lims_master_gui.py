@@ -987,7 +987,7 @@ class LIMSMasterApp:
 
         if not z_limits:
             if slot == "Slot_4" or (labware_obj and ("ehm" in labware_obj.name.lower() or "48" in labware_obj.name.lower())):
-                z_limits = {"recommended_aspirate_z": 98.0, "max_safe_bottom_z": 99.5}
+                z_limits = {"recommended_aspirate_z": 84.0, "max_safe_bottom_z": 84.0}
             elif (slot == "Slot_5" and labware_obj and "96" in labware_obj.name.lower()) or (labware_obj and "96" in labware_obj.name.lower() and "tip" not in labware_obj.name.lower()):
                 z_limits = {"recommended_aspirate_z": 76.0, "max_safe_bottom_z": 78.0}
             elif slot == "Slot_5" or (labware_obj and "reservoir" in labware_obj.name.lower()):
@@ -995,15 +995,17 @@ class LIMSMasterApp:
             elif slot == "Slot_3":
                 z_limits = {"recommended_pickup_z": 87.0, "max_safe_bottom_z": 92.0}
             else:
-                z_limits = {"recommended_aspirate_z": 98.0, "max_safe_bottom_z": 100.0}
+                z_limits = {"recommended_aspirate_z": 84.0, "max_safe_bottom_z": 100.0}
 
-        rec = z_limits.get('recommended_aspirate_z', z_limits.get('recommended_pickup_z', 98.0))
+        rec = z_limits.get('recommended_aspirate_z', z_limits.get('recommended_pickup_z', 84.0))
         max_b = z_limits.get('max_safe_bottom_z', 100.0)
         self.lbl_safe_z.config(text=f"💡 Rec: {rec:.1f}mm | ⚠️ Max Safe: {max_b:.1f}mm")
 
     def action_load_ehm_test_protocol(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
         cand_paths = [
+            os.path.join(script_dir, "protocols", "mock_ehm_diagonal_a1_to_h6.json"),
+            os.path.join(os.getcwd(), "protocols", "mock_ehm_diagonal_a1_to_h6.json"),
             os.path.join(script_dir, "protocols", "ehm_48_well_test.json"),
             os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "protocols", "ehm_48_well_test.json"),
             os.path.join(os.getcwd(), "protocols", "ehm_48_well_test.json"),
@@ -1018,6 +1020,7 @@ class LIMSMasterApp:
                 loaded_sequence = json.load(f)
             self.workflow_sequence.clear()
             self.wf_box.delete(0, tk.END)
+            self.has_tip_var.set(True)
             lw_dir = self.get_labware_dir()
             ehm_path = os.path.join(lw_dir, "myriamed_48_well.json")
             if os.path.exists(ehm_path):
@@ -1029,10 +1032,10 @@ class LIMSMasterApp:
                 if step['action'] == "Pick Up Tip":
                     msg = f"[{step['action'].upper()}] from {step.get('slot', '')}, Well {step.get('well', '')}"
                 else:
-                    msg = f"[{step['action'].upper()}] at {step.get('slot', '')}, Well {step.get('well', '')}"
+                    msg = f"[{step['action'].upper()}] at {step.get('slot', '')}, Well {step.get('well', '')} (Z=84.0mm)"
                 self.wf_box.insert(tk.END, msg)
             if hasattr(self, 'draw_deck'): self.draw_deck()
-            self.logger.info(f"Loaded EHM 48-Well Mock Test Protocol ({len(loaded_sequence)} steps). Labware auto-assigned.")
+            self.logger.info(f"Loaded EHM 48-Well Diagonal Mock ({len(loaded_sequence)} steps, Z=84.0mm, no tip pickup).")
         else:
             messagebox.showerror("File Not Found", "Could not locate ehm_48_well_test.json")
 
@@ -1340,11 +1343,11 @@ class LIMSMasterApp:
             return target_x, target_y
 
         # 4. MYRIAMED 48-WELL EHM PLATE (Slot_4 default or myriamed/ehm labware)
-        if ("myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "ehm" in lw_src or "myriamed" in lw_src) or (not labware_obj and slot_name == "Slot_4"):
-            col_x = {'1': 106.00, '2': 88.00, '3': 70.00, '4': 52.00, '5': 34.00, '6': 16.00}
+        if ("myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "ehm" in lw_src or "myriamed" in lw_src) or (slot_name == "Slot_4" and "tip" not in lw_name and "tip" not in lw_src):
+            col_x = {'1': 105.00, '2': 87.00, '3': 69.00, '4': 51.00, '5': 33.00, '6': 15.00}
             row_y = {
-                'A': 60.0, 'B': 69.0, 'C': 78.0, 'D': 87.0,
-                'E': 96.0, 'F': 105.0, 'G': 114.0, 'H': 123.0
+                'A': 57.0, 'B': 65.0, 'C': 74.0, 'D': 82.0,
+                'E': 91.0, 'F': 99.0, 'G': 108.0, 'H': 116.0
             }
             if len(well_id) >= 2:
                 row_char = well_id[0].upper()
@@ -1356,7 +1359,7 @@ class LIMSMasterApp:
 
         # 5. 96-WELL FORMAT (Tip Rack or 96-Well Microplate on any slot!)
         if ("96" in lw_name or "tip" in lw_name or "tip_rack" in lw_src or "96" in lw_src or
-            (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12)) or (not labware_obj and slot_name in ["Slot_3", "Slot_4", "Slot_5"]):
+            (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12)) or (not labware_obj and slot_name in ["Slot_3", "Slot_5"]):
             if slot_name == "Slot_5":
                 col_x = {
                     '1': 243.0, '2': 234.0, '3': 225.0, '4': 216.0,
@@ -1418,8 +1421,8 @@ class LIMSMasterApp:
                 base_z = 76.0
             elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name in ["Slot_3", "Slot_5"]):
                 base_z = 103.0
-            elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or (not labware_obj and slot_name == "Slot_4"):
-                base_z = 98.0
+            elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "myriamed" in lw_src or "ehm" in lw_src or (slot_name == "Slot_4" and "tip" not in lw_name and "tip" not in lw_src):
+                return 84.0
             elif "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
                 base_z = 98.0
             elif action == "Discard Tip" and slot_name == "Slot_1":
@@ -1674,8 +1677,8 @@ class LIMSMasterApp:
                         lw_dir = self.get_labware_dir()
                         default_lw_map = {
                             "Slot_2": "reservoir_3_well.json",
-                            "Slot_3": "reservoir_6_column.json",
-                            "Slot_4": "tip_rack_1000ul.json" if (well_id and well_id[0] in "ABCDEFGH") else "myriamed_48_well.json",
+                            "Slot_3": "tip_rack_1000ul.json" if action == "Pick Up Tip" else "reservoir_6_column.json",
+                            "Slot_4": "tip_rack_1000ul.json" if action == "Pick Up Tip" else "myriamed_48_well.json",
                             "Slot_5": "generic_96_well_plate.json",
                             "Slot_6": "waste_trough.json"
                         }
@@ -2218,11 +2221,12 @@ class LIMSMasterApp:
                 for step in loaded_sequence:
                     s_name = step.get('slot', '')
                     w_name = step.get('well', '')
+                    s_act = step.get('action', '')
                     if s_name and s_name.startswith('Slot_') and s_name not in self.lims.deck_labware:
                         default_map = {
                             "Slot_2": "reservoir_3_well.json",
-                            "Slot_3": "reservoir_6_column.json",
-                            "Slot_4": "tip_rack_1000ul.json" if (w_name and w_name[0] in "ABCDEFGH") else "myriamed_48_well.json",
+                            "Slot_3": "tip_rack_1000ul.json" if s_act == "Pick Up Tip" else "reservoir_6_column.json",
+                            "Slot_4": "tip_rack_1000ul.json" if s_act == "Pick Up Tip" else "myriamed_48_well.json",
                             "Slot_5": "generic_96_well_plate.json",
                             "Slot_6": "waste_trough.json"
                         }

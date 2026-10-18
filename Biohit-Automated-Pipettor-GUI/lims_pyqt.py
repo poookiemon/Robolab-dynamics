@@ -271,11 +271,11 @@ class LIMSPyQtApp(QMainWindow):
             return target_x, target_y
 
         # 4. MYRIAMED 48-WELL EHM PLATE
-        if ("myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "ehm" in lw_src or "myriamed" in lw_src) or (not labware_obj and slot_name == "Slot_4"):
-            col_x = {'1': 106.00, '2': 88.00, '3': 70.00, '4': 52.00, '5': 34.00, '6': 16.00}
+        if ("myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "ehm" in lw_src or "myriamed" in lw_src) or (slot_name == "Slot_4" and "tip" not in lw_name and "tip" not in lw_src):
+            col_x = {'1': 105.00, '2': 87.00, '3': 69.00, '4': 51.00, '5': 33.00, '6': 15.00}
             row_y = {
-                'A': 60.0, 'B': 69.0, 'C': 78.0, 'D': 87.0,
-                'E': 96.0, 'F': 105.0, 'G': 114.0, 'H': 123.0
+                'A': 57.0, 'B': 65.0, 'C': 74.0, 'D': 82.0,
+                'E': 91.0, 'F': 99.0, 'G': 108.0, 'H': 116.0
             }
             if len(well_id) >= 2:
                 row_char = well_id[0].upper()
@@ -285,7 +285,7 @@ class LIMSPyQtApp(QMainWindow):
 
         # 5. 96-WELL FORMAT
         if ("96" in lw_name or "tip" in lw_name or "tip_rack" in lw_src or "96" in lw_src or
-            (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12)) or (not labware_obj and slot_name in ["Slot_3", "Slot_4", "Slot_5"]):
+            (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12)) or (not labware_obj and slot_name in ["Slot_3", "Slot_5"]):
             if slot_name == "Slot_5":
                 col_x = {
                     '1': 243.0, '2': 234.0, '3': 225.0, '4': 216.0,
@@ -343,8 +343,8 @@ class LIMSPyQtApp(QMainWindow):
                 base_z = 76.0
             elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name in ["Slot_3", "Slot_5"]):
                 base_z = 103.0
-            elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or (not labware_obj and slot_name == "Slot_4"):
-                base_z = 98.0
+            elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "myriamed" in lw_src or "ehm" in lw_src or (slot_name == "Slot_4" and "tip" not in lw_name and "tip" not in lw_src):
+                return 84.0
             elif "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
                 base_z = 98.0
             elif action == "Discard Tip" and slot_name == "Slot_1":

@@ -1,0 +1,58 @@
+[
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A1",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B2",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C3",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "D4",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "E5",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "G6",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "H6",
+        "volume": 0.0,
+        "extra_z": 0.0
+    }
+]
