@@ -7,7 +7,7 @@
         "height_mm": 35.0,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "waste_trough.json"
+        "labware_file": "reservoir_3_well.json"
     },
     "Slot_2": {
         "name": "Slot_2",
@@ -17,7 +17,7 @@
         "height_mm": 35.0,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": null
+        "labware_file": "reservoir_3_well.json"
     },
     "Slot_3": {
         "name": "Slot_3",
@@ -47,7 +47,7 @@
         "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "reservoir_6_column.json"
+        "labware_file": "generic_96_well_plate.json"
     },
     "Slot_6": {
         "name": "Slot_6",
