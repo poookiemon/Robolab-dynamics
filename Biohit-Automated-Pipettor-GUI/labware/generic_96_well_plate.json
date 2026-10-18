@@ -18,9 +18,14 @@
         "radius_mm": 3.4,
         "max_volume_ul": 360.0
     },
+    "z": {
+        "aspirate": 84.0,
+        "dispense": 84.0,
+        "discard_tip": 84.0
+    },
     "z_limits": {
-        "recommended_aspirate_z": 76.0,
-        "recommended_dispense_z": 76.0,
-        "max_safe_bottom_z": 78.0
+        "recommended_aspirate_z": 84.0,
+        "recommended_dispense_z": 84.0,
+        "max_safe_bottom_z": 84.0
     }
 }
