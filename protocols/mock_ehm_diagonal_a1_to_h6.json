@@ -43,6 +43,14 @@
         "action": "Dispense Media",
         "mode": "auto",
         "slot": "Slot_4",
+        "well": "F6",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
         "well": "G6",
         "volume": 0.0,
         "extra_z": 0.0
