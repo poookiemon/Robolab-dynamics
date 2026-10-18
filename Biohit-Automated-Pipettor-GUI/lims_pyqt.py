@@ -70,7 +70,10 @@ class WorkflowRunner(QThread):
                         self.lims.hw.move_to(0, 0, 0, speed=1500)
                         try:
                             import foc_automation
-                            foc_automation.execute_foc48_measurement(plate_name=step.get('well', ''), logger=self.log)
+                            step_exp = (step.get('well', '') or '').strip()
+                            global_exp = self.gui.cbx_foc_exp.currentText().strip() if hasattr(self.gui, 'cbx_foc_exp') else ''
+                            chosen_exp = step_exp if (step_exp and step_exp.upper() != 'A1') else (global_exp or step_exp)
+                            foc_automation.execute_foc48_measurement(plate_name=chosen_exp, logger=self.log)
                         except Exception as foc_err:
                             self.log(f"FOC48 Automation Error: {foc_err}")
                     elif "Data Analysis" in action:
@@ -629,6 +632,26 @@ class LIMSPyQtApp(QMainWindow):
         
         self.chk_manual_mode = QCheckBox("Enable Manual Coordinates")
         l_ctrl.addWidget(self.chk_manual_mode)
+
+        l_ctrl.addWidget(QLabel("FOC48 Experiment (Plate 1 = 17a, Plate 2 = 17b):"))
+        self.cbx_foc_exp = QComboBox()
+        self.cbx_foc_exp.setEditable(True)
+        foc_presets = [
+            "17b (Plate 2 - 1st in list)",
+            "17a (Plate 1 - 2nd in list)",
+            "Row 1 (1st Experiment)",
+            "Row 2 (2nd Experiment)",
+            "Row 3 (3rd Experiment)"
+        ]
+        try:
+            import foc_automation
+            for exp_dir in foc_automation.get_available_experiments():
+                if exp_dir not in foc_presets:
+                    foc_presets.append(exp_dir)
+        except Exception:
+            pass
+        self.cbx_foc_exp.addItems(foc_presets)
+        l_ctrl.addWidget(self.cbx_foc_exp)
         
         self.cbx_slot = QComboBox()
         l_ctrl.addWidget(QLabel("Target Deck Slot:"))
@@ -706,8 +729,10 @@ class LIMSPyQtApp(QMainWindow):
                 step_data["volume"] = float(self.ent_vol.text() or 0.0)
                 msg = f"[SYSTEM] Incubate for {step_data['volume']} seconds."
             elif "FOC48" in action:
-                step_data["well"] = self.ent_well.text()
-                msg = f"[MEASURE] Execute FOC48_Stim_0.xml for Plate: '{step_data['well']}'"
+                custom_exp = self.ent_well.text().strip()
+                chosen_exp = custom_exp if custom_exp else self.cbx_foc_exp.currentText().strip()
+                step_data["well"] = chosen_exp
+                msg = f"[MEASURE] FOC48_autoOrgan -> Experiment: '{chosen_exp}'"
             elif "Data Analysis" in action:
                 msg = "[ANALYSIS] Execute Hill Equation Modeling"
             elif "DB Upload" in action:

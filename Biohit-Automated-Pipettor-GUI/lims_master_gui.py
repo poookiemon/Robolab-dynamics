@@ -836,7 +836,28 @@ class LIMSMasterApp:
         self.manual_mode_var = tk.BooleanVar(value=False)
         self.chk_manual_mode = ttk.Checkbutton(pane_ctrl, text="Enable Manual Coordinates",
                                                variable=self.manual_mode_var, command=self._toggle_wf_inputs)
-        self.chk_manual_mode.pack(fill=tk.X, pady=(0, 10))
+        self.chk_manual_mode.pack(fill=tk.X, pady=(0, 6))
+
+        foc_frame = ttk.LabelFrame(pane_ctrl, text="🔬 FOC48 Experiment Selection", padding=6)
+        foc_frame.pack(fill=tk.X, pady=(0, 8))
+        ttk.Label(foc_frame, text="Target Experiment (Plate 1 = 17a, Plate 2 = 17b):", font=("Arial", 8, "bold")).pack(anchor="w")
+        foc_presets = [
+            "17b (Plate 2 - 1st in list)",
+            "17a (Plate 1 - 2nd in list)",
+            "Row 1 (1st Experiment)",
+            "Row 2 (2nd Experiment)",
+            "Row 3 (3rd Experiment)"
+        ]
+        try:
+            import foc_automation
+            for exp_dir in foc_automation.get_available_experiments():
+                if exp_dir not in foc_presets:
+                    foc_presets.append(exp_dir)
+        except Exception:
+            pass
+        self.foc_exp_var = tk.StringVar(value=foc_presets[0])
+        self.cbx_foc_exp = ttk.Combobox(foc_frame, textvariable=self.foc_exp_var, values=foc_presets, state="normal")
+        self.cbx_foc_exp.pack(fill=tk.X, pady=(2, 0))
 
         self.input_frame = ttk.Frame(pane_ctrl)
         self.input_frame.pack(fill=tk.X, expand=True)
@@ -866,6 +887,7 @@ class LIMSMasterApp:
 
         self.wf_box = tk.Listbox(pane_list, font=("Consolas", 11), bg="#f8f9fa", fg="black", selectbackground="#007bff")
         self.wf_box.pack(fill=tk.BOTH, expand=True)
+        self.wf_box.bind("<Double-Button-1>", self.edit_wf_step)
 
         run_frame = ttk.LabelFrame(pane_list, text="Opentrons-Style Run Dashboard", padding=10)
         run_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=10)
@@ -921,11 +943,11 @@ class LIMSMasterApp:
                 self.ent_vol.pack(fill=tk.X, pady=(0, 5))
         else:
             if "Incubate" in action:
-                self.lbl_4.config(text="Seconds (e.g., 300):")
+                self.lbl_4.config(text="Seconds (e.g., 120):")
                 self.lbl_4.pack(anchor="w")
                 self.ent_vol.pack(fill=tk.X, pady=(0, 5))
             elif "FOC48" in action:
-                self.lbl_2.config(text="Assay Plate Name:")
+                self.lbl_2.config(text="Experiment Override (optional, or use selector above):")
                 self.lbl_2.pack(anchor="w")
                 self.ent_well.pack(fill=tk.X, pady=(0, 5))
             elif "Data Analysis" in action:
@@ -1115,8 +1137,10 @@ class LIMSMasterApp:
                 step_data["volume"] = vol_val
                 msg = f"[SYSTEM] Incubate for {vol_val} seconds."
             elif "FOC48" in action:
-                step_data["well"] = self.ent_well.get()
-                msg = f"[MEASURE] Execute FOC48_Stim_0.xml for Plate: '{step_data['well']}'"
+                custom_exp = self.ent_well.get().strip()
+                chosen_exp = custom_exp if custom_exp else self.foc_exp_var.get().strip()
+                step_data["well"] = chosen_exp
+                msg = f"[MEASURE] FOC48_autoOrgan -> Experiment: '{chosen_exp}'"
             elif "Data Analysis" in action:
                 msg = f"[ANALYSIS] Execute Hill Equation Modeling"
             elif "DB Upload" in action:
@@ -1194,6 +1218,46 @@ class LIMSMasterApp:
 
         self.wf_box.insert(tk.END, msg)
         self.workflow_sequence.append(step_data)
+
+    def edit_wf_step(self, event=None):
+        sel = self.wf_box.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        if idx >= len(self.workflow_sequence):
+            return
+        step = self.workflow_sequence[idx]
+        act = step.get('action', '')
+        from tkinter import simpledialog
+        if "FOC48" in act:
+            curr = step.get('well', '') or self.foc_exp_var.get()
+            new_exp = simpledialog.askstring(
+                "Edit FOC48 Experiment",
+                "Enter Experiment to select in FOC48 Save dialog:\n\n"
+                "• '17b' or 'Plate 2' or '1' -> 1st Experiment [20260917b]\n"
+                "• '17a' or 'Plate 1' or '2' -> 2nd Experiment [20260917a]\n"
+                "• Or type any Experiment folder name:",
+                initialvalue=curr,
+                parent=self.root
+            )
+            if new_exp is not None:
+                step['well'] = new_exp.strip()
+                self.wf_box.delete(idx)
+                self.wf_box.insert(idx, f"[MEASURE] FOC48_autoOrgan -> Experiment: '{step['well'] or 'Default'}'")
+                self.wf_box.selection_set(idx)
+        elif "Incubate" in act:
+            curr_vol = step.get('volume', 120.0)
+            new_sec = simpledialog.askfloat(
+                "Edit Incubation Time",
+                "Enter wait duration in seconds (e.g., 120):",
+                initialvalue=float(curr_vol),
+                parent=self.root
+            )
+            if new_sec is not None:
+                step['volume'] = float(new_sec)
+                self.wf_box.delete(idx)
+                self.wf_box.insert(idx, f"[SYSTEM] Incubate for {step['volume']} seconds.")
+                self.wf_box.selection_set(idx)
 
     def pause_resume_run(self):
         if self.pause_event.is_set():
@@ -1522,7 +1586,7 @@ class LIMSMasterApp:
                 if "Incubate" in action:
                     self.estimated_total_time += vol
                 elif "FOC48" in action:
-                    self.estimated_total_time += 15.0
+                    self.estimated_total_time += 115.0
                 elif "Data Analysis" in action:
                     self.estimated_total_time += 5.0
                 elif "DB Upload" in action:
@@ -1575,7 +1639,10 @@ class LIMSMasterApp:
                             self.lims.hw.move_to(0, 0, 0, speed=self.speed_var.get())
                             try:
                                 import foc_automation
-                                foc_automation.execute_foc48_measurement(plate_name=step.get('well', ''), logger=self.logger)
+                                step_exp = (step.get('well', '') or '').strip()
+                                global_exp = self.foc_exp_var.get().strip() if hasattr(self, 'foc_exp_var') else ''
+                                chosen_exp = step_exp if (step_exp and step_exp.upper() != 'A1') else (global_exp or step_exp)
+                                foc_automation.execute_foc48_measurement(plate_name=chosen_exp, logger=self.logger)
                             except Exception as foc_err:
                                 self.logger.error(f"FOC48 Automation Error: {foc_err}")
                         elif "Data Analysis" in action:
