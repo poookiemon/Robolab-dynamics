@@ -1414,7 +1414,7 @@ class LIMSMasterApp:
         lw_name = (getattr(labware_obj, 'name', '') or '').lower()
         lw_src = (getattr(labware_obj, 'source_file', '') or '').lower()
 
-        if action in ["Aspirate Media", "Dispense Media", "Discard Tip"]:
+        if action in ["Aspirate Media", "Dispense Media", "Discard Tip", "Mix Well"]:
             if "waste" in lw_name or "waste" in lw_src or (not labware_obj and slot_name in ["Slot_6", "Slot_1"]):
                 base_z = 90.0
             elif "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
@@ -1861,7 +1861,7 @@ class LIMSMasterApp:
                                 except TypeError:
                                     self.lims.pipettor.hardware.move_z(0)
 
-                    elif action in ["Aspirate Media", "Dispense Media", "Discard Tip"]:
+                    elif action in ["Aspirate Media", "Dispense Media", "Discard Tip", "Mix Well"]:
                         tz = target_z if mode == "manual" else self._calculate_z(action,
                                                                                  self.lims.deck_labware.get(slot_name),
                                                                                  well_id, mode, 0.0, slot_name, extra_z)
@@ -1900,6 +1900,42 @@ class LIMSMasterApp:
                                         self.logger.warning(f"Dispense blowout exception ignored: {d_err}")
                                 else:
                                     time.sleep(0.3)
+
+                                mix_cycles = int(step.get('mix_cycles', 0))
+                                if mix_cycles > 0:
+                                    mix_vol = min(float(step.get('mix_volume', 100.0)), self.lims.pipettor.tip_volume)
+                                    self.logger.info(f"In-place mixing at {well_id}: {mix_cycles}x {mix_vol}uL (submerged at Z={tz:.1f}mm)")
+                                    for _ in range(mix_cycles):
+                                        if self.is_aborted: break
+                                        try:
+                                            self.lims.pipettor.hardware.aspirate(mix_vol)
+                                            time.sleep(0.6)
+                                            self.lims.pipettor.hardware.dispense(mix_vol)
+                                            time.sleep(0.3)
+                                        except Exception as m_err:
+                                            self.logger.warning(f"Mix stroke warning: {m_err}")
+                                    try:
+                                        self.lims.pipettor.hardware.dispense(50)
+                                    except Exception:
+                                        pass
+
+                            elif action == "Mix Well":
+                                mix_cycles = int(step.get('mix_cycles', 3))
+                                mix_vol = min(float(vol if vol > 0 else step.get('mix_volume', 100.0)), self.lims.pipettor.tip_volume)
+                                self.logger.info(f"In-place mixing at {well_id}: {mix_cycles}x {mix_vol}uL (submerged at Z={tz:.1f}mm)")
+                                for _ in range(mix_cycles):
+                                    if self.is_aborted: break
+                                    try:
+                                        self.lims.pipettor.hardware.aspirate(mix_vol)
+                                        time.sleep(0.6)
+                                        self.lims.pipettor.hardware.dispense(mix_vol)
+                                        time.sleep(0.3)
+                                    except Exception as m_err:
+                                        self.logger.warning(f"Mix stroke warning: {m_err}")
+                                try:
+                                    self.lims.pipettor.hardware.dispense(50)
+                                except Exception:
+                                    pass
 
                             elif action == "Discard Tip":
                                 self.lims.pipettor.hardware.eject_tip()
