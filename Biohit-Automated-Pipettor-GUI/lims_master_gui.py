@@ -614,15 +614,19 @@ class LIMSMasterApp:
             threading.Thread(target=self._poll_coordinates, daemon=True).start()
 
     def _poll_coordinates(self):
+        last_pos = None
         while self.telemetry_active:
             if self.lims.pipettor.hardware:
                 try:
-                    self.current_pos = {"X": self.jog_vars["X"].get(), "Y": self.jog_vars["Y"].get(),
-                                        "Z": self.jog_vars["Z"].get()}
+                    new_pos = {"X": self.jog_vars["X"].get(), "Y": self.jog_vars["Y"].get(),
+                               "Z": self.jog_vars["Z"].get()}
+                    if new_pos != last_pos:
+                        self.current_pos = new_pos
+                        last_pos = dict(new_pos)
+                        self.root.after(0, self.draw_deck)
                 except Exception:
                     pass
-            self.root.after(0, self.draw_deck)
-            time.sleep(0.1)
+            time.sleep(0.25)
 
     def get_render_width(self):
         return self.bed_width
@@ -1371,14 +1375,11 @@ class LIMSMasterApp:
                     r_c = well_id[0].upper()
                     c_str = well_id[1:]
                     r_idx = ord(r_c) - ord('A')
-                    if r_c == 'H':
-                        if hasattr(self, 'logger') and self.logger:
-                            self.logger.warning(f"Slot 5 Warning: Well {well_id} in Row H exceeds pipette travel limit (Y=218.0mm). Usable range: A1-G12.")
                     if c_str in col_x and 0 <= r_idx < 8:
                         return col_x[c_str], origin_y + (r_idx * 9.0)
             else:
                 origin_x = 242.0 if slot_obj.x_abs >= 70.0 else 106.8
-                origin_y = slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0
+                origin_y = 51.0 if slot_name == "Slot_3" else (slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0)
                 if len(well_id) >= 2:
                     r_c = well_id[0].upper()
                     c_str = well_id[1:]
