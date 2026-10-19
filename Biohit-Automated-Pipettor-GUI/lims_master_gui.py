@@ -1288,9 +1288,10 @@ class LIMSMasterApp:
             pass
 
     def update_ui_state(self, running):
+        self.is_running = running
         state = tk.DISABLED if running else tk.NORMAL
         self.btn_play.config(state=state)
-        self.btn_pause.config(state=tk.NORMAL if running else tk.DISABLED)
+        self.btn_pause.config(state=tk.NORMAL if running else tk.DISABLED, text="⏸ PAUSE", bg="#ffc107")
         self.btn_stop.config(state=tk.NORMAL if running else tk.DISABLED, text="■ STOP")
 
     def ask_error_resolution(self, error_msg, step_idx):
@@ -1928,6 +1929,7 @@ class LIMSMasterApp:
                     self.lims.pipettor.hardware.move_z(0)
                 except Exception as ze:
                     self.logger.warning(f"Z clearance move warning: {ze}")
+            self.is_running = False
             self.root.after(0, lambda: self.update_ui_state(False))
             self.root.after(0, lambda: self.progress_var.set(0))
 
