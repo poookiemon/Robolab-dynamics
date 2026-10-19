@@ -1346,8 +1346,8 @@ class LIMSMasterApp:
             target_y = 200.0 if slot_name == "Slot_5" else cy
             return target_x, target_y
 
-        # 4. MYRIAMED 48-WELL EHM PLATE (Slot_4 default or myriamed/ehm labware)
-        if ("myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "ehm" in lw_src or "myriamed" in lw_src) or (slot_name == "Slot_4" and "tip" not in lw_name and "tip" not in lw_src):
+        # 4. MYRIAMED 48-WELL EHM PLATE (Slot_4 when assigned myriamed/ehm/48-well or unassigned)
+        if ("myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "ehm" in lw_src or "myriamed" in lw_src) or (slot_name == "Slot_4" and not any(k in lw_name or k in lw_src for k in ["tip", "96"])):
             col_x = {'1': 105.00, '2': 87.00, '3': 69.00, '4': 51.00, '5': 33.00, '6': 15.00}
             row_y = {
                 'A': 57.0, 'B': 65.0, 'C': 74.0, 'D': 82.0,
@@ -1358,8 +1358,6 @@ class LIMSMasterApp:
                 col_char = well_id[1:]
                 if row_char in row_y and col_char in col_x:
                     return col_x[col_char], row_y[row_char]
-            if hasattr(self, 'logger'):
-                self.logger.warning(f"Slot 4 Override: Well {well_id} falls outside defined EHM grid.")
 
         # 5. 96-WELL FORMAT (Tip Rack or 96-Well Microplate on any slot!)
         if ("96" in lw_name or "tip" in lw_name or "tip_rack" in lw_src or "96" in lw_src or
@@ -1379,7 +1377,7 @@ class LIMSMasterApp:
                         return col_x[c_str], origin_y + (r_idx * 9.0)
             else:
                 origin_x = 242.0 if slot_obj.x_abs >= 70.0 else 106.8
-                origin_y = 51.0 if slot_name == "Slot_3" else (slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0)
+                origin_y = 51.0 if slot_name == "Slot_3" else (57.0 if slot_name == "Slot_4" else (slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0))
                 if len(well_id) >= 2:
                     r_c = well_id[0].upper()
                     c_str = well_id[1:]
@@ -1422,7 +1420,7 @@ class LIMSMasterApp:
                 return 80.0
             elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name in ["Slot_3", "Slot_5"]):
                 base_z = 103.0
-            elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "myriamed" in lw_src or "ehm" in lw_src or (slot_name == "Slot_4" and "tip" not in lw_name and "tip" not in lw_src):
+            elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "myriamed" in lw_src or "ehm" in lw_src or (slot_name == "Slot_4" and not any(k in lw_name or k in lw_src for k in ["tip", "96"])):
                 return 84.0
             elif "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
                 base_z = 98.0
@@ -1673,6 +1671,17 @@ class LIMSMasterApp:
                 if mode == "manual":
                     target_x, target_y, target_z = step.get('x', 0.0), step.get('y', 0.0), step.get('z', 0.0)
                 elif slot_name in self.lims.deck_slots:
+                    # Auto-switch Slot_4 to 96-well plate if protocol accesses columns 7-12 on Slot_4
+                    if slot_name == "Slot_4" and len(well_id) >= 2 and well_id[1:].isdigit() and int(well_id[1:]) > 6:
+                        curr_lw = self.lims.deck_labware.get("Slot_4")
+                        if not curr_lw or "96" not in (getattr(curr_lw, 'source_file', '') or '').lower():
+                            lw_dir = self.get_labware_dir()
+                            p96 = os.path.join(lw_dir, "generic_96_well_plate.json")
+                            if os.path.exists(p96):
+                                self.lims.deck_labware["Slot_4"] = Labware(p96)
+                                self.lims.deck_labware["Slot_4"].source_file = "generic_96_well_plate.json"
+                                self.logger.info("Auto-switched Slot_4 to generic_96_well_plate.json (columns 7-12 detected).")
+
                     # Auto-assign labware fallback if missing from deck_labware
                     if slot_name not in self.lims.deck_labware:
                         lw_dir = self.get_labware_dir()
@@ -2217,8 +2226,20 @@ class LIMSMasterApp:
 
                     self.wf_box.insert(tk.END, msg)
 
-                # Auto-mount labware for any referenced slots not currently mounted
+                # Auto-mount labware for any referenced slots not currently mounted (or switch Slot_4 between 96-well and 48-well)
                 lw_dir = self.get_labware_dir()
+                slot4_has_col_gt_6 = any(
+                    s.get('slot') == 'Slot_4' and len(s.get('well', '')) >= 2 and s.get('well', '')[1:].isdigit() and int(s.get('well', '')[1:]) > 6
+                    for s in loaded_sequence
+                )
+                if slot4_has_col_gt_6:
+                    p96 = os.path.join(lw_dir, "generic_96_well_plate.json")
+                    if os.path.exists(p96):
+                        self.lims.deck_labware["Slot_4"] = Labware(p96)
+                        self.lims.deck_labware["Slot_4"].source_file = "generic_96_well_plate.json"
+                        if "Slot_4" not in self.placed_slots: self.placed_slots.append("Slot_4")
+                        self.logger.info("Auto-configured Slot_4 as 96-Well Plate (generic_96_well_plate.json) for this protocol.")
+
                 for step in loaded_sequence:
                     s_name = step.get('slot', '')
                     w_name = step.get('well', '')
@@ -2227,7 +2248,7 @@ class LIMSMasterApp:
                         default_map = {
                             "Slot_2": "reservoir_3_well.json",
                             "Slot_3": "tip_rack_1000ul.json" if s_act == "Pick Up Tip" else "reservoir_6_column.json",
-                            "Slot_4": "tip_rack_1000ul.json" if s_act == "Pick Up Tip" else "myriamed_48_well.json",
+                            "Slot_4": "tip_rack_1000ul.json" if s_act == "Pick Up Tip" else ("generic_96_well_plate.json" if slot4_has_col_gt_6 else "myriamed_48_well.json"),
                             "Slot_5": "generic_96_well_plate.json",
                             "Slot_6": "waste_trough.json"
                         }

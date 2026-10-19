@@ -271,7 +271,7 @@ class LIMSPyQtApp(QMainWindow):
             return target_x, target_y
 
         # 4. MYRIAMED 48-WELL EHM PLATE
-        if ("myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "ehm" in lw_src or "myriamed" in lw_src) or (slot_name == "Slot_4" and "tip" not in lw_name and "tip" not in lw_src):
+        if ("myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "ehm" in lw_src or "myriamed" in lw_src) or (slot_name == "Slot_4" and not any(k in lw_name or k in lw_src for k in ["tip", "96"])):
             col_x = {'1': 105.00, '2': 87.00, '3': 69.00, '4': 51.00, '5': 33.00, '6': 15.00}
             row_y = {
                 'A': 57.0, 'B': 65.0, 'C': 74.0, 'D': 82.0,
@@ -301,7 +301,7 @@ class LIMSPyQtApp(QMainWindow):
                         return col_x[c_str], origin_y + (r_idx * 9.0)
             else:
                 origin_x = 242.0 if slot_obj.x_abs >= 70.0 else 106.8
-                origin_y = 51.0 if slot_name == "Slot_3" else (slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0)
+                origin_y = 51.0 if slot_name == "Slot_3" else (57.0 if slot_name == "Slot_4" else (slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0))
                 if len(well_id) >= 2:
                     r_c = well_id[0].upper()
                     c_str = well_id[1:]
@@ -341,7 +341,7 @@ class LIMSPyQtApp(QMainWindow):
                 return 80.0
             elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name in ["Slot_3", "Slot_5"]):
                 base_z = 103.0
-            elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "myriamed" in lw_src or "ehm" in lw_src or (slot_name == "Slot_4" and "tip" not in lw_name and "tip" not in lw_src):
+            elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "myriamed" in lw_src or "ehm" in lw_src or (slot_name == "Slot_4" and not any(k in lw_name or k in lw_src for k in ["tip", "96"])):
                 return 84.0
             elif "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
                 base_z = 98.0
