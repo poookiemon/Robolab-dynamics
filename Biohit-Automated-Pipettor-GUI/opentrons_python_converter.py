@@ -104,6 +104,9 @@ class MockPipette:
         return self.protocol.waste_slot, "A1"
 
     def _extract_mix_info(self, kwargs):
+        mix_after = kwargs.get('mix_after')
+        if isinstance(mix_after, (tuple, list)) and len(mix_after) >= 2:
+            return 5, float(mix_after[1])
         lc = kwargs.get('liquid_class')
         if isinstance(lc, dict):
             found_reps = 0
@@ -131,11 +134,15 @@ class MockPipette:
         slot, well = self._get_target(location)
         self.protocol.record_step("Dispense Media", slot, well, vol)
 
-    def mix(self, repetitions=3, volume=None, location=None, **kwargs):
-        vol = float(volume) if volume is not None else 50.0
-        for _ in range(int(repetitions)):
-            self.aspirate(vol, location)
-            self.dispense(vol, location)
+    def mix(self, repetitions=5, volume=None, location=None, **kwargs):
+        vol = float(volume) if volume is not None else 100.0
+        reps = max(1, int(repetitions)) if repetitions else 5
+        if self.protocol.steps and self.protocol.steps[-1].get("action") == "Dispense Media":
+            self.protocol.steps[-1]["mix_cycles"] = reps
+            self.protocol.steps[-1]["mix_volume"] = round(vol, 2)
+        else:
+            slot, well = self._get_target(location)
+            self.protocol.record_step("Mix Well", slot, well, vol, mix_cycles=reps, mix_volume=vol)
 
     def blow_out(self, location=None):
         pass
@@ -368,16 +375,18 @@ def detect_opentrons_labware(py_filepath):
 
             for slot, lw in collector.labware_list.items():
                 lw_lower = lw.name.lower()
-                if "tip" in lw_lower:
+                if "tip" in lw_lower or slot == "8":
                     suggested = "Slot_3"
-                elif "reservoir" in lw_lower or "trough" in lw_lower:
-                    suggested = "Slot_5"
-                elif "waste" in lw_lower or "trash" in lw_lower:
+                elif "tuberack" in lw_lower or "falcon" in lw_lower or "reservoir" in lw_lower or "trough" in lw_lower or slot == "10":
+                    suggested = "Slot_2"
+                elif "waste" in lw_lower or "trash" in lw_lower or slot == "12":
                     suggested = "Slot_6"
                 elif slot == "4":
                     suggested = "Slot_4"
+                elif slot == "11":
+                    suggested = "Slot_5"
                 else:
-                    suggested = "Slot_4" if "Slot_4" not in [d.get('suggested_biohit_slot') for d in detected] else "Slot_2"
+                    suggested = "Slot_4" if "Slot_4" not in [d.get('suggested_biohit_slot') for d in detected] else "Slot_5"
 
                 detected.append({
                     "name": lw.name,
