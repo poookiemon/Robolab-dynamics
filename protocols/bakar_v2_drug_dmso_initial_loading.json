@@ -10,7 +10,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -37,7 +37,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -64,7 +64,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -91,7 +91,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 24.0,
         "extra_z": 0.0
@@ -240,7 +240,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -267,7 +267,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -294,7 +294,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -321,7 +321,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 24.0,
         "extra_z": 0.0
@@ -470,7 +470,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -497,7 +497,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -524,7 +524,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -551,7 +551,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 24.0,
         "extra_z": 0.0
@@ -700,7 +700,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -727,7 +727,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -754,7 +754,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -781,7 +781,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 24.0,
         "extra_z": 0.0
@@ -930,7 +930,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -957,7 +957,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -984,7 +984,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -1011,7 +1011,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_1",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 24.0,
         "extra_z": 0.0

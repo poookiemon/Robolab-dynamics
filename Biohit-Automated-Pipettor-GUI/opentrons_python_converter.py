@@ -420,7 +420,7 @@ def convert_opentrons_py_to_biohit(py_filepath, slot_mapping=None, max_volume=20
         # Default slot map if none provided
         effective_slot_map = {
             '8': 'Slot_3',
-            '10': 'Slot_1',
+            '10': 'Slot_2',
             '4': 'Slot_4',
             '11': 'Slot_5',
             '12': 'Slot_6'
