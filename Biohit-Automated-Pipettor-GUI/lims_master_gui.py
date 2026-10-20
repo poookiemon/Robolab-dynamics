@@ -990,7 +990,7 @@ class LIMSMasterApp:
             z_limits = labware_obj.raw_data.get('z_limits', {})
 
         if slot == "Slot_4" and labware_obj and "96" in (getattr(labware_obj, 'name', '') + getattr(labware_obj, 'source_file', '')).lower():
-            z_limits = {"recommended_aspirate_z": 90.0, "max_safe_bottom_z": 90.0}
+            z_limits = {"recommended_aspirate_z": 85.0, "max_safe_bottom_z": 85.0}
         elif not z_limits:
             if slot == "Slot_4" or (labware_obj and ("ehm" in labware_obj.name.lower() or "48" in labware_obj.name.lower())):
                 z_limits = {"recommended_aspirate_z": 84.0, "max_safe_bottom_z": 84.0}
@@ -1420,7 +1420,7 @@ class LIMSMasterApp:
             elif "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
                 base_z = 98.0
             elif ("96" in lw_name or "96" in lw_src or (not labware_obj and slot_name == "Slot_5")) and ("tip" not in lw_name and "tip" not in lw_src):
-                return 90.0 if slot_name == "Slot_4" else 80.0
+                return 85.0 if slot_name == "Slot_4" else 80.0
             elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name in ["Slot_3", "Slot_5"]):
                 base_z = 103.0
             elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "myriamed" in lw_src or "ehm" in lw_src or (slot_name == "Slot_4" and not any(k in lw_name or k in lw_src for k in ["tip", "96"])):
@@ -1684,7 +1684,7 @@ class LIMSMasterApp:
                             if os.path.exists(p96):
                                 self.lims.deck_labware["Slot_4"] = Labware(p96)
                                 self.lims.deck_labware["Slot_4"].source_file = "generic_96_well_plate.json"
-                                self.logger.info("Auto-switched Slot_4 to generic_96_well_plate.json (Z=90.0mm).")
+                                self.logger.info("Auto-switched Slot_4 to generic_96_well_plate.json (Z=85.0mm).")
                     elif slot_name == "Slot_4" and req_lw == "myriamed_48_well.json":
                         curr_lw = self.lims.deck_labware.get("Slot_4")
                         if not curr_lw or "48" not in (getattr(curr_lw, 'source_file', '') or '').lower():

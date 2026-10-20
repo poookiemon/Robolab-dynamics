@@ -104,22 +104,6 @@ class MockPipette:
         return self.protocol.waste_slot, "A1"
 
     def _extract_mix_info(self, kwargs):
-        lc = kwargs.get('liquid_class')
-        if isinstance(lc, dict):
-            # Search recursively for any {"enabled": True, "repetitions": ..., "volume": ...} under "mix"
-            found_reps = 0
-            found_vol = 100.0
-            def walk(d):
-                nonlocal found_reps, found_vol
-                if isinstance(d, dict):
-                    if "mix" in d and isinstance(d["mix"], dict) and d["mix"].get("enabled"):
-                        found_reps += int(d["mix"].get("repetitions", 5))
-                        found_vol = float(d["mix"].get("volume", 100.0))
-                    for v in d.values():
-                        walk(v)
-            walk(lc)
-            if found_reps > 0:
-                return 5, found_vol
         return 0, 100.0
 
     def aspirate(self, volume=None, location=None, **kwargs):
