@@ -93,7 +93,7 @@
         "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "volume": 31.4,
+        "volume": 24.0,
         "extra_z": 0.0
     },
     {
@@ -101,7 +101,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A6",
-        "volume": 31.4,
+        "volume": 24.0,
         "extra_z": 0.0,
         "labware": "generic_96_well_plate.json"
     },
@@ -110,7 +110,7 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A1",
-        "volume": 14.6,
+        "volume": 22.0,
         "extra_z": 0.0
     },
     {
@@ -118,7 +118,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A6",
-        "volume": 14.6,
+        "volume": 22.0,
         "extra_z": 0.0,
         "mix_cycles": 5,
         "mix_volume": 100.0,
@@ -323,7 +323,7 @@
         "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "volume": 31.4,
+        "volume": 24.0,
         "extra_z": 0.0
     },
     {
@@ -331,7 +331,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B6",
-        "volume": 31.4,
+        "volume": 24.0,
         "extra_z": 0.0,
         "labware": "generic_96_well_plate.json"
     },
@@ -340,7 +340,7 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A2",
-        "volume": 14.6,
+        "volume": 22.0,
         "extra_z": 0.0
     },
     {
@@ -348,7 +348,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "B6",
-        "volume": 14.6,
+        "volume": 22.0,
         "extra_z": 0.0,
         "mix_cycles": 5,
         "mix_volume": 100.0,
@@ -553,7 +553,7 @@
         "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "volume": 31.4,
+        "volume": 24.0,
         "extra_z": 0.0
     },
     {
@@ -561,7 +561,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C6",
-        "volume": 31.4,
+        "volume": 24.0,
         "extra_z": 0.0,
         "labware": "generic_96_well_plate.json"
     },
@@ -570,7 +570,7 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A3",
-        "volume": 14.6,
+        "volume": 22.0,
         "extra_z": 0.0
     },
     {
@@ -578,7 +578,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "C6",
-        "volume": 14.6,
+        "volume": 22.0,
         "extra_z": 0.0,
         "mix_cycles": 5,
         "mix_volume": 100.0,
@@ -783,7 +783,7 @@
         "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "volume": 31.4,
+        "volume": 24.0,
         "extra_z": 0.0
     },
     {
@@ -791,7 +791,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "D6",
-        "volume": 31.4,
+        "volume": 24.0,
         "extra_z": 0.0,
         "labware": "generic_96_well_plate.json"
     },
@@ -800,7 +800,7 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "A4",
-        "volume": 14.6,
+        "volume": 22.0,
         "extra_z": 0.0
     },
     {
@@ -808,7 +808,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "D6",
-        "volume": 14.6,
+        "volume": 22.0,
         "extra_z": 0.0,
         "mix_cycles": 5,
         "mix_volume": 100.0,
@@ -1013,7 +1013,7 @@
         "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "volume": 31.4,
+        "volume": 24.0,
         "extra_z": 0.0
     },
     {
@@ -1021,7 +1021,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "E6",
-        "volume": 31.4,
+        "volume": 24.0,
         "extra_z": 0.0,
         "labware": "generic_96_well_plate.json"
     },
@@ -1030,7 +1030,7 @@
         "mode": "auto",
         "slot": "Slot_5",
         "well": "B1",
-        "volume": 14.6,
+        "volume": 22.0,
         "extra_z": 0.0
     },
     {
@@ -1038,7 +1038,7 @@
         "mode": "auto",
         "slot": "Slot_4",
         "well": "E6",
-        "volume": 14.6,
+        "volume": 22.0,
         "extra_z": 0.0,
         "mix_cycles": 5,
         "mix_volume": 100.0,
