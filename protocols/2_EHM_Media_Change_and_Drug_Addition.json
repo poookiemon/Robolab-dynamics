@@ -4982,7 +4982,9 @@
         "well": "A1",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -4999,7 +5001,9 @@
         "well": "B1",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5016,7 +5020,9 @@
         "well": "C1",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5033,7 +5039,9 @@
         "well": "A2",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5050,7 +5058,9 @@
         "well": "B2",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5067,7 +5077,9 @@
         "well": "C2",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5084,7 +5096,9 @@
         "well": "A3",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5101,7 +5115,9 @@
         "well": "B3",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5118,7 +5134,9 @@
         "well": "C3",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5135,7 +5153,9 @@
         "well": "A4",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5152,7 +5172,9 @@
         "well": "B4",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5169,7 +5191,9 @@
         "well": "C4",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5186,7 +5210,9 @@
         "well": "A5",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5203,7 +5229,9 @@
         "well": "B5",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5220,7 +5248,9 @@
         "well": "C5",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5237,7 +5267,9 @@
         "well": "A6",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5254,7 +5286,9 @@
         "well": "B6",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5271,7 +5305,9 @@
         "well": "C6",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Discard Tip",
@@ -5304,7 +5340,9 @@
         "well": "D1",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5321,7 +5359,9 @@
         "well": "E1",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5338,7 +5378,9 @@
         "well": "F1",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5355,7 +5397,9 @@
         "well": "D2",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5372,7 +5416,9 @@
         "well": "E2",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5389,7 +5435,9 @@
         "well": "F2",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5406,7 +5454,9 @@
         "well": "D3",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5423,7 +5473,9 @@
         "well": "E3",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5440,7 +5492,9 @@
         "well": "F3",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5457,7 +5511,9 @@
         "well": "D4",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5474,7 +5530,9 @@
         "well": "E4",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5491,7 +5549,9 @@
         "well": "F4",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5508,7 +5568,9 @@
         "well": "D5",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5525,7 +5587,9 @@
         "well": "E5",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5542,7 +5606,9 @@
         "well": "F5",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5559,7 +5625,9 @@
         "well": "D6",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5576,7 +5644,9 @@
         "well": "E6",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Aspirate Media",
@@ -5593,7 +5663,9 @@
         "well": "F6",
         "volume": 5.0,
         "extra_z": 0.0,
-        "labware": "myriamed_48_well.json"
+        "labware": "myriamed_48_well.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Discard Tip",
