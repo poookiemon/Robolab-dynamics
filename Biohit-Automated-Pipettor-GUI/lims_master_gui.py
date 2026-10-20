@@ -1674,8 +1674,9 @@ class LIMSMasterApp:
                 if mode == "manual":
                     target_x, target_y, target_z = step.get('x', 0.0), step.get('y', 0.0), step.get('z', 0.0)
                 elif slot_name in self.lims.deck_slots:
-                    # Auto-switch Slot_4 to 96-well plate if protocol accesses columns 7-12 on Slot_4
-                    if slot_name == "Slot_4" and len(well_id) >= 2 and well_id[1:].isdigit() and int(well_id[1:]) > 6:
+                    # Auto-switch Slot_4 to 96-well plate if protocol specifies generic_96_well_plate.json or accesses columns 7-12
+                    req_lw = step.get('labware', '')
+                    if slot_name == "Slot_4" and (req_lw == "generic_96_well_plate.json" or (len(well_id) >= 2 and well_id[1:].isdigit() and int(well_id[1:]) > 6)):
                         curr_lw = self.lims.deck_labware.get("Slot_4")
                         if not curr_lw or "96" not in (getattr(curr_lw, 'source_file', '') or '').lower():
                             lw_dir = self.get_labware_dir()
@@ -1683,7 +1684,16 @@ class LIMSMasterApp:
                             if os.path.exists(p96):
                                 self.lims.deck_labware["Slot_4"] = Labware(p96)
                                 self.lims.deck_labware["Slot_4"].source_file = "generic_96_well_plate.json"
-                                self.logger.info("Auto-switched Slot_4 to generic_96_well_plate.json (columns 7-12 detected).")
+                                self.logger.info("Auto-switched Slot_4 to generic_96_well_plate.json (Z=90.0mm).")
+                    elif slot_name == "Slot_4" and req_lw == "myriamed_48_well.json":
+                        curr_lw = self.lims.deck_labware.get("Slot_4")
+                        if not curr_lw or "48" not in (getattr(curr_lw, 'source_file', '') or '').lower():
+                            lw_dir = self.get_labware_dir()
+                            p48 = os.path.join(lw_dir, "myriamed_48_well.json")
+                            if os.path.exists(p48):
+                                self.lims.deck_labware["Slot_4"] = Labware(p48)
+                                self.lims.deck_labware["Slot_4"].source_file = "myriamed_48_well.json"
+                                self.logger.info("Auto-switched Slot_4 to myriamed_48_well.json (Z=84.0mm).")
 
                     # Auto-assign labware fallback if missing from deck_labware
                     if slot_name not in self.lims.deck_labware:
@@ -1891,47 +1901,49 @@ class LIMSMasterApp:
                                     time.sleep(0.3)
                             elif action == "Dispense Media":
                                 actual_dispense = min(float(vol), self.lims.pipettor.tip_volume)
+                                mix_cycles = int(step.get('mix_cycles', 0))
                                 if actual_dispense > 0:
                                     try:
                                         self.lims.pipettor.hardware.dispense(actual_dispense)
-                                        time.sleep(0.05)
-                                        self.lims.pipettor.hardware.dispense(50)
+                                        time.sleep(0.4 if mix_cycles > 0 else 0.05)
+                                        if not step.get('no_blowout', False) and mix_cycles == 0:
+                                            self.lims.pipettor.hardware.dispense(50)
                                     except Exception as d_err:
                                         self.logger.warning(f"Dispense blowout exception ignored: {d_err}")
                                 else:
                                     time.sleep(0.3)
 
-                                mix_cycles = int(step.get('mix_cycles', 0))
                                 if mix_cycles > 0:
                                     mix_vol = min(float(step.get('mix_volume', 100.0)), self.lims.pipettor.tip_volume)
                                     self.logger.info(f"In-place mixing at {well_id}: {mix_cycles}x {mix_vol}uL (submerged at Z={tz:.1f}mm)")
-                                    for _ in range(mix_cycles):
+                                    for c_idx in range(mix_cycles):
                                         if self.is_aborted: break
                                         try:
                                             self.lims.pipettor.hardware.aspirate(mix_vol)
-                                            time.sleep(0.6)
+                                            time.sleep(1.2)
                                             self.lims.pipettor.hardware.dispense(mix_vol)
-                                            time.sleep(0.3)
+                                            time.sleep(0.8)
                                         except Exception as m_err:
-                                            self.logger.warning(f"Mix stroke warning: {m_err}")
-                                    try:
-                                        self.lims.pipettor.hardware.dispense(50)
-                                    except Exception:
-                                        pass
+                                            self.logger.warning(f"Mix stroke {c_idx + 1}/{mix_cycles} warning: {m_err}")
+                                    if not step.get('no_blowout', False):
+                                        try:
+                                            self.lims.pipettor.hardware.dispense(50)
+                                        except Exception:
+                                            pass
 
                             elif action == "Mix Well":
-                                mix_cycles = int(step.get('mix_cycles', 3))
+                                mix_cycles = int(step.get('mix_cycles', 5))
                                 mix_vol = min(float(vol if vol > 0 else step.get('mix_volume', 100.0)), self.lims.pipettor.tip_volume)
                                 self.logger.info(f"In-place mixing at {well_id}: {mix_cycles}x {mix_vol}uL (submerged at Z={tz:.1f}mm)")
-                                for _ in range(mix_cycles):
+                                for c_idx in range(mix_cycles):
                                     if self.is_aborted: break
                                     try:
                                         self.lims.pipettor.hardware.aspirate(mix_vol)
-                                        time.sleep(0.6)
+                                        time.sleep(1.2)
                                         self.lims.pipettor.hardware.dispense(mix_vol)
-                                        time.sleep(0.3)
+                                        time.sleep(0.8)
                                     except Exception as m_err:
-                                        self.logger.warning(f"Mix stroke warning: {m_err}")
+                                        self.logger.warning(f"Mix stroke {c_idx + 1}/{mix_cycles} warning: {m_err}")
                                 try:
                                     self.lims.pipettor.hardware.dispense(50)
                                 except Exception:
@@ -2262,14 +2274,19 @@ class LIMSMasterApp:
                             msg = f"[{step['action'].upper()}] into {step.get('slot', '')} (Waste Trough)"
                         else:
                             z_msg = f" (Z+{step.get('extra_z', 0.0)}mm)" if step.get('extra_z', 0.0) > 0 else ""
-                            msg = f"[{step['action'].upper()}] {step.get('volume', 0.0)}\u03bcL at {step.get('slot', '')}, Well {step.get('well', '')}{z_msg}"
+                            mix_c = int(step.get('mix_cycles', 0))
+                            mix_msg = f" [+ Mix {mix_c}x {step.get('mix_volume', 100.0)}\u03bcL]" if mix_c > 0 else ""
+                            msg = f"[{step['action'].upper()}] {step.get('volume', 0.0)}\u03bcL at {step.get('slot', '')}, Well {step.get('well', '')}{z_msg}{mix_msg}"
 
                     self.wf_box.insert(tk.END, msg)
 
                 # Auto-mount labware for any referenced slots not currently mounted (or switch Slot_4 between 96-well and 48-well)
                 lw_dir = self.get_labware_dir()
                 slot4_has_col_gt_6 = any(
-                    s.get('slot') == 'Slot_4' and len(s.get('well', '')) >= 2 and s.get('well', '')[1:].isdigit() and int(s.get('well', '')[1:]) > 6
+                    s.get('slot') == 'Slot_4' and (
+                        s.get('labware') == 'generic_96_well_plate.json' or
+                        (len(s.get('well', '')) >= 2 and s.get('well', '')[1:].isdigit() and int(s.get('well', '')[1:]) > 6)
+                    )
                     for s in loaded_sequence
                 )
                 if slot4_has_col_gt_6:
@@ -2386,7 +2403,9 @@ class LIMSMasterApp:
                             msg = f"[{action.upper()}] into {step.get('slot', '')} (Waste Trough)"
                         else:
                             z_msg = f" (Z+{step.get('extra_z', 0.0)}mm)" if step.get('extra_z', 0.0) > 0 else ""
-                            msg = f"[{action.upper()}] {step.get('volume', 0.0)}\u03bcL at {step.get('slot', '')}, Well {step.get('well', '')}{z_msg}"
+                            mix_c = int(step.get('mix_cycles', 0))
+                            mix_msg = f" [+ Mix {mix_c}x {step.get('mix_volume', 100.0)}\u03bcL]" if mix_c > 0 else ""
+                            msg = f"[{action.upper()}] {step.get('volume', 0.0)}\u03bcL at {step.get('slot', '')}, Well {step.get('well', '')}{z_msg}{mix_msg}"
                         self.wf_box.insert(tk.END, msg)
 
                     top.destroy()

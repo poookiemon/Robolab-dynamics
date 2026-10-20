@@ -91,10 +91,36 @@ class MockPipette:
 
     def _get_target(self, target):
         if isinstance(target, MockWell):
-            return self.protocol.map_slot(target.labware.location), target.name
+            slot = self.protocol.map_slot(target.labware.location)
+            lw_name = getattr(target.labware, 'name', '').lower()
+            if "tuberack" in lw_name or "falcon" in lw_name:
+                if target.name.upper() == "A4":
+                    return self.protocol.waste_slot, "A1"
+                elif target.name.upper() == "A3":
+                    return slot, "A1"
+            return slot, target.name
         elif isinstance(target, MockLabware):
             return self.protocol.map_slot(target.location), "A1"
         return self.protocol.waste_slot, "A1"
+
+    def _extract_mix_info(self, kwargs):
+        lc = kwargs.get('liquid_class')
+        if isinstance(lc, dict):
+            # Search recursively for any {"enabled": True, "repetitions": ..., "volume": ...} under "mix"
+            found_reps = 0
+            found_vol = 100.0
+            def walk(d):
+                nonlocal found_reps, found_vol
+                if isinstance(d, dict):
+                    if "mix" in d and isinstance(d["mix"], dict) and d["mix"].get("enabled"):
+                        found_reps += int(d["mix"].get("repetitions", 5))
+                        found_vol = float(d["mix"].get("volume", 100.0))
+                    for v in d.values():
+                        walk(v)
+            walk(lc)
+            if found_reps > 0:
+                return 5, found_vol
+        return 0, 100.0
 
     def aspirate(self, volume=None, location=None, **kwargs):
         vol = float(volume) if volume is not None else self.max_volume
@@ -141,15 +167,32 @@ class MockPipette:
         dest_list = dest if isinstance(dest, list) else [dest]
 
         vol = float(volume)
-        for d in dest_list:
-            d_slot, d_well = self._get_target(d)
-            # Volume chunking
-            rem = vol
-            while rem > 0:
-                chunk = min(rem, self.max_volume)
-                self.protocol.record_step("Aspirate Media", s_slot, s_well, chunk)
-                self.protocol.record_step("Dispense Media", d_slot, d_well, chunk)
-                rem -= chunk
+        # Multi-dispense optimization: if 2 * vol <= max_volume (e.g. 2 * 100uL = 200uL), aspirate 200uL once and dispense 100uL + 100uL
+        if vol > 0 and (vol * 2.0) <= self.max_volume and len(dest_list) >= 2:
+            idx = 0
+            while idx < len(dest_list):
+                if idx + 1 < len(dest_list):
+                    d1_slot, d1_well = self._get_target(dest_list[idx])
+                    d2_slot, d2_well = self._get_target(dest_list[idx + 1])
+                    self.protocol.record_step("Aspirate Media", s_slot, s_well, vol * 2.0)
+                    self.protocol.record_step("Dispense Media", d1_slot, d1_well, vol, no_blowout=True, labware="generic_96_well_plate.json" if d1_slot == "Slot_4" else None)
+                    self.protocol.record_step("Dispense Media", d2_slot, d2_well, vol, no_blowout=False, labware="generic_96_well_plate.json" if d2_slot == "Slot_4" else None)
+                    idx += 2
+                else:
+                    d_slot, d_well = self._get_target(dest_list[idx])
+                    self.protocol.record_step("Aspirate Media", s_slot, s_well, vol)
+                    self.protocol.record_step("Dispense Media", d_slot, d_well, vol, labware="generic_96_well_plate.json" if d_slot == "Slot_4" else None)
+                    idx += 1
+        else:
+            for d in dest_list:
+                d_slot, d_well = self._get_target(d)
+                # Volume chunking
+                rem = vol
+                while rem > 0:
+                    chunk = min(rem, self.max_volume)
+                    self.protocol.record_step("Aspirate Media", s_slot, s_well, chunk)
+                    self.protocol.record_step("Dispense Media", d_slot, d_well, chunk, labware="generic_96_well_plate.json" if d_slot == "Slot_4" else None)
+                    rem -= chunk
 
         if new_tip == 'always':
             self.drop_tip()
@@ -159,6 +202,7 @@ class MockPipette:
         tips = kwargs.get('tips', [])
         src_list = source if isinstance(source, list) else [source]
         dest_list = dest if isinstance(dest, list) else [dest]
+        mix_cycles, mix_vol = self._extract_mix_info(kwargs)
 
         # Match lengths if one is single and other is list
         if len(src_list) == 1 and len(dest_list) > 1:
@@ -179,8 +223,14 @@ class MockPipette:
             rem = vol
             while rem > 0:
                 chunk = min(rem, self.max_volume)
-                self.protocol.record_step("Aspirate Media", s_slot, s_well, chunk)
-                self.protocol.record_step("Dispense Media", d_slot, d_well, chunk)
+                self.protocol.record_step("Aspirate Media", s_slot, s_well, chunk, labware="generic_96_well_plate.json" if s_slot == "Slot_4" else None)
+                is_last = (rem - chunk) <= 0
+                self.protocol.record_step(
+                    "Dispense Media", d_slot, d_well, chunk,
+                    mix_cycles=(mix_cycles if is_last else 0),
+                    mix_volume=mix_vol,
+                    labware="generic_96_well_plate.json" if d_slot == "Slot_4" else None
+                )
                 rem -= chunk
 
             if new_tip == 'always':
@@ -243,7 +293,7 @@ class MockProtocolContext:
         return None
 
     def define_liquid_class(self, *args, **kwargs):
-        return None
+        return kwargs.get("properties", {})
 
     def delay(self, seconds=0, minutes=0, **kwargs):
         total_sec = float(seconds) + (float(minutes) * 60.0)
@@ -256,15 +306,23 @@ class MockProtocolContext:
     def comment(self, msg=""):
         pass
 
-    def record_step(self, action, slot, well, volume):
-        self.steps.append({
+    def record_step(self, action, slot, well, volume, mix_cycles=0, mix_volume=100.0, no_blowout=False, labware=None):
+        step = {
             "action": action,
             "mode": "auto",
             "slot": slot,
             "well": well,
             "volume": round(float(volume), 2),
             "extra_z": 0.0
-        })
+        }
+        if mix_cycles > 0:
+            step["mix_cycles"] = int(mix_cycles)
+            step["mix_volume"] = round(float(mix_volume), 2)
+        if no_blowout:
+            step["no_blowout"] = True
+        if labware:
+            step["labware"] = labware
+        self.steps.append(step)
 
 def detect_opentrons_labware(py_filepath):
     """
@@ -362,9 +420,9 @@ def convert_opentrons_py_to_biohit(py_filepath, slot_mapping=None, max_volume=20
         # Default slot map if none provided
         effective_slot_map = {
             '8': 'Slot_3',
-            '10': 'Slot_5',
+            '10': 'Slot_1',
             '4': 'Slot_4',
-            '11': 'Slot_2',
+            '11': 'Slot_5',
             '12': 'Slot_6'
         }
         if slot_mapping:
