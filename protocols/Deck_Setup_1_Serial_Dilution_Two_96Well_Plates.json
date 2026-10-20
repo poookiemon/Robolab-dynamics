@@ -1,0 +1,62 @@
+{
+    "Slot_1": {
+        "name": "Slot_1",
+        "x_abs": 135.2,
+        "y_abs": 5.0,
+        "width_mm": 127.8,
+        "height_mm": 35.0,
+        "z_offset": 0.0,
+        "is_placed": true,
+        "labware_file": "reservoir_3_well.json"
+    },
+    "Slot_2": {
+        "name": "Slot_2",
+        "x_abs": 0.0,
+        "y_abs": 5.0,
+        "width_mm": 127.8,
+        "height_mm": 35.0,
+        "z_offset": 0.0,
+        "is_placed": true,
+        "labware_file": "reservoir_3_well.json"
+    },
+    "Slot_3": {
+        "name": "Slot_3",
+        "x_abs": 135.2,
+        "y_abs": 60.0,
+        "width_mm": 127.8,
+        "height_mm": 85.5,
+        "z_offset": 0.0,
+        "is_placed": true,
+        "labware_file": "tip_rack_1000ul.json"
+    },
+    "Slot_4": {
+        "name": "Slot_4",
+        "x_abs": 0.0,
+        "y_abs": 60.0,
+        "width_mm": 127.8,
+        "height_mm": 85.5,
+        "z_offset": 0.0,
+        "is_placed": true,
+        "labware_file": "generic_96_well_plate.json"
+    },
+    "Slot_5": {
+        "name": "Slot_5",
+        "x_abs": 135.2,
+        "y_abs": 165.5,
+        "width_mm": 127.8,
+        "height_mm": 85.5,
+        "z_offset": 0.0,
+        "is_placed": true,
+        "labware_file": "generic_96_well_plate.json"
+    },
+    "Slot_6": {
+        "name": "Slot_6",
+        "x_abs": 0.0,
+        "y_abs": 165.5,
+        "width_mm": 127.8,
+        "height_mm": 85.5,
+        "z_offset": 0.0,
+        "is_placed": true,
+        "labware_file": "waste_trough.json"
+    }
+}

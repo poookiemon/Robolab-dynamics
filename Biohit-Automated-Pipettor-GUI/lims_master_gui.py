@@ -1566,7 +1566,7 @@ class LIMSMasterApp:
                 "In-Well Mixing Option",
                 "Do you want to enable 5x in-well mixing for this run?\n\n"
                 "• YES (Mix ON): Goes down into the well (90mm on 96-well / 84mm on 48-well EHM) and mixes 5 times after adding drug.\n"
-                "• NO (Mix OFF): Skips all mixing and dispenses from the brim (85mm on 96-well / 84mm on 48-well EHM) without touching the well liquid."
+                "• NO (Mix OFF): Skips all mixing and dispenses from the brim (85mm on 96-well / 79mm on 48-well EHM) without touching the well liquid."
             )
         else:
             self.enable_mixing_for_run = False
@@ -1898,6 +1898,11 @@ class LIMSMasterApp:
                                     tz = min(90.0 + extra_z, 103.5)
                                 else:
                                     tz = min(85.0 + extra_z, 103.5)
+                            elif "tip" not in lw_str_s4:
+                                if action in ["Aspirate Media", "Mix Well"] or effective_mix > 0:
+                                    tz = min(84.0 + extra_z, 103.5)
+                                else:
+                                    tz = min(79.0 + extra_z, 103.5)
                         self.logger.info(
                             f"Absolute Z-Depth Override Executed: Z={tz:.1f}mm for {well_id if mode != 'manual' else 'Manual Target'}")
 
@@ -2319,6 +2324,13 @@ class LIMSMasterApp:
                         self.lims.deck_labware["Slot_4"].source_file = "generic_96_well_plate.json"
                         if "Slot_4" not in self.placed_slots: self.placed_slots.append("Slot_4")
                         self.logger.info("Auto-configured Slot_4 as 96-Well Plate (generic_96_well_plate.json) for this protocol.")
+                elif any(s.get('slot') == 'Slot_4' and s.get('labware') == 'myriamed_48_well.json' for s in loaded_sequence):
+                    p48 = os.path.join(lw_dir, "myriamed_48_well.json")
+                    if os.path.exists(p48):
+                        self.lims.deck_labware["Slot_4"] = Labware(p48)
+                        self.lims.deck_labware["Slot_4"].source_file = "myriamed_48_well.json"
+                        if "Slot_4" not in self.placed_slots: self.placed_slots.append("Slot_4")
+                        self.logger.info("Auto-configured Slot_4 as 48-Well EHM Plate (myriamed_48_well.json) for this protocol.")
 
                 for step in loaded_sequence:
                     s_name = step.get('slot', '')
