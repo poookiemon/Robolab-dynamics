@@ -3742,8 +3742,6 @@
         "well": "A1",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -3761,8 +3759,6 @@
         "well": "B1",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -3780,8 +3776,6 @@
         "well": "C1",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -3799,8 +3793,6 @@
         "well": "A2",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -3818,8 +3810,6 @@
         "well": "B2",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -3837,8 +3827,6 @@
         "well": "C2",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -3856,8 +3844,6 @@
         "well": "A3",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -3875,8 +3861,6 @@
         "well": "B3",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -3894,8 +3878,6 @@
         "well": "C3",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -3913,8 +3895,6 @@
         "well": "A4",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -3932,8 +3912,6 @@
         "well": "B4",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -3951,8 +3929,6 @@
         "well": "C4",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -3970,8 +3946,6 @@
         "well": "A5",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -3989,8 +3963,6 @@
         "well": "B5",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4008,8 +3980,6 @@
         "well": "C5",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4027,8 +3997,6 @@
         "well": "A6",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4046,8 +4014,6 @@
         "well": "B6",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4065,8 +4031,6 @@
         "well": "C6",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4100,8 +4064,6 @@
         "well": "D1",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4119,8 +4081,6 @@
         "well": "E1",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4138,8 +4098,6 @@
         "well": "F1",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4157,8 +4115,6 @@
         "well": "D2",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4176,8 +4132,6 @@
         "well": "E2",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4195,8 +4149,6 @@
         "well": "F2",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4214,8 +4166,6 @@
         "well": "D3",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4233,8 +4183,6 @@
         "well": "E3",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4252,8 +4200,6 @@
         "well": "F3",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4271,8 +4217,6 @@
         "well": "D4",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4290,8 +4234,6 @@
         "well": "E4",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4309,8 +4251,6 @@
         "well": "F4",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4328,8 +4268,6 @@
         "well": "D5",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4347,8 +4285,6 @@
         "well": "E5",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4366,8 +4302,6 @@
         "well": "F5",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4385,8 +4319,6 @@
         "well": "D6",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4404,8 +4336,6 @@
         "well": "E6",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {
@@ -4423,8 +4353,6 @@
         "well": "F6",
         "volume": 5.0,
         "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 100.0,
         "labware": "myriamed_48_well.json"
     },
     {

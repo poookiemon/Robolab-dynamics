@@ -21,9 +21,7 @@
         "slot": "Slot_4",
         "well": "A1",
         "volume": 5.0,
-        "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 150.0
+        "extra_z": 0.0
     },
     {
         "action": "Discard Tip",
@@ -55,9 +53,7 @@
         "slot": "Slot_4",
         "well": "A2",
         "volume": 5.0,
-        "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 150.0
+        "extra_z": 0.0
     },
     {
         "action": "Discard Tip",
@@ -89,9 +85,7 @@
         "slot": "Slot_4",
         "well": "A3",
         "volume": 5.0,
-        "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 150.0
+        "extra_z": 0.0
     },
     {
         "action": "Discard Tip",
@@ -123,9 +117,7 @@
         "slot": "Slot_4",
         "well": "A4",
         "volume": 5.0,
-        "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 150.0
+        "extra_z": 0.0
     },
     {
         "action": "Discard Tip",
@@ -157,9 +149,7 @@
         "slot": "Slot_4",
         "well": "A5",
         "volume": 5.0,
-        "extra_z": 0.0,
-        "mix_cycles": 5,
-        "mix_volume": 150.0
+        "extra_z": 0.0
     },
     {
         "action": "Discard Tip",
