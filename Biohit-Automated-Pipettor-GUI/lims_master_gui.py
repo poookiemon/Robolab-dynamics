@@ -1911,6 +1911,16 @@ class LIMSMasterApp:
                         time.sleep(0.05)
 
                         if self.lims.pipettor.hardware:
+                            if action == "Aspirate Media":
+                                next_step = self.workflow_sequence[i] if i < len(self.workflow_sequence) else {}
+                                next_has_mix = int(next_step.get('mix_cycles', 0)) > 0 and getattr(self, 'enable_mixing_for_run', True)
+                                if 0 < float(vol) <= 150.0 and not next_has_mix:
+                                    try:
+                                        self.lims.pipettor.hardware.aspirate(50.0)
+                                        time.sleep(0.3)
+                                    except Exception as air_err:
+                                        self.logger.warning(f"Air cushion draw skipped: {air_err}")
+
                             self.lims.pipettor.hardware.move_z(tz)
 
                             if action == "Aspirate Media":
