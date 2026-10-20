@@ -1560,6 +1560,16 @@ class LIMSMasterApp:
                                  "Hardware must be homed via 'Connect & Initialize' before executing automated workflows.")
             return
         if not self.workflow_sequence: return
+        has_mix_steps = any(int(s.get('mix_cycles', 0)) > 0 or s.get('action') == "Mix Well" for s in self.workflow_sequence)
+        if has_mix_steps:
+            self.enable_mixing_for_run = messagebox.askyesno(
+                "In-Well Mixing Option",
+                "Do you want to enable 5x in-well mixing for this run?\n\n"
+                "• YES (Mix ON): Submerges into the well (90mm on 96-well / 84mm on 48-well EHM) and mixes 5x on drug steps, while plain media dispenses at 85mm.\n"
+                "• NO (Mix OFF): Skips all mixing and dispenses from the well brim (85mm on 96-well / 84mm on 48-well EHM) without mixing."
+            )
+        else:
+            self.enable_mixing_for_run = False
         self.is_running = True
 
         # --- AUTO SAVE FUNCTIONALITY INJECTED HERE ---
@@ -1872,9 +1882,22 @@ class LIMSMasterApp:
                                     self.lims.pipettor.hardware.move_z(0)
 
                     elif action in ["Aspirate Media", "Dispense Media", "Discard Tip", "Mix Well"]:
+                        if action == "Mix Well" and not getattr(self, 'enable_mixing_for_run', True):
+                            self.logger.info("Mixing opted out for this run. Skipping Mix Well step.")
+                            time.sleep(0.05)
+                            continue
+                        effective_mix = int(step.get('mix_cycles', 0)) if getattr(self, 'enable_mixing_for_run', True) else 0
                         tz = target_z if mode == "manual" else self._calculate_z(action,
                                                                                  self.lims.deck_labware.get(slot_name),
                                                                                  well_id, mode, 0.0, slot_name, extra_z)
+                        if mode != "manual" and slot_name == "Slot_4":
+                            lw_obj_s4 = self.lims.deck_labware.get("Slot_4")
+                            lw_str_s4 = ((getattr(lw_obj_s4, 'name', '') or '') + (getattr(lw_obj_s4, 'source_file', '') or '')).lower()
+                            if "96" in lw_str_s4 and "tip" not in lw_str_s4:
+                                if action in ["Aspirate Media", "Mix Well"] or effective_mix > 0:
+                                    tz = min(90.0 + extra_z, 103.5)
+                                else:
+                                    tz = min(85.0 + extra_z, 103.5)
                         self.logger.info(
                             f"Absolute Z-Depth Override Executed: Z={tz:.1f}mm for {well_id if mode != 'manual' else 'Manual Target'}")
 
@@ -1901,7 +1924,7 @@ class LIMSMasterApp:
                                     time.sleep(0.3)
                             elif action == "Dispense Media":
                                 actual_dispense = min(float(vol), self.lims.pipettor.tip_volume)
-                                mix_cycles = int(step.get('mix_cycles', 0))
+                                mix_cycles = effective_mix
                                 if actual_dispense > 0:
                                     try:
                                         self.lims.pipettor.hardware.dispense(actual_dispense)

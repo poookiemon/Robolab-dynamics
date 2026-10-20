@@ -40,7 +40,9 @@
         "well": "H2",
         "volume": 22.0,
         "extra_z": 0.0,
-        "labware": "generic_96_well_plate.json"
+        "labware": "generic_96_well_plate.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
     },
     {
         "action": "Discard Tip",

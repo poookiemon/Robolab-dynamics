@@ -120,6 +120,8 @@
         "well": "A6",
         "volume": 14.6,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -138,6 +140,8 @@
         "well": "A5",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -156,6 +160,8 @@
         "well": "A4",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -174,6 +180,8 @@
         "well": "A3",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -192,6 +200,8 @@
         "well": "A2",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -340,6 +350,8 @@
         "well": "B6",
         "volume": 14.6,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -358,6 +370,8 @@
         "well": "B5",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -376,6 +390,8 @@
         "well": "B4",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -394,6 +410,8 @@
         "well": "B3",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -412,6 +430,8 @@
         "well": "B2",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -560,6 +580,8 @@
         "well": "C6",
         "volume": 14.6,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -578,6 +600,8 @@
         "well": "C5",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -596,6 +620,8 @@
         "well": "C4",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -614,6 +640,8 @@
         "well": "C3",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -632,6 +660,8 @@
         "well": "C2",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -780,6 +810,8 @@
         "well": "D6",
         "volume": 14.6,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -798,6 +830,8 @@
         "well": "D5",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -816,6 +850,8 @@
         "well": "D4",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -834,6 +870,8 @@
         "well": "D3",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -852,6 +890,8 @@
         "well": "D2",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -1000,6 +1040,8 @@
         "well": "E6",
         "volume": 14.6,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -1018,6 +1060,8 @@
         "well": "E5",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -1036,6 +1080,8 @@
         "well": "E4",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -1054,6 +1100,8 @@
         "well": "E3",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
@@ -1072,6 +1120,8 @@
         "well": "E2",
         "volume": 46.0,
         "extra_z": 0.0,
+        "mix_cycles": 5,
+        "mix_volume": 100.0,
         "labware": "generic_96_well_plate.json"
     },
     {
