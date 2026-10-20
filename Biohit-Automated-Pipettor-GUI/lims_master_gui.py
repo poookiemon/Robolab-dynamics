@@ -1565,8 +1565,8 @@ class LIMSMasterApp:
             self.enable_mixing_for_run = messagebox.askyesno(
                 "In-Well Mixing Option",
                 "Do you want to enable 5x in-well mixing for this run?\n\n"
-                "• YES (Mix ON): Submerges into the well (90mm on 96-well / 84mm on 48-well EHM) and mixes 5x on drug steps, while plain media dispenses at 85mm.\n"
-                "• NO (Mix OFF): Skips all mixing and dispenses from the well brim (85mm on 96-well / 84mm on 48-well EHM) without mixing."
+                "• YES (Mix ON): Goes down into the well (90mm on 96-well / 84mm on 48-well EHM) and mixes 5 times after adding drug.\n"
+                "• NO (Mix OFF): Skips all mixing and dispenses from the brim (85mm on 96-well / 84mm on 48-well EHM) without touching the well liquid."
             )
         else:
             self.enable_mixing_for_run = False
