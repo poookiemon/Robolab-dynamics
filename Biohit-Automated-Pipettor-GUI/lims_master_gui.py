@@ -62,6 +62,7 @@ class LIMSMasterApp:
 
         self.is_running = False
         self.is_aborted = False
+        self.has_air_cushion = False
         self.pause_event = threading.Event()
         self.pause_event.set()
 
@@ -1949,6 +1950,7 @@ class LIMSMasterApp:
             self.is_aborted = False
             # Fresh liquid-level ledger for every run (tubes assumed refilled to start level)
             self.liquid_ledger = {}
+            self.has_air_cushion = False
             self.pause_event.set()
             self.root.after(0, lambda: self.update_ui_state(True))
             total_steps = len(self.workflow_sequence)
@@ -2319,12 +2321,17 @@ class LIMSMasterApp:
                             if action == "Aspirate Media":
                                 next_step = self.workflow_sequence[i] if i < len(self.workflow_sequence) else {}
                                 next_has_mix = int(next_step.get('mix_cycles', 0)) > 0 and getattr(self, 'enable_mixing_for_run', True)
-                                if 0 < float(vol) <= 150.0 and not next_has_mix:
+                                is_drug_or_micro_vol = (float(vol) <= 50.0) or (slot_name == "Slot_5")
+                                if (0 < float(vol) <= 150.0 and not next_has_mix) or is_drug_or_micro_vol:
                                     try:
                                         self.lims.pipettor.hardware.aspirate(50.0)
+                                        self.has_air_cushion = True
+                                        self.logger.info(f"Air Cushion: Pre-aspirated 50.0uL air push cushion at Z=0 for clean detachment of {vol}uL ({slot_name} {well_id}).")
                                         time.sleep(0.3)
                                     except Exception as air_err:
                                         self.logger.warning(f"Air cushion draw skipped: {air_err}")
+                                else:
+                                    self.has_air_cushion = False
 
                                 # --- Option 2: Live Software Liquid Level Tracking (well-wise, auto mode) ---
                                 # Always on for tubes in Slot_1 / Slot_2 unless the step sets "track_liquid": false
@@ -2405,12 +2412,17 @@ class LIMSMasterApp:
                             elif action == "Dispense Media":
                                 actual_dispense = min(float(vol), self.lims.pipettor.tip_volume)
                                 mix_cycles = effective_mix
+                                had_air = getattr(self, 'has_air_cushion', False)
+                                self.has_air_cushion = False
                                 if actual_dispense > 0:
                                     try:
                                         self.lims.pipettor.hardware.dispense(actual_dispense)
                                         time.sleep(0.4 if mix_cycles > 0 else 0.05)
-                                        if not step.get('no_blowout', False) and mix_cycles == 0:
+                                        if (had_air or mix_cycles == 0) and not step.get('no_blowout', False):
                                             self.lims.pipettor.hardware.dispense(50)
+                                            if had_air:
+                                                self.logger.info(f"Air Push: Dispensed 50.0uL air push blowout to detach {actual_dispense}uL droplet cleanly.")
+                                            time.sleep(0.2)
                                     except Exception as d_err:
                                         self.logger.warning(f"Dispense blowout exception ignored: {d_err}")
                                 else:
