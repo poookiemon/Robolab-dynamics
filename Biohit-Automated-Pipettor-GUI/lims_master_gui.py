@@ -2315,32 +2315,41 @@ class LIMSMasterApp:
                                     except Exception as air_err:
                                         self.logger.warning(f"Air cushion draw skipped: {air_err}")
 
-                                # --- Dynamic Liquid Height Detection during Aspiration ---
+                                # --- Option 2: Live Software Liquid Level Tracking ---
                                 use_dynamic_z = (
                                     (getattr(self, 'dynamic_z_var', None) and self.dynamic_z_var.get())
                                     or step.get('use_surface_detection', False)
-                                    or (slot_name in ["Slot_1", "Slot_2", "Slot_6"])
                                 )
-                                # Exempt microplate wells where full-depth evacuation is calibrated (Slot 4 EHM and Slot 5 drug plate)
-                                if slot_name in ["Slot_4", "Slot_5"]:
+                                # Exempt manual mode and calibrated microplates (Slot 4 EHM and Slot 5 drug plate)
+                                if mode == "manual" or slot_name in ["Slot_4", "Slot_5"]:
                                     use_dynamic_z = False
 
-                                if use_dynamic_z:
-                                    max_bottom_z = tz
-                                    labware_obj = self.lims.deck_labware.get(slot_name)
-                                    if labware_obj and hasattr(labware_obj, 'z_limits') and 'max_safe_bottom_z' in labware_obj.z_limits:
-                                        max_bottom_z = float(labware_obj.z_limits['max_safe_bottom_z'])
-                                    slot_obj_cur = self.lims.deck_slots.get(slot_name)
-                                    max_bottom_z = min(103.5, max_bottom_z + getattr(slot_obj_cur, 'z_offset', 0.0))
+                                if use_dynamic_z and slot_name in ["Slot_1", "Slot_2"]:
+                                    if not hasattr(self, 'liquid_ledger'):
+                                        self.liquid_ledger = {}
+                                    ledger_key = f"{slot_name}_{well_id}"
+                                    if ledger_key not in self.liquid_ledger:
+                                        self.liquid_ledger[ledger_key] = {
+                                            "surface_z": 45.0,  # Start depth for 30mL tube
+                                            "bottom_z": 103.0,  # Base of tube
+                                            "area_mm2": 434.0   # 30mL tube cross-sectional area
+                                        }
+                                    tube_info = self.liquid_ledger[ledger_key]
+                                    curr_surface = tube_info["surface_z"]
+                                    # Submerge 5.0mm below current meniscus, capped 1.5mm above tube base
+                                    tz = min(curr_surface + 5.0, tube_info["bottom_z"] - 1.5)
 
-                                    z_surf = self._probe_surface_and_wait(max_bottom_z, submerge_mm=1.0)
+                                    # Update meniscus depth for next aspiration
+                                    req_vol = float(vol)
+                                    dz = req_vol / tube_info["area_mm2"]
+                                    new_surface = min(curr_surface + dz, tube_info["bottom_z"] - 1.5)
+                                    tube_info["surface_z"] = new_surface
 
-                                    if z_surf < max_bottom_z - 0.5:
-                                        tz = min(z_surf + 3.0, max_bottom_z)
-                                        self.logger.info(f"Liquid Surface Detected at Z={z_surf:.1f}mm -> Submerging tip to Z={tz:.1f}mm for aspiration.")
-                                    else:
-                                        tz = min(max_bottom_z - 1.0, 103.5)
-                                        self.logger.warning(f"Meniscus not detected above Z={max_bottom_z:.1f}mm. Aspirating near bottom (Z={tz:.1f}mm).")
+                                    rem_height = max(0.0, tube_info["bottom_z"] - new_surface)
+                                    rem_ml = (rem_height * tube_info["area_mm2"]) / 1000.0
+                                    self.logger.info(
+                                        f"[OPTION 2 TRACKER] {slot_name} {well_id}: Meniscus Z={curr_surface:.1f}mm -> Submerging to Z={tz:.1f}mm. Est. Remaining: ~{rem_ml:.2f}mL"
+                                    )
 
                             self.lims.pipettor.hardware.move_z(tz)
 
