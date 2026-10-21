@@ -1,7 +1,7 @@
 from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-import json, logging, threading, time, os, subprocess
+import json, logging, threading, time, os, subprocess, math
 import ctypes  # Native Windows library for ghost mouse
 from working import LIMSOrchestrator, Labware, DeckSlot, Pipettor
 from gui import GUI as AnalyzerGUI
@@ -800,6 +800,7 @@ class LIMSMasterApp:
             ("Home Head", "Resets pipette head to safety origin.", "HOME"),
             ("Find Tip", "Auto-searches a designated slot using NATIVE API.", "FIND_TIP"),
             ("Discard Tips", "Moves head to designated Waste slot and triggers ejection mechanism.", "DISCARD"),
+            ("Check Liquid Level", "Detects liquid surface in selected slot/well and calculates remaining volume.", "CHECK_LIQUID"),
             ("Check Alignment", "Compares visual mouse grid to hardware jog coordinates.", "CHECK")
         ]
         for title, desc, code in ops:
@@ -822,6 +823,7 @@ class LIMSMasterApp:
 
         self.wf_action = ttk.Combobox(pane_ctrl, state="readonly",
                                       values=["Pick Up Tip", "Aspirate Media", "Dispense Media", "Discard Tip",
+                                              "Detect Liquid Level",
                                               "System: Incubate (Wait)", "System: FOC48 Measurement", "System: Calcium Curve", "System: Data Analysis", "System: DB Upload"])
         self.wf_action.current(0)
         self.wf_action.pack(fill=tk.X, pady=(0, 5))
@@ -941,7 +943,7 @@ class LIMSMasterApp:
             self.lbl_3.config(text="Action Z-Depth (mm):")
             self.lbl_3.pack(anchor="w")
             self.ent_z.pack(fill=tk.X, pady=(0, 5))
-            if action not in ["Pick Up Tip", "Discard Tip"]:
+            if action not in ["Pick Up Tip", "Discard Tip", "Detect Liquid Level"]:
                 self.lbl_4.config(text="Volume (\u03bcL):")
                 self.lbl_4.pack(anchor="w")
                 self.ent_vol.pack(fill=tk.X, pady=(0, 5))
@@ -969,7 +971,7 @@ class LIMSMasterApp:
                 self.lbl_2.config(text="Target Well (e.g., A1):")
                 self.lbl_2.pack(anchor="w")
                 self.ent_well.pack(fill=tk.X, pady=(0, 5))
-                if action not in ["Pick Up Tip", "Discard Tip"]:
+                if action not in ["Pick Up Tip", "Discard Tip", "Detect Liquid Level"]:
                     self.lbl_4.config(text="Volume (\u03bcL):")
                     self.lbl_4.pack(anchor="w")
                     self.ent_vol.pack(fill=tk.X, pady=(0, 5))
@@ -1178,6 +1180,8 @@ class LIMSMasterApp:
 
             if action in ["Pick Up Tip", "Discard Tip"]:
                 msg = f"[{action.upper()} MANUAL] X:{step_data['x']} Y:{step_data['y']} Z:{step_data['z']}"
+            elif action == "Detect Liquid Level":
+                msg = f"[{action.upper()} MANUAL] X:{step_data['x']} Y:{step_data['y']} Z:{step_data['z']}"
             else:
                 msg = f"[{action.upper()} MANUAL] X:{step_data['x']} Y:{step_data['y']} Z:{step_data['z']} Vol:{step_data['volume']}\u03bcL"
         else:
@@ -1221,6 +1225,8 @@ class LIMSMasterApp:
 
             if action in ["Pick Up Tip", "Discard Tip"]:
                 msg = f"[{action.upper()}] from {slot}, Well {well}" if action == "Pick Up Tip" else f"[{action.upper()}] into {slot} (Waste Trough)"
+            elif action == "Detect Liquid Level":
+                msg = f"[{action.upper()}] at {slot}, Well {well}"
             else:
                 z_msg = f" (Z+{step_data['extra_z']}mm)" if step_data.get('extra_z', 0.0) > 0 else ""
                 msg = f"[{action.upper()}] {step_data['volume']}\u03bcL at {slot}, Well {well}{z_msg}"
@@ -1529,6 +1535,205 @@ class LIMSMasterApp:
         if not tip_found:
             self.logger.error("Tip search failed. Rack is empty.")
             self.root.after(0, lambda: messagebox.showerror("Search Failed", f"No tips found in {slot_name}."))
+
+    def prompt_for_liquid_check(self):
+        if not self.lims.hw.is_initialized:
+            messagebox.showerror("Safety Interlock", "Hardware must be initialized first.")
+            return
+
+        top = tk.Toplevel(self.root)
+        top.title("Auto-Read Liquid Level (Sensor Probing)")
+        top.geometry("420x290")
+        top.resizable(False, False)
+
+        f = ttk.Frame(top, padding=15)
+        f.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(f, text="Select Target Slot & Well:", font=("Arial", 11, "bold")).pack(anchor="w", pady=(0, 10))
+
+        # Slot Selection
+        f_slot = ttk.Frame(f)
+        f_slot.pack(fill=tk.X, pady=4)
+        ttk.Label(f_slot, text="Deck Slot:", width=14, anchor="w").pack(side=tk.LEFT)
+        slot_var = tk.StringVar()
+        slot_choices = [s for s in self.placed_slots if s] if self.placed_slots else [f"Slot_{i}" for i in range(1, 7)]
+        cb_slot = ttk.Combobox(f_slot, textvariable=slot_var, values=slot_choices, state="readonly", width=18)
+        cb_slot.pack(side=tk.LEFT)
+
+        # Well Selection
+        f_well = ttk.Frame(f)
+        f_well.pack(fill=tk.X, pady=4)
+        ttk.Label(f_well, text="Target Well:", width=14, anchor="w").pack(side=tk.LEFT)
+        well_var = tk.StringVar(value="A1")
+        cb_well = ttk.Combobox(f_well, textvariable=well_var, width=18)
+        cb_well.pack(side=tk.LEFT)
+
+        # Info Label (displays labware details and well radius)
+        lbl_info = ttk.Label(f, text="", font=("Arial", 9), foreground="#333333", wraplength=380, justify="left")
+        lbl_info.pack(fill=tk.X, pady=10)
+
+        def update_info(*args):
+            s = slot_var.get()
+            lw = self.lims.deck_labware.get(s)
+            if lw:
+                lw_name = getattr(lw, 'name', 'Labware')
+                wells = list(getattr(lw, 'wells', {}).keys())
+                if wells:
+                    cb_well['values'] = wells
+                    if well_var.get() not in wells:
+                        well_var.set(wells[0])
+                first_w = next(iter(getattr(lw, 'wells', {}).values()), None)
+                rad = getattr(first_w, 'radius', 3.4) if first_w else 3.4
+                z_lim = getattr(lw, 'z_limits', {}).get('max_safe_bottom_z', 'Auto')
+                lbl_info.config(text=f"Labware: {lw_name}\nWell Radius: {rad:.1f} mm | Bottom Limit: {z_lim} mm")
+            else:
+                lbl_info.config(text=f"Slot: {s} (Generic / Unassigned Labware)")
+
+        slot_var.trace_add("write", update_info)
+        if slot_choices:
+            if "Slot_6" in slot_choices:
+                slot_var.set("Slot_6")
+            else:
+                slot_var.set(slot_choices[0])
+        else:
+            update_info()
+
+        def on_confirm():
+            slot = slot_var.get()
+            well = well_var.get().strip().upper()
+            if not slot or not well:
+                messagebox.showwarning("Input Missing", "Please specify both Slot and Well.")
+                return
+
+            if not self.has_tip_var.get():
+                if not messagebox.askyesno(
+                    "Tip Check",
+                    "The Biohit tip sensor requires a pipette tip mounted on the channel.\n\n"
+                    "Pipette tip state is currently marked as EMPTY.\n\n"
+                    "Do you want to proceed anyway?"
+                ):
+                    return
+
+            top.destroy()
+            threading.Thread(target=self.run_liquid_check_routine, args=(slot, well), daemon=True).start()
+
+        ttk.Button(f, text="Probe Liquid Level", command=on_confirm).pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
+
+    def run_liquid_check_routine(self, slot_name, well_id):
+        self.logger.info(f"--- Direct Op: Liquid Level Auto-Read at {slot_name} Well {well_id} ---")
+        if not self.lims.hw.is_initialized:
+            self.logger.error("Hardware not initialized.")
+            return
+
+        coords = self._calculate_xy(slot_name, well_id)
+        if not coords or (coords[0] == 0.0 and coords[1] == 0.0 and slot_name not in ["Slot_1"]):
+            msg = f"Could not calculate XY coordinates for {slot_name} well {well_id}."
+            self.logger.error(msg)
+            self.root.after(0, lambda: messagebox.showerror("Coordinate Error", msg))
+            return
+
+        tx, ty = coords
+        labware_obj = self.lims.deck_labware.get(slot_name)
+        slot_obj = self.lims.deck_slots.get(slot_name)
+        slot_z_offset = getattr(slot_obj, 'z_offset', 0.0)
+
+        lw_name = (getattr(labware_obj, 'name', '') or '').lower()
+        lw_src = (getattr(labware_obj, 'source_file', '') or '').lower()
+
+        # Bottom Z determination
+        if labware_obj and hasattr(labware_obj, 'z_limits') and 'max_safe_bottom_z' in labware_obj.z_limits:
+            bottom_z = float(labware_obj.z_limits['max_safe_bottom_z'])
+        elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or (slot_name == "Slot_4" and "96" not in lw_name and "tip" not in lw_name):
+            bottom_z = 84.0
+        elif "96" in lw_name or "96" in lw_src or slot_name == "Slot_5":
+            bottom_z = 90.0 if slot_name != "Slot_5" else 80.0
+        elif "3-well" in lw_name or "reservoir_3" in lw_src:
+            bottom_z = 98.0
+        elif "6-column" in lw_name or "reservoir_6" in lw_src:
+            bottom_z = 103.0
+        elif "rack" in lw_name or "17a" in lw_src:
+            bottom_z = 95.0
+        else:
+            bottom_z = 90.0
+
+        bottom_z = min(103.5, bottom_z + slot_z_offset)
+
+        # Well radius determination
+        radius_mm = 3.4
+        if labware_obj and hasattr(labware_obj, 'wells') and well_id in labware_obj.wells:
+            radius_mm = getattr(labware_obj.wells[well_id], 'radius', 3.4)
+        elif labware_obj and hasattr(labware_obj, 'raw_data'):
+            radius_mm = labware_obj.raw_data.get('well_properties', {}).get('radius_mm', 3.4)
+
+        if radius_mm <= 0.0:
+            radius_mm = 3.4
+
+        try:
+            # 1. Retract to safe Z=0
+            if self.lims.pipettor.hardware:
+                self.lims.pipettor.hardware.move_z(0)
+            self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
+            time.sleep(0.1)
+
+            # 2. Execute surface detection
+            self.logger.info(f"Probing liquid surface downwards to limit Z={bottom_z:.1f}mm...")
+            if self.lims.pipettor.hardware:
+                hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
+                self.lims.pipettor.hardware.z_speed = 3
+                try:
+                    self.lims.pipettor.hardware.move_to_surface(limit=bottom_z, distance_from_surface=0.0)
+                except Exception as surf_err:
+                    self.logger.warning(f"move_to_surface alert: {surf_err}")
+                z_measured = getattr(self.lims.pipettor.hardware, 'z_position', bottom_z)
+                self.lims.pipettor.hardware.z_speed = hw_speed
+                self.lims.pipettor.hardware.move_z(0)
+            else:
+                # Simulator fallback
+                z_measured = bottom_z - 6.5
+                time.sleep(0.5)
+
+            # 3. Analyze result
+            if z_measured >= bottom_z - 0.3:
+                res_msg = (
+                    f"No liquid detected in {slot_name} Well {well_id}.\n\n"
+                    f"Sensor reached bottom limit (Z={bottom_z:.1f} mm) without meniscus contact.\n"
+                    f"The well/tube appears empty."
+                )
+                self.logger.warning(f"Liquid Level: {slot_name} {well_id} -> EMPTY (Z={z_measured:.2f}mm, limit={bottom_z:.1f}mm)")
+                self.root.after(0, lambda: messagebox.showwarning("Liquid Level Detection", res_msg))
+            else:
+                liquid_height_mm = max(0.0, bottom_z - z_measured)
+                area_mm2 = math.pi * (radius_mm ** 2)
+                volume_ul = area_mm2 * liquid_height_mm
+                volume_ml = volume_ul / 1000.0
+
+                if volume_ul >= 1000.0:
+                    vol_text = f"{volume_ul:.1f} µL ({volume_ml:.2f} mL)"
+                else:
+                    vol_text = f"{volume_ul:.1f} µL"
+
+                report = (
+                    f"Target: {slot_name} | Well: {well_id}\n"
+                    f"Labware: {getattr(labware_obj, 'name', 'Generic')}\n"
+                    f"-----------------------------------------\n"
+                    f"Surface Contact Z: {z_measured:.2f} mm\n"
+                    f"Bottom Limit Z:    {bottom_z:.2f} mm\n"
+                    f"Liquid Height:     {liquid_height_mm:.2f} mm\n"
+                    f"Well Radius:       {radius_mm:.2f} mm\n"
+                    f"-----------------------------------------\n"
+                    f"Estimated Remaining Volume: {vol_text}"
+                )
+                self.logger.info(f"Liquid Level Detected: {slot_name} {well_id} -> Z={z_measured:.2f}mm, H={liquid_height_mm:.2f}mm, Vol={vol_text}")
+                self.root.after(0, lambda: messagebox.showinfo("Liquid Level Measured", report))
+
+        except Exception as err:
+            self.logger.error(f"Liquid level detection error: {err}")
+            if self.lims.pipettor.hardware:
+                try:
+                    self.lims.pipettor.hardware.move_z(0)
+                except Exception:
+                    pass
+            self.root.after(0, lambda: messagebox.showerror("Detection Error", f"Surface detection failed: {err}"))
 
     def update_timer(self):
         if not getattr(self, 'timer_running', False):
@@ -1881,6 +2086,57 @@ class LIMSMasterApp:
                                 except TypeError:
                                     self.lims.pipettor.hardware.move_z(0)
 
+                    elif action == "Detect Liquid Level":
+                        labware_obj = self.lims.deck_labware.get(slot_name)
+                        slot_obj = self.lims.deck_slots.get(slot_name)
+                        slot_z_offset = getattr(slot_obj, 'z_offset', 0.0)
+
+                        if mode == "manual":
+                            bottom_z = target_z
+                        elif labware_obj and hasattr(labware_obj, 'z_limits') and 'max_safe_bottom_z' in labware_obj.z_limits:
+                            bottom_z = float(labware_obj.z_limits['max_safe_bottom_z'])
+                        else:
+                            bottom_z = self._calculate_z("Aspirate Media", labware_obj, well_id, mode, 0.0, slot_name, extra_z)
+                            if bottom_z <= 0.0:
+                                bottom_z = 90.0
+
+                        bottom_z = min(103.5, bottom_z + (slot_z_offset if mode != "manual" else 0.0))
+
+                        radius_mm = 3.4
+                        if labware_obj and hasattr(labware_obj, 'wells') and well_id in labware_obj.wells:
+                            radius_mm = getattr(labware_obj.wells[well_id], 'radius', 3.4)
+                        elif labware_obj and hasattr(labware_obj, 'raw_data'):
+                            radius_mm = labware_obj.raw_data.get('well_properties', {}).get('radius_mm', 3.4)
+                        if radius_mm <= 0.0:
+                            radius_mm = 3.4
+
+                        self.logger.info(f"Detect Liquid Level: moving to {slot_name} Well {well_id} (Z-limit={bottom_z:.1f}mm)...")
+                        if self.lims.pipettor.hardware:
+                            self.lims.pipettor.hardware.move_z(0)
+                        self.lims.hw.move_to(target_x, target_y, 0, speed=self.speed_var.get())
+                        time.sleep(0.05)
+
+                        if self.lims.pipettor.hardware:
+                            hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
+                            self.lims.pipettor.hardware.z_speed = 3
+                            try:
+                                self.lims.pipettor.hardware.move_to_surface(limit=bottom_z, distance_from_surface=0.0)
+                            except Exception as surf_err:
+                                self.logger.warning(f"move_to_surface warning: {surf_err}")
+                            z_measured = getattr(self.lims.pipettor.hardware, 'z_position', bottom_z)
+                            self.lims.pipettor.hardware.z_speed = hw_speed
+                            self.lims.pipettor.hardware.move_z(0)
+                        else:
+                            z_measured = bottom_z - 6.0
+
+                        if z_measured >= bottom_z - 0.3:
+                            self.logger.warning(f"[LIQUID LEVEL] {slot_name} Well {well_id}: EMPTY (reached bottom limit Z={bottom_z:.1f}mm).")
+                        else:
+                            liquid_height_mm = max(0.0, bottom_z - z_measured)
+                            volume_ul = math.pi * (radius_mm ** 2) * liquid_height_mm
+                            vol_str = f"{volume_ul:.1f}uL ({volume_ul / 1000.0:.2f}mL)" if volume_ul >= 1000.0 else f"{volume_ul:.1f}uL"
+                            self.logger.info(f"[LIQUID LEVEL] {slot_name} Well {well_id}: Surface Z={z_measured:.2f}mm, Height={liquid_height_mm:.2f}mm, Remaining Volume={vol_str}")
+
                     elif action in ["Aspirate Media", "Dispense Media", "Discard Tip", "Mix Well"]:
                         if action == "Mix Well" and not getattr(self, 'enable_mixing_for_run', True):
                             self.logger.info("Mixing opted out for this run. Skipping Mix Well step.")
@@ -2078,6 +2334,8 @@ class LIMSMasterApp:
                     self.logger.warning(f"Discard return move_z(0) error: {ze2}")
         elif c == "FIND_TIP":
             self.prompt_for_tip_slot()
+        elif c == "CHECK_LIQUID":
+            self.prompt_for_liquid_check()
         elif c == "CHECK":
             self.check_alignment()
 
@@ -2303,6 +2561,8 @@ class LIMSMasterApp:
                     elif m == "manual":
                         if step['action'] in ["Pick Up Tip", "Discard Tip"]:
                             msg = f"[{step['action'].upper()} MANUAL] X:{step.get('x', 0)} Y:{step.get('y', 0)} Z:{step.get('z', 0)}"
+                        elif step['action'] == "Detect Liquid Level":
+                            msg = f"[{step['action'].upper()} MANUAL] X:{step.get('x', 0)} Y:{step.get('y', 0)} Z:{step.get('z', 0)}"
                         else:
                             msg = f"[{step['action'].upper()} MANUAL] X:{step.get('x', 0)} Y:{step.get('y', 0)} Z:{step.get('z', 0)} Vol:{step.get('volume', 0.0)}\u03bcL"
                     else:
@@ -2310,6 +2570,8 @@ class LIMSMasterApp:
                             msg = f"[{step['action'].upper()}] from {step.get('slot', '')}, Well {step.get('well', '')}"
                         elif step['action'] == "Discard Tip":
                             msg = f"[{step['action'].upper()}] into {step.get('slot', '')} (Waste Trough)"
+                        elif step['action'] == "Detect Liquid Level":
+                            msg = f"[{step['action'].upper()}] at {step.get('slot', '')}, Well {step.get('well', '')}"
                         else:
                             z_msg = f" (Z+{step.get('extra_z', 0.0)}mm)" if step.get('extra_z', 0.0) > 0 else ""
                             mix_c = int(step.get('mix_cycles', 0))
