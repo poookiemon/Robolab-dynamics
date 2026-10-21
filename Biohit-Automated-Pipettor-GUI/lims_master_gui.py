@@ -1478,8 +1478,8 @@ class LIMSMasterApp:
         lw_name = (getattr(labware_obj, 'name', '') or '').lower()
         lw_src = (getattr(labware_obj, 'source_file', '') or '').lower()
 
-        # 1. 24-TUBE RACK (Biohit Rack 4x6 - Ø17A: 4 rows A-D, 6 cols 1-6)
-        if ("rack" in lw_name or "17a" in lw_src or "biohit_rack" in lw_src):
+        # 1. 24-TUBE RACK (Biohit Rack 4x6 - Ø17A: 4 rows A-D, 6 cols 1-6) - STRICTLY EXCLUDE TIP RACKS
+        if (("biohit_rack" in lw_name or "tube" in lw_name or "17a" in lw_name or "24" in lw_name or ("rack" in lw_name and "tip" not in lw_name)) or "17a" in lw_src or "biohit_rack" in lw_src) and ("tip" not in lw_name and "tip" not in lw_src):
             col_x = {'1': 112.15, '2': 92.85, '3': 73.55, '4': 54.25, '5': 34.95, '6': 15.65}
             row_y = {'A': 179.3, 'B': 198.6, 'C': 217.9, 'D': 237.2}
             if len(well_id) >= 2:
@@ -1597,7 +1597,7 @@ class LIMSMasterApp:
                 return 84.0
             elif "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
                 base_z = 98.0
-            elif "rack" in lw_name or "17a" in lw_src:
+            elif ("rack" in lw_name and "tip" not in lw_name) or "17a" in lw_src or "biohit_rack" in lw_src:
                 base_z = 95.0
             else:
                 base_z = 101.0
@@ -1815,7 +1815,7 @@ class LIMSMasterApp:
             bottom_z = 98.0
         elif "6-column" in lw_name or "reservoir_6" in lw_src:
             bottom_z = 103.0
-        elif "rack" in lw_name or "17a" in lw_src:
+        elif ("rack" in lw_name and "tip" not in lw_name) or "17a" in lw_src or "biohit_rack" in lw_src:
             bottom_z = 95.0
         else:
             bottom_z = 90.0
