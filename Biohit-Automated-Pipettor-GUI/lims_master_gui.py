@@ -2345,12 +2345,37 @@ class LIMSMasterApp:
                                             "area_mm2": float(step.get('tube_area_mm2', 434.0))     # Tube cross-section
                                         }
                                     tube_info = self.liquid_ledger[ledger_key]
+                                    req_vol = float(vol)
+
+                                    # --- Low-volume refill pause ---
+                                    rem_before_ml = max(0.0, tube_info["bottom_z"] - tube_info["surface_z"]) * tube_info["area_mm2"] / 1000.0
+                                    reserve_ml = float(step.get('min_reserve_ml', 2.0))
+                                    if rem_before_ml - (req_vol / 1000.0) < reserve_ml:
+                                        self.logger.warning(
+                                            f"[OPTION 2 TRACKER] {slot_name} {well_id} LOW: ~{rem_before_ml:.2f}mL left (reserve {reserve_ml:.1f}mL). Pausing for refill.")
+                                        self.refill_decision = None
+                                        start_z = float(step.get('start_surface_z', 45.0))
+
+                                        def _ask_refill():
+                                            ok = messagebox.askyesno(
+                                                "Refill Tube",
+                                                f"{slot_name} {well_id} is nearly empty (~{rem_before_ml:.1f} mL left).\n\n"
+                                                f"Refill it to the start mark (Z={start_z:.0f} mm), then press YES.\n\n"
+                                                f"Press NO to continue without refilling (tip will go near the bottom).")
+                                            self.refill_decision = "refilled" if ok else "continue"
+
+                                        self.root.after(0, _ask_refill)
+                                        while self.refill_decision is None and not self.is_aborted:
+                                            time.sleep(0.1)
+                                        if self.refill_decision == "refilled":
+                                            tube_info["surface_z"] = start_z
+                                            self.logger.info(f"[OPTION 2 TRACKER] {slot_name} {well_id} refilled -> surface reset to Z={start_z:.1f}mm")
+
                                     curr_surface = tube_info["surface_z"]
                                     # Submerge 5.0mm below current meniscus, capped 1.5mm above tube base
                                     tz = min(curr_surface + 5.0, tube_info["bottom_z"] - 1.5)
 
                                     # Update meniscus depth for next aspiration
-                                    req_vol = float(vol)
                                     dz = req_vol / tube_info["area_mm2"]
                                     new_surface = min(curr_surface + dz, tube_info["bottom_z"] - 1.5)
                                     tube_info["surface_z"] = new_surface

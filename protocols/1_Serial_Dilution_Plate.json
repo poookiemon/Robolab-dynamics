@@ -13,7 +13,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -40,7 +45,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -67,7 +77,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -94,7 +109,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 24.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -243,7 +263,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -270,7 +295,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -297,7 +327,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -324,7 +359,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 24.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -473,7 +513,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -500,7 +545,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -527,7 +577,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -554,7 +609,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 24.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -703,7 +763,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -730,7 +795,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -757,7 +827,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -784,7 +859,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 24.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -933,7 +1013,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -960,7 +1045,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -987,7 +1077,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
@@ -1014,7 +1109,12 @@
         "slot": "Slot_2",
         "well": "A1",
         "volume": 24.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0,
+        "min_reserve_ml": 2.0
     },
     {
         "action": "Dispense Media",
