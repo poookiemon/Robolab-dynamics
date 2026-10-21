@@ -662,6 +662,7 @@ class LIMSMasterApp:
         self.canvas.create_oval(ox - 15, 2, ox - 2, 15, fill="red", outline="black")
         self.canvas.create_text(ox - 18, 15, text="(0,0)", anchor="ne", fill="red", font=("Arial", 9, "bold"))
 
+        # Pass 1: draw ALL slot rectangles first, so no slot body can paint over another slot's wells
         for name in self.placed_slots:
             s = self.lims.deck_slots[name]
 
@@ -678,6 +679,13 @@ class LIMSMasterApp:
             self.canvas.create_rectangle(visual_x_left, y0, visual_x_right, y1, fill=fill, outline=outline,
                                          width=3 if is_sel else 2)
             self.canvas.create_text(visual_x_left + 5, y0 + 5, text=name, anchor="nw", font=("Arial", 10, "bold"))
+
+        # Pass 2: draw wells on top of every rectangle, then the selection badge
+        for name in self.placed_slots:
+            s = self.lims.deck_slots[name]
+            visual_x_right = self.get_v_x(s.x_abs)
+            y0 = s.y_abs * self.scale
+            is_sel = (name == self.selected_slot_name)
 
             if name in self.lims.deck_labware:
                 lab = self.lims.deck_labware[name]
@@ -1490,12 +1498,13 @@ class LIMSMasterApp:
         if slot_name == "Slot_6" or (("waste" in lw_name or "waste" in lw_src) and slot_name not in ["Slot_1", "Slot_2"]):
             return cx, cy
 
-        # 3. 3-WELL RESERVOIR & FRONT REAGENT SLOTS (Slot_1 or Slot_2: Well 1=Left, 2=Center, 3=Right)
+        # 3. 3-WELL RESERVOIR & FRONT REAGENT SLOTS (Slot_1 or Slot_2)
+        #    Physically verified: A1 = base+106.5 (21.3 drove to A3)
         if "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src or slot_name in ["Slot_1", "Slot_2"]:
             base_x = slot_obj.x_abs
-            col_x_map = {'1': base_x + 21.3, '2': base_x + 63.9, '3': base_x + 106.5}
+            col_x_map = {'1': base_x + 106.5, '2': base_x + 63.9, '3': base_x + 21.3}
             c_c = well_id[1:] if len(well_id) >= 2 else (well_id if well_id in col_x_map else '1')
-            return col_x_map.get(c_c, base_x + 21.3), cy
+            return col_x_map.get(c_c, base_x + 106.5), cy
 
         # 4. 6-COLUMN RESERVOIR (reservoir_6 labware)
         if "6-column" in lw_name or "reservoir_6" in lw_src or "6_column" in lw_src:
@@ -1938,6 +1947,8 @@ class LIMSMasterApp:
         def run_sequence():
             self.logger.info("--- Protocol Sequence Initiated ---")
             self.is_aborted = False
+            # Fresh liquid-level ledger for every run (tubes assumed refilled to start level)
+            self.liquid_ledger = {}
             self.pause_event.set()
             self.root.after(0, lambda: self.update_ui_state(True))
             total_steps = len(self.workflow_sequence)
@@ -2315,24 +2326,23 @@ class LIMSMasterApp:
                                     except Exception as air_err:
                                         self.logger.warning(f"Air cushion draw skipped: {air_err}")
 
-                                # --- Option 2: Live Software Liquid Level Tracking ---
+                                # --- Option 2: Live Software Liquid Level Tracking (well-wise, auto mode) ---
+                                # Always on for tubes in Slot_1 / Slot_2 unless the step sets "track_liquid": false
                                 use_dynamic_z = (
-                                    (getattr(self, 'dynamic_z_var', None) and self.dynamic_z_var.get())
-                                    or step.get('use_surface_detection', False)
+                                    mode != "manual"
+                                    and slot_name in ["Slot_1", "Slot_2"]
+                                    and step.get('track_liquid', True)
                                 )
-                                # Exempt manual mode and calibrated microplates (Slot 4 EHM and Slot 5 drug plate)
-                                if mode == "manual" or slot_name in ["Slot_4", "Slot_5"]:
-                                    use_dynamic_z = False
 
-                                if use_dynamic_z and slot_name in ["Slot_1", "Slot_2"]:
+                                if use_dynamic_z:
                                     if not hasattr(self, 'liquid_ledger'):
                                         self.liquid_ledger = {}
                                     ledger_key = f"{slot_name}_{well_id}"
                                     if ledger_key not in self.liquid_ledger:
                                         self.liquid_ledger[ledger_key] = {
-                                            "surface_z": 45.0,  # Start depth for 30mL tube
-                                            "bottom_z": 103.0,  # Base of tube
-                                            "area_mm2": 434.0   # 30mL tube cross-sectional area
+                                            "surface_z": float(step.get('start_surface_z', 45.0)),  # Start meniscus (30mL tube)
+                                            "bottom_z": float(step.get('tube_bottom_z', 103.0)),    # Base of tube
+                                            "area_mm2": float(step.get('tube_area_mm2', 434.0))     # Tube cross-section
                                         }
                                     tube_info = self.liquid_ledger[ledger_key]
                                     curr_surface = tube_info["surface_z"]

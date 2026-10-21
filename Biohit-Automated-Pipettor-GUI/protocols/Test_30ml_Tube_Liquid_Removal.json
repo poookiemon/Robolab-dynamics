@@ -9,1112 +9,1010 @@
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 50.0,
         "volume": 200.0,
-        "comment": "Cycle 1/50: Asp from Slot_2 A1 at Z=50.0mm (Total removed: 0.2mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 1/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 50.46,
         "volume": 200.0,
-        "comment": "Cycle 2/50: Asp from Slot_2 A1 at Z=50.46mm (Total removed: 0.4mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 2/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 50.92,
         "volume": 200.0,
-        "comment": "Cycle 3/50: Asp from Slot_2 A1 at Z=50.92mm (Total removed: 0.6mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 3/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 51.38,
         "volume": 200.0,
-        "comment": "Cycle 4/50: Asp from Slot_2 A1 at Z=51.38mm (Total removed: 0.8mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 4/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 51.84,
         "volume": 200.0,
-        "comment": "Cycle 5/50: Asp from Slot_2 A1 at Z=51.84mm (Total removed: 1.0mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 5/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 52.3,
         "volume": 200.0,
-        "comment": "Cycle 6/50: Asp from Slot_2 A1 at Z=52.3mm (Total removed: 1.2mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 6/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 52.76,
         "volume": 200.0,
-        "comment": "Cycle 7/50: Asp from Slot_2 A1 at Z=52.76mm (Total removed: 1.4mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 7/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 53.22,
         "volume": 200.0,
-        "comment": "Cycle 8/50: Asp from Slot_2 A1 at Z=53.22mm (Total removed: 1.6mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 8/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 53.68,
         "volume": 200.0,
-        "comment": "Cycle 9/50: Asp from Slot_2 A1 at Z=53.68mm (Total removed: 1.8mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 9/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 54.14,
         "volume": 200.0,
-        "comment": "Cycle 10/50: Asp from Slot_2 A1 at Z=54.14mm (Total removed: 2.0mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 10/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 54.6,
         "volume": 200.0,
-        "comment": "Cycle 11/50: Asp from Slot_2 A1 at Z=54.6mm (Total removed: 2.2mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 11/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 55.06,
         "volume": 200.0,
-        "comment": "Cycle 12/50: Asp from Slot_2 A1 at Z=55.06mm (Total removed: 2.4mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 12/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 55.52,
         "volume": 200.0,
-        "comment": "Cycle 13/50: Asp from Slot_2 A1 at Z=55.52mm (Total removed: 2.6mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 13/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 55.98,
         "volume": 200.0,
-        "comment": "Cycle 14/50: Asp from Slot_2 A1 at Z=55.98mm (Total removed: 2.8mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 14/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 56.44,
         "volume": 200.0,
-        "comment": "Cycle 15/50: Asp from Slot_2 A1 at Z=56.44mm (Total removed: 3.0mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 15/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 56.9,
         "volume": 200.0,
-        "comment": "Cycle 16/50: Asp from Slot_2 A1 at Z=56.9mm (Total removed: 3.2mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 16/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 57.36,
         "volume": 200.0,
-        "comment": "Cycle 17/50: Asp from Slot_2 A1 at Z=57.36mm (Total removed: 3.4mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 17/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 57.82,
         "volume": 200.0,
-        "comment": "Cycle 18/50: Asp from Slot_2 A1 at Z=57.82mm (Total removed: 3.6mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 18/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 58.28,
         "volume": 200.0,
-        "comment": "Cycle 19/50: Asp from Slot_2 A1 at Z=58.28mm (Total removed: 3.8mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 19/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 58.74,
         "volume": 200.0,
-        "comment": "Cycle 20/50: Asp from Slot_2 A1 at Z=58.74mm (Total removed: 4.0mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 20/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 59.2,
         "volume": 200.0,
-        "comment": "Cycle 21/50: Asp from Slot_2 A1 at Z=59.2mm (Total removed: 4.2mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 21/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 59.66,
         "volume": 200.0,
-        "comment": "Cycle 22/50: Asp from Slot_2 A1 at Z=59.66mm (Total removed: 4.4mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 22/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 60.12,
         "volume": 200.0,
-        "comment": "Cycle 23/50: Asp from Slot_2 A1 at Z=60.12mm (Total removed: 4.6mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 23/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 60.58,
         "volume": 200.0,
-        "comment": "Cycle 24/50: Asp from Slot_2 A1 at Z=60.58mm (Total removed: 4.8mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 24/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 61.04,
         "volume": 200.0,
-        "comment": "Cycle 25/50: Asp from Slot_2 A1 at Z=61.04mm (Total removed: 5.0mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 25/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 61.5,
         "volume": 200.0,
-        "comment": "Cycle 26/50: Asp from Slot_2 A1 at Z=61.5mm (Total removed: 5.2mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 26/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 61.96,
         "volume": 200.0,
-        "comment": "Cycle 27/50: Asp from Slot_2 A1 at Z=61.96mm (Total removed: 5.4mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 27/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 62.42,
         "volume": 200.0,
-        "comment": "Cycle 28/50: Asp from Slot_2 A1 at Z=62.42mm (Total removed: 5.6mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 28/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 62.88,
         "volume": 200.0,
-        "comment": "Cycle 29/50: Asp from Slot_2 A1 at Z=62.88mm (Total removed: 5.8mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 29/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 63.34,
         "volume": 200.0,
-        "comment": "Cycle 30/50: Asp from Slot_2 A1 at Z=63.34mm (Total removed: 6.0mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 30/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 63.8,
         "volume": 200.0,
-        "comment": "Cycle 31/50: Asp from Slot_2 A1 at Z=63.8mm (Total removed: 6.2mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 31/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 64.26,
         "volume": 200.0,
-        "comment": "Cycle 32/50: Asp from Slot_2 A1 at Z=64.26mm (Total removed: 6.4mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 32/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 64.72,
         "volume": 200.0,
-        "comment": "Cycle 33/50: Asp from Slot_2 A1 at Z=64.72mm (Total removed: 6.6mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 33/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 65.18,
         "volume": 200.0,
-        "comment": "Cycle 34/50: Asp from Slot_2 A1 at Z=65.18mm (Total removed: 6.8mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 34/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 65.64,
         "volume": 200.0,
-        "comment": "Cycle 35/50: Asp from Slot_2 A1 at Z=65.64mm (Total removed: 7.0mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 35/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 66.1,
         "volume": 200.0,
-        "comment": "Cycle 36/50: Asp from Slot_2 A1 at Z=66.1mm (Total removed: 7.2mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 36/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 66.56,
         "volume": 200.0,
-        "comment": "Cycle 37/50: Asp from Slot_2 A1 at Z=66.56mm (Total removed: 7.4mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 37/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 67.02,
         "volume": 200.0,
-        "comment": "Cycle 38/50: Asp from Slot_2 A1 at Z=67.02mm (Total removed: 7.6mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 38/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 67.48,
         "volume": 200.0,
-        "comment": "Cycle 39/50: Asp from Slot_2 A1 at Z=67.48mm (Total removed: 7.8mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 39/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 67.94,
         "volume": 200.0,
-        "comment": "Cycle 40/50: Asp from Slot_2 A1 at Z=67.94mm (Total removed: 8.0mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 40/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 68.4,
         "volume": 200.0,
-        "comment": "Cycle 41/50: Asp from Slot_2 A1 at Z=68.4mm (Total removed: 8.2mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 41/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 68.86,
         "volume": 200.0,
-        "comment": "Cycle 42/50: Asp from Slot_2 A1 at Z=68.86mm (Total removed: 8.4mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 42/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 69.32,
         "volume": 200.0,
-        "comment": "Cycle 43/50: Asp from Slot_2 A1 at Z=69.32mm (Total removed: 8.6mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 43/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 69.78,
         "volume": 200.0,
-        "comment": "Cycle 44/50: Asp from Slot_2 A1 at Z=69.78mm (Total removed: 8.8mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 44/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 70.24,
         "volume": 200.0,
-        "comment": "Cycle 45/50: Asp from Slot_2 A1 at Z=70.24mm (Total removed: 9.0mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 45/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 70.7,
         "volume": 200.0,
-        "comment": "Cycle 46/50: Asp from Slot_2 A1 at Z=70.7mm (Total removed: 9.2mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 46/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 71.16,
         "volume": 200.0,
-        "comment": "Cycle 47/50: Asp from Slot_2 A1 at Z=71.16mm (Total removed: 9.4mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 47/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 71.62,
         "volume": 200.0,
-        "comment": "Cycle 48/50: Asp from Slot_2 A1 at Z=71.62mm (Total removed: 9.6mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 48/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 72.08,
         "volume": 200.0,
-        "comment": "Cycle 49/50: Asp from Slot_2 A1 at Z=72.08mm (Total removed: 9.8mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 49/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Aspirate Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_2",
         "well": "A1",
-        "x": 21.3,
-        "y": 22.5,
-        "z": 72.54,
         "volume": 200.0,
-        "comment": "Cycle 50/50: Asp from Slot_2 A1 at Z=72.54mm (Total removed: 10.0mL)"
+        "extra_z": 0.0,
+        "track_liquid": true,
+        "start_surface_z": 45.0,
+        "tube_bottom_z": 103.0,
+        "tube_area_mm2": 434.0
     },
     {
         "action": "Dispense Media",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 85.0,
         "volume": 200.0,
-        "comment": "Cycle 50/50: Dispense to Slot_6 Waste"
+        "extra_z": 0.0
     },
     {
         "action": "Discard Tip",
-        "mode": "manual",
+        "mode": "auto",
         "slot": "Slot_6",
         "well": "A1",
-        "x": 63.9,
-        "y": 208.25,
-        "z": 90.0,
-        "volume": 0.0
+        "volume": 0.0,
+        "extra_z": 0.0
     }
 ]
