@@ -1486,16 +1486,16 @@ class LIMSMasterApp:
                         ry -= 160.0
                     return rx, ry
 
-        # 2. WASTE TROUGH (Slot_6 by default or waste labware)
-        if ("waste" in lw_name or "waste" in lw_src) or (not labware_obj and slot_name == "Slot_6"):
+        # 2. WASTE TROUGH (Slot_6 by default or waste labware on non-reagent slots)
+        if slot_name == "Slot_6" or (("waste" in lw_name or "waste" in lw_src) and slot_name not in ["Slot_1", "Slot_2"]):
             return cx, cy
 
-        # 3. 3-WELL RESERVOIR & FRONT REAGENT SLOTS (Slot_1 or Slot_2, 3 wells along X)
+        # 3. 3-WELL RESERVOIR & FRONT REAGENT SLOTS (Slot_1 or Slot_2: Well 1=Left, 2=Center, 3=Right)
         if "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src or slot_name in ["Slot_1", "Slot_2"]:
             base_x = slot_obj.x_abs
-            col_x_map = {'1': base_x + 106.5, '2': base_x + 63.9, '3': base_x + 21.3}
+            col_x_map = {'1': base_x + 21.3, '2': base_x + 63.9, '3': base_x + 106.5}
             c_c = well_id[1:] if len(well_id) >= 2 else (well_id if well_id in col_x_map else '1')
-            return col_x_map.get(c_c, base_x + 63.9), cy
+            return col_x_map.get(c_c, base_x + 21.3), cy
 
         # 4. 6-COLUMN RESERVOIR (reservoir_6 labware)
         if "6-column" in lw_name or "reservoir_6" in lw_src or "6_column" in lw_src:
