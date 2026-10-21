@@ -887,6 +887,7 @@ class LIMSMasterApp:
         ttk.Button(pane_ctrl, text="⚡ Load Quick 5-Slot Mock", command=self.action_load_quick_mock_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="🧪 Load EHM 48-Well Test", command=self.action_load_ehm_test_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="🎯 Load 96-Well Row A (A1-A12)", command=self.action_load_slot5_rowA_protocol).pack(fill=tk.X, pady=2)
+        ttk.Button(pane_ctrl, text="🌊 Load Liquid Height Test (Slot 6)", command=self.action_load_liquid_test_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="📥 Convert & Import Python (.py)", command=self.action_import_python_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="📂 Load JSON Protocol", command=self.action_load_workflow).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="💾 Save Protocol As JSON...", command=self.action_save_workflow_as).pack(fill=tk.X, pady=2)
@@ -1132,6 +1133,62 @@ class LIMSMasterApp:
             self.logger.info(f"Loaded Slot 5 96-Well Row A Test Protocol ({len(loaded_sequence)} steps). Labware auto-assigned and Tip state marked ATTACHED.")
         else:
             messagebox.showerror("File Not Found", "Could not locate slot5_96well_rowA_test.json")
+
+    def action_load_liquid_test_protocol(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        cand_paths = [
+            os.path.join(script_dir, "protocols", "Test_Liquid_Level_Detection.json"),
+            os.path.join(os.path.dirname(script_dir), "protocols", "Test_Liquid_Level_Detection.json"),
+            os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "protocols", "Test_Liquid_Level_Detection.json"),
+            os.path.join(os.getcwd(), "protocols", "Test_Liquid_Level_Detection.json"),
+        ]
+        target_path = None
+        for p in cand_paths:
+            if os.path.exists(p):
+                target_path = p
+                break
+        if target_path:
+            with open(target_path, 'r') as f:
+                loaded_sequence = json.load(f)
+            self.workflow_sequence.clear()
+            self.wf_box.delete(0, tk.END)
+            lw_dir = self.get_labware_dir()
+
+            # Auto-assign Slot 6 = biohit_rack_4x6_17a.json, Slot 2 = waste_trough.json, Slot 3 = tip_rack_1000ul.json
+            deck_setup = {
+                "Slot_2": "waste_trough.json",
+                "Slot_3": "tip_rack_1000ul.json",
+                "Slot_6": "biohit_rack_4x6_17a.json"
+            }
+            for s_name, lw_file in deck_setup.items():
+                lp = os.path.join(lw_dir, lw_file)
+                if os.path.exists(lp):
+                    self.lims.deck_labware[s_name] = Labware(lp)
+                    self.lims.deck_labware[s_name].source_file = lw_file
+                if s_name not in self.placed_slots:
+                    self.placed_slots.append(s_name)
+
+            for step in loaded_sequence:
+                self.workflow_sequence.append(step)
+                act = step['action']
+                slot = step.get('slot', '')
+                well = step.get('well', '')
+                vol = step.get('volume', 0.0)
+                if act == "Pick Up Tip":
+                    msg = f"[{act.upper()}] from {slot}, Well {well}"
+                elif act == "Discard Tip":
+                    msg = f"[{act.upper()}] into {slot} (Waste)"
+                elif act == "Detect Liquid Level":
+                    msg = f"[{act.upper()}] at {slot}, Well {well}"
+                elif "Incubate" in act:
+                    msg = f"[SYSTEM] Wait {vol:.0f}s (Adjust/lower liquid height in Slot 6 Tube A1)"
+                else:
+                    msg = f"[{act.upper()}] {vol:.0f}\u03bcL at {slot}, Well {well}"
+                self.wf_box.insert(tk.END, msg)
+            if hasattr(self, 'draw_deck'): self.draw_deck()
+            self.logger.info(f"Loaded Liquid Height Test Protocol ({len(loaded_sequence)} steps). Slot 6 Rack & Slot 2 Waste auto-assigned.")
+        else:
+            messagebox.showerror("File Not Found", "Could not locate Test_Liquid_Level_Detection.json")
 
     def add_wf_step(self):
         action = self.wf_action.get()
@@ -1853,8 +1910,10 @@ class LIMSMasterApp:
                 if "System:" in action:
                     try:
                         if "Incubate" in action:
-                            self.lims.hw.move_to(0, 0, 0, speed=self.speed_var.get());
+                            self.lims.hw.move_to(0, 0, 0, speed=self.speed_var.get())
+                            self.logger.info(f"System: Waiting {vol:.0f}s at safety origin (adjust or lower liquid height in tube now)...")
                             time.sleep(vol)
+                            self.logger.info("Wait complete. Resuming protocol sequence.")
                         elif "FOC48" in action:
                             self.lims.hw.move_to(0, 0, 0, speed=self.speed_var.get())
                             try:
