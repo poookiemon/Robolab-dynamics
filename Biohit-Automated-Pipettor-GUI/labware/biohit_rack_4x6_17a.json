@@ -1,0 +1,60 @@
+{
+    "labware_name": "Biohit Rack 4x6 - Ø17A (24 Tubes)",
+    "rack_model": "Biohit Rack 4x6 - Ø17A",
+    "format": "24-tube rack (4 rows x 6 columns)",
+    "z_height_mm": 40.0,
+    "grid": {
+        "rows": 4,
+        "columns": 6
+    },
+    "well_a1_offset": {
+        "x": 15.65,
+        "y": 13.8
+    },
+    "spacing": {
+        "x": 19.3,
+        "y": 19.3
+    },
+    "well_properties": {
+        "diameter_mm": 17.0,
+        "radius_mm": 8.5,
+        "depth_mm": 40.0,
+        "max_volume_ul": 15000.0
+    },
+    "z": {
+        "aspirate": 85.0,
+        "dispense": 75.0,
+        "discard_tip": 90.0
+    },
+    "z_limits": {
+        "recommended_aspirate_z": 85.0,
+        "recommended_dispense_z": 75.0,
+        "max_safe_bottom_z": 95.0
+    },
+    "wells": {
+        "A1": {"x_rel": 15.65, "y_rel": 13.8},
+        "A2": {"x_rel": 34.95, "y_rel": 13.8},
+        "A3": {"x_rel": 54.25, "y_rel": 13.8},
+        "A4": {"x_rel": 73.55, "y_rel": 13.8},
+        "A5": {"x_rel": 92.85, "y_rel": 13.8},
+        "A6": {"x_rel": 112.15, "y_rel": 13.8},
+        "B1": {"x_rel": 15.65, "y_rel": 33.1},
+        "B2": {"x_rel": 34.95, "y_rel": 33.1},
+        "B3": {"x_rel": 54.25, "y_rel": 33.1},
+        "B4": {"x_rel": 73.55, "y_rel": 33.1},
+        "B5": {"x_rel": 92.85, "y_rel": 33.1},
+        "B6": {"x_rel": 112.15, "y_rel": 33.1},
+        "C1": {"x_rel": 15.65, "y_rel": 52.4},
+        "C2": {"x_rel": 34.95, "y_rel": 52.4},
+        "C3": {"x_rel": 54.25, "y_rel": 52.4},
+        "C4": {"x_rel": 73.55, "y_rel": 52.4},
+        "C5": {"x_rel": 92.85, "y_rel": 52.4},
+        "C6": {"x_rel": 112.15, "y_rel": 52.4},
+        "D1": {"x_rel": 15.65, "y_rel": 71.7},
+        "D2": {"x_rel": 34.95, "y_rel": 71.7},
+        "D3": {"x_rel": 54.25, "y_rel": 71.7},
+        "D4": {"x_rel": 73.55, "y_rel": 71.7},
+        "D5": {"x_rel": 92.85, "y_rel": 71.7},
+        "D6": {"x_rel": 112.15, "y_rel": 71.7}
+    }
+}
