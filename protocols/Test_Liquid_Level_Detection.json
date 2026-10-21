@@ -10,7 +10,7 @@
     {
         "action": "Detect Liquid Level",
         "mode": "auto",
-        "slot": "Slot_6",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 0.0,
         "extra_z": 0.0
@@ -26,7 +26,7 @@
     {
         "action": "Detect Liquid Level",
         "mode": "auto",
-        "slot": "Slot_6",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 0.0,
         "extra_z": 0.0
@@ -34,7 +34,7 @@
     {
         "action": "Aspirate Media",
         "mode": "auto",
-        "slot": "Slot_6",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -42,7 +42,7 @@
     {
         "action": "Dispense Media",
         "mode": "auto",
-        "slot": "Slot_2",
+        "slot": "Slot_6",
         "well": "A1",
         "volume": 200.0,
         "extra_z": 0.0
@@ -50,7 +50,7 @@
     {
         "action": "Discard Tip",
         "mode": "auto",
-        "slot": "Slot_2",
+        "slot": "Slot_6",
         "well": "A1",
         "volume": 0.0,
         "extra_z": 0.0

@@ -1377,6 +1377,88 @@ class LIMSMasterApp:
             self.pause_event.set()
             self.root.after(0, lambda: self.btn_pause.config(text="⏸ PAUSE", bg="#ffc107"))
 
+    def _probe_surface_and_wait(self, limit_z: float, submerge_mm: float = 1.0) -> float:
+        """
+        Safely probes downward for liquid meniscus using Biohit tip frequency sensor.
+        Blocks until physical movement completes, pauses for visual confirmation,
+        and returns the measured liquid surface Z coordinate (in mm).
+        """
+        hw = getattr(self.lims.pipettor, 'hardware', None)
+        if not hw:
+            # Simulator mode fallback
+            time.sleep(1.0)
+            return max(0.0, float(limit_z) - 15.0)
+
+        saved_z_speed = getattr(hw, 'z_speed', 5)
+        try:
+            # Set gentle speed for surface probing (speed 3 = gentle descent)
+            hw.z_speed = 3
+            self.logger.info(f"[SURFACE PROBE] Descending toward limit Z={limit_z:.1f}mm (depth={submerge_mm:.1f}mm)...")
+
+            # Execute move_to_surface
+            called_ok = False
+            try:
+                hw.move_to_surface(limit=float(limit_z), distance_from_surface=float(submerge_mm))
+                called_ok = True
+            except Exception as e_wrap:
+                self.logger.warning(f"[SURFACE PROBE] pipettor.move_to_surface: {e_wrap}")
+
+            if not called_ok:
+                inst = getattr(hw, '_Pipettor__instrument', None)
+                if inst:
+                    try:
+                        if hasattr(inst, 'MoveToSurface'):
+                            inst.MoveToSurface(float(limit_z), float(submerge_mm))
+                            called_ok = True
+                        elif hasattr(inst, 'Control') and hasattr(inst.Control, 'MoveToSurface'):
+                            inst.Control.MoveToSurface(float(limit_z), True)
+                            called_ok = True
+                    except Exception as e_clr:
+                        self.logger.error(f"[SURFACE PROBE] Direct CLR MoveToSurface call failed: {e_clr}")
+
+            # Wait for physical descent to complete (polling drive state and position stability)
+            inst = getattr(hw, '_Pipettor__instrument', None)
+            t_start = time.time()
+            max_wait_sec = 25.0
+            time.sleep(0.3)  # Brief grace period for motor acceleration
+
+            last_z = None
+            stable_ticks = 0
+            while (time.time() - t_start) < max_wait_sec:
+                drive_active = False
+                if inst and hasattr(inst, 'Control') and hasattr(inst.Control, 'IsDriveOn'):
+                    try:
+                        drive_active = bool(inst.Control.IsDriveOn("Z"))
+                    except Exception:
+                        drive_active = False
+
+                curr_z = getattr(hw, 'z_position', None)
+                if curr_z is not None:
+                    if last_z is not None and abs(curr_z - last_z) < 0.08:
+                        stable_ticks += 1
+                    else:
+                        stable_ticks = 0
+                    last_z = curr_z
+
+                # Stop waiting when drive is off and position has stabilized for 3 consecutive ticks
+                if not drive_active and stable_ticks >= 3:
+                    break
+
+                time.sleep(0.1)
+
+            z_measured = getattr(hw, 'z_position', limit_z)
+            self.logger.info(f"[SURFACE PROBE] Surface detected/stopped at Z={z_measured:.2f}mm (limit={limit_z:.1f}mm)")
+
+            # Visual confirmation pause
+            time.sleep(1.0)
+            return float(z_measured)
+
+        finally:
+            try:
+                hw.z_speed = saved_z_speed
+            except Exception:
+                pass
+
     def _calculate_xy(self, slot_name, well_id):
         slot_obj = self.lims.deck_slots.get(slot_name)
         if not slot_obj: return 0.0, 0.0
@@ -1388,18 +1470,34 @@ class LIMSMasterApp:
         lw_name = (getattr(labware_obj, 'name', '') or '').lower()
         lw_src = (getattr(labware_obj, 'source_file', '') or '').lower()
 
-        # 1. WASTE TROUGH (Slot_6, Slot_1, or Slot_2 when used as waste, or waste labware)
-        if ("waste" in lw_name or "waste" in lw_src) or (not labware_obj and slot_name in ["Slot_6", "Slot_1", "Slot_2"]):
+        # 1. 24-TUBE RACK (Biohit Rack 4x6 - Ø17A: 4 rows A-D, 6 cols 1-6)
+        if ("rack" in lw_name or "17a" in lw_src or "biohit_rack" in lw_src):
+            col_x = {'1': 112.15, '2': 92.85, '3': 73.55, '4': 54.25, '5': 34.95, '6': 15.65}
+            row_y = {'A': 179.3, 'B': 198.6, 'C': 217.9, 'D': 237.2}
+            if len(well_id) >= 2:
+                r_c = well_id[0].upper()
+                c_str = well_id[1:]
+                if r_c in row_y and c_str in col_x:
+                    rx = col_x[c_str]
+                    ry = row_y[r_c]
+                    if slot_obj.x_abs >= 70.0:
+                        rx += 135.2
+                    if slot_obj.y_abs < 50.0:
+                        ry -= 160.0
+                    return rx, ry
+
+        # 2. WASTE TROUGH (Slot_6 by default or waste labware)
+        if ("waste" in lw_name or "waste" in lw_src) or (not labware_obj and slot_name == "Slot_6"):
             return cx, cy
 
-        # 2. 3-WELL RESERVOIR (Option A: Fits in Slot_1 or Slot_2, 3 wells along X)
-        if "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
+        # 3. 3-WELL RESERVOIR & FRONT REAGENT SLOTS (Slot_1 or Slot_2, 3 wells along X)
+        if "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src or slot_name in ["Slot_1", "Slot_2"]:
             base_x = slot_obj.x_abs
             col_x_map = {'1': base_x + 106.5, '2': base_x + 63.9, '3': base_x + 21.3}
             c_c = well_id[1:] if len(well_id) >= 2 else (well_id if well_id in col_x_map else '1')
             return col_x_map.get(c_c, base_x + 63.9), cy
 
-        # 3. 6-COLUMN RESERVOIR (reservoir_6 labware)
+        # 4. 6-COLUMN RESERVOIR (reservoir_6 labware)
         if "6-column" in lw_name or "reservoir_6" in lw_src or "6_column" in lw_src:
             col_x = {
                 '1': 245.0, '2': 230.0, '3': 212.0,
@@ -1478,9 +1576,9 @@ class LIMSMasterApp:
         lw_src = (getattr(labware_obj, 'source_file', '') or '').lower()
 
         if action in ["Aspirate Media", "Dispense Media", "Discard Tip", "Mix Well"]:
-            if "waste" in lw_name or "waste" in lw_src or (not labware_obj and slot_name in ["Slot_6", "Slot_1", "Slot_2"]):
+            if action == "Discard Tip" or "waste" in lw_name or "waste" in lw_src or (not labware_obj and slot_name == "Slot_6"):
                 base_z = 90.0
-            elif "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
+            elif "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src or (not labware_obj and slot_name in ["Slot_1", "Slot_2"]):
                 base_z = 98.0
             elif ("96" in lw_name or "96" in lw_src or (not labware_obj and slot_name == "Slot_5")) and ("tip" not in lw_name and "tip" not in lw_src):
                 return 85.0 if slot_name == "Slot_4" else 80.0
@@ -1490,8 +1588,8 @@ class LIMSMasterApp:
                 return 84.0
             elif "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
                 base_z = 98.0
-            elif action == "Discard Tip" and slot_name in ["Slot_1", "Slot_2", "Slot_6"]:
-                base_z = 90.0
+            elif "rack" in lw_name or "17a" in lw_src:
+                base_z = 95.0
             else:
                 base_z = 101.0
 
@@ -1704,7 +1802,7 @@ class LIMSMasterApp:
             bottom_z = 84.0
         elif "96" in lw_name or "96" in lw_src or slot_name == "Slot_5":
             bottom_z = 90.0 if slot_name != "Slot_5" else 80.0
-        elif "3-well" in lw_name or "reservoir_3" in lw_src:
+        elif "3-well" in lw_name or "reservoir_3" in lw_src or slot_name in ["Slot_1", "Slot_2"]:
             bottom_z = 98.0
         elif "6-column" in lw_name or "reservoir_6" in lw_src:
             bottom_z = 103.0
@@ -1733,24 +1831,14 @@ class LIMSMasterApp:
             time.sleep(0.1)
 
             # 2. Execute surface detection
-            self.logger.info(f"Probing liquid surface downwards to limit Z={bottom_z:.1f}mm...")
-            if self.lims.pipettor.hardware:
-                hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
-                self.lims.pipettor.hardware.z_speed = 3
-                try:
-                    self.lims.pipettor.hardware.move_to_surface(limit=bottom_z, distance_from_surface=0.0)
-                except Exception as surf_err:
-                    self.logger.warning(f"move_to_surface alert: {surf_err}")
-                z_measured = getattr(self.lims.pipettor.hardware, 'z_position', bottom_z)
-                self.lims.pipettor.hardware.z_speed = hw_speed
-                self.lims.pipettor.hardware.move_z(0)
-            else:
-                # Simulator fallback
-                z_measured = bottom_z - 6.5
-                time.sleep(0.5)
+            z_measured = self._probe_surface_and_wait(bottom_z, submerge_mm=1.0)
 
-            # 3. Analyze result
-            if z_measured >= bottom_z - 0.3:
+            # 3. Retract back to safe Z=0
+            if self.lims.pipettor.hardware:
+                self.lims.pipettor.hardware.move_z(0)
+
+            # 4. Analyze result
+            if z_measured >= bottom_z - 0.5:
                 res_msg = (
                     f"No liquid detected in {slot_name} Well {well_id}.\n\n"
                     f"Sensor reached bottom limit (Z={bottom_z:.1f} mm) without meniscus contact.\n"
@@ -2175,20 +2263,11 @@ class LIMSMasterApp:
                         self.lims.hw.move_to(target_x, target_y, 0, speed=self.speed_var.get())
                         time.sleep(0.05)
 
+                        z_measured = self._probe_surface_and_wait(bottom_z, submerge_mm=1.0)
                         if self.lims.pipettor.hardware:
-                            hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
-                            self.lims.pipettor.hardware.z_speed = 3
-                            try:
-                                self.lims.pipettor.hardware.move_to_surface(limit=bottom_z, distance_from_surface=0.0)
-                            except Exception as surf_err:
-                                self.logger.warning(f"move_to_surface warning: {surf_err}")
-                            z_measured = getattr(self.lims.pipettor.hardware, 'z_position', bottom_z)
-                            self.lims.pipettor.hardware.z_speed = hw_speed
                             self.lims.pipettor.hardware.move_z(0)
-                        else:
-                            z_measured = bottom_z - 6.0
 
-                        if z_measured >= bottom_z - 0.3:
+                        if z_measured >= bottom_z - 0.5:
                             self.logger.warning(f"[LIQUID LEVEL] {slot_name} Well {well_id}: EMPTY (reached bottom limit Z={bottom_z:.1f}mm).")
                         else:
                             liquid_height_mm = max(0.0, bottom_z - z_measured)
@@ -2240,7 +2319,7 @@ class LIMSMasterApp:
                                 use_dynamic_z = (
                                     (getattr(self, 'dynamic_z_var', None) and self.dynamic_z_var.get())
                                     or step.get('use_surface_detection', False)
-                                    or (slot_name == "Slot_6")
+                                    or (slot_name in ["Slot_1", "Slot_2", "Slot_6"])
                                 )
                                 # Exempt microplate wells where full-depth evacuation is calibrated (Slot 4 EHM and Slot 5 drug plate)
                                 if slot_name in ["Slot_4", "Slot_5"]:
@@ -2254,14 +2333,7 @@ class LIMSMasterApp:
                                     slot_obj_cur = self.lims.deck_slots.get(slot_name)
                                     max_bottom_z = min(103.5, max_bottom_z + getattr(slot_obj_cur, 'z_offset', 0.0))
 
-                                    hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
-                                    self.lims.pipettor.hardware.z_speed = 3
-                                    try:
-                                        self.lims.pipettor.hardware.move_to_surface(limit=max_bottom_z, distance_from_surface=0.0)
-                                    except Exception as surf_err:
-                                        self.logger.warning(f"move_to_surface probe alert: {surf_err}")
-                                    z_surf = getattr(self.lims.pipettor.hardware, 'z_position', max_bottom_z)
-                                    self.lims.pipettor.hardware.z_speed = hw_speed
+                                    z_surf = self._probe_surface_and_wait(max_bottom_z, submerge_mm=1.0)
 
                                     if z_surf < max_bottom_z - 0.5:
                                         tz = min(z_surf + 3.0, max_bottom_z)
