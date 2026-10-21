@@ -17,7 +17,7 @@
         "height_mm": 35.0,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "reservoir_3_well.json"
+        "labware_file": "waste_trough.json"
     },
     "Slot_3": {
         "name": "Slot_3",
@@ -57,6 +57,6 @@
         "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "waste_trough.json"
+        "labware_file": "biohit_rack_4x6_17a.json"
     }
 }

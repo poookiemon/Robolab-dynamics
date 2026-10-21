@@ -1331,8 +1331,8 @@ class LIMSMasterApp:
         lw_name = (getattr(labware_obj, 'name', '') or '').lower()
         lw_src = (getattr(labware_obj, 'source_file', '') or '').lower()
 
-        # 1. WASTE TROUGH (Slot_6 or Slot_1 when used as waste, or waste labware)
-        if ("waste" in lw_name or "waste" in lw_src) or (not labware_obj and slot_name in ["Slot_6", "Slot_1"]):
+        # 1. WASTE TROUGH (Slot_6, Slot_1, or Slot_2 when used as waste, or waste labware)
+        if ("waste" in lw_name or "waste" in lw_src) or (not labware_obj and slot_name in ["Slot_6", "Slot_1", "Slot_2"]):
             return cx, cy
 
         # 2. 3-WELL RESERVOIR (Option A: Fits in Slot_1 or Slot_2, 3 wells along X)
@@ -1421,7 +1421,7 @@ class LIMSMasterApp:
         lw_src = (getattr(labware_obj, 'source_file', '') or '').lower()
 
         if action in ["Aspirate Media", "Dispense Media", "Discard Tip", "Mix Well"]:
-            if "waste" in lw_name or "waste" in lw_src or (not labware_obj and slot_name in ["Slot_6", "Slot_1"]):
+            if "waste" in lw_name or "waste" in lw_src or (not labware_obj and slot_name in ["Slot_6", "Slot_1", "Slot_2"]):
                 base_z = 90.0
             elif "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
                 base_z = 98.0
@@ -1433,7 +1433,7 @@ class LIMSMasterApp:
                 return 84.0
             elif "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
                 base_z = 98.0
-            elif action == "Discard Tip" and slot_name == "Slot_1":
+            elif action == "Discard Tip" and slot_name in ["Slot_1", "Slot_2", "Slot_6"]:
                 base_z = 90.0
             else:
                 base_z = 101.0
@@ -1914,11 +1914,11 @@ class LIMSMasterApp:
                     if slot_name not in self.lims.deck_labware:
                         lw_dir = self.get_labware_dir()
                         default_lw_map = {
-                            "Slot_2": "reservoir_3_well.json",
+                            "Slot_2": "waste_trough.json" if action in ["Dispense Media", "Discard Tip"] else "reservoir_3_well.json",
                             "Slot_3": "tip_rack_1000ul.json" if action == "Pick Up Tip" else "reservoir_6_column.json",
                             "Slot_4": "tip_rack_1000ul.json" if action == "Pick Up Tip" else "myriamed_48_well.json",
                             "Slot_5": "generic_96_well_plate.json",
-                            "Slot_6": "waste_trough.json"
+                            "Slot_6": "biohit_rack_4x6_17a.json" if action == "Aspirate Media" else "waste_trough.json"
                         }
                         def_file = default_lw_map.get(slot_name)
                         if def_file:
@@ -2176,6 +2176,40 @@ class LIMSMasterApp:
                                         time.sleep(0.3)
                                     except Exception as air_err:
                                         self.logger.warning(f"Air cushion draw skipped: {air_err}")
+
+                                # --- Dynamic Liquid Height Detection during Aspiration ---
+                                use_dynamic_z = (
+                                    (getattr(self, 'dynamic_z_var', None) and self.dynamic_z_var.get())
+                                    or step.get('use_surface_detection', False)
+                                    or (slot_name == "Slot_6")
+                                )
+                                # Exempt microplate wells where full-depth evacuation is calibrated (Slot 4 EHM and Slot 5 drug plate)
+                                if slot_name in ["Slot_4", "Slot_5"]:
+                                    use_dynamic_z = False
+
+                                if use_dynamic_z:
+                                    max_bottom_z = tz
+                                    labware_obj = self.lims.deck_labware.get(slot_name)
+                                    if labware_obj and hasattr(labware_obj, 'z_limits') and 'max_safe_bottom_z' in labware_obj.z_limits:
+                                        max_bottom_z = float(labware_obj.z_limits['max_safe_bottom_z'])
+                                    slot_obj_cur = self.lims.deck_slots.get(slot_name)
+                                    max_bottom_z = min(103.5, max_bottom_z + getattr(slot_obj_cur, 'z_offset', 0.0))
+
+                                    hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
+                                    self.lims.pipettor.hardware.z_speed = 3
+                                    try:
+                                        self.lims.pipettor.hardware.move_to_surface(limit=max_bottom_z, distance_from_surface=0.0)
+                                    except Exception as surf_err:
+                                        self.logger.warning(f"move_to_surface probe alert: {surf_err}")
+                                    z_surf = getattr(self.lims.pipettor.hardware, 'z_position', max_bottom_z)
+                                    self.lims.pipettor.hardware.z_speed = hw_speed
+
+                                    if z_surf < max_bottom_z - 0.5:
+                                        tz = min(z_surf + 3.0, max_bottom_z)
+                                        self.logger.info(f"Liquid Surface Detected at Z={z_surf:.1f}mm -> Submerging tip to Z={tz:.1f}mm for aspiration.")
+                                    else:
+                                        tz = min(max_bottom_z - 1.0, 103.5)
+                                        self.logger.warning(f"Meniscus not detected above Z={max_bottom_z:.1f}mm. Aspirating near bottom (Z={tz:.1f}mm).")
 
                             self.lims.pipettor.hardware.move_z(tz)
 
@@ -2610,11 +2644,11 @@ class LIMSMasterApp:
                     s_act = step.get('action', '')
                     if s_name and s_name.startswith('Slot_') and s_name not in self.lims.deck_labware:
                         default_map = {
-                            "Slot_2": "reservoir_3_well.json",
+                            "Slot_2": "waste_trough.json" if s_act in ["Dispense Media", "Discard Tip"] else "reservoir_3_well.json",
                             "Slot_3": "tip_rack_1000ul.json" if s_act == "Pick Up Tip" else "reservoir_6_column.json",
                             "Slot_4": "tip_rack_1000ul.json" if s_act == "Pick Up Tip" else ("generic_96_well_plate.json" if slot4_has_col_gt_6 else "myriamed_48_well.json"),
                             "Slot_5": "generic_96_well_plate.json",
-                            "Slot_6": "waste_trough.json"
+                            "Slot_6": "biohit_rack_4x6_17a.json" if s_act == "Aspirate Media" else "waste_trough.json"
                         }
                         lw_file = default_map.get(s_name)
                         if lw_file:
