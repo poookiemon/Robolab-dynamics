@@ -219,6 +219,15 @@ class MockPipette:
         if new_tip == 'always':
             self.drop_tip()
 
+    def transfer_with_liquid_class(self, volume, source, dest, **kwargs):
+        return self.transfer(volume, source, dest, **kwargs)
+
+    def distribute_with_liquid_class(self, volume, source, dest, **kwargs):
+        return self.distribute(volume, source, dest, **kwargs)
+
+    def consolidate_with_liquid_class(self, volume, source, dest, **kwargs):
+        return self.consolidate(volume, source, dest, **kwargs)
+
     def transfer(self, volume, source, dest, **kwargs):
         new_tip = kwargs.get('new_tip', 'once')
         tips = kwargs.get('tips', [])
@@ -306,6 +315,15 @@ class MockProtocolContext:
         return "Slot_4"
 
     def load_labware(self, name, location, **kwargs):
+        lw = MockLabware(name, location)
+        self.labware_list[str(location)] = lw
+        return lw
+
+    def load_labware_from_definition(self, definition, location, **kwargs):
+        name = "custom_labware"
+        if isinstance(definition, dict):
+            metadata = definition.get("metadata", {})
+            name = metadata.get("displayName", definition.get("parameters", {}).get("loadName", "custom_labware"))
         lw = MockLabware(name, location)
         self.labware_list[str(location)] = lw
         return lw
