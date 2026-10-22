@@ -251,11 +251,15 @@ class LIMSPyQtApp(QMainWindow):
             return cx, cy
 
         # 2. 3-WELL RESERVOIR (Option A: Fits in Slot_1 or Slot_2, 3 wells along X)
+        #    Pushed back 1 cm (10.0 mm) for new printed height blocks (target Y = 32.5 mm)
         if "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
             base_x = slot_obj.x_abs
             col_x_map = {'1': base_x + 106.5, '2': base_x + 63.9, '3': base_x + 21.3}
             c_c = well_id[1:] if len(well_id) >= 2 else (well_id if well_id in col_x_map else '1')
-            return col_x_map.get(c_c, base_x + 63.9), cy
+            target_y = slot_obj.y_abs + (slot_obj.height_mm / 2.0)
+            if slot_name in ["Slot_1", "Slot_2"] and target_y < 30.0:
+                target_y += 10.0
+            return col_x_map.get(c_c, base_x + 106.5), target_y
 
         # 3. 6-COLUMN RESERVOIR
         if "6-column" in lw_name or "reservoir_6" in lw_src or "6_column" in lw_src:

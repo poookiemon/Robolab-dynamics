@@ -2,7 +2,7 @@
     "Slot_1": {
         "name": "Slot_1",
         "x_abs": 135.2,
-        "y_abs": 5.0,
+        "y_abs": 15.0,
         "width_mm": 127.8,
         "height_mm": 35.0,
         "z_offset": 0.0,
@@ -12,7 +12,7 @@
     "Slot_2": {
         "name": "Slot_2",
         "x_abs": 0.0,
-        "y_abs": 5.0,
+        "y_abs": 15.0,
         "width_mm": 127.8,
         "height_mm": 35.0,
         "z_offset": 0.0,

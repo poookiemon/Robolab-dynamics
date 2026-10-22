@@ -1501,11 +1501,15 @@ class LIMSMasterApp:
 
         # 3. 3-WELL RESERVOIR & FRONT REAGENT SLOTS (Slot_1 or Slot_2)
         #    Physically verified: A1 = base+106.5 (21.3 drove to A3)
+        #    Pushed back 1 cm (10.0 mm) for new printed height blocks (target Y = 32.5 mm)
         if "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src or slot_name in ["Slot_1", "Slot_2"]:
             base_x = slot_obj.x_abs
             col_x_map = {'1': base_x + 106.5, '2': base_x + 63.9, '3': base_x + 21.3}
             c_c = well_id[1:] if len(well_id) >= 2 else (well_id if well_id in col_x_map else '1')
-            return col_x_map.get(c_c, base_x + 106.5), cy
+            target_y = slot_obj.y_abs + (slot_obj.height_mm / 2.0)
+            if slot_name in ["Slot_1", "Slot_2"] and target_y < 30.0:
+                target_y += 10.0
+            return col_x_map.get(c_c, base_x + 106.5), target_y
 
         # 4. 6-COLUMN RESERVOIR (reservoir_6 labware)
         if "6-column" in lw_name or "reservoir_6" in lw_src or "6_column" in lw_src:
@@ -2799,7 +2803,7 @@ class LIMSMasterApp:
             self.lims.deck_labware.clear()
             self.placed_slots.clear()
             self.unplaced_slots.clear()
-            grid_layout = [("Slot_1", 135.2, 5.0, 127.8, 35.0), ("Slot_2", 0.0, 5.0, 127.8, 35.0),
+            grid_layout = [("Slot_1", 135.2, 15.0, 127.8, 35.0), ("Slot_2", 0.0, 15.0, 127.8, 35.0),
                            ("Slot_3", 135.2, 60.0, 127.8, 85.5), ("Slot_4", 0.0, 60.0, 127.8, 85.5),
                            ("Slot_5", 135.2, 165.5, 127.8, 85.5), ("Slot_6", 0.0, 165.5, 127.8, 85.5)]
             for name, x, y, w, h in grid_layout:
