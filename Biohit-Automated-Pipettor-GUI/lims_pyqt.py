@@ -345,7 +345,7 @@ class LIMSPyQtApp(QMainWindow):
             elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name in ["Slot_3", "Slot_5"]):
                 base_z = 103.0
             elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "myriamed" in lw_src or "ehm" in lw_src or (slot_name == "Slot_4" and not any(k in lw_name or k in lw_src for k in ["tip", "96"])):
-                return 84.0
+                return 86.0  # Calibrated 2mm deeper (was 84.0)
             elif "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
                 base_z = 98.0
             elif action == "Discard Tip" and slot_name == "Slot_1":

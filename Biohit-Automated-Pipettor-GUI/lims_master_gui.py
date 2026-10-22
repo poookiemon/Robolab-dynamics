@@ -1005,7 +1005,7 @@ class LIMSMasterApp:
             z_limits = {"recommended_aspirate_z": 85.0, "max_safe_bottom_z": 85.0}
         elif not z_limits:
             if slot == "Slot_4" or (labware_obj and ("ehm" in labware_obj.name.lower() or "48" in labware_obj.name.lower())):
-                z_limits = {"recommended_aspirate_z": 84.0, "max_safe_bottom_z": 84.0}
+                z_limits = {"recommended_aspirate_z": 86.0, "max_safe_bottom_z": 86.0}
             elif (slot == "Slot_5" and labware_obj and "96" in labware_obj.name.lower()) or (labware_obj and "96" in labware_obj.name.lower() and "tip" not in labware_obj.name.lower()):
                 z_limits = {"recommended_aspirate_z": 80.0, "max_safe_bottom_z": 80.0}
             elif slot == "Slot_5" or (labware_obj and "reservoir" in labware_obj.name.lower()):
@@ -1013,9 +1013,9 @@ class LIMSMasterApp:
             elif slot == "Slot_3":
                 z_limits = {"recommended_pickup_z": 87.0, "max_safe_bottom_z": 92.0}
             else:
-                z_limits = {"recommended_aspirate_z": 84.0, "max_safe_bottom_z": 100.0}
+                z_limits = {"recommended_aspirate_z": 86.0, "max_safe_bottom_z": 100.0}
 
-        rec = z_limits.get('recommended_aspirate_z', z_limits.get('recommended_pickup_z', 84.0))
+        rec = z_limits.get('recommended_aspirate_z', z_limits.get('recommended_pickup_z', 86.0))
         max_b = z_limits.get('max_safe_bottom_z', 100.0)
         self.lbl_safe_z.config(text=f"💡 Rec: {rec:.1f}mm | ⚠️ Max Safe: {max_b:.1f}mm")
 
@@ -1050,10 +1050,10 @@ class LIMSMasterApp:
                 if step['action'] == "Pick Up Tip":
                     msg = f"[{step['action'].upper()}] from {step.get('slot', '')}, Well {step.get('well', '')}"
                 else:
-                    msg = f"[{step['action'].upper()}] at {step.get('slot', '')}, Well {step.get('well', '')} (Z=84.0mm)"
+                    msg = f"[{step['action'].upper()}] at {step.get('slot', '')}, Well {step.get('well', '')} (Z=86.0mm)"
                 self.wf_box.insert(tk.END, msg)
             if hasattr(self, 'draw_deck'): self.draw_deck()
-            self.logger.info(f"Loaded EHM 48-Well Diagonal Mock ({len(loaded_sequence)} steps, Z=84.0mm, no tip pickup).")
+            self.logger.info(f"Loaded EHM 48-Well Diagonal Mock ({len(loaded_sequence)} steps, Z=86.0mm, no tip pickup).")
         else:
             messagebox.showerror("File Not Found", "Could not locate ehm_48_well_test.json")
 
@@ -1597,7 +1597,7 @@ class LIMSMasterApp:
             elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name in ["Slot_3", "Slot_5"]):
                 base_z = 103.0
             elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or "myriamed" in lw_src or "ehm" in lw_src or (slot_name == "Slot_4" and not any(k in lw_name or k in lw_src for k in ["tip", "96"])):
-                return 84.0
+                return 86.0  # Calibrated 2mm deeper (was 84.0)
             elif "tip" in lw_name or (labware_obj and getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
                 base_z = 98.0
             elif ("rack" in lw_name and "tip" not in lw_name) or "17a" in lw_src or "biohit_rack" in lw_src:
@@ -1888,7 +1888,7 @@ class LIMSMasterApp:
         if labware_obj and hasattr(labware_obj, 'z_limits') and 'max_safe_bottom_z' in labware_obj.z_limits:
             bottom_z = float(labware_obj.z_limits['max_safe_bottom_z'])
         elif "myriamed" in lw_name or "ehm" in lw_name or "48" in lw_name or (slot_name == "Slot_4" and "96" not in lw_name and "tip" not in lw_name):
-            bottom_z = 84.0
+            bottom_z = 86.0  # Calibrated 2mm deeper (was 84.0)
         elif "96" in lw_name or "96" in lw_src or slot_name == "Slot_5":
             bottom_z = 90.0 if slot_name != "Slot_5" else 80.0
         elif "3-well" in lw_name or "reservoir_3" in lw_src or slot_name in ["Slot_1", "Slot_2"]:
@@ -2147,7 +2147,7 @@ class LIMSMasterApp:
                             if os.path.exists(p48):
                                 self.lims.deck_labware["Slot_4"] = Labware(p48)
                                 self.lims.deck_labware["Slot_4"].source_file = "myriamed_48_well.json"
-                                self.logger.info("Auto-switched Slot_4 to myriamed_48_well.json (Z=84.0mm).")
+                                self.logger.info("Auto-switched Slot_4 to myriamed_48_well.json (Z=86.0mm).")
 
                     # Auto-assign labware fallback if missing from deck_labware
                     if slot_name not in self.lims.deck_labware:
@@ -2386,9 +2386,9 @@ class LIMSMasterApp:
                                     tz = min(85.0 + extra_z, 103.5)
                             elif "tip" not in lw_str_s4:
                                 if action in ["Aspirate Media", "Mix Well"] or effective_mix > 0:
-                                    tz = min(84.0 + extra_z, 103.5)
+                                    tz = min(86.0 + extra_z, 103.5)  # 2mm deeper (was 84.0)
                                 else:
-                                    tz = min(79.0 + extra_z, 103.5)
+                                    tz = min(81.0 + extra_z, 103.5)  # 2mm deeper brim (was 79.0)
                         self.logger.info(
                             f"Absolute Z-Depth Override Executed: Z={tz:.1f}mm for {well_id if mode != 'manual' else 'Manual Target'}")
 
