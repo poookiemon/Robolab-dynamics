@@ -2,9 +2,9 @@
     "Slot_1": {
         "name": "Slot_1",
         "x_abs": 135.2,
-        "y_abs": 15.0,
+        "y_abs": 0.0,
         "width_mm": 127.8,
-        "height_mm": 35.0,
+        "height_mm": 26.0,
         "z_offset": 0.0,
         "is_placed": true,
         "labware_file": "waste_trough.json"
@@ -12,9 +12,9 @@
     "Slot_2": {
         "name": "Slot_2",
         "x_abs": 0.0,
-        "y_abs": 15.0,
+        "y_abs": 0.0,
         "width_mm": 127.8,
-        "height_mm": 35.0,
+        "height_mm": 26.0,
         "z_offset": 0.0,
         "is_placed": true,
         "labware_file": "reservoir_3_well.json"
