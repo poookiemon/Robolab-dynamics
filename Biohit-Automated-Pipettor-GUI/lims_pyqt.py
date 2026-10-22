@@ -301,7 +301,7 @@ class LIMSPyQtApp(QMainWindow):
                         return col_x[c_str], origin_y + (r_idx * 9.0)
             else:
                 origin_x = 242.0 if slot_obj.x_abs >= 70.0 else 105.0
-                origin_y = 51.0 if slot_name == "Slot_3" else (57.0 if slot_name == "Slot_4" else (slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0))
+                origin_y = 56.0 if slot_name == "Slot_3" else (57.0 if slot_name == "Slot_4" else (slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0))
                 if len(well_id) >= 2:
                     r_c = well_id[0].upper()
                     c_str = well_id[1:]

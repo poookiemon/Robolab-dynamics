@@ -1551,7 +1551,7 @@ class LIMSMasterApp:
                         return col_x[c_str], origin_y + (r_idx * 9.0)
             else:
                 origin_x = 242.0 if slot_obj.x_abs >= 70.0 else 105.0
-                origin_y = 51.0 if slot_name == "Slot_3" else (57.0 if slot_name == "Slot_4" else (slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0))
+                origin_y = 56.0 if slot_name == "Slot_3" else (57.0 if slot_name == "Slot_4" else (slot_obj.y_abs if slot_obj.y_abs >= 40.0 else 60.0))
                 if len(well_id) >= 2:
                     r_c = well_id[0].upper()
                     c_str = well_id[1:]
@@ -2864,36 +2864,98 @@ class LIMSMasterApp:
             detected_lw = detect_opentrons_labware(filepath)
 
             top = tk.Toplevel(self.root)
-            top.title("Opentrons to Biohit Slot Mapping")
-            top.geometry("520x420")
-            top.resizable(False, False)
+            top.title("Opentrons to Biohit Protocol Importer & Labware Mapper")
+            top.geometry("780x520")
+            top.resizable(True, True)
             top.transient(self.root)
             top.grab_set()
 
-            ttk.Label(top, text="Import Opentrons Python Protocol", font=("Arial", 12, "bold")).pack(pady=(12, 4))
-            ttk.Label(top, text=f"File: {os.path.basename(filepath)}", font=("Arial", 9, "italic"), foreground="gray").pack(pady=(0, 10))
+            ttk.Label(top, text="Import Opentrons Python Protocol (.py)", font=("Arial", 12, "bold")).pack(pady=(12, 2))
+            ttk.Label(top, text=f"File: {os.path.basename(filepath)}", font=("Arial", 9, "italic"), foreground="gray").pack(pady=(0, 8))
 
-            frame_mappings = ttk.LabelFrame(top, text="Detected Labware & Slot Assignments", padding=10)
+            # Labware discovery from disk
+            lw_dir = self.get_labware_dir()
+            available_files = []
+            if os.path.isdir(lw_dir):
+                available_files = sorted([f for f in os.listdir(lw_dir) if f.endswith(".json")])
+
+            lw_display_to_file = {}
+            lw_file_to_display = {}
+            for f in available_files:
+                name_clean = f.replace(".json", "").replace("_", " ").title()
+                if "3_Well" in f or "3-well" in f:
+                    disp = "3-Well Reservoir (reservoir_3_well.json)"
+                elif "17A" in f.upper() or ("Rack" in name_clean and "Tip" not in name_clean):
+                    disp = "24-Tube Rack 4x6 (biohit_rack_4x6_17a.json)"
+                elif "96_Well" in f or "generic_96" in f:
+                    disp = "96-Well Microplate (generic_96_well_plate.json)"
+                elif "48" in f or "myriamed" in f:
+                    disp = "48-Well EHM Plate (myriamed_48_well.json)"
+                elif "Tip" in name_clean or "tip_rack" in f:
+                    disp = "1000µL Tip Rack (tip_rack_1000ul.json)"
+                elif "Waste" in name_clean or "waste_trough" in f:
+                    disp = "Waste Trough (waste_trough.json)"
+                elif "6_Column" in f or "reservoir_6" in f:
+                    disp = "6-Column Reservoir (reservoir_6_column.json)"
+                else:
+                    disp = f"{name_clean} ({f})"
+                lw_display_to_file[disp] = f
+                lw_file_to_display[f] = disp
+
+            labware_display_options = list(lw_display_to_file.keys())
+
+            frame_mappings = ttk.LabelFrame(top, text="Detected Opentrons Labware & Biohit Slot/Labware Configuration", padding=10)
             frame_mappings.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
 
+            # Table Header Row
+            hdr = ttk.Frame(frame_mappings)
+            hdr.pack(fill=tk.X, pady=(0, 6))
+            ttk.Label(hdr, text="Opentrons Item (Slot)", font=("Arial", 9, "bold"), width=28, anchor="w").pack(side=tk.LEFT, padx=2)
+            ttk.Label(hdr, text="Target Biohit Slot", font=("Arial", 9, "bold"), width=15, anchor="w").pack(side=tk.LEFT, padx=4)
+            ttk.Label(hdr, text="Biohit Labware Type", font=("Arial", 9, "bold"), width=34, anchor="w").pack(side=tk.LEFT, padx=4)
+            ttk.Label(hdr, text="Reagent Well", font=("Arial", 9, "bold"), width=14, anchor="w").pack(side=tk.LEFT, padx=2)
+
             biohit_slots = ["Slot_1", "Slot_2", "Slot_3", "Slot_4", "Slot_5", "Slot_6"]
-            combos = {}
+            well_options = ["Auto / As-is", "Well A1", "Well A2", "Well A3", "Well A4", "Well A5", "Well A6"]
+
+            row_widgets = {}
 
             if detected_lw:
                 for idx, item in enumerate(detected_lw):
                     row = ttk.Frame(frame_mappings)
-                    row.pack(fill=tk.X, pady=4)
+                    row.pack(fill=tk.X, pady=3)
 
-                    lbl_text = f"{item['name'][:24]} (OT Slot {item['opentrons_slot']}):"
-                    ttk.Label(row, text=lbl_text, width=32, anchor="w").pack(side=tk.LEFT)
+                    # 1. Opentrons source label
+                    ot_name_short = item['name'][:22]
+                    lbl_text = f"{ot_name_short} (OT {item['opentrons_slot']}):"
+                    ttk.Label(row, text=lbl_text, width=28, anchor="w").pack(side=tk.LEFT, padx=2)
 
-                    cb = ttk.Combobox(row, values=biohit_slots, state="readonly", width=12)
-                    suggested = item.get("suggested_biohit_slot", "Slot_4")
-                    cb.set(suggested)
-                    cb.pack(side=tk.RIGHT)
-                    combos[item['opentrons_slot']] = cb
+                    # 2. Biohit Slot
+                    cb_slot = ttk.Combobox(row, values=biohit_slots, state="readonly", width=13)
+                    suggested_slot = item.get("suggested_biohit_slot", "Slot_4")
+                    cb_slot.set(suggested_slot)
+                    cb_slot.pack(side=tk.LEFT, padx=4)
+
+                    # 3. Biohit Labware Dropdown
+                    cb_lw = ttk.Combobox(row, values=labware_display_options, state="readonly", width=32)
+                    suggested_lw_file = item.get("suggested_biohit_labware", "generic_96_well_plate.json")
+                    suggested_lw_disp = lw_file_to_display.get(suggested_lw_file, labware_display_options[0] if labware_display_options else "")
+                    cb_lw.set(suggested_lw_disp)
+                    cb_lw.pack(side=tk.LEFT, padx=4)
+
+                    # 4. Reagent Well Selection
+                    cb_well = ttk.Combobox(row, values=well_options, state="readonly", width=13)
+                    is_tuberack = any(k in item['name'].lower() for k in ["tuberack", "falcon", "reservoir", "rack"])
+                    cb_well.set("Well A1" if is_tuberack else "Auto / As-is")
+                    cb_well.pack(side=tk.LEFT, padx=2)
+
+                    row_widgets[item['opentrons_slot']] = {
+                        "slot": cb_slot,
+                        "labware": cb_lw,
+                        "well": cb_well
+                    }
             else:
-                ttk.Label(frame_mappings, text="No explicit labware definitions detected.\nDefault slot layout will be used.", justify="center").pack(pady=20)
+                ttk.Label(frame_mappings, text="No explicit labware definitions detected in script.\nDefault slot layout will be used.", justify="center").pack(pady=20)
 
             frame_stroke = ttk.Frame(top)
             frame_stroke.pack(fill=tk.X, padx=15, pady=8)
@@ -2905,18 +2967,53 @@ class LIMSMasterApp:
 
             def do_convert():
                 try:
-                    slot_map = {ot_s: cb.get() for ot_s, cb in combos.items()}
+                    slot_map = {}
+                    labware_map = {}
+                    well_map = {}
+
+                    for ot_s, wdict in row_widgets.items():
+                        b_slot = wdict['slot'].get()
+                        lw_disp = wdict['labware'].get()
+                        lw_file = lw_display_to_file.get(lw_disp, lw_disp)
+                        w_choice = wdict['well'].get()
+
+                        slot_map[ot_s] = b_slot
+                        labware_map[b_slot] = lw_file
+                        if w_choice and w_choice != "Auto / As-is":
+                            well_map[b_slot] = w_choice
+
                     try:
                         max_vol = float(ent_stroke.get())
                     except ValueError:
                         max_vol = 200.0
 
-                    converted_steps = convert_opentrons_py_to_biohit(filepath, slot_mapping=slot_map, max_volume=max_vol)
+                    converted_steps = convert_opentrons_py_to_biohit(
+                        filepath,
+                        slot_mapping=slot_map,
+                        labware_mapping=labware_map,
+                        well_mapping=well_map,
+                        max_volume=max_vol
+                    )
 
                     if not converted_steps:
                         messagebox.showwarning("Empty Protocol", "No pipetting steps were generated from this script.")
                         top.destroy()
                         return
+
+                    # Configure physical deck labware in orchestrator
+                    for b_slot, lw_file in labware_map.items():
+                        if b_slot and lw_file:
+                            lp = os.path.join(lw_dir, lw_file)
+                            if os.path.exists(lp):
+                                self.lims.deck_labware[b_slot] = Labware(lp)
+                                self.lims.deck_labware[b_slot].source_file = lw_file
+                                if b_slot not in self.placed_slots:
+                                    self.placed_slots.append(b_slot)
+                                self.logger.info(f"Deck Configured: {b_slot} ➔ {lw_file}")
+
+                    # Redraw visual canvas with newly mounted labware
+                    if hasattr(self, 'draw_deck'):
+                        self.draw_deck()
 
                     self.workflow_sequence.clear()
                     self.wf_box.delete(0, tk.END)
@@ -2940,7 +3037,7 @@ class LIMSMasterApp:
                     self.logger.info(f"Imported {len(converted_steps)} steps from Python script {os.path.basename(filepath)}.")
                     messagebox.showinfo(
                         "Conversion Complete",
-                        f"Successfully converted and loaded {len(converted_steps)} steps from:\n{os.path.basename(filepath)}\n\nYou can now run the workflow or export it via 'Save JSON Protocol As...'."
+                        f"Successfully converted and loaded {len(converted_steps)} steps from:\n{os.path.basename(filepath)}\n\nConfigured deck labware:\n" + "\n".join(f"• {s}: {f}" for s, f in labware_map.items()) + "\n\nYou can now run the workflow or export it via 'Save JSON Protocol As...'."
                     )
                 except Exception as ce:
                     self.logger.error(f"Conversion error: {ce}")
@@ -2953,6 +3050,7 @@ class LIMSMasterApp:
 
         except Exception as e:
             self.logger.error(f"Python script parse error: {e}")
+            messagebox.showerror("Parse Error", f"Failed to parse Opentrons script:\n{e}")
             messagebox.showerror("Import Error", f"Could not inspect Python protocol:\n{e}")
 
 

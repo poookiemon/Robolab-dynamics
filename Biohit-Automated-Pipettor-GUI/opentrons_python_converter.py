@@ -93,14 +93,30 @@ class MockPipette:
         if isinstance(target, MockWell):
             slot = self.protocol.map_slot(target.labware.location)
             lw_name = getattr(target.labware, 'name', '').lower()
-            if "tuberack" in lw_name or "falcon" in lw_name:
-                if target.name.upper() == "A4":
-                    return self.protocol.waste_slot, "A1"
-                elif target.name.upper() == "A3":
+            
+            # Waste routing: if target well is A4 in a tube rack or trash, always route to dedicated waste trough
+            if ("tuberack" in lw_name or "falcon" in lw_name) and target.name.upper() == "A4":
+                return self.protocol.waste_slot, "A1"
+            
+            # Check user well override for this slot
+            override_well = self.protocol.well_map.get(slot)
+            if override_well and override_well not in ["Auto / As-is", "As-is", "None", None, ""]:
+                w_clean = override_well.replace("Well ", "").strip()
+                return slot, w_clean
+
+            # If tube rack and target is A3:
+            assigned_lw = self.protocol.labware_map.get(slot, "")
+            if ("tuberack" in lw_name or "falcon" in lw_name) and target.name.upper() == "A3":
+                if "reservoir_3" in assigned_lw or "3_well" in assigned_lw:
                     return slot, "A1"
+
             return slot, target.name
         elif isinstance(target, MockLabware):
-            return self.protocol.map_slot(target.location), "A1"
+            slot = self.protocol.map_slot(target.location)
+            override_well = self.protocol.well_map.get(slot)
+            if override_well and override_well not in ["Auto / As-is", "As-is", "None", None, ""]:
+                return slot, override_well.replace("Well ", "").strip()
+            return slot, "A1"
         return self.protocol.waste_slot, "A1"
 
     def _extract_mix_info(self, kwargs):
@@ -268,8 +284,10 @@ class MockPipette:
             self.drop_tip()
 
 class MockProtocolContext:
-    def __init__(self, slot_map=None, max_volume=200.0):
+    def __init__(self, slot_map=None, labware_map=None, well_map=None, max_volume=200.0):
         self.slot_map = slot_map or {}
+        self.labware_map = labware_map or {}
+        self.well_map = well_map or {}
         self.max_volume = float(max_volume)
         self.tip_slot = "Slot_3"
         self.waste_slot = "Slot_6"
@@ -313,6 +331,7 @@ class MockProtocolContext:
         pass
 
     def record_step(self, action, slot, well, volume, mix_cycles=0, mix_volume=100.0, no_blowout=False, labware=None):
+        assigned_lw = labware or self.labware_map.get(slot)
         step = {
             "action": action,
             "mode": "auto",
@@ -326,8 +345,8 @@ class MockProtocolContext:
             step["mix_volume"] = round(float(mix_volume), 2)
         if no_blowout:
             step["no_blowout"] = True
-        if labware:
-            step["labware"] = labware
+        if assigned_lw:
+            step["labware"] = assigned_lw
         self.steps.append(step)
 
 def detect_opentrons_labware(py_filepath):
@@ -377,21 +396,28 @@ def detect_opentrons_labware(py_filepath):
                 lw_lower = lw.name.lower()
                 if "tip" in lw_lower or slot == "8":
                     suggested = "Slot_3"
+                    suggested_lw = "tip_rack_1000ul.json"
                 elif "tuberack" in lw_lower or "falcon" in lw_lower or "reservoir" in lw_lower or "trough" in lw_lower or slot == "10":
                     suggested = "Slot_2"
+                    suggested_lw = "reservoir_3_well.json"
                 elif "waste" in lw_lower or "trash" in lw_lower or slot == "12":
                     suggested = "Slot_6"
+                    suggested_lw = "waste_trough.json"
                 elif slot == "4":
                     suggested = "Slot_4"
+                    suggested_lw = "generic_96_well_plate.json"
                 elif slot == "11":
                     suggested = "Slot_5"
+                    suggested_lw = "generic_96_well_plate.json"
                 else:
                     suggested = "Slot_4" if "Slot_4" not in [d.get('suggested_biohit_slot') for d in detected] else "Slot_5"
+                    suggested_lw = "generic_96_well_plate.json"
 
                 detected.append({
                     "name": lw.name,
                     "opentrons_slot": slot,
-                    "suggested_biohit_slot": suggested
+                    "suggested_biohit_slot": suggested,
+                    "suggested_biohit_labware": suggested_lw
                 })
     finally:
         if old_ot: sys.modules['opentrons'] = old_ot
@@ -403,7 +429,7 @@ def detect_opentrons_labware(py_filepath):
 
     return detected
 
-def convert_opentrons_py_to_biohit(py_filepath, slot_mapping=None, max_volume=200.0):
+def convert_opentrons_py_to_biohit(py_filepath, slot_mapping=None, labware_mapping=None, well_mapping=None, max_volume=200.0):
     """
     Executes an Opentrons Python protocol against our mock environment,
     translating it into native Biohit JSON protocol steps.
@@ -436,7 +462,12 @@ def convert_opentrons_py_to_biohit(py_filepath, slot_mapping=None, max_volume=20
         if slot_mapping:
             effective_slot_map.update(slot_mapping)
 
-        proto = MockProtocolContext(slot_map=effective_slot_map, max_volume=max_volume)
+        proto = MockProtocolContext(
+            slot_map=effective_slot_map,
+            labware_map=(labware_mapping or {}),
+            well_map=(well_mapping or {}),
+            max_volume=max_volume
+        )
         
         # Look up metadata from tip rack if in slot_map
         for ot_slot, bio_slot in effective_slot_map.items():
