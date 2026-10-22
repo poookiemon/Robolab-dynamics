@@ -339,7 +339,7 @@ class LIMSPyQtApp(QMainWindow):
             if "waste" in lw_name or "waste" in lw_src or (not labware_obj and slot_name in ["Slot_6", "Slot_1"]):
                 base_z = 90.0
             elif "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src:
-                base_z = 98.0
+                base_z = 52.0  # Safe meniscus submerge (47.0mm + 5.0mm) with printed height blocks
             elif ("96" in lw_name or "96" in lw_src or (not labware_obj and slot_name == "Slot_5")) and ("tip" not in lw_name and "tip" not in lw_src):
                 return 90.0 if slot_name == "Slot_4" else 80.0
             elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name in ["Slot_3", "Slot_5"]):

@@ -1591,7 +1591,7 @@ class LIMSMasterApp:
             if action == "Discard Tip" or "waste" in lw_name or "waste" in lw_src or (not labware_obj and slot_name == "Slot_6"):
                 base_z = 90.0
             elif "3-well" in lw_name or "3_well" in lw_src or "reservoir_3" in lw_src or (not labware_obj and slot_name in ["Slot_1", "Slot_2"]):
-                base_z = 98.0
+                base_z = 52.0  # Safe meniscus submerge (47.0mm + 5.0mm) with printed height blocks
             elif ("96" in lw_name or "96" in lw_src or (not labware_obj and slot_name == "Slot_5")) and ("tip" not in lw_name and "tip" not in lw_src):
                 return 85.0 if slot_name == "Slot_4" else 80.0
             elif "6-column" in lw_name or "reservoir_6" in lw_src or "reservoir" in lw_name or (not labware_obj and slot_name in ["Slot_3", "Slot_5"]):
@@ -1892,7 +1892,7 @@ class LIMSMasterApp:
         elif "96" in lw_name or "96" in lw_src or slot_name == "Slot_5":
             bottom_z = 90.0 if slot_name != "Slot_5" else 80.0
         elif "3-well" in lw_name or "reservoir_3" in lw_src or slot_name in ["Slot_1", "Slot_2"]:
-            bottom_z = 98.0
+            bottom_z = 79.0
         elif "6-column" in lw_name or "reservoir_6" in lw_src:
             bottom_z = 103.0
         elif ("rack" in lw_name and "tip" not in lw_name) or "17a" in lw_src or "biohit_rack" in lw_src:
@@ -2413,16 +2413,10 @@ class LIMSMasterApp:
                                     self.has_air_cushion = False
 
                                 # --- Option 2: Live Software Liquid Level Tracking (well-wise, auto mode) ---
-                                # Always on for tubes in Slot_1 / Slot_2 unless the step sets "track_liquid": false or labware is a reservoir
-                                lw_obj_track = self.lims.deck_labware.get(slot_name)
-                                lw_name_track = (getattr(lw_obj_track, 'name', '') or '').lower()
-                                lw_src_track = (getattr(lw_obj_track, 'source_file', '') or '').lower()
-                                is_reservoir_slot = "reservoir" in lw_name_track or "reservoir" in lw_src_track or "3-well" in lw_name_track or "3_well" in lw_src_track
-
+                                # Active on Slot_1 / Slot_2 (start meniscus default Z=47.0mm with height blocks)
                                 use_dynamic_z = (
                                     mode != "manual"
                                     and slot_name in ["Slot_1", "Slot_2"]
-                                    and not is_reservoir_slot
                                     and step.get('track_liquid', True)
                                 )
 
@@ -2432,9 +2426,9 @@ class LIMSMasterApp:
                                     ledger_key = f"{slot_name}_{well_id}"
                                     if ledger_key not in self.liquid_ledger:
                                         self.liquid_ledger[ledger_key] = {
-                                            "surface_z": float(step.get('start_surface_z', 45.0)),  # Start meniscus (30mL tube)
-                                            "bottom_z": float(step.get('tube_bottom_z', 103.0)),    # Base of tube
-                                            "area_mm2": float(step.get('tube_area_mm2', 434.0))     # Tube cross-section
+                                            "surface_z": float(step.get('start_surface_z', 47.0)),  # Start meniscus (47.0mm with height blocks)
+                                            "bottom_z": float(step.get('tube_bottom_z', 79.0)),     # Base of reservoir/tube with height blocks
+                                            "area_mm2": float(step.get('tube_area_mm2', 434.0))     # Cross-section
                                         }
                                     tube_info = self.liquid_ledger[ledger_key]
                                     req_vol = float(vol)
@@ -2446,7 +2440,7 @@ class LIMSMasterApp:
                                         self.logger.warning(
                                             f"[OPTION 2 TRACKER] {slot_name} {well_id} LOW: ~{rem_before_ml:.2f}mL left (reserve {reserve_ml:.1f}mL). Pausing for refill.")
                                         self.refill_decision = None
-                                        start_z = float(step.get('start_surface_z', 45.0))
+                                        start_z = float(step.get('start_surface_z', 47.0))
 
                                         def _ask_refill():
                                             ok = messagebox.askyesno(
