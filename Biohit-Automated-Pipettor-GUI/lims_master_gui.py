@@ -1607,6 +1607,83 @@ class LIMSMasterApp:
 
         return 0.0
 
+    def prompt_for_discard_slot(self):
+        if not self.lims.hw.is_initialized:
+            messagebox.showerror("Safety Interlock", "Hardware must be initialized first.")
+            return
+
+        top = tk.Toplevel(self.root)
+        top.title("Discard Tip Location")
+        top.geometry("380x170")
+        top.resizable(False, False)
+        top.transient(self.root)
+        top.grab_set()
+
+        ttk.Label(top, text="Select destination slot to discard tip into:", font=("Arial", 10, "bold")).pack(pady=(15, 6))
+
+        # Default to waste slot (Slot_6 or any slot with 'waste' in labware name)
+        default_slot = "Slot_6"
+        for s in self.placed_slots:
+            lw = self.lims.deck_labware.get(s)
+            if lw and "waste" in getattr(lw, 'name', '').lower():
+                default_slot = s
+                break
+
+        slot_choices = list(self.placed_slots) if self.placed_slots else ["Slot_6", "Slot_1", "Slot_2", "Slot_3", "Slot_4", "Slot_5"]
+        if default_slot not in slot_choices and default_slot in ["Slot_1", "Slot_2", "Slot_3", "Slot_4", "Slot_5", "Slot_6"]:
+            slot_choices.append(default_slot)
+
+        slot_var = tk.StringVar(value=default_slot if default_slot in slot_choices else slot_choices[0])
+        cb = ttk.Combobox(top, textvariable=slot_var, values=slot_choices, state="readonly", width=25)
+        cb.pack(pady=5)
+
+        def on_confirm():
+            slot = slot_var.get()
+            top.destroy()
+            if slot:
+                threading.Thread(target=self.run_direct_discard_routine, args=(slot,), daemon=True).start()
+
+        btn_frame = ttk.Frame(top)
+        btn_frame.pack(pady=(12, 10))
+        ttk.Button(btn_frame, text="Discard Tip Now", command=on_confirm).pack(side=tk.LEFT, padx=6)
+        ttk.Button(btn_frame, text="Cancel", command=top.destroy).pack(side=tk.LEFT, padx=6)
+
+    def run_direct_discard_routine(self, slot_name):
+        hw_instance = self.lims.pipettor.hardware
+        if not hw_instance:
+            self.logger.error("Hardware not initialized for tip discard.")
+            return
+
+        self.logger.info(f"--- Direct Op: Moving to {slot_name} to Discard Tip ---")
+        try:
+            # 1. Raise Z to safe travel height
+            hw_instance.move_z(0.0)
+
+            # 2. Move XY to slot target coordinates (Well A1 or center of slot)
+            tx, ty = self._calculate_xy(slot_name, "A1")
+            self.lims.hw.move_to(tx, ty, 0.0, speed=self.speed_var.get())
+
+            # 3. Lower Z to discard height
+            labware_obj = self.lims.deck_labware.get(slot_name)
+            tz = self._calculate_z("Discard Tip", labware_obj, "A1", "auto", 90.0, slot_name)
+            if tz <= 0.0:
+                tz = 90.0
+            hw_instance.move_z(tz)
+
+            # 4. Eject tip
+            hw_instance.eject_tip()
+            self.root.after(0, lambda: self.has_tip_var.set(False))
+            self.logger.info(f"Direct Op: Tip successfully discarded into {slot_name}. HAS_TIP = False")
+
+            # 5. Return Z to 0 (safe travel)
+            hw_instance.move_z(0.0)
+        except Exception as e:
+            self.logger.error(f"Error during direct tip discard to {slot_name}: {e}")
+            try:
+                hw_instance.move_z(0.0)
+            except:
+                pass
+
     def prompt_for_tip_slot(self):
         if not self.lims.hw.is_initialized:
             messagebox.showerror("Safety Interlock", "Hardware must be initialized first.")
@@ -2334,10 +2411,16 @@ class LIMSMasterApp:
                                     self.has_air_cushion = False
 
                                 # --- Option 2: Live Software Liquid Level Tracking (well-wise, auto mode) ---
-                                # Always on for tubes in Slot_1 / Slot_2 unless the step sets "track_liquid": false
+                                # Always on for tubes in Slot_1 / Slot_2 unless the step sets "track_liquid": false or labware is a reservoir
+                                lw_obj_track = self.lims.deck_labware.get(slot_name)
+                                lw_name_track = (getattr(lw_obj_track, 'name', '') or '').lower()
+                                lw_src_track = (getattr(lw_obj_track, 'source_file', '') or '').lower()
+                                is_reservoir_slot = "reservoir" in lw_name_track or "reservoir" in lw_src_track or "3-well" in lw_name_track or "3_well" in lw_src_track
+
                                 use_dynamic_z = (
                                     mode != "manual"
                                     and slot_name in ["Slot_1", "Slot_2"]
+                                    and not is_reservoir_slot
                                     and step.get('track_liquid', True)
                                 )
 
@@ -2538,21 +2621,7 @@ class LIMSMasterApp:
         if c == "HOME":
             if hw_instance: hw_instance.initialize()
         elif c == "DISCARD":
-            if hw_instance:
-                try:
-                    hw_instance.move_z(90.0)
-                except Exception as ze:
-                    self.logger.warning(f"Discard move_z(90) error: {ze}")
-                try:
-                    hw_instance.eject_tip()
-                except Exception as ee:
-                    self.logger.warning(f"Eject tip error: {ee}")
-                self.root.after(0, lambda: self.has_tip_var.set(False))
-                self.logger.info("Direct Op: Tips discarded. HAS_TIP = False")
-                try:
-                    hw_instance.move_z(0)
-                except Exception as ze2:
-                    self.logger.warning(f"Discard return move_z(0) error: {ze2}")
+            self.prompt_for_discard_slot()
         elif c == "FIND_TIP":
             self.prompt_for_tip_slot()
         elif c == "CHECK_LIQUID":
