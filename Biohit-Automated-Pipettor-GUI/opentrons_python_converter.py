@@ -364,10 +364,24 @@ class MockProtocolContext:
         assigned_lw = labware or self.labware_map.get(slot, "")
         lw_lower = str(assigned_lw).lower()
 
-        # 2mL Falcon tube auto-rollover on Slot 1: after 2000 uL, advance to A2, A3...
+        # Check if user set an explicit well override for this slot (e.g. Well A1)
+        override_well = self.well_map.get(slot)
+        has_well_override = bool(override_well and override_well not in ["Auto / As-is", "As-is", "None", None, ""])
+
+        # 2mL Falcon tube auto-rollover: ONLY if labware is specifically the 2mL Falcon rack
+        # (NOT a 30mL reservoir, NOT a 6-column reservoir, and not when user explicitly chose a well)
+        is_2ml_falcon_rack = (
+            ("2x6" in lw_lower or "2ml" in lw_lower or "tube_rack_2x6" in lw_lower)
+            and "reservoir" not in lw_lower
+            and "3_well" not in lw_lower
+            and "30ml" not in lw_lower
+            and "50ml" not in lw_lower
+            and "15ml" not in lw_lower
+        )
+
         target_well = well
         vol_f = round(float(volume), 2)
-        if action == "Aspirate Media" and (slot == "Slot_1" or "2x6" in lw_lower or "tube_rack_2x6" in lw_lower):
+        if action == "Aspirate Media" and is_2ml_falcon_rack and not has_well_override:
             if not hasattr(self, 'tube_consumption'):
                 self.tube_consumption = {}
                 self.tube_order = ["A1", "A2", "A3", "A4", "A5", "A6", "B1", "B2", "B3", "B4", "B5", "B6"]

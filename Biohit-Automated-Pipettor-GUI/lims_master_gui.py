@@ -2802,9 +2802,18 @@ class LIMSMasterApp:
                                     self.has_air_cushion = False
 
                                 # --- Option 2: Live Software Liquid Level Tracking (well-wise, auto mode) ---
+                                lw_src_lower = str(getattr(self.lims.deck_labware.get(slot_name), 'source_file', '')).lower()
                                 lw_kind = self._lw_kind(self.lims.deck_labware.get(slot_name))
-                                is_reservoir = self._is_front_slot(slot_name) and lw_kind in ("reservoir_3", None)
-                                is_2ml_falcon = lw_kind == "tube_rack_2x6" or (self._is_front_slot(slot_name) and "2x6" in str(getattr(self.lims.deck_labware.get(slot_name), 'source_file', '')).lower())
+                                is_reservoir = (
+                                    (self._is_front_slot(slot_name) and lw_kind in ("reservoir_3", None))
+                                    or "reservoir" in lw_src_lower
+                                    or "3_well" in lw_src_lower
+                                    or "30ml" in lw_src_lower
+                                )
+                                is_2ml_falcon = (
+                                    (lw_kind == "tube_rack_2x6" or (self._is_front_slot(slot_name) and "2x6" in lw_src_lower))
+                                    and not is_reservoir
+                                )
                                 use_dynamic_z = (
                                     mode != "manual"
                                     and (is_reservoir or is_2ml_falcon)
