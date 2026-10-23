@@ -430,26 +430,26 @@ def detect_opentrons_labware(py_filepath):
                 elif "17a" in lw_lower or "4x6" in lw_lower:
                     suggested = "Slot_1"
                     suggested_lw = "biohit_rack_4x6_17a.json"
-                elif "tuberack" in lw_lower or "falcon" in lw_lower:
+                elif "tuberack" in lw_lower or "falcon" in lw_lower or slot == "10":
                     suggested = "Slot_1"
                     suggested_lw = "tube_rack_2x6_2ml.json"
                 elif "tip" in lw_lower or slot == "8":
-                    suggested = "Slot_5" if slot in ("5", "11") else ("Slot_4" if slot == "4" else "Slot_3")
+                    suggested = "Slot_4"
                     suggested_lw = "tip_rack_1000ul.json"
-                elif "reservoir" in lw_lower or "trough" in lw_lower or slot == "10":
-                    suggested = "Slot_2"
-                    suggested_lw = "reservoir_3_well.json"
                 elif "waste" in lw_lower or "trash" in lw_lower or slot == "12":
-                    suggested = "Slot_6"
+                    suggested = "Slot_2"
                     suggested_lw = "waste_trough.json"
                 elif slot == "4":
-                    suggested = "Slot_4"
-                    suggested_lw = "generic_96_well_plate.json"
-                elif slot == "11":
                     suggested = "Slot_5"
                     suggested_lw = "generic_96_well_plate.json"
+                elif slot in ("11", "7"):
+                    suggested = "Slot_3"
+                    suggested_lw = "generic_96_well_plate.json"
+                elif "reservoir" in lw_lower or "trough" in lw_lower:
+                    suggested = "Slot_2"
+                    suggested_lw = "reservoir_3_well.json"
                 else:
-                    suggested = "Slot_4" if "Slot_4" not in [d.get('suggested_biohit_slot') for d in detected] else "Slot_5"
+                    suggested = "Slot_5" if "Slot_5" not in [d.get('suggested_biohit_slot') for d in detected] else "Slot_3"
                     suggested_lw = "generic_96_well_plate.json"
 
                 detected.append({
@@ -492,11 +492,12 @@ def convert_opentrons_py_to_biohit(py_filepath, slot_mapping=None, labware_mappi
     try:
         # Default slot map if none provided
         effective_slot_map = {
-            '8': 'Slot_3',
-            '10': 'Slot_2',
-            '4': 'Slot_4',
-            '11': 'Slot_5',
-            '12': 'Slot_6'
+            '8': 'Slot_4',
+            '10': 'Slot_1',
+            '4': 'Slot_5',
+            '11': 'Slot_3',
+            '7': 'Slot_3',
+            '12': 'Slot_2'
         }
         if slot_mapping:
             effective_slot_map.update(slot_mapping)
