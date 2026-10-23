@@ -1795,7 +1795,7 @@ class LIMSMasterApp:
     SLOT_A1_ORIGINS = {
         "Slot_1": (238.2, 13.0),   # calibrated (front right, height-block slot)
         "Slot_2": (103.0, 13.0),   # calibrated (front left, height-block slot)
-        "Slot_3": (242.0, 56.0),   # calibrated (tip rack / 96 format)
+        "Slot_3": (242.0, 55.0),   # calibrated (96 format, row A1 Y=55.0 shifted 1mm away from row B)
         "Slot_4": (105.0, 56.0),   # calibrated (96-well A1 X=105, Y=56)
         "Slot_5": (243.0, 155.0),  # calibrated (96-well drug plate)
         "Slot_6": (105.0, 155.0),  # derived (Slot_4 X column + Slot_5 Y row)
