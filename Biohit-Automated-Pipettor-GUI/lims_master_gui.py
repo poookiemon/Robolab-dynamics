@@ -15,24 +15,37 @@ except ImportError:
     pd = None
     sns = None
     plt = None
-import re
+import re, queue
 
 
 class TextHandler(logging.Handler):
     def __init__(self, text_widget):
         logging.Handler.__init__(self)
         self.text_widget = text_widget
+        self.log_queue = queue.Queue()
+        self._poll_logs()
 
     def emit(self, record):
-        msg = self.format(record)
+        try:
+            self.log_queue.put_nowait(self.format(record))
+        except Exception:
+            pass
 
-        def append():
-            self.text_widget.configure(state='normal')
-            self.text_widget.insert(tk.END, msg + '\n')
-            self.text_widget.configure(state='disabled')
-            self.text_widget.yview(tk.END)
-
-        self.text_widget.after(0, append)
+    def _poll_logs(self):
+        try:
+            while not self.log_queue.empty():
+                msg = self.log_queue.get_nowait()
+                self.text_widget.configure(state='normal')
+                self.text_widget.insert(tk.END, msg + '\n')
+                self.text_widget.configure(state='disabled')
+                self.text_widget.yview(tk.END)
+        except Exception:
+            pass
+        finally:
+            try:
+                self.text_widget.after(100, self._poll_logs)
+            except Exception:
+                pass
 
 
 class LIMSMasterApp:
@@ -70,9 +83,20 @@ class LIMSMasterApp:
         self.current_pos = {"X": 0.0, "Y": 0.0, "Z": 0.0}
         self.telemetry_active = False
 
+        # Live Jogging & Keyboard Control State
+        self.jog_step_var = tk.DoubleVar(value=1.0)
+        self.jog_z_clearance_var = tk.BooleanVar(value=False)
+        self.jog_nudge_btns = []
+        self._jogging_in_progress = False
+
         self.setup_menu()
         self.setup_ui()
         self.setup_logging()
+
+        try:
+            self.root.bind("<KeyPress>", self._on_key_press)
+        except Exception:
+            pass
 
         hw_mode = "Multichannel (8-channel) array" if is_multi else "Single-channel direct mapping"
         self.logger.info(f"System Boot: {hw_mode} | Tracking bypassed. Pure kinematics engaged.")
@@ -567,19 +591,51 @@ class LIMSMasterApp:
 
         for axis in ["X", "Y", "Z"]:
             f = ttk.Frame(f_jog)
-            f.pack(fill=tk.X, padx=100, pady=10)
+            f.pack(fill=tk.X, padx=100, pady=8)
             ttk.Label(f, text=f"{axis}-Axis (mm):", width=12, font=("Arial", 11)).pack(side=tk.LEFT)
 
-            e = ttk.Entry(f, textvariable=self.jog_vars[axis], font=("Consolas", 11), state='disabled', width=15)
-            e.pack(side=tk.LEFT, padx=10)
+            btn_m = tk.Button(f, text=" - ", bg="#e9ecef", font=("Consolas", 10, "bold"), width=4, state='disabled',
+                              command=lambda a=axis: self.jog_step(a, -1.0))
+            btn_m.pack(side=tk.LEFT, padx=(5, 3))
+            self.jog_nudge_btns.append(btn_m)
+
+            e = ttk.Entry(f, textvariable=self.jog_vars[axis], font=("Consolas", 11), state='disabled', width=12)
+            e.pack(side=tk.LEFT, padx=3)
             self.jog_sliders[axis] = e
 
-            btn = tk.Button(f, text="MOVE", bg="#007bff", fg="white", font=("Arial", 9, "bold"), state='disabled',
+            btn_p = tk.Button(f, text=" + ", bg="#e9ecef", font=("Consolas", 10, "bold"), width=4, state='disabled',
+                              command=lambda a=axis: self.jog_step(a, +1.0))
+            btn_p.pack(side=tk.LEFT, padx=(3, 10))
+            self.jog_nudge_btns.append(btn_p)
+
+            btn = tk.Button(f, text="GO TO", bg="#007bff", fg="white", font=("Arial", 9, "bold"), state='disabled',
                             command=lambda ax=axis: self._execute_jog_move(ax))
             btn.pack(side=tk.LEFT, padx=5)
             self.jog_btns[axis] = btn
 
             e.bind('<Return>', lambda event, ax=axis: self._execute_jog_move(ax))
+
+        f_step = ttk.Frame(f_jog)
+        f_step.pack(fill=tk.X, padx=100, pady=(15, 5))
+        ttk.Label(f_step, text="Jog Step Size:", font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=(0, 10))
+        for step_val in [0.1, 1.0, 5.0, 10.0]:
+            r_btn = ttk.Radiobutton(f_step, text=f"{step_val} mm", value=step_val, variable=self.jog_step_var)
+            r_btn.pack(side=tk.LEFT, padx=6)
+
+        f_opt = ttk.Frame(f_jog)
+        f_opt.pack(fill=tk.X, padx=100, pady=5)
+        ttk.Checkbutton(f_opt, text="Retract Z to 0 before XY moves (Clearance Lift)", variable=self.jog_z_clearance_var).pack(side=tk.LEFT)
+
+        f_guide = ttk.LabelFrame(f_jog, text="⌨️ Keyboard Live Jog Controls (Active Anywhere in Window)", padding=10)
+        f_guide.pack(fill=tk.X, padx=100, pady=12)
+        guide_text = (
+            "• X-Axis (Left / Right):   ◄ / ►   or   A / D\n"
+            "• Y-Axis (Forward / Back): ▲ / ▼   or   W / S\n"
+            "• Z-Axis (Up / Down):      PgUp (▲) / PgDn (▼)   or   Q / E   or   + / -\n"
+            "• Multipliers: Hold Shift for 10× (10mm) | Hold Ctrl for 0.1× (0.1mm)\n"
+            "• Direct Motion: Moves directly without pulling Z up to 0 (stays at current height)"
+        )
+        ttk.Label(f_guide, text=guide_text, font=("Consolas", 9), foreground="#0056b3").pack(anchor="w")
 
     def _safe_get_jog(self, axis):
         try:
@@ -604,10 +660,160 @@ class LIMSMasterApp:
         y = self._safe_get_jog("Y")
         z = self._safe_get_jog("Z")
         speed = self._safe_get_speed()
+        clearance = getattr(self, 'jog_z_clearance_var', tk.BooleanVar(value=False)).get()
+
+        self.current_pos["X"] = x
+        self.current_pos["Y"] = y
+        self.current_pos["Z"] = z
+        if hasattr(self, 'draw_deck'):
+            try:
+                self.draw_deck()
+            except Exception:
+                pass
+
+        def _worker():
+            try:
+                hw = self.lims.pipettor.hardware
+                if hw:
+                    hw_speed = max(1, min(9, int((speed / 100.0) * 9)))
+                    if ax == "Z":
+                        hw.z_speed = hw_speed
+                        hw.move_z(z, wait=True)
+                    elif ax in ("X", "Y"):
+                        if clearance:
+                            hw.move_z(0, wait=True)
+                        hw.move_xy(x, y, speed=hw_speed, wait=True)
+                        if clearance and z > 0:
+                            hw.move_z(z, wait=True)
+                    else:
+                        self.lims.hw.move_to(x, y, z, speed=speed, clearance=clearance)
+                self.logger.info(f"Jog Move -> X:{x:.1f}, Y:{y:.1f}, Z:{z:.1f} (Clearance={'ON' if clearance else 'OFF'})")
+            except Exception as e:
+                self.logger.error(f"Jog move failed: {e}")
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def jog_step(self, axis, direction):
+        if getattr(self, '_jogging_in_progress', False):
+            return
+
+        hw = self.lims.pipettor.hardware
+        if hw and not self.lims.hw.is_initialized:
+            self.logger.warning("Hardware not initialized. Please click 'Connect & Initialize' first.")
+            return
+
+        step = 1.0
         try:
-            self.lims.hw.move_to(x, y, z, speed=speed)
+            step = float(self.jog_step_var.get())
+        except Exception:
+            pass
+        delta = float(direction) * step
+
+        curr_x = self._safe_get_jog("X")
+        curr_y = self._safe_get_jog("Y")
+        curr_z = self._safe_get_jog("Z")
+
+        target_x, target_y, target_z = curr_x, curr_y, curr_z
+        max_x = self.lims.machine_config.get("max_x_mm", 300.0)
+        max_y = self.lims.machine_config.get("max_y_mm", 300.0)
+
+        if axis == "X":
+            target_x = max(0.0, min(curr_x + delta, max_x))
+            self.jog_vars["X"].set(round(target_x, 2))
+        elif axis == "Y":
+            target_y = max(0.0, min(curr_y + delta, max_y))
+            self.jog_vars["Y"].set(round(target_y, 2))
+        elif axis == "Z":
+            target_z = max(0.0, min(curr_z + delta, 103.5))
+            self.jog_vars["Z"].set(round(target_z, 2))
+
+        speed = self._safe_get_speed()
+        clearance = False
+        try:
+            clearance = bool(self.jog_z_clearance_var.get())
+        except Exception:
+            pass
+
+        self.current_pos["X"] = target_x
+        self.current_pos["Y"] = target_y
+        self.current_pos["Z"] = target_z
+        if hasattr(self, 'draw_deck'):
+            try:
+                self.draw_deck()
+            except Exception:
+                pass
+
+        self._jogging_in_progress = True
+        threading.Thread(
+            target=self._jog_step_worker,
+            args=(axis, target_x, target_y, target_z, speed, clearance, delta),
+            daemon=True
+        ).start()
+
+    def _jog_step_worker(self, axis, target_x, target_y, target_z, speed, clearance, delta):
+        try:
+            hw = self.lims.pipettor.hardware
+            if hw:
+                hw_speed = max(1, min(9, int((speed / 100.0) * 9)))
+                if axis == "Z":
+                    hw.z_speed = hw_speed
+                    hw.move_z(target_z, wait=True)
+                else:
+                    if clearance:
+                        hw.move_z(0, wait=True)
+                    hw.move_xy(target_x, target_y, speed=hw_speed, wait=True)
+                    if clearance and target_z > 0:
+                        hw.move_z(target_z, wait=True)
+
+            self.logger.info(f"Jog {axis} {delta:+.2f}mm -> (X:{target_x:.1f}, Y:{target_y:.1f}, Z:{target_z:.1f})")
         except Exception as e:
-            self.logger.error(f"Jog move failed: {e}")
+            self.logger.error(f"Jog {axis} failed: {e}")
+        finally:
+            self._jogging_in_progress = False
+
+    def _on_key_press(self, event):
+        # Ignore keyboard controls if user is currently typing in an input widget
+        focus_w = self.root.focus_get()
+        if focus_w:
+            w_class = getattr(focus_w, 'winfo_class', lambda: '')()
+            if w_class in ('Entry', 'TEntry', 'Text', 'Combobox', 'TCombobox', 'Spinbox'):
+                return
+
+        key = event.keysym.lower()
+        shift = bool(event.state & 0x0001)  # Shift key pressed -> 10x step
+        ctrl = bool(event.state & 0x0004)   # Ctrl key pressed -> 0.1x step
+
+        mult = 1.0
+        if shift:
+            mult = 10.0
+        elif ctrl:
+            mult = 0.1
+
+        # X-Axis Jog (Left / Right)
+        if key in ('left', 'a'):
+            self.jog_step('X', -1.0 * mult)
+            return "break"
+        elif key in ('right', 'd'):
+            self.jog_step('X', +1.0 * mult)
+            return "break"
+
+        # Y-Axis Jog (Forward / Back)
+        elif key in ('up', 'w'):
+            self.jog_step('Y', +1.0 * mult)
+            return "break"
+        elif key in ('down', 's'):
+            self.jog_step('Y', -1.0 * mult)
+            return "break"
+
+        # Z-Axis Jog (Up / Down)
+        # Prior / PageUp / q / +: move Z UP (decrease Z mm towards 0)
+        # Next / PageDown / e / -: move Z DOWN (increase Z mm towards labware)
+        elif key in ('prior', 'pageup', 'q', 'equal', 'plus'):
+            self.jog_step('Z', -1.0 * mult)
+            return "break"
+        elif key in ('next', 'pagedown', 'e', 'minus', 'underscore'):
+            self.jog_step('Z', +1.0 * mult)
+            return "break"
 
     def start_telemetry(self):
         if not self.telemetry_active:
@@ -759,16 +965,34 @@ class LIMSMasterApp:
             f.pack(fill=tk.X, padx=10, pady=2)
             ttk.Label(f, text=f"{axis} (mm):", width=8, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
 
-            e = ttk.Entry(f, textvariable=self.jog_vars[axis], font=("Consolas", 10), state='disabled', width=10)
-            e.pack(side=tk.LEFT, padx=10)
+            btn_m = tk.Button(f, text="-", width=2, bg="#e9ecef", font=("Consolas", 8, "bold"), state='disabled',
+                              command=lambda a=axis: self.jog_step(a, -1.0))
+            btn_m.pack(side=tk.LEFT, padx=(2, 2))
+            self.jog_nudge_btns.append(btn_m)
+
+            e = ttk.Entry(f, textvariable=self.jog_vars[axis], font=("Consolas", 10), state='disabled', width=8)
+            e.pack(side=tk.LEFT, padx=3)
             self.deck_jog_sliders[axis] = e
+
+            btn_p = tk.Button(f, text="+", width=2, bg="#e9ecef", font=("Consolas", 8, "bold"), state='disabled',
+                              command=lambda a=axis: self.jog_step(a, +1.0))
+            btn_p.pack(side=tk.LEFT, padx=(2, 5))
+            self.jog_nudge_btns.append(btn_p)
 
             btn = tk.Button(f, text="MOVE", bg="#007bff", fg="white", font=("Arial", 8, "bold"), state='disabled',
                             command=lambda ax=axis: self._execute_jog_move(ax))
-            btn.pack(side=tk.LEFT, padx=5)
+            btn.pack(side=tk.LEFT, padx=3)
             self.deck_jog_btns[axis] = btn
 
             e.bind('<Return>', lambda event, ax=axis: self._execute_jog_move(ax))
+
+        deck_ctrl_f = ttk.Frame(f_jog)
+        deck_ctrl_f.pack(fill=tk.X, padx=10, pady=(4, 0))
+        ttk.Label(deck_ctrl_f, text="Step:", font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=(0, 4))
+        for step_val in [0.1, 1.0, 5.0]:
+            ttk.Radiobutton(deck_ctrl_f, text=f"{step_val}mm", value=step_val, variable=self.jog_step_var).pack(side=tk.LEFT, padx=2)
+        ttk.Checkbutton(deck_ctrl_f, text="Clearance (Z=0)", variable=self.jog_z_clearance_var).pack(side=tk.LEFT, padx=6)
+        ttk.Label(deck_ctrl_f, text="⌨️ Arrow keys / PgUp-PgDn active", font=("Arial", 8, "italic"), foreground="#0066cc").pack(side=tk.RIGHT)
 
         ttk.Label(pane_l, text="Inventory", font=("Arial", 10, "bold")).pack(pady=5)
         self.list_unplaced = tk.Listbox(pane_l, height=10, bg="white")
@@ -2674,6 +2898,11 @@ class LIMSMasterApp:
                         self.jog_btns[axis].config(state='normal')
                     if hasattr(self, 'deck_jog_btns') and axis in self.deck_jog_btns:
                         self.deck_jog_btns[axis].config(state='normal')
+                for btn in getattr(self, 'jog_nudge_btns', []):
+                    try:
+                        btn.config(state='normal')
+                    except Exception:
+                        pass
                 self.start_telemetry()
         else:
             self.logger.error(f"Connection failed: {m}")
