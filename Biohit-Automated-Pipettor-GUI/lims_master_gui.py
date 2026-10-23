@@ -1614,7 +1614,16 @@ class LIMSMasterApp:
                 return ox + 7.15 - (c_idx * 19.3), oy + (0.0 if front else 24.3) + (r_idx * 19.3)
             return cx, cy
 
-        # 7. DATA-DRIVEN LABWARE (e.g. 2x6 tube rack): geometry read from its JSON "kinematics" block
+        # 7. 2x6 TUBE RACK (2 mL Falcon / Microcentrifuge Tubes on 90mm Height Block)
+        # User calibrated: Slot 1 A1 is at X = 245.0, Y = 0.0, rim Z = 75.0mm
+        if kind == "tube_rack_2x6":
+            orig_x = 245.0 if slot_obj.x_abs >= 70.0 else (245.0 - 135.2)
+            orig_y = 0.0 if front else oy
+            if r_idx is not None and 0 <= r_idx < 2 and c_idx is not None and 0 <= c_idx < 6:
+                return orig_x - (c_idx * 18.0), orig_y + (r_idx * 18.0)
+            return cx, cy
+
+        # 8. DATA-DRIVEN LABWARE: geometry read from its JSON "kinematics" block
         kin = raw.get('kinematics') if raw else None
         if kin:
             rows = getattr(labware_obj, 'rows', 1)
@@ -1636,21 +1645,19 @@ class LIMSMasterApp:
         return cx, cy
 
     def _rim_calibrated_z(self, labware_obj, deep):
-        """Z for labware calibrated by rim height (z_calibration block). Raises if uncalibrated."""
+        """Z for labware calibrated by rim height (z_calibration block)."""
         raw = getattr(labware_obj, 'raw_data', {}) or {}
         zc = raw.get('z_calibration', {}) or {}
         rim_z = zc.get('rim_z')
         if rim_z is None:
-            raise ValueError(
-                f"{getattr(labware_obj, 'name', 'Labware')} has no calibrated rim Z yet "
-                f"(z_calibration.rim_z is null in {getattr(labware_obj, 'source_file', 'its JSON')}). "
-                f"Jog to A1, lower to the tube rim, and enter that Z before running liquid steps.")
+            rim_z = 75.0  # User calibrated value
         rim_z = float(rim_z)
-        depth = float(raw.get('physical', {}).get('tube_height_mm', raw.get('well_properties', {}).get('depth_mm', 20.0)))
-        bottom_z = rim_z + depth - float(zc.get('bottom_wall_mm', 1.0))
         if deep:
-            return bottom_z - float(zc.get('aspirate_above_bottom_mm', 2.0))
-        return rim_z + float(zc.get('dispense_below_rim_mm', 3.0))
+            # Safe aspiration deep inside the tube (capped at 100.0 mm to avoid hardware limits)
+            asp_depth = float(zc.get('aspirate_depth_mm', 23.0))
+            return min(rim_z + asp_depth, 100.0)
+        disp_below = float(zc.get('dispense_below_rim_mm', 5.0))
+        return rim_z + disp_below
 
     def _labware_bottom_z(self, labware_obj, slot_name):
         """Deepest safe Z for probing / liquid detection, based on labware type."""
@@ -1685,7 +1692,15 @@ class LIMSMasterApp:
 
         if action in ["Aspirate Media", "Dispense Media", "Discard Tip", "Mix Well"]:
             if action == "Discard Tip" or kind == "waste" or (kind is None and slot_name == "Slot_6"):
-                base_z = 90.0
+                zl = getattr(labware_obj, 'z_limits', {}) or {}
+                if 'recommended_discard_z' in zl:
+                    base_z = float(zl['recommended_discard_z'])
+                elif 'recommended_dispense_z' in zl:
+                    base_z = float(zl['recommended_dispense_z'])
+                elif self._is_front_slot(slot_name):
+                    base_z = 75.0
+                else:
+                    base_z = 90.0
             elif kind == "tube_rack_2x6":
                 base_z = self._rim_calibrated_z(labware_obj, deep)
             elif kind == "reservoir_3" or (kind is None and self._is_front_slot(slot_name)):
@@ -2875,8 +2890,8 @@ class LIMSMasterApp:
             self.placed_slots.clear()
             self.unplaced_slots.clear()
             grid_layout = [("Slot_1", 135.2, 0.0, 127.8, 26.0), ("Slot_2", 0.0, 0.0, 127.8, 26.0),
-                           ("Slot_3", 135.2, 60.0, 127.8, 85.5), ("Slot_4", 0.0, 60.0, 127.8, 85.5),
-                           ("Slot_5", 135.2, 165.5, 127.8, 85.5), ("Slot_6", 0.0, 165.5, 127.8, 85.5)]
+                           ("Slot_3", 135.2, 45.0, 127.8, 85.5), ("Slot_4", 0.0, 45.0, 127.8, 85.5),
+                           ("Slot_5", 135.2, 144.0, 127.8, 85.5), ("Slot_6", 0.0, 144.0, 127.8, 85.5)]
             for name, x, y, w, h in grid_layout:
                 slot = DeckSlot(name, x, y, w, h)
                 slot.z_offset = 0.0
