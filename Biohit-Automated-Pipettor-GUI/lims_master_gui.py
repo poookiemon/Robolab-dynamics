@@ -1795,15 +1795,15 @@ class LIMSMasterApp:
     SLOT_A1_ORIGINS = {
         "Slot_1": (238.2, 13.0),   # calibrated (front right, height-block slot)
         "Slot_2": (103.0, 13.0),   # calibrated (front left, height-block slot)
-        "Slot_3": (243.0, 53.0),   # calibrated (user jog-calibrated: X=243, Y=53)
+        "Slot_3": (243.81, 53.0),  # calibrated (exact center: X=243.81, Y=53.0)
         "Slot_4": (105.0, 56.0),   # calibrated (96-well A1 X=105, Y=56)
-        "Slot_5": (243.0, 147.0),  # calibrated (user jog-calibrated: X=243, Y=147, Z=92)
-        "Slot_6": (105.0, 147.0),  # derived (Slot_4 X column + Slot_5 Y row)
+        "Slot_5": (243.81, 149.23), # calibrated (exact center: X=243.81, Y=149.23)
+        "Slot_6": (105.0, 149.23), # derived (Slot_4 X column + Slot_5 Y row)
     }
 
     # Calibrated per-slot column tables for 96-format labware (override pitch math)
     SLOT_96_COL_OVERRIDES = {
-        "Slot_5": [243.0, 234.0, 225.0, 216.0, 207.0, 198.0, 189.0, 180.0, 171.0, 162.0, 153.0, 143.0],
+        "Slot_5": [243.81, 234.81, 225.81, 216.81, 207.81, 198.81, 189.81, 180.81, 171.81, 162.81, 153.81, 144.81],
     }
 
     # Calibrated per-slot Z for 96-well microplates: (deep / aspirate / mix, brim / dispense)
@@ -1854,13 +1854,13 @@ class LIMSMasterApp:
         slot_obj = self.lims.deck_slots.get(slot_name)
         if not slot_obj:
             return 0.0, 0.0
-        ox = 243.0 if slot_obj.x_abs >= 70.0 else 105.0
+        ox = 243.81 if slot_obj.x_abs >= 70.0 else 105.0
         if slot_obj.y_abs < 40.0:
             oy = 13.0
         elif slot_obj.y_abs < 120.0:
             oy = 53.0
         else:
-            oy = 147.0
+            oy = 149.23
         return ox, oy
 
     @staticmethod
@@ -2434,9 +2434,9 @@ class LIMSMasterApp:
         if has_mix_steps:
             self.enable_mixing_for_run = messagebox.askyesno(
                 "In-Well Mixing Option",
-                "Do you want to enable 5x in-well mixing for this run?\n\n"
-                "• YES (Mix ON): Goes down into the well (90mm on Slot 4 96-well / 86mm on 48-well EHM) and mixes 5 times after adding drug.\n"
-                "• NO (Mix OFF): Skips all mixing and dispenses from the brim (85mm on Slot 4 96-well / 81mm on 48-well EHM) without touching the well liquid."
+                "Do you want to enable 2x in-well mixing for this run?\n\n"
+                "• YES (Mix ON): Goes down into the well (92mm on Slot 5 96-well / 90mm on Slot 4 / 86mm on 48-well EHM) and mixes 2 times after adding drug.\n"
+                "• NO (Mix OFF): Skips all mixing and dispenses from the brim (85mm on 96-well) without touching the well liquid."
             )
         else:
             self.enable_mixing_for_run = False
@@ -2802,11 +2802,12 @@ class LIMSMasterApp:
                                     self.has_air_cushion = False
 
                                 # --- Option 2: Live Software Liquid Level Tracking (well-wise, auto mode) ---
-                                # Active on Slot_1 / Slot_2 (start meniscus default Z=47.0mm with height blocks)
+                                lw_kind = self._lw_kind(self.lims.deck_labware.get(slot_name))
+                                is_reservoir = self._is_front_slot(slot_name) and lw_kind in ("reservoir_3", None)
+                                is_2ml_falcon = lw_kind == "tube_rack_2x6" or (self._is_front_slot(slot_name) and "2x6" in str(getattr(self.lims.deck_labware.get(slot_name), 'source_file', '')).lower())
                                 use_dynamic_z = (
                                     mode != "manual"
-                                    and self._is_front_slot(slot_name)
-                                    and self._lw_kind(self.lims.deck_labware.get(slot_name)) in ("reservoir_3", None)
+                                    and (is_reservoir or is_2ml_falcon)
                                     and step.get('track_liquid', True)
                                 )
 
@@ -2815,51 +2816,84 @@ class LIMSMasterApp:
                                         self.liquid_ledger = {}
                                     ledger_key = f"{slot_name}_{well_id}"
                                     if ledger_key not in self.liquid_ledger:
-                                        self.liquid_ledger[ledger_key] = {
-                                            "surface_z": float(step.get('start_surface_z', 47.0)),  # Start meniscus (47.0mm with height blocks)
-                                            "bottom_z": float(step.get('tube_bottom_z', 79.0)),     # Base of reservoir/tube with height blocks
-                                            "area_mm2": float(step.get('tube_area_mm2', 434.0))     # Cross-section
-                                        }
+                                        if is_2ml_falcon:
+                                            # 2mL Falcon tube on 90mm height block: starts at rim Z=75.0mm, bottom Z=103.0mm, 28mm depth for 2000uL -> area=71.43mm2
+                                            self.liquid_ledger[ledger_key] = {
+                                                "surface_z": float(step.get('start_surface_z', 75.0)),
+                                                "bottom_z": float(step.get('tube_bottom_z', 103.0)),
+                                                "area_mm2": float(step.get('tube_area_mm2', 71.43))
+                                            }
+                                        else:
+                                            self.liquid_ledger[ledger_key] = {
+                                                "surface_z": float(step.get('start_surface_z', 47.0)),  # Start meniscus (47.0mm with height blocks)
+                                                "bottom_z": float(step.get('tube_bottom_z', 79.0)),     # Base of reservoir/tube with height blocks
+                                                "area_mm2": float(step.get('tube_area_mm2', 434.0))     # Cross-section
+                                            }
                                     tube_info = self.liquid_ledger[ledger_key]
                                     req_vol = float(vol)
 
-                                    # --- Low-volume refill pause ---
+                                    # --- Low-volume refill / auto-rollover check ---
                                     rem_before_ml = max(0.0, tube_info["bottom_z"] - tube_info["surface_z"]) * tube_info["area_mm2"] / 1000.0
-                                    reserve_ml = float(step.get('min_reserve_ml', 2.0))
+                                    reserve_ml = float(step.get('min_reserve_ml', 0.05 if is_2ml_falcon else 2.0))
                                     if rem_before_ml - (req_vol / 1000.0) < reserve_ml:
-                                        self.logger.warning(
-                                            f"[OPTION 2 TRACKER] {slot_name} {well_id} LOW: ~{rem_before_ml:.2f}mL left (reserve {reserve_ml:.1f}mL). Pausing for refill.")
-                                        self.refill_decision = None
-                                        start_z = float(step.get('start_surface_z', 47.0))
+                                        if is_2ml_falcon:
+                                            # Auto-advance to next Falcon tube in rack (A1 -> A2 -> A3...)
+                                            tube_order = ["A1", "A2", "A3", "A4", "A5", "A6", "B1", "B2", "B3", "B4", "B5", "B6"]
+                                            curr_idx = tube_order.index(well_id) if well_id in tube_order else -1
+                                            if curr_idx != -1 and curr_idx + 1 < len(tube_order):
+                                                next_well = tube_order[curr_idx + 1]
+                                                self.logger.warning(
+                                                    f"[2mL TUBE TRACKER] {slot_name} {well_id} depleted (2.0mL consumed) -> Auto-advancing to {slot_name} {next_well} for fresh DMSO!")
+                                                well_id = next_well
+                                                ledger_key = f"{slot_name}_{well_id}"
+                                                self.liquid_ledger[ledger_key] = {
+                                                    "surface_z": 75.0,
+                                                    "bottom_z": 103.0,
+                                                    "area_mm2": 71.43
+                                                }
+                                                tube_info = self.liquid_ledger[ledger_key]
+                                                # Recalculate target XY for new tube
+                                                new_coords = self._calculate_xy(slot_name, well_id)
+                                                if new_coords and (new_coords[0] != 0 or new_coords[1] != 0):
+                                                    target_x, target_y = new_coords
+                                                    self.lims.hw.move_to(target_x, target_y, 0, speed=self.speed_var.get())
+                                                    time.sleep(0.05)
+                                        else:
+                                            self.logger.warning(
+                                                f"[OPTION 2 TRACKER] {slot_name} {well_id} LOW: ~{rem_before_ml:.2f}mL left (reserve {reserve_ml:.1f}mL). Pausing for refill.")
+                                            self.refill_decision = None
+                                            start_z = float(step.get('start_surface_z', 47.0))
 
-                                        def _ask_refill():
-                                            ok = messagebox.askyesno(
-                                                "Refill Tube",
-                                                f"{slot_name} {well_id} is nearly empty (~{rem_before_ml:.1f} mL left).\n\n"
-                                                f"Refill it to the start mark (Z={start_z:.0f} mm), then press YES.\n\n"
-                                                f"Press NO to continue without refilling (tip will go near the bottom).")
-                                            self.refill_decision = "refilled" if ok else "continue"
+                                            def _ask_refill():
+                                                ok = messagebox.askyesno(
+                                                    "Refill Tube",
+                                                    f"{slot_name} {well_id} is nearly empty (~{rem_before_ml:.1f} mL left).\n\n"
+                                                    f"Refill it to the start mark (Z={start_z:.0f} mm), then press YES.\n\n"
+                                                    f"Press NO to continue without refilling (tip will go near the bottom).")
+                                                self.refill_decision = "refilled" if ok else "continue"
 
-                                        self.root.after(0, _ask_refill)
-                                        while self.refill_decision is None and not self.is_aborted:
-                                            time.sleep(0.1)
-                                        if self.refill_decision == "refilled":
-                                            tube_info["surface_z"] = start_z
-                                            self.logger.info(f"[OPTION 2 TRACKER] {slot_name} {well_id} refilled -> surface reset to Z={start_z:.1f}mm")
+                                            self.root.after(0, _ask_refill)
+                                            while self.refill_decision is None and not self.is_aborted:
+                                                time.sleep(0.1)
+                                            if self.refill_decision == "refilled":
+                                                tube_info["surface_z"] = start_z
+                                                self.logger.info(f"[OPTION 2 TRACKER] {slot_name} {well_id} refilled -> surface reset to Z={start_z:.1f}mm")
 
                                     curr_surface = tube_info["surface_z"]
-                                    # Submerge 5.0mm below current meniscus, capped 1.5mm above tube base
-                                    tz = min(curr_surface + 5.0, tube_info["bottom_z"] - 1.5)
+                                    # Submerge 2.5mm for Falcon tube (5.0mm for reservoir), capped at tube bottom
+                                    submerge_depth = 2.5 if is_2ml_falcon else 5.0
+                                    tz = min(curr_surface + submerge_depth, tube_info["bottom_z"] - 0.5)
 
                                     # Update meniscus depth for next aspiration
                                     dz = req_vol / tube_info["area_mm2"]
-                                    new_surface = min(curr_surface + dz, tube_info["bottom_z"] - 1.5)
+                                    new_surface = min(curr_surface + dz, tube_info["bottom_z"])
                                     tube_info["surface_z"] = new_surface
 
                                     rem_height = max(0.0, tube_info["bottom_z"] - new_surface)
                                     rem_ml = (rem_height * tube_info["area_mm2"]) / 1000.0
+                                    tracker_name = "2mL TUBE TRACKER" if is_2ml_falcon else "OPTION 2 TRACKER"
                                     self.logger.info(
-                                        f"[OPTION 2 TRACKER] {slot_name} {well_id}: Meniscus Z={curr_surface:.1f}mm -> Submerging to Z={tz:.1f}mm. Est. Remaining: ~{rem_ml:.2f}mL"
+                                        f"[{tracker_name}] {slot_name} {well_id}: Meniscus Z={curr_surface:.1f}mm -> Submerging to Z={tz:.1f}mm (Bottom={tube_info['bottom_z']:.1f}mm). Est. Remaining: ~{rem_ml:.2f}mL"
                                     )
 
                             self.lims.pipettor.hardware.move_z(tz)

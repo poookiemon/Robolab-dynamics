@@ -134,7 +134,7 @@ class MockPipette:
     def _extract_mix_info(self, kwargs):
         mix_after = kwargs.get('mix_after')
         if isinstance(mix_after, (tuple, list)) and len(mix_after) >= 2:
-            return 5, float(mix_after[1])
+            return 2, float(mix_after[1])
         lc = kwargs.get('liquid_class')
         if isinstance(lc, dict):
             found_reps = 0
@@ -143,13 +143,13 @@ class MockPipette:
                 nonlocal found_reps, found_vol
                 if isinstance(d, dict):
                     if "mix" in d and isinstance(d["mix"], dict) and d["mix"].get("enabled"):
-                        found_reps += int(d["mix"].get("repetitions", 5))
+                        found_reps += int(d["mix"].get("repetitions", 2))
                         found_vol = float(d["mix"].get("volume", 100.0))
                     for v in d.values():
                         walk(v)
             walk(lc)
             if found_reps > 0:
-                return 5, found_vol
+                return 2, found_vol
         return 0, 100.0
 
     def aspirate(self, volume=None, location=None, **kwargs):
@@ -162,9 +162,9 @@ class MockPipette:
         slot, well = self._get_target(location)
         self.protocol.record_step("Dispense Media", slot, well, vol)
 
-    def mix(self, repetitions=5, volume=None, location=None, **kwargs):
+    def mix(self, repetitions=2, volume=None, location=None, **kwargs):
         vol = float(volume) if volume is not None else 100.0
-        reps = max(1, int(repetitions)) if repetitions else 5
+        reps = min(2, max(1, int(repetitions))) if repetitions else 2
         if self.protocol.steps and self.protocol.steps[-1].get("action") == "Dispense Media":
             self.protocol.steps[-1]["mix_cycles"] = reps
             self.protocol.steps[-1]["mix_volume"] = round(vol, 2)
@@ -361,17 +361,40 @@ class MockProtocolContext:
         pass
 
     def record_step(self, action, slot, well, volume, mix_cycles=0, mix_volume=100.0, no_blowout=False, labware=None):
-        assigned_lw = labware or self.labware_map.get(slot)
+        assigned_lw = labware or self.labware_map.get(slot, "")
+        lw_lower = str(assigned_lw).lower()
+
+        # 2mL Falcon tube auto-rollover on Slot 1: after 2000 uL, advance to A2, A3...
+        target_well = well
+        vol_f = round(float(volume), 2)
+        if action == "Aspirate Media" and (slot == "Slot_1" or "2x6" in lw_lower or "tube_rack_2x6" in lw_lower):
+            if not hasattr(self, 'tube_consumption'):
+                self.tube_consumption = {}
+                self.tube_order = ["A1", "A2", "A3", "A4", "A5", "A6", "B1", "B2", "B3", "B4", "B5", "B6"]
+                self.current_tube_idx = 0
+
+            curr_tube = self.tube_order[self.current_tube_idx]
+            consumed = self.tube_consumption.get(curr_tube, 0.0)
+
+            # Advance to next tube if this draw exceeds 2.0 mL (2000 uL)
+            if consumed + vol_f > 2000.0 and (self.current_tube_idx + 1) < len(self.tube_order):
+                self.current_tube_idx += 1
+                curr_tube = self.tube_order[self.current_tube_idx]
+                consumed = 0.0
+
+            self.tube_consumption[curr_tube] = consumed + vol_f
+            target_well = curr_tube
+
         step = {
             "action": action,
             "mode": "auto",
             "slot": slot,
-            "well": well,
-            "volume": round(float(volume), 2),
+            "well": target_well,
+            "volume": vol_f,
             "extra_z": 0.0
         }
         if mix_cycles > 0:
-            step["mix_cycles"] = int(mix_cycles)
+            step["mix_cycles"] = min(2, int(mix_cycles))  # Reduced to 2 cycles as requested
             step["mix_volume"] = round(float(mix_volume), 2)
         if no_blowout:
             step["no_blowout"] = True
