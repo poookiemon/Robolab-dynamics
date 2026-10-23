@@ -639,10 +639,19 @@ class LIMSMasterApp:
 
     def _safe_get_jog(self, axis):
         try:
+            if hasattr(self, 'jog_sliders') and axis in self.jog_sliders:
+                txt = self.jog_sliders[axis].get().strip()
+                if txt:
+                    val = float(txt)
+                    self.jog_vars[axis].set(round(val, 2))
+                    return val
+        except Exception:
+            pass
+        try:
             val = self.jog_vars[axis].get()
             return float(val)
         except Exception:
-            cur = self.current_pos.get(axis, 0.0)
+            cur = float(self.current_pos.get(axis, 0.0))
             try:
                 self.jog_vars[axis].set(cur)
             except Exception:
@@ -662,6 +671,11 @@ class LIMSMasterApp:
         speed = self._safe_get_speed()
         clearance = getattr(self, 'jog_z_clearance_var', tk.BooleanVar(value=False)).get()
 
+        try:
+            self.root.focus_set()
+        except Exception:
+            pass
+
         self.current_pos["X"] = x
         self.current_pos["Y"] = y
         self.current_pos["Z"] = z
@@ -676,18 +690,49 @@ class LIMSMasterApp:
                 hw = self.lims.pipettor.hardware
                 if hw:
                     hw_speed = max(1, min(9, int((speed / 100.0) * 9)))
-                    if ax == "Z":
+                    try:
+                        hw.x_speed = hw_speed
+                        hw.y_speed = hw_speed
                         hw.z_speed = hw_speed
+                    except Exception:
+                        pass
+
+                    if ax == "Z":
                         hw.move_z(z, wait=True)
-                    elif ax in ("X", "Y"):
+                    elif ax == "X":
                         if clearance:
                             hw.move_z(0, wait=True)
-                        hw.move_xy(x, y, speed=hw_speed, wait=True)
+                        try:
+                            hw.move_x(x, wait=True)
+                        except (AttributeError, TypeError):
+                            try:
+                                hw.move_xy(x, hw.y_position, wait=True)
+                            except (AttributeError, TypeError):
+                                hw.move_xy(x, y, wait=True)
+                        if clearance and z > 0:
+                            hw.move_z(z, wait=True)
+                    elif ax == "Y":
+                        if clearance:
+                            hw.move_z(0, wait=True)
+                        try:
+                            hw.move_y(y, wait=True)
+                        except (AttributeError, TypeError):
+                            try:
+                                hw.move_xy(hw.x_position, y, wait=True)
+                            except (AttributeError, TypeError):
+                                hw.move_xy(x, y, wait=True)
                         if clearance and z > 0:
                             hw.move_z(z, wait=True)
                     else:
-                        self.lims.hw.move_to(x, y, z, speed=speed, clearance=clearance)
-                self.logger.info(f"Jog Move -> X:{x:.1f}, Y:{y:.1f}, Z:{z:.1f} (Clearance={'ON' if clearance else 'OFF'})")
+                        if clearance:
+                            hw.move_z(0, wait=True)
+                        try:
+                            hw.move_xy(x, y, wait=True)
+                        except TypeError:
+                            hw.move_xy(x, y)
+                        if clearance and z > 0:
+                            hw.move_z(z, wait=True)
+                self.logger.info(f"Jog Move {ax or 'All'} -> X:{x:.1f}, Y:{y:.1f}, Z:{z:.1f} (Clearance={'ON' if clearance else 'OFF'})")
             except Exception as e:
                 self.logger.error(f"Jog move failed: {e}")
 
@@ -755,13 +800,37 @@ class LIMSMasterApp:
             hw = self.lims.pipettor.hardware
             if hw:
                 hw_speed = max(1, min(9, int((speed / 100.0) * 9)))
-                if axis == "Z":
+                try:
+                    hw.x_speed = hw_speed
+                    hw.y_speed = hw_speed
                     hw.z_speed = hw_speed
+                except Exception:
+                    pass
+
+                if axis == "Z":
                     hw.move_z(target_z, wait=True)
-                else:
+                elif axis == "X":
                     if clearance:
                         hw.move_z(0, wait=True)
-                    hw.move_xy(target_x, target_y, speed=hw_speed, wait=True)
+                    try:
+                        hw.move_x(target_x, wait=True)
+                    except (AttributeError, TypeError):
+                        try:
+                            hw.move_xy(target_x, hw.y_position, wait=True)
+                        except (AttributeError, TypeError):
+                            hw.move_xy(target_x, target_y, wait=True)
+                    if clearance and target_z > 0:
+                        hw.move_z(target_z, wait=True)
+                elif axis == "Y":
+                    if clearance:
+                        hw.move_z(0, wait=True)
+                    try:
+                        hw.move_y(target_y, wait=True)
+                    except (AttributeError, TypeError):
+                        try:
+                            hw.move_xy(hw.x_position, target_y, wait=True)
+                        except (AttributeError, TypeError):
+                            hw.move_xy(target_x, target_y, wait=True)
                     if clearance and target_z > 0:
                         hw.move_z(target_z, wait=True)
 
@@ -772,13 +841,6 @@ class LIMSMasterApp:
             self._jogging_in_progress = False
 
     def _on_key_press(self, event):
-        # Ignore keyboard controls if user is currently typing in an input widget
-        focus_w = self.root.focus_get()
-        if focus_w:
-            w_class = getattr(focus_w, 'winfo_class', lambda: '')()
-            if w_class in ('Entry', 'TEntry', 'Text', 'Combobox', 'TCombobox', 'Spinbox'):
-                return
-
         key = event.keysym.lower()
         shift = bool(event.state & 0x0001)  # Shift key pressed -> 10x step
         ctrl = bool(event.state & 0x0004)   # Ctrl key pressed -> 0.1x step
@@ -788,6 +850,29 @@ class LIMSMasterApp:
             mult = 10.0
         elif ctrl:
             mult = 0.1
+
+        # PageUp / PageDown / + / - always jog Z immediately even if focus is inside an Entry!
+        if key in ('prior', 'pageup', 'page_up', 'equal', 'plus'):
+            self.jog_step('Z', -1.0 * mult)
+            return "break"
+        elif key in ('next', 'pagedown', 'page_down', 'minus', 'underscore'):
+            self.jog_step('Z', +1.0 * mult)
+            return "break"
+
+        # Escape releases focus from any active Entry
+        if key == 'escape':
+            try:
+                self.root.focus_set()
+            except Exception:
+                pass
+            return "break"
+
+        # Ignore keyboard controls if user is currently typing in an input widget
+        focus_w = self.root.focus_get()
+        if focus_w:
+            w_class = getattr(focus_w, 'winfo_class', lambda: '')()
+            if w_class in ('Entry', 'TEntry', 'Text', 'Combobox', 'TCombobox', 'Spinbox'):
+                return
 
         # X-Axis Jog (Left / Right)
         if key in ('left', 'a'):
@@ -805,13 +890,11 @@ class LIMSMasterApp:
             self.jog_step('Y', -1.0 * mult)
             return "break"
 
-        # Z-Axis Jog (Up / Down)
-        # Prior / PageUp / q / +: move Z UP (decrease Z mm towards 0)
-        # Next / PageDown / e / -: move Z DOWN (increase Z mm towards labware)
-        elif key in ('prior', 'pageup', 'q', 'equal', 'plus'):
+        # Z-Axis Jog (Q / E)
+        elif key == 'q':
             self.jog_step('Z', -1.0 * mult)
             return "break"
-        elif key in ('next', 'pagedown', 'e', 'minus', 'underscore'):
+        elif key == 'e':
             self.jog_step('Z', +1.0 * mult)
             return "break"
 
@@ -825,12 +908,23 @@ class LIMSMasterApp:
         while self.telemetry_active:
             if self.lims.pipettor.hardware:
                 try:
-                    new_pos = {"X": self.jog_vars["X"].get(), "Y": self.jog_vars["Y"].get(),
-                               "Z": self.jog_vars["Z"].get()}
+                    hw = self.lims.pipettor.hardware
+                    hx = round(float(getattr(hw, 'x_position', self.current_pos.get("X", 0.0))), 2)
+                    hy = round(float(getattr(hw, 'y_position', self.current_pos.get("Y", 0.0))), 2)
+                    hz = round(float(getattr(hw, 'z_position', self.current_pos.get("Z", 0.0))), 2)
+                    new_pos = {"X": hx, "Y": hy, "Z": hz}
                     if new_pos != last_pos:
                         self.current_pos = new_pos
                         last_pos = dict(new_pos)
-                        self.root.after(0, self.draw_deck)
+                        focus_w = self.root.focus_get()
+                        is_typing = focus_w and getattr(focus_w, 'winfo_class', lambda: '')() in ('Entry', 'TEntry')
+                        if not is_typing:
+                            for ax in ("X", "Y", "Z"):
+                                self.jog_vars[ax].set(new_pos[ax])
+                        try:
+                            self.draw_deck()
+                        except Exception:
+                            pass
                 except Exception:
                     pass
             time.sleep(0.25)
@@ -1807,7 +1901,9 @@ class LIMSMasterApp:
             if r_idx is not None and 0 <= r_idx < 8 and 0 <= c_idx < 12:
                 col_table = self.SLOT_96_COL_OVERRIDES.get(slot_name)
                 tx = col_table[c_idx] if col_table else ox - (c_idx * 9.0)
-                return tx, oy + (r_idx * 9.0)
+                # Calibrated Y offset: tip rack sits 1.5mm higher on Y (calibrated A1: Y=57.5) vs microplates (Y=56.0)
+                tip_y_shift = 1.5 if kind == "tip_rack" else 0.0
+                return tx, (oy + tip_y_shift) + (r_idx * 9.0)
             return cx, cy
 
         # 3. MYRIAMED 48-WELL EHM PLATE (calibrated on Slot_4: cols 105..15, rows 57..119)
@@ -2890,6 +2986,18 @@ class LIMSMasterApp:
                     except Exception as e:
                         self.logger.warning(f"Initial speed lock failed: {e}")
                 # ------------------------------------------------------
+
+                if self.lims.pipettor.hardware:
+                    try:
+                        hw = self.lims.pipettor.hardware
+                        hx = round(float(getattr(hw, 'x_position', 0.0)), 2)
+                        hy = round(float(getattr(hw, 'y_position', 0.0)), 2)
+                        hz = round(float(getattr(hw, 'z_position', 0.0)), 2)
+                        for ax, v in [("X", hx), ("Y", hy), ("Z", hz)]:
+                            self.jog_vars[ax].set(v)
+                            self.current_pos[ax] = v
+                    except Exception:
+                        pass
 
                 for axis in ["X", "Y", "Z"]:
                     self.jog_sliders[axis].config(state='normal')
