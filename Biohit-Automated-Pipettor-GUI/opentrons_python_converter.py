@@ -76,15 +76,27 @@ class MockPipette:
         return f"{r}{c}"
 
     def pick_up_tip(self, location=None):
-        well = location.name if isinstance(location, MockWell) else self._next_tip()
+        if isinstance(location, MockWell):
+            slot = self.protocol.map_slot(location.labware.location)
+            well = location.name
+        else:
+            slot = self.protocol.tip_slot
+            well = self._next_tip()
         self.has_tip = True
-        slot = self.protocol.tip_slot
         self.protocol.record_step("Pick Up Tip", slot, well, 0.0)
 
     def drop_tip(self, location=None):
         self.has_tip = False
-        slot = self.protocol.waste_slot
-        self.protocol.record_step("Discard Tip", slot, "A1", 0.0)
+        if isinstance(location, MockWell):
+            slot = self.protocol.map_slot(location.labware.location)
+            well = location.name
+        elif isinstance(location, MockLabware):
+            slot = self.protocol.map_slot(location.location)
+            well = "A1"
+        else:
+            slot = self.protocol.waste_slot
+            well = "A1"
+        self.protocol.record_step("Discard Tip", slot, well, 0.0)
 
     def return_tip(self):
         self.drop_tip()
@@ -412,10 +424,19 @@ def detect_opentrons_labware(py_filepath):
 
             for slot, lw in collector.labware_list.items():
                 lw_lower = lw.name.lower()
-                if "tip" in lw_lower or slot == "8":
-                    suggested = "Slot_3"
+                if "2x6" in lw_lower or ("tube" in lw_lower and ("2ml" in lw_lower or "falcon" in lw_lower)) or ("tuberack" in lw_lower and "2ml" in lw_lower):
+                    suggested = "Slot_1"
+                    suggested_lw = "tube_rack_2x6_2ml.json"
+                elif "17a" in lw_lower or "4x6" in lw_lower:
+                    suggested = "Slot_1"
+                    suggested_lw = "biohit_rack_4x6_17a.json"
+                elif "tuberack" in lw_lower or "falcon" in lw_lower:
+                    suggested = "Slot_1"
+                    suggested_lw = "tube_rack_2x6_2ml.json"
+                elif "tip" in lw_lower or slot == "8":
+                    suggested = "Slot_5" if slot in ("5", "11") else ("Slot_4" if slot == "4" else "Slot_3")
                     suggested_lw = "tip_rack_1000ul.json"
-                elif "tuberack" in lw_lower or "falcon" in lw_lower or "reservoir" in lw_lower or "trough" in lw_lower or slot == "10":
+                elif "reservoir" in lw_lower or "trough" in lw_lower or slot == "10":
                     suggested = "Slot_2"
                     suggested_lw = "reservoir_3_well.json"
                 elif "waste" in lw_lower or "trash" in lw_lower or slot == "12":
@@ -487,12 +508,31 @@ def convert_opentrons_py_to_biohit(py_filepath, slot_mapping=None, labware_mappi
             max_volume=max_volume
         )
         
-        # Look up metadata from tip rack if in slot_map
-        for ot_slot, bio_slot in effective_slot_map.items():
-            if bio_slot == 'Slot_3':
-                proto.tip_slot = 'Slot_3'
-            elif bio_slot == 'Slot_6':
-                proto.waste_slot = 'Slot_6'
+        # Dynamically set tip_slot and waste_slot from labware_mapping or slot_mapping
+        found_tip_slot = None
+        found_waste_slot = None
+        for b_slot, lw_file in (labware_mapping or {}).items():
+            lw_lower = str(lw_file).lower()
+            if "tip" in lw_lower and not found_tip_slot:
+                found_tip_slot = b_slot
+            elif ("waste" in lw_lower or "trash" in lw_lower) and not found_waste_slot:
+                found_waste_slot = b_slot
+
+        if found_tip_slot:
+            proto.tip_slot = found_tip_slot
+        elif 'Slot_5' in effective_slot_map.values():
+            proto.tip_slot = 'Slot_5'
+        elif 'Slot_4' in effective_slot_map.values():
+            proto.tip_slot = 'Slot_4'
+        elif 'Slot_3' in effective_slot_map.values():
+            proto.tip_slot = 'Slot_3'
+
+        if found_waste_slot:
+            proto.waste_slot = found_waste_slot
+        elif 'Slot_2' in effective_slot_map.values() and (labware_mapping or {}).get('Slot_2', '').lower().find('waste') != -1:
+            proto.waste_slot = 'Slot_2'
+        elif 'Slot_6' in effective_slot_map.values():
+            proto.waste_slot = 'Slot_6'
 
         with open(py_filepath, 'r', encoding='utf-8') as f:
             code = f.read()

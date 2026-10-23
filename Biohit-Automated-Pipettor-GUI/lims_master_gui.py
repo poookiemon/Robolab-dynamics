@@ -1899,11 +1899,14 @@ class LIMSMasterApp:
         # 2. 96-FORMAT (tip rack or 96-well plate) on ANY slot
         if kind in ("tip_rack", "plate96") or (kind is None and not front):
             if r_idx is not None and 0 <= r_idx < 8 and 0 <= c_idx < 12:
+                if kind == "tip_rack":
+                    # Tip rack A1 physically calibrated at X=104.0, Y=54.0 on Slot 5 and Slot 4
+                    if slot_name in ("Slot_5", "Slot_4"):
+                        return 104.0 - (c_idx * 9.0), 54.0 + (r_idx * 9.0)
+                    return ox - (c_idx * 9.0), oy + (r_idx * 9.0)
                 col_table = self.SLOT_96_COL_OVERRIDES.get(slot_name)
                 tx = col_table[c_idx] if col_table else ox - (c_idx * 9.0)
-                # Calibrated Y offset: tip rack sits 1.5mm higher on Y (calibrated A1: Y=57.5) vs microplates (Y=56.0)
-                tip_y_shift = 1.5 if kind == "tip_rack" else 0.0
-                return tx, (oy + tip_y_shift) + (r_idx * 9.0)
+                return tx, oy + (r_idx * 9.0)
             return cx, cy
 
         # 3. MYRIAMED 48-WELL EHM PLATE (calibrated on Slot_4: cols 105..15, rows 57..119)
@@ -3384,20 +3387,33 @@ class LIMSMasterApp:
             lw_file_to_display = {}
             for f in available_files:
                 name_clean = f.replace(".json", "").replace("_", " ").title()
-                if "3_Well" in f or "3-well" in f:
-                    disp = "3-Well Reservoir (reservoir_3_well.json)"
-                elif "17A" in f.upper() or ("Rack" in name_clean and "Tip" not in name_clean):
+                f_lower = f.lower()
+                if "2x6" in f_lower or "2ml" in f_lower:
+                    disp = "12-Falcon Tube Rack 2x6 (tube_rack_2x6_2ml.json)"
+                elif "17a" in f_lower or "4x6" in f_lower:
                     disp = "24-Tube Rack 4x6 (biohit_rack_4x6_17a.json)"
-                elif "96_Well" in f or "generic_96" in f:
-                    disp = "96-Well Microplate (generic_96_well_plate.json)"
-                elif "48" in f or "myriamed" in f:
-                    disp = "48-Well EHM Plate (myriamed_48_well.json)"
-                elif "Tip" in name_clean or "tip_rack" in f:
-                    disp = "1000µL Tip Rack (tip_rack_1000ul.json)"
-                elif "Waste" in name_clean or "waste_trough" in f:
-                    disp = "Waste Trough (waste_trough.json)"
-                elif "6_Column" in f or "reservoir_6" in f:
+                elif "3_well" in f_lower or "3-well" in f_lower:
+                    disp = "3-Well Reservoir (reservoir_3_well.json)"
+                elif "6_column" in f_lower or "reservoir_6" in f_lower:
                     disp = "6-Column Reservoir (reservoir_6_column.json)"
+                elif "generic_96" in f_lower or "96_well" in f_lower:
+                    disp = "96-Well Microplate (generic_96_well_plate.json)"
+                elif "48" in f_lower or "myriamed" in f_lower:
+                    disp = "48-Well EHM Plate (myriamed_48_well.json)"
+                elif "ehm_42" in f_lower:
+                    disp = "42-Well EHM Plate (ehm_42_well.json)"
+                elif "tip_rack" in f_lower or "tip" in f_lower:
+                    disp = "1000µL Tip Rack (tip_rack_1000ul.json)"
+                elif "waste" in f_lower or "trough" in f_lower:
+                    disp = "Waste Trough (waste_trough.json)"
+                elif "corning_96" in f_lower:
+                    disp = "Corning 96 Flat (corning_96_flat.json)"
+                elif "corning_24" in f_lower:
+                    disp = "Corning 24 Well (corning_24_well.json)"
+                elif "corning_12" in f_lower:
+                    disp = "Corning 12 Well (corning_12_well.json)"
+                elif "corning_6" in f_lower:
+                    disp = "Corning 6 Well (corning_6_well.json)"
                 else:
                     disp = f"{name_clean} ({f})"
                 lw_display_to_file[disp] = f
