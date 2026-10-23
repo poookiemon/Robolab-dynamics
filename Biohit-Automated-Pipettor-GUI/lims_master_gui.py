@@ -1795,10 +1795,10 @@ class LIMSMasterApp:
     SLOT_A1_ORIGINS = {
         "Slot_1": (238.2, 13.0),   # calibrated (front right, height-block slot)
         "Slot_2": (103.0, 13.0),   # calibrated (front left, height-block slot)
-        "Slot_3": (242.0, 55.0),   # calibrated (96 format, row A1 Y=55.0 shifted 1mm away from row B)
+        "Slot_3": (243.0, 53.0),   # calibrated (user jog-calibrated: X=243, Y=53)
         "Slot_4": (105.0, 56.0),   # calibrated (96-well A1 X=105, Y=56)
-        "Slot_5": (243.0, 150.5),  # calibrated (96-well drug plate, row A1 centered in well A)
-        "Slot_6": (105.0, 150.5),  # derived (Slot_4 X column + Slot_5 Y row)
+        "Slot_5": (243.0, 147.0),  # calibrated (user jog-calibrated: X=243, Y=147, Z=92)
+        "Slot_6": (105.0, 147.0),  # derived (Slot_4 X column + Slot_5 Y row)
     }
 
     # Calibrated per-slot column tables for 96-format labware (override pitch math)
@@ -1809,9 +1809,9 @@ class LIMSMasterApp:
     # Calibrated per-slot Z for 96-well microplates: (deep / aspirate / mix, brim / dispense)
     SLOT_96_PLATE_Z = {
         "Slot_4": (90.0, 85.0),
-        "Slot_5": (87.0, 82.0),
+        "Slot_5": (92.0, 85.0),
     }
-    DEFAULT_96_PLATE_Z = (87.0, 82.0)
+    DEFAULT_96_PLATE_Z = (92.0, 85.0)
 
     def _lw_kind(self, labware_obj):
         """Classify a labware object by its definition (file first, then name)."""
@@ -1854,13 +1854,13 @@ class LIMSMasterApp:
         slot_obj = self.lims.deck_slots.get(slot_name)
         if not slot_obj:
             return 0.0, 0.0
-        ox = 242.0 if slot_obj.x_abs >= 70.0 else 105.0
+        ox = 243.0 if slot_obj.x_abs >= 70.0 else 105.0
         if slot_obj.y_abs < 40.0:
             oy = 13.0
         elif slot_obj.y_abs < 120.0:
-            oy = 56.0
+            oy = 53.0
         else:
-            oy = 150.5
+            oy = 147.0
         return ox, oy
 
     @staticmethod
