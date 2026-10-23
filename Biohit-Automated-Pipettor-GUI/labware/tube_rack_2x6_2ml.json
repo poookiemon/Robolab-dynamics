@@ -1,0 +1,45 @@
+{
+    "labware_name": "Tube Rack 2x6 - 2 mL Tubes (12 Tubes, on 90mm Height Block)",
+    "format": "12-tube rack (2 rows A-B x 6 columns 1-6)",
+    "_comment": "Designed for front Slot_1 / Slot_2. Physical: height block 90.0 mm, tube rim 104.6 mm above deck, tube length 40.0 mm (tube bottom 64.6 mm above deck). XY pitch and Z rim are PLACEHOLDERS until jog-calibrated: set kinematics.calibrated=true and z_calibration.rim_z once measured.",
+    "z_height_mm": 104.6,
+    "grid": {
+        "rows": 2,
+        "columns": 6
+    },
+    "well_a1_offset": {
+        "x": 9.0,
+        "y": 9.0
+    },
+    "spacing": {
+        "x": 18.0,
+        "y": 18.0
+    },
+    "well_properties": {
+        "diameter_mm": 8.7,
+        "radius_mm": 4.35,
+        "depth_mm": 40.0,
+        "max_volume_ul": 2000.0
+    },
+    "physical": {
+        "adapter_height_mm": 90.0,
+        "rim_height_mm": 104.6,
+        "tube_height_mm": 40.0,
+        "tube_bottom_height_mm": 64.6
+    },
+    "kinematics": {
+        "_comment": "Machine XY of well = slot A1 origin + (a1_dx - col_idx*pitch_col, a1_dy + row_idx*pitch_row). Slot_2 origin = (103.0, 13.0), Slot_1 origin = (238.2, 13.0).",
+        "a1_dx_mm": 0.0,
+        "a1_dy_mm": 0.0,
+        "pitch_col_mm": 18.0,
+        "pitch_row_mm": 18.0,
+        "calibrated": false
+    },
+    "z_calibration": {
+        "_comment": "rim_z = machine Z (mm from home) where the tip end is level with the tube rim. Jog to A1, lower until tip is at the rim, enter that Z here. Liquid moves are BLOCKED while rim_z is null.",
+        "rim_z": null,
+        "dispense_below_rim_mm": 3.0,
+        "bottom_wall_mm": 1.0,
+        "aspirate_above_bottom_mm": 2.0
+    }
+}
