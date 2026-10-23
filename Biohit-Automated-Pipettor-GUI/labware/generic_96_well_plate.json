@@ -19,13 +19,13 @@
         "max_volume_ul": 360.0
     },
     "z": {
-        "aspirate": 80.0,
-        "dispense": 80.0,
+        "aspirate": 87.0,
+        "dispense": 82.0,
         "discard_tip": 80.0
     },
     "z_limits": {
-        "recommended_aspirate_z": 80.0,
-        "recommended_dispense_z": 80.0,
-        "max_safe_bottom_z": 80.0
+        "recommended_aspirate_z": 87.0,
+        "recommended_dispense_z": 82.0,
+        "max_safe_bottom_z": 90.0
     }
 }
