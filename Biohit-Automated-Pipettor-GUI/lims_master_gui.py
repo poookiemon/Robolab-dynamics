@@ -4,7 +4,16 @@ from tkinter import ttk, messagebox, filedialog
 import json, logging, threading, time, os, subprocess, math
 import ctypes  # Native Windows library for ghost mouse
 from working import LIMSOrchestrator, Labware, DeckSlot, Pipettor
-from gui import GUI as AnalyzerGUI
+try:
+    from gui import GUI as AnalyzerGUI
+except Exception:
+    AnalyzerGUI = None
+from labware_models import (
+    DeckManager, DeckSlot as ModelDeckSlot, HeightAdapter,
+    ADAPTER_NONE, ADAPTER_90MM_BLOCK, ADAPTER_45MM_BLOCK,
+    LabwareBase, Plate96, Plate48Myriamed, Reservoir3Well,
+    TubeRack2x6_2mL, FalconRack50mL, TipRack96, WasteTrough
+)
 
 import xml.etree.ElementTree as ET
 try:
@@ -78,6 +87,12 @@ class LIMSMasterApp:
         self.has_air_cushion = False
         self.pause_event = threading.Event()
         self.pause_event.set()
+
+        # Object-Oriented Labware & Kinematics Engine
+        self.deck_manager = DeckManager()
+        self.current_step_idx = 0
+        self.protocol_edit_buttons = []
+        self.tip_rack_learned_offset = (0.0, 0.0)
 
         self.has_tip_var = tk.BooleanVar(value=False)
         self.current_pos = {"X": 0.0, "Y": 0.0, "Z": 0.0}
@@ -481,8 +496,14 @@ class LIMSMasterApp:
         popout.geometry("1600x900")
         
         # Instantiate the AnalyzerGUI inside the new full-screen Toplevel window
-        from gui import GUI as AnalyzerGUI
-        self.analyzer = AnalyzerGUI(master=popout)
+        global AnalyzerGUI
+        if AnalyzerGUI is None:
+            try:
+                from gui import GUI as AnalyzerGUI
+            except Exception:
+                AnalyzerGUI = None
+        if AnalyzerGUI:
+            self.analyzer = AnalyzerGUI(master=popout)
 
     def build_ops_tab(self):
         ttk.Label(self.tab_ops, text="TECHNICIAN DAILY OPERATIONS", font=("Arial", 14, "bold")).pack(pady=20)
@@ -1160,8 +1181,16 @@ class LIMSMasterApp:
         ttk.Checkbutton(pane_ctrl, text="Auto-Search Tips (Skip empty wells)", variable=self.auto_tip_search_var).pack(
             fill=tk.X, pady=(5, 2))
 
+        self.adaptive_tip_centering_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(pane_ctrl, text="Adaptive Tip Auto-Centering (±0.5mm)", variable=self.adaptive_tip_centering_var).pack(
+            fill=tk.X, pady=(0, 2))
+
         self.dynamic_z_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(pane_ctrl, text="Auto-Height Detection (Liquids ONLY)", variable=self.dynamic_z_var).pack(
+            fill=tk.X, pady=(0, 2))
+
+        self.lld_tracking_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(pane_ctrl, text="Sensor Liquid Level Detection (LLD)", variable=self.lld_tracking_var).pack(
             fill=tk.X, pady=(0, 2))
 
         ttk.Checkbutton(pane_ctrl, text="Pipette Currently Has Tip", variable=self.has_tip_var).pack(fill=tk.X,
@@ -1216,6 +1245,7 @@ class LIMSMasterApp:
         ttk.Button(pane_ctrl, text="🧪 Load EHM 48-Well Test", command=self.action_load_ehm_test_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="🎯 Load 96-Well Row A (A1-A12)", command=self.action_load_slot5_rowA_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="🌊 Load Liquid Height Test (Slot 6)", command=self.action_load_liquid_test_protocol).pack(fill=tk.X, pady=2)
+        ttk.Button(pane_ctrl, text="🧬 Load 2-EHM Multi-Plate Deck", command=self.action_load_deck_2_ehm_multiplate).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="📥 Convert & Import Python (.py)", command=self.action_import_python_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="📂 Load JSON Protocol", command=self.action_load_workflow).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="💾 Save Protocol As JSON...", command=self.action_save_workflow_as).pack(fill=tk.X, pady=2)
@@ -1223,6 +1253,21 @@ class LIMSMasterApp:
         self.wf_box = tk.Listbox(pane_list, font=("Consolas", 11), bg="#f8f9fa", fg="black", selectbackground="#007bff")
         self.wf_box.pack(fill=tk.BOTH, expand=True)
         self.wf_box.bind("<Double-Button-1>", self.edit_wf_step)
+
+        # Mid-Run & Offline Protocol Modification Toolbar
+        bar_edit = ttk.Frame(pane_list)
+        bar_edit.pack(fill=tk.X, pady=(3, 6))
+        self.btn_wf_insert = ttk.Button(bar_edit, text="➕ Insert", width=8, command=self.action_insert_step)
+        self.btn_wf_insert.pack(side=tk.LEFT, padx=1)
+        self.btn_wf_delete = ttk.Button(bar_edit, text="🗑️ Delete", width=8, command=self.action_delete_step)
+        self.btn_wf_delete.pack(side=tk.LEFT, padx=1)
+        self.btn_wf_edit = ttk.Button(bar_edit, text="✏️ Edit", width=7, command=self.edit_wf_step)
+        self.btn_wf_edit.pack(side=tk.LEFT, padx=1)
+        self.btn_wf_up = ttk.Button(bar_edit, text="⬆️ Up", width=6, command=self.action_move_step_up)
+        self.btn_wf_up.pack(side=tk.LEFT, padx=1)
+        self.btn_wf_down = ttk.Button(bar_edit, text="⬇️ Down", width=6, command=self.action_move_step_down)
+        self.btn_wf_down.pack(side=tk.LEFT, padx=1)
+        self.protocol_edit_buttons = [self.btn_wf_insert, self.btn_wf_delete, self.btn_wf_edit, self.btn_wf_up, self.btn_wf_down]
 
         run_frame = ttk.LabelFrame(pane_list, text="Opentrons-Style Run Dashboard", padding=10)
         run_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=10)
@@ -1617,55 +1662,355 @@ class LIMSMasterApp:
         self.wf_box.insert(tk.END, msg)
         self.workflow_sequence.append(step_data)
 
-    def edit_wf_step(self, event=None):
+    def _format_step_msg(self, step_data):
+        action = step_data.get('action', '')
+        mode = step_data.get('mode', 'auto')
+        vol = step_data.get('volume', 0.0)
+        slot = step_data.get('slot', '')
+        well = step_data.get('well', '')
+        extra_z = step_data.get('extra_z', 0.0)
+        mix_c = step_data.get('mix_cycles', 0)
+        mix_v = step_data.get('mix_volume', 100.0)
+
+        if "FOC48" in action:
+            return f"[MEASURE] FOC48_autoOrgan -> Experiment: '{well or 'Default'}'"
+        elif "Incubate" in action:
+            return f"[SYSTEM] Incubate for {vol} seconds."
+        elif "Data Analysis" in action or "DB Upload" in action or "Calcium Curve" in action:
+            return f"[{action.upper()}]"
+        elif mode == "manual":
+            return f"[{action.upper()}] Manual -> X:{step_data.get('x',0)} Y:{step_data.get('y',0)} Z:{step_data.get('z',0)} Vol:{vol}uL"
+        elif action in ["Pick Up Tip", "Discard Tip"]:
+            return f"[{action.upper()}] from {slot}, Well {well}" if action == "Pick Up Tip" else f"[{action.upper()}] into {slot} (Well {well})"
+        elif action == "Detect Liquid Level":
+            return f"[{action.upper()}] at {slot}, Well {well}"
+        else:
+            z_msg = f" (Z+{extra_z}mm)" if extra_z > 0 else ""
+            mix_msg = f" [Mix {mix_c}x {mix_v}uL]" if int(mix_c) > 0 and action == "Dispense Media" else ""
+            return f"[{action.upper()}] {vol}\u03bcL at {slot}, Well {well}{z_msg}{mix_msg}"
+
+    def _set_protocol_edit_buttons_state(self, state):
+        for btn in getattr(self, 'protocol_edit_buttons', []):
+            try:
+                btn.config(state=state)
+            except Exception:
+                pass
+
+    def action_delete_step(self):
         sel = self.wf_box.curselection()
         if not sel:
+            messagebox.showinfo("Delete Step", "Please select a step in the protocol list to delete.")
             return
         idx = sel[0]
-        if idx >= len(self.workflow_sequence):
-            return
+        if idx >= len(self.workflow_sequence): return
+        del_step = self.workflow_sequence[idx]
+        del self.workflow_sequence[idx]
+        self.wf_box.delete(idx)
+        if self.is_running and hasattr(self, 'current_step_idx'):
+            if idx < self.current_step_idx:
+                self.current_step_idx = max(0, self.current_step_idx - 1)
+            self.estimated_total_time = self.estimate_workflow_time(self.workflow_sequence)
+        self.logger.info(f"Protocol Step {idx + 1} deleted ({del_step.get('action')}). Remaining: {len(self.workflow_sequence)}.")
+        if self.workflow_sequence:
+            new_sel = min(idx, len(self.workflow_sequence) - 1)
+            self.wf_box.selection_set(new_sel)
+
+    def action_insert_step(self):
+        sel = self.wf_box.curselection()
+        insert_idx = (sel[0] + 1) if sel else len(self.workflow_sequence)
+        if sel and sel[0] < len(self.workflow_sequence):
+            template_step = dict(self.workflow_sequence[sel[0]])
+        else:
+            template_step = {
+                'action': 'Aspirate Media',
+                'mode': 'auto',
+                'slot': 'Slot_1',
+                'well': 'A1',
+                'volume': 100.0,
+                'extra_z': 0.0,
+                'mix_cycles': 0,
+                'mix_volume': 100.0
+            }
+        self._open_step_editor_dialog(template_step, insert_idx=insert_idx)
+
+    def action_move_step_up(self):
+        sel = self.wf_box.curselection()
+        if not sel or sel[0] == 0: return
+        idx = sel[0]
+        if idx >= len(self.workflow_sequence): return
+        self.workflow_sequence[idx - 1], self.workflow_sequence[idx] = self.workflow_sequence[idx], self.workflow_sequence[idx - 1]
+        msg_cur = self.wf_box.get(idx)
+        msg_prev = self.wf_box.get(idx - 1)
+        self.wf_box.delete(idx - 1, idx)
+        self.wf_box.insert(idx - 1, msg_cur)
+        self.wf_box.insert(idx, msg_prev)
+        self.wf_box.selection_set(idx - 1)
+        if self.is_running and hasattr(self, 'current_step_idx'):
+            if self.current_step_idx == idx:
+                self.current_step_idx -= 1
+            elif self.current_step_idx == idx - 1:
+                self.current_step_idx += 1
+        self.logger.info(f"Moved Step {idx + 1} UP to Position {idx}.")
+
+    def action_move_step_down(self):
+        sel = self.wf_box.curselection()
+        if not sel or sel[0] >= len(self.workflow_sequence) - 1: return
+        idx = sel[0]
+        self.workflow_sequence[idx], self.workflow_sequence[idx + 1] = self.workflow_sequence[idx + 1], self.workflow_sequence[idx]
+        msg_cur = self.wf_box.get(idx)
+        msg_next = self.wf_box.get(idx + 1)
+        self.wf_box.delete(idx, idx + 1)
+        self.wf_box.insert(idx, msg_next)
+        self.wf_box.insert(idx + 1, msg_cur)
+        self.wf_box.selection_set(idx + 1)
+        if self.is_running and hasattr(self, 'current_step_idx'):
+            if self.current_step_idx == idx:
+                self.current_step_idx += 1
+            elif self.current_step_idx == idx + 1:
+                self.current_step_idx -= 1
+        self.logger.info(f"Moved Step {idx + 1} DOWN to Position {idx + 2}.")
+
+    def edit_wf_step(self, event=None):
+        sel = self.wf_box.curselection()
+        if not sel: return
+        idx = sel[0]
+        if idx >= len(self.workflow_sequence): return
         step = self.workflow_sequence[idx]
-        act = step.get('action', '')
-        from tkinter import simpledialog
-        if "FOC48" in act:
-            curr = step.get('well', '') or self.foc_exp_var.get()
-            new_exp = simpledialog.askstring(
-                "Edit FOC48 Experiment",
-                "Enter Experiment to select in FOC48 Save dialog:\n\n"
-                "• '17b' or 'Plate 2' or '1' -> 1st Experiment [20260917b]\n"
-                "• '17a' or 'Plate 1' or '2' -> 2nd Experiment [20260917a]\n"
-                "• Or type any Experiment folder name:",
-                initialvalue=curr,
-                parent=self.root
-            )
-            if new_exp is not None:
-                step['well'] = new_exp.strip()
-                self.wf_box.delete(idx)
-                self.wf_box.insert(idx, f"[MEASURE] FOC48_autoOrgan -> Experiment: '{step['well'] or 'Default'}'")
-                self.wf_box.selection_set(idx)
-        elif "Incubate" in act:
-            curr_vol = step.get('volume', 120.0)
-            new_sec = simpledialog.askfloat(
-                "Edit Incubation Time",
-                "Enter wait duration in seconds (e.g., 120):",
-                initialvalue=float(curr_vol),
-                parent=self.root
-            )
-            if new_sec is not None:
-                step['volume'] = float(new_sec)
-                self.wf_box.delete(idx)
-                self.wf_box.insert(idx, f"[SYSTEM] Incubate for {step['volume']} seconds.")
-                self.wf_box.selection_set(idx)
+        self._open_step_editor_dialog(step, edit_idx=idx)
+
+    def _open_step_editor_dialog(self, step_data, edit_idx=None, insert_idx=None):
+        dlg = tk.Toplevel(self.root)
+        is_edit = edit_idx is not None
+        dlg.title(f"{'Edit' if is_edit else 'Insert'} Protocol Step")
+        dlg.geometry("400x380")
+        dlg.resizable(False, False)
+        dlg.transient(self.root)
+        dlg.grab_set()
+
+        pad = {"padx": 10, "pady": 4}
+        f = ttk.Frame(dlg, padding=10)
+        f.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(f, text="Action:").grid(row=0, column=0, sticky="w", **pad)
+        actions = ["Pick Up Tip", "Aspirate Media", "Dispense Media", "Discard Tip", "Mix Well", "Detect Liquid Level", "System: Incubate (Wait)", "System: FOC48 Measurement"]
+        act_cb = ttk.Combobox(f, values=actions, state="readonly")
+        cur_act = step_data.get('action', 'Aspirate Media')
+        act_cb.set(cur_act if cur_act in actions else actions[1])
+        act_cb.grid(row=0, column=1, sticky="ew", **pad)
+
+        ttk.Label(f, text="Deck Slot:").grid(row=1, column=0, sticky="w", **pad)
+        slots = ["Slot_1", "Slot_2", "Slot_3", "Slot_4", "Slot_5", "Slot_6"]
+        slot_cb = ttk.Combobox(f, values=slots, state="readonly")
+        slot_cb.set(step_data.get('slot', 'Slot_1'))
+        slot_cb.grid(row=1, column=1, sticky="ew", **pad)
+
+        ttk.Label(f, text="Well:").grid(row=2, column=0, sticky="w", **pad)
+        well_ent = ttk.Entry(f)
+        well_ent.insert(0, str(step_data.get('well', 'A1')))
+        well_ent.grid(row=2, column=1, sticky="ew", **pad)
+
+        ttk.Label(f, text="Volume (\u03bcL) / Time (s):").grid(row=3, column=0, sticky="w", **pad)
+        vol_ent = ttk.Entry(f)
+        vol_ent.insert(0, str(step_data.get('volume', 100.0)))
+        vol_ent.grid(row=3, column=1, sticky="ew", **pad)
+
+        ttk.Label(f, text="Extra Z offset (mm):").grid(row=4, column=0, sticky="w", **pad)
+        z_ent = ttk.Entry(f)
+        z_ent.insert(0, str(step_data.get('extra_z', 0.0)))
+        z_ent.grid(row=4, column=1, sticky="ew", **pad)
+
+        ttk.Label(f, text="Mix Cycles:").grid(row=5, column=0, sticky="w", **pad)
+        mix_c_ent = ttk.Entry(f)
+        mix_c_ent.insert(0, str(step_data.get('mix_cycles', 0)))
+        mix_c_ent.grid(row=5, column=1, sticky="ew", **pad)
+
+        ttk.Label(f, text="Mix Volume (\u03bcL):").grid(row=6, column=0, sticky="w", **pad)
+        mix_v_ent = ttk.Entry(f)
+        mix_v_ent.insert(0, str(step_data.get('mix_volume', 100.0)))
+        mix_v_ent.grid(row=6, column=1, sticky="ew", **pad)
+
+        def save():
+            try:
+                new_data = dict(step_data)
+                new_data['action'] = act_cb.get()
+                new_data['slot'] = slot_cb.get()
+                new_data['well'] = well_ent.get().strip().upper()
+                new_data['volume'] = float(vol_ent.get())
+                new_data['extra_z'] = float(z_ent.get())
+                new_data['mix_cycles'] = int(mix_c_ent.get())
+                new_data['mix_volume'] = float(mix_v_ent.get())
+
+                msg = self._format_step_msg(new_data)
+                if is_edit:
+                    self.workflow_sequence[edit_idx] = new_data
+                    self.wf_box.delete(edit_idx)
+                    self.wf_box.insert(edit_idx, msg)
+                    self.wf_box.selection_set(edit_idx)
+                    self.logger.info(f"Edited Step {edit_idx + 1}: {msg}")
+                else:
+                    self.workflow_sequence.insert(insert_idx, new_data)
+                    self.wf_box.insert(insert_idx, msg)
+                    self.wf_box.selection_set(insert_idx)
+                    if self.is_running and hasattr(self, 'current_step_idx'):
+                        if insert_idx <= self.current_step_idx:
+                            self.current_step_idx += 1
+                    self.logger.info(f"Inserted Step at {insert_idx + 1}: {msg}")
+
+                if self.is_running:
+                    self.estimated_total_time = self.estimate_workflow_time(self.workflow_sequence)
+
+                dlg.destroy()
+            except ValueError as ve:
+                messagebox.showerror("Invalid Input", f"Please check numerical values:\n{ve}", parent=dlg)
+
+        btn_box = ttk.Frame(f)
+        btn_box.grid(row=7, column=0, columnspan=2, pady=15)
+        ttk.Button(btn_box, text="💾 Save Step", command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_box, text="Cancel", command=dlg.destroy).pack(side=tk.LEFT, padx=5)
+
+    def action_load_deck_2_ehm_multiplate(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        cand_paths = [
+            os.path.join(script_dir, "deck_2_ehm_plates_slot2_discard_50ml.json"),
+            os.path.join(script_dir, "deck_configurations", "deck_2_ehm_plates_slot2_discard_50ml.json"),
+            os.path.join(os.getcwd(), "deck_2_ehm_plates_slot2_discard_50ml.json"),
+            os.path.join(os.getcwd(), "protocols", "deck_2_ehm_plates_slot2_discard_50ml.json"),
+            os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "deck_2_ehm_plates_slot2_discard_50ml.json"),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if target_path:
+            self._deserialize_workspace(target_path)
+            self.logger.info("Loaded 2-EHM Multi-Plate Deck Configuration (Slot 2 A3 Discard, Slot 1 & 2 50mL Falcon Media).")
+        else:
+            messagebox.showerror("Error", "Could not locate deck_2_ehm_plates_slot2_discard_50ml.json")
+
+    def sync_deck_manager(self):
+        """
+        Synchronizes the strongly-typed DeckManager with the GUI's deck_slots and deck_labware.
+        Maps labware definitions to dedicated LabwareBase subclasses and attaches HeightAdapters.
+        """
+        if not hasattr(self, 'deck_manager'):
+            self.deck_manager = DeckManager()
+
+        for slot_name, slot_obj in self.lims.deck_slots.items():
+            adapter = ADAPTER_90MM_BLOCK if slot_name in ("Slot_1", "Slot_2") else ADAPTER_NONE
+
+            labware_obj = self.lims.deck_labware.get(slot_name)
+            if not labware_obj:
+                if slot_name in self.deck_manager.slots:
+                    self.deck_manager.slots[slot_name].labware = None
+                    self.deck_manager.slots[slot_name].adapter = adapter
+                continue
+
+            src = str(getattr(labware_obj, 'source_file', '') or '').lower()
+            name = str(getattr(labware_obj, 'name', '') or '').lower()
+            both = f"{src} {name}"
+
+            typed_lw = None
+            if "3x50ml" in both or "50ml" in both or "tube_rack_3x50ml" in src:
+                typed_lw = FalconRack50mL(source_file=src)
+            elif "2x6" in both or "2ml" in both or "tube_rack_2x6" in src:
+                typed_lw = TubeRack2x6_2mL(source_file=src)
+            elif "reservoir_3" in src or "3_well" in src or "3-well" in name or "30ml" in both:
+                typed_lw = Reservoir3Well(source_file=src)
+            elif "tip" in both or "tip_rack" in src:
+                existing_offset = (0.0, 0.0)
+                if slot_name in self.deck_manager.slots and isinstance(self.deck_manager.slots[slot_name].labware, TipRack96):
+                    existing_offset = (
+                        self.deck_manager.slots[slot_name].labware.learned_rack_offset_x,
+                        self.deck_manager.slots[slot_name].labware.learned_rack_offset_y
+                    )
+                typed_lw = TipRack96(source_file=src)
+                typed_lw.learned_rack_offset_x, typed_lw.learned_rack_offset_y = existing_offset
+            elif "waste" in both or (slot_name == "Slot_6" and not both.strip()):
+                typed_lw = WasteTrough(source_file=src)
+            elif "myriamed" in both or "ehm" in both or "48" in both:
+                typed_lw = Plate48Myriamed(source_file=src)
+            elif "96" in both or (getattr(labware_obj, 'rows', 0) == 8 and getattr(labware_obj, 'columns', 0) == 12):
+                typed_lw = Plate96(source_file=src)
+            else:
+                typed_lw = LabwareBase(
+                    name=getattr(labware_obj, 'name', 'Generic Labware'),
+                    category="custom",
+                    rows=getattr(labware_obj, 'rows', 1),
+                    columns=getattr(labware_obj, 'columns', 1),
+                    z_height_mm=getattr(labware_obj, 'z_height_mm', 14.35),
+                    well_depth_mm=getattr(labware_obj, 'well_depth_mm', 10.0),
+                    well_radius_mm=getattr(labware_obj, 'well_radius_mm', 3.4),
+                    source_file=src,
+                    raw_data=getattr(labware_obj, 'raw_data', {}) or {}
+                )
+
+            self.deck_manager.mount_labware(slot_name, typed_lw, adapter=adapter)
+
+    def estimate_workflow_time(self, sequence) -> float:
+        total_time = 0.0
+        current_x, current_y = 0.0, 0.0
+        speed_pct = self.speed_var.get() if hasattr(self, 'speed_var') else 80.0
+        xy_speed = max(50.0, 250.0 * (speed_pct / 100.0))
+
+        for s in sequence:
+            action = s.get('action', '')
+            vol = float(s.get('volume', 0.0))
+            mix_cycles = int(s.get('mix_cycles', 0)) if getattr(self, 'enable_mixing_for_run', True) else 0
+
+            if "Incubate" in action:
+                total_time += vol
+                continue
+            elif "FOC48" in action:
+                total_time += 150.0
+                continue
+            elif "Data Analysis" in action:
+                total_time += 5.0
+                continue
+            elif "DB Upload" in action:
+                total_time += 3.0
+                continue
+            elif "Calcium Curve" in action:
+                total_time += 60.0
+                continue
+
+            slot = s.get('slot', '')
+            well = s.get('well', '')
+            tx, ty = self._calculate_xy(slot, well) if slot else (current_x, current_y)
+            travel_dist = math.hypot(tx - current_x, ty - current_y)
+            current_x, current_y = tx, ty
+            travel_time = (travel_dist / xy_speed) + 0.35
+
+            if action == "Pick Up Tip":
+                total_time += travel_time + 8.5
+            elif action == "Discard Tip":
+                total_time += travel_time + 4.5
+            elif action == "Aspirate Media":
+                has_air = (vol <= 50.0) or (slot == "Slot_5")
+                air_time = 1.5 if has_air else 0.0
+                draw_time = max(1.0, vol * 0.005)
+                total_time += travel_time + 3.5 + air_time + draw_time
+            elif action == "Dispense Media":
+                disp_time = max(0.5, vol * 0.004)
+                mix_time = mix_cycles * 2.8
+                total_time += travel_time + 3.0 + disp_time + 0.5 + mix_time
+            elif action == "Mix Well":
+                total_time += travel_time + 3.0 + (mix_cycles * 2.8)
+            elif action == "Detect Liquid Level":
+                total_time += travel_time + 8.0
+            else:
+                total_time += travel_time + 2.0
+
+        return round(total_time, 1)
 
     def pause_resume_run(self):
         if self.pause_event.is_set():
             self.pause_event.clear()
             self.btn_pause.config(text="▶ RESUME", bg="#17a2b8")
-            self.logger.info("Protocol Paused by User.")
+            self._set_protocol_edit_buttons_state(tk.NORMAL)
+            self.logger.info("Protocol Paused by User. Steps can be edited, added, reordered, or deleted.")
         else:
             self.pause_event.set()
             self.btn_pause.config(text="⏸ PAUSE", bg="#ffc107")
-            self.logger.info("Protocol Resumed.")
+            self._set_protocol_edit_buttons_state(tk.DISABLED)
+            cur_i = getattr(self, 'current_step_idx', 0)
+            self.logger.info(f"Protocol Resumed at Step {cur_i + 1}/{len(self.workflow_sequence)}.")
 
     def stop_run(self):
         self.is_aborted = True
@@ -1681,7 +2026,8 @@ class LIMSMasterApp:
         state = tk.DISABLED if running else tk.NORMAL
         self.btn_play.config(state=state)
         self.btn_pause.config(state=tk.NORMAL if running else tk.DISABLED, text="⏸ PAUSE", bg="#ffc107")
-        self.btn_stop.config(state=tk.NORMAL if running else tk.DISABLED, text="■ STOP")
+        self.btn_stop.config(state=tk.NORMAL if running else tk.DISABLED, text="⏹ CANCEL")
+        self._set_protocol_edit_buttons_state(tk.NORMAL if not running else tk.DISABLED)
 
     def ask_error_resolution(self, error_msg, step_idx):
         self.pause_event.clear()
@@ -1879,6 +2225,14 @@ class LIMSMasterApp:
         return r_idx, c_idx
 
     def _calculate_xy(self, slot_name, well_id):
+        # 0. Object-Oriented DeckManager Kinematics
+        if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
+            slot_model = self.deck_manager.slots[slot_name]
+            if slot_model.labware:
+                cx, cy = slot_model.labware.get_well_xy(slot_model, well_id)
+                if cx != 0.0 or cy != 0.0:
+                    return cx, cy
+
         slot_obj = self.lims.deck_slots.get(slot_name)
         if not slot_obj: return 0.0, 0.0
 
@@ -1901,9 +2255,10 @@ class LIMSMasterApp:
             if r_idx is not None and 0 <= r_idx < 8 and 0 <= c_idx < 12:
                 if kind == "tip_rack":
                     # Tip rack A1 physically calibrated at X=104.0, Y=54.0 on Slot 5 and Slot 4
+                    learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
                     if slot_name in ("Slot_5", "Slot_4"):
-                        return 104.0 - (c_idx * 9.0), 54.0 + (r_idx * 9.0)
-                    return ox - (c_idx * 9.0), oy + (r_idx * 9.0)
+                        return (104.0 - (c_idx * 9.0)) + learned_dx, (54.0 + (r_idx * 9.0)) + learned_dy
+                    return (ox - (c_idx * 9.0)) + learned_dx, (oy + (r_idx * 9.0)) + learned_dy
                 col_table = self.SLOT_96_COL_OVERRIDES.get(slot_name)
                 tx = col_table[c_idx] if col_table else ox - (c_idx * 9.0)
                 return tx, oy + (r_idx * 9.0)
@@ -1984,6 +2339,10 @@ class LIMSMasterApp:
 
     def _labware_bottom_z(self, labware_obj, slot_name):
         """Deepest safe Z for probing / liquid detection, based on labware type."""
+        if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
+            slot_model = self.deck_manager.slots[slot_name]
+            if slot_model.labware:
+                return slot_model.labware.get_bottom_z(slot_model)
         kind = self._lw_kind(labware_obj)
         if kind == "tube_rack_2x6":
             return self._rim_calibrated_z(labware_obj, deep=True)
@@ -2001,6 +2360,50 @@ class LIMSMasterApp:
             return 95.0
         return 90.0
 
+    def _get_next_tube_in_sequence(self, slot_name, current_well):
+        """Returns the next well/tube ID in sequence for auto-advancing when liquid is depleted."""
+        slot_model = self.deck_manager.slots.get(slot_name) if hasattr(self, 'deck_manager') else None
+        lw = slot_model.labware if slot_model else None
+        lw_obj = self.lims.deck_labware.get(slot_name)
+        lw_src = str(getattr(lw_obj, 'source_file', '')).lower()
+
+        # 1. 2mL Falcon Rack
+        if isinstance(lw, TubeRack2x6_2mL) or "2x6" in lw_src:
+            tube_order = ["A1", "A2", "A3", "A4", "A5", "A6", "B1", "B2", "B3", "B4", "B5", "B6"]
+            if current_well in tube_order:
+                c_idx = tube_order.index(current_well)
+                if c_idx + 1 < len(tube_order):
+                    return tube_order[c_idx + 1]
+            return None
+
+        # 2. 50mL Falcon Rack (A1 Media Plt 2, A2 Reagent Stock; A3 is Discard)
+        if isinstance(lw, FalconRack50mL) or "50ml" in lw_src or "3x50ml" in lw_src:
+            tube_order = ["A1", "A2"]
+            if current_well in tube_order:
+                c_idx = tube_order.index(current_well)
+                if c_idx + 1 < len(tube_order):
+                    return tube_order[c_idx + 1]
+            return None
+
+        # 3. 3-Well Reservoir
+        if isinstance(lw, Reservoir3Well) or "reservoir_3" in lw_src or "3_well" in lw_src:
+            tube_order = ["A1", "A2", "A3"] if current_well.startswith("A") else ["1", "2", "3"]
+            if current_well in tube_order:
+                c_idx = tube_order.index(current_well)
+                if c_idx + 1 < len(tube_order):
+                    return tube_order[c_idx + 1]
+            return None
+
+        # 4. Generic Labware: iterate through all wells
+        if lw_obj and hasattr(lw_obj, 'wells') and lw_obj.wells:
+            well_keys = list(lw_obj.wells.keys())
+            if current_well in well_keys:
+                c_idx = well_keys.index(current_well)
+                if c_idx + 1 < len(well_keys):
+                    return well_keys[c_idx + 1]
+
+        return None
+
     def _calculate_z(self, action, labware_obj, well_id, mode, manual_z, slot_name, extra_z=0.0, mix_cycles=0):
         if action == "Pick Up Tip":
             return 0.0
@@ -2009,6 +2412,15 @@ class LIMSMasterApp:
 
         slot_obj = self.lims.deck_slots.get(slot_name)
         slot_z_offset = getattr(slot_obj, 'z_offset', 0.0)
+
+        # 0. Object-Oriented DeckManager Kinematics
+        if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
+            slot_model = self.deck_manager.slots[slot_name]
+            if slot_model.labware:
+                in_liquid = action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0
+                computed_z = self.deck_manager.calculate_z(action, slot_name, well_id, in_liquid=in_liquid)
+                return min(computed_z + slot_z_offset + extra_z, 103.5)
+
         kind = self._lw_kind(labware_obj)
         # "deep" = going into the liquid (aspirate / mix); otherwise stop at the brim
         deep = action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0
@@ -2465,163 +2877,224 @@ class LIMSMasterApp:
             self.root.after(0, lambda: self.update_ui_state(True))
             total_steps = len(self.workflow_sequence)
 
-            # --- IMPROVED TIME TRACKING ---
-            self.estimated_total_time = 0
-            for s in self.workflow_sequence:
-                action = s.get('action', '')
-                vol = s.get('volume', 0.0)
-
-                if "Incubate" in action:
-                    self.estimated_total_time += vol
-                elif "FOC48" in action:
-                    self.estimated_total_time += 115.0
-                elif "Data Analysis" in action:
-                    self.estimated_total_time += 5.0
-                elif "DB Upload" in action:
-                    self.estimated_total_time += 3.0
-                elif "Calcium Curve" in action:
-                    self.estimated_total_time += 60.0
-                elif "Aspirate Media" in action:
-                    self.estimated_total_time += 10.0 + (vol * 0.02)
-                elif "Dispense Media" in action:
-                    self.estimated_total_time += 14.0
-                else:
-                    self.estimated_total_time += 10.0
-
+            self.sync_deck_manager()
+            # --- PHYSICS-BASED TIME ESTIMATION ---
+            self.estimated_total_time = self.estimate_workflow_time(self.workflow_sequence)
             self.run_start_time = time.time()
             self.timer_running = True
             self.root.after(0, self.update_timer)
             # ----------------------------------------
 
-            for i, step in enumerate(self.workflow_sequence, 1):
+            self.current_step_idx = 0
+            while self.current_step_idx < len(self.workflow_sequence):
                 self.pause_event.wait()
                 if self.is_aborted: break
 
-                self.root.after(0, lambda idx=i - 1: self.wf_box.selection_clear(0, tk.END))
-                self.root.after(0, lambda idx=i - 1: self.wf_box.selection_set(idx))
-                self.root.after(0, lambda idx=i - 1: self.wf_box.see(idx))
-                self.root.after(0, lambda idx=i: self.progress_var.set((idx / total_steps) * 100))
-
-                action, mode, vol = step['action'], step.get('mode', 'auto'), step.get('volume', 0.0)
-                extra_z = step.get('extra_z', 0.0)
-                self.logger.info(f"Executing Step {i}/{total_steps}: [{action}]")
-
-                if action == "Pick Up Tip" and mode != "manual":
-                    if self.has_tip_var.get():
-                        self.logger.info("Tip State: ATTACHED. Skipping redundant pickup step.")
-                        time.sleep(0.05)
-                        continue
-                elif action == "Discard Tip" and mode != "manual":
-                    if not self.has_tip_var.get():
-                        self.logger.info("Tip State: EMPTY. Skipping redundant discard step.")
-                        time.sleep(0.05)
-                        continue
-
-                # --- DB / UPLOAD REMOVED FROM EXECUTION LOGIC ---
-                if "System:" in action:
-                    try:
-                        if "Incubate" in action:
-                            self.lims.hw.move_to(0, 0, 0, speed=self.speed_var.get())
-                            self.logger.info(f"System: Waiting {vol:.0f}s at safety origin (adjust or lower liquid height in tube now)...")
-                            time.sleep(vol)
-                            self.logger.info("Wait complete. Resuming protocol sequence.")
-                        elif "FOC48" in action:
-                            self.lims.hw.move_to(0, 0, 0, speed=self.speed_var.get())
-                            try:
-                                import foc_automation
-                                step_exp = (step.get('well', '') or '').strip()
-                                global_exp = self.foc_exp_var.get().strip() if hasattr(self, 'foc_exp_var') else ''
-                                chosen_exp = step_exp if (step_exp and step_exp.upper() != 'A1') else (global_exp or step_exp)
-                                foc_automation.execute_foc48_measurement(plate_name=chosen_exp, logger=self.logger)
-                            except Exception as foc_err:
-                                self.logger.error(f"FOC48 Automation Error: {foc_err}")
-                        elif "Data Analysis" in action:
-                            self.logger.info("Launching Analysis Subsystem (Hill Equations)...")
-                            time.sleep(1.5)
-                            self.logger.info("Analysis complete. Results buffered.")
-                        elif "DB Upload" in action:
-                            self.logger.info("Launching DB Subsystem...")
-                            time.sleep(1.0)
-                            self.logger.info("Payload verified. Pushed to Contraction DB.")
-                        elif "Calcium Curve" in action:
-                            self.logger.info("Executing Automated Calcium Curve Macro...")
-                            time.sleep(2.0)
-                            self.logger.info("Calcium Curve executed successfully.")
-
-                    except Exception as e:
-                        self.ask_error_resolution(e, i)
-                    time.sleep(0.05)
-                    continue
-
-                slot_name, well_id = step.get('slot', ''), step.get('well', '')
-                target_x, target_y, target_z = None, None, None
-
-                if mode == "manual":
-                    target_x, target_y, target_z = step.get('x', 0.0), step.get('y', 0.0), step.get('z', 0.0)
-                elif slot_name in self.lims.deck_slots:
-                    # Respect the user's deck: never overwrite assigned labware.
-                    # Only if the slot is EMPTY and the step declares its labware, mount that file.
-                    if slot_name not in self.lims.deck_labware:
-                        req_lw = step.get('labware', '')
-                        req_path = os.path.join(self.get_labware_dir(), req_lw) if req_lw else ''
-                        if req_lw and os.path.exists(req_path):
-                            self.lims.deck_labware[slot_name] = Labware(req_path)
-                            self.lims.deck_labware[slot_name].source_file = req_lw
-                            if slot_name not in self.placed_slots: self.placed_slots.append(slot_name)
-                            self.logger.info(f"{slot_name} was empty -> mounted protocol-declared {req_lw}.")
-                        elif action != "Discard Tip":
-                            self.ask_error_resolution(f"No labware assigned to {slot_name}. Assign one in the Deck tab.", i)
-                            continue
-
-                    # Calculate XY coordinates
-                    coords = self._calculate_xy(slot_name, well_id)
-                    if coords and (coords[0] != 0.0 or coords[1] != 0.0):
-                        target_x, target_y = coords
-                    else:
-                        self.ask_error_resolution(f"Coordinate mapping failed for {slot_name} Well {well_id}.", i)
-                        continue
-                else:
-                    self.ask_error_resolution(f"Unknown slot '{slot_name}'. Coordinate mapping failed.", i)
-                    continue
+                step = self.workflow_sequence[self.current_step_idx]
+                i = self.current_step_idx + 1
+                total_steps = len(self.workflow_sequence)
 
                 try:
+                    self.root.after(0, lambda idx=i - 1: self.wf_box.selection_clear(0, tk.END))
+                    self.root.after(0, lambda idx=i - 1: self.wf_box.selection_set(idx))
+                    self.root.after(0, lambda idx=i - 1: self.wf_box.see(idx))
+                    self.root.after(0, lambda idx=i: self.progress_var.set((idx / total_steps) * 100))
+
+                    action, mode, vol = step['action'], step.get('mode', 'auto'), step.get('volume', 0.0)
+                    extra_z = step.get('extra_z', 0.0)
+                    self.logger.info(f"Executing Step {i}/{total_steps}: [{action}]")
+
+                    if action == "Pick Up Tip" and mode != "manual":
+                        if self.has_tip_var.get():
+                            self.logger.info("Tip State: ATTACHED. Skipping redundant pickup step.")
+                            time.sleep(0.05)
+                            continue
+                    elif action == "Discard Tip" and mode != "manual":
+                        if not self.has_tip_var.get():
+                            self.logger.info("Tip State: EMPTY. Skipping redundant discard step.")
+                            time.sleep(0.05)
+                            continue
+
+                    # --- DB / UPLOAD REMOVED FROM EXECUTION LOGIC ---
+                    if "System:" in action:
+                        try:
+                            if "Incubate" in action:
+                                self.lims.hw.move_to(0, 0, 0, speed=self.speed_var.get())
+                                self.logger.info(f"System: Waiting {vol:.0f}s at safety origin (adjust or lower liquid height in tube now)...")
+                                time.sleep(vol)
+                                self.logger.info("Wait complete. Resuming protocol sequence.")
+                            elif "FOC48" in action:
+                                self.lims.hw.move_to(0, 0, 0, speed=self.speed_var.get())
+                                try:
+                                    import foc_automation
+                                    step_exp = (step.get('well', '') or '').strip()
+                                    global_exp = self.foc_exp_var.get().strip() if hasattr(self, 'foc_exp_var') else ''
+                                    chosen_exp = step_exp if (step_exp and step_exp.upper() != 'A1') else (global_exp or step_exp)
+                                    foc_automation.execute_foc48_measurement(plate_name=chosen_exp, logger=self.logger)
+                                except Exception as foc_err:
+                                    self.logger.error(f"FOC48 Automation Error: {foc_err}")
+                            elif "Data Analysis" in action:
+                                self.logger.info("Launching Analysis Subsystem (Hill Equations)...")
+                                time.sleep(1.5)
+                                self.logger.info("Analysis complete. Results buffered.")
+                            elif "DB Upload" in action:
+                                self.logger.info("Launching DB Subsystem...")
+                                time.sleep(1.0)
+                                self.logger.info("Payload verified. Pushed to Contraction DB.")
+                            elif "Calcium Curve" in action:
+                                self.logger.info("Executing Automated Calcium Curve Macro...")
+                                time.sleep(2.0)
+                                self.logger.info("Calcium Curve executed successfully.")
+
+                        except Exception as e:
+                            self.ask_error_resolution(e, i)
+                        time.sleep(0.05)
+                        continue
+
+                    slot_name, well_id = step.get('slot', ''), step.get('well', '')
+                    target_x, target_y, target_z = None, None, None
+
+                    if mode == "manual":
+                        target_x, target_y, target_z = step.get('x', 0.0), step.get('y', 0.0), step.get('z', 0.0)
+                    elif slot_name in self.lims.deck_slots:
+                        if slot_name not in self.lims.deck_labware:
+                            req_lw = step.get('labware', '')
+                            req_path = os.path.join(self.get_labware_dir(), req_lw) if req_lw else ''
+                            if req_lw and os.path.exists(req_path):
+                                self.lims.deck_labware[slot_name] = Labware(req_path)
+                                self.lims.deck_labware[slot_name].source_file = req_lw
+                                if slot_name not in self.placed_slots: self.placed_slots.append(slot_name)
+                                self.sync_deck_manager()
+                                self.logger.info(f"{slot_name} was empty -> mounted protocol-declared {req_lw}.")
+                            elif action != "Discard Tip":
+                                self.ask_error_resolution(f"No labware assigned to {slot_name}. Assign one in the Deck tab.", i)
+                                continue
+
+                        coords = self._calculate_xy(slot_name, well_id)
+                        if coords and (coords[0] != 0.0 or coords[1] != 0.0):
+                            target_x, target_y = coords
+                        else:
+                            self.ask_error_resolution(f"Coordinate mapping failed for {slot_name} Well {well_id}.", i)
+                            continue
+                    else:
+                        self.ask_error_resolution(f"Unknown slot '{slot_name}'. Coordinate mapping failed.", i)
+                        continue
+
                     if action == "Pick Up Tip":
                         pickup_limit = min(92.0, max(82.0, 87.0 + extra_z))
                         hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                         labware_obj = self.lims.deck_labware.get(slot_name)
                         z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
                         approach_z = max(0.0, min(55.0, z_height - 18.0))
-                        if mode == "manual":
-                            if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
-                            self.lims.hw.move_to(target_x, target_y, 0, speed=self.speed_var.get())
-                            time.sleep(0.05)
-                            try:
+
+                        tip_rack_model = None
+                        if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
+                            lw_cand = self.deck_manager.slots[slot_name].labware
+                            if isinstance(lw_cand, TipRack96):
+                                tip_rack_model = lw_cand
+
+                        def _attempt_tip_seat(tx_coord, ty_coord, from_hover=False, hover_z=None):
+                            if not from_hover:
                                 if self.lims.pipettor.hardware:
-                                    self.lims.pipettor.hardware.z_speed = hw_speed
-                                    self.lims.pipettor.hardware.move_z(approach_z)
-                                    self.lims.pipettor.hardware.z_speed = 3
-                                    self.lims.pipettor.hardware.tip_pickup_force = 26
+                                    self.lims.pipettor.hardware.move_z(0)
+                                self.lims.hw.move_to(tx_coord, ty_coord, 0, speed=self.speed_var.get())
+                                time.sleep(0.05)
+                            else:
+                                # Fast jog at hover height directly above rim
+                                self.lims.hw.move_to(tx_coord, ty_coord, hover_z, speed=self.speed_var.get())
+                                time.sleep(0.03)
+
+                            if not self.lims.pipettor.hardware:
+                                return True, 79.0
+
+                            hw = self.lims.pipettor.hardware
+                            if not from_hover:
+                                hw.z_speed = hw_speed
+                                hw.move_z(approach_z)
+                            hw.z_speed = 3
+                            hw.tip_pickup_force = 26
+                            try:
+                                hw.pick_tip(pickup_limit)
+                            except Exception:
+                                pass
+                            curr_z = getattr(hw, 'z_position', 0.0)
+                            if curr_z >= 78.5 and curr_z <= (pickup_limit - 1.5):
+                                # Cone successfully dropped into tip collar opening!
+                                try:
+                                    push_z = min(curr_z + 2.5, pickup_limit + 2.0)
+                                    hw.move_z(push_z)
+                                    time.sleep(0.35)
+                                except Exception as pe:
+                                    self.logger.warning(f"Pushback seating completed with resistance: {pe}")
+                                if hasattr(hw, 'sensor_value'):
                                     try:
-                                        self.lims.pipettor.hardware.pick_tip(pickup_limit)
-                                    except Exception as p_err:
-                                        curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                                        if curr_z < 60.0:
-                                            raise p_err
-                                    curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                                    if curr_z >= 60.0:
-                                        try:
-                                            push_z = min(curr_z + 2.5, pickup_limit + 2.0)
-                                            self.lims.pipettor.hardware.move_z(push_z)
-                                            time.sleep(0.35)
-                                        except Exception as pe:
-                                            self.logger.warning(f"Pushback seating completed with resistance: {pe}")
-                                else:
-                                    curr_z = 75.0
-                                self.logger.info(f"Manual tip pickup at Z={curr_z:.2f}mm.")
-                                time.sleep(0.35)
-                            except Exception as e:
-                                self.logger.warning(f"Ignored tip error: {e}")
-                            self.root.after(0, lambda: self.has_tip_var.set(True))
+                                        s_val = hw.sensor_value()
+                                        self.logger.info(f"Tip seal verified via frequency sensor: {s_val} counts.")
+                                    except Exception:
+                                        pass
+                                return True, getattr(hw, 'z_position', curr_z)
+                            return False, curr_z
+
+                        def _adaptive_search_and_pick(base_x, base_y):
+                            seated, curr_z = _attempt_tip_seat(base_x, base_y, from_hover=False)
+                            if seated:
+                                return True, curr_z
+
+                            # If cone went down to bottom limit, the well is completely empty
+                            if curr_z >= (pickup_limit - 1.5):
+                                self.logger.info(f"Well empty at ({base_x:.2f}, {base_y:.2f}) (Z={curr_z:.2f}mm reached limit).")
+                                if self.lims.pipettor.hardware:
+                                    self.lims.pipettor.hardware.move_z(0)
+                                return False, curr_z
+
+                            # If cone stalled at Z < 77.5mm, it made contact with the tip collar rim!
+                            if getattr(self, 'adaptive_tip_centering_var', None) and self.adaptive_tip_centering_var.get() and not self.is_aborted:
+                                hover_z = max(0.0, curr_z - 2.5)
+                                self.logger.warning(
+                                    f"Tip pickup stalled at Z={curr_z:.2f}mm (<77.5mm, cone hit tip collar rim). "
+                                    f"Hovering at Z={hover_z:.2f}mm and engaging polar micro-search around ({base_x:.2f}, {base_y:.2f})..."
+                                )
+                                if self.lims.pipettor.hardware:
+                                    self.lims.pipettor.hardware.move_z(hover_z)
+
+                                search_pattern = tip_rack_model.get_pickup_search_pattern() if tip_rack_model else [
+                                    (0.3, 0.0), (-0.3, 0.0), (0.0, 0.3), (0.0, -0.3),
+                                    (0.5, 0.5), (-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5),
+                                    (0.7, 0.0), (-0.7, 0.0), (0.0, 0.7), (0.0, -0.7),
+                                    (1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.0, -1.0)
+                                ]
+                                for dx, dy in search_pattern:
+                                    if (dx, dy) == (0.0, 0.0):
+                                        continue
+                                    if self.is_aborted: break
+                                    self.logger.info(f"Micro-search testing rim offset dx={dx:+.2f}mm, dy={dy:+.2f}mm (hovering Z={hover_z:.1f}mm)...")
+                                    s_ok, s_cz = _attempt_tip_seat(base_x + dx, base_y + dy, from_hover=True, hover_z=hover_z)
+                                    if s_ok:
+                                        self.logger.info(
+                                            f"🎯 Tip Opening Acquired at offset dx={dx:+.2f}mm, dy={dy:+.2f}mm (Z={s_cz:.2f}mm)! "
+                                            f"Auto-learning offset for all remaining tips in rack."
+                                        )
+                                        if tip_rack_model:
+                                            tip_rack_model.apply_learned_offset(dx, dy)
+                                        self.tip_rack_learned_offset = (
+                                            getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))[0] + dx,
+                                            getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))[1] + dy
+                                        )
+                                        return True, s_cz
+                                    else:
+                                        if self.lims.pipettor.hardware:
+                                            hover_z = max(0.0, s_cz - 2.5)
+                                            self.lims.pipettor.hardware.move_z(hover_z)
+
+                            if self.lims.pipettor.hardware:
+                                self.lims.pipettor.hardware.move_z(0)
+                            return False, curr_z
+
+                        if mode == "manual":
+                            seated, cz = _adaptive_search_and_pick(target_x, target_y)
+                            if seated:
+                                self.logger.info(f"Manual tip pickup succeeded at Z={cz:.2f}mm.")
+                                self.root.after(0, lambda: self.has_tip_var.set(True))
                             if self.lims.pipettor.hardware:
                                 try:
                                     self.lims.pipettor.hardware.z_speed = hw_speed
@@ -2637,39 +3110,12 @@ class LIMSMasterApp:
                             for idx in range(start_idx, len(wells)):
                                 if self.is_aborted: break
                                 current_well = wells[idx]
-
                                 coords = self._calculate_xy(slot_name, current_well)
                                 tx, ty = coords if coords else (0, 0)
-
-                                if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
-                                self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
-                                time.sleep(0.05)
-
-                                self.logger.info(f"Triggering native pick_tip({pickup_limit}) algorithm at {current_well}.")
-                                try:
-                                    if self.lims.pipettor.hardware:
-                                        self.lims.pipettor.hardware.z_speed = hw_speed
-                                        self.lims.pipettor.hardware.move_z(approach_z)
-                                        self.lims.pipettor.hardware.z_speed = 3
-                                        self.lims.pipettor.hardware.tip_pickup_force = 26
-                                        try:
-                                            self.lims.pipettor.hardware.pick_tip(pickup_limit)
-                                        except Exception as p_err:
-                                            curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                                            if curr_z < 60.0:
-                                                raise p_err
-                                        curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                                        if curr_z >= 60.0:
-                                            try:
-                                                push_z = min(curr_z + 2.5, pickup_limit + 2.0)
-                                                self.lims.pipettor.hardware.move_z(push_z)
-                                                time.sleep(0.35)
-                                            except Exception as pe:
-                                                self.logger.warning(f"Pushback seating completed with resistance: {pe}")
-                                    else:
-                                        curr_z = 75.0
-                                    self.logger.info(f"Tip acquired at {current_well} (Z={curr_z:.2f}mm). HAS_TIP = True")
-                                    time.sleep(0.35)
+                                self.logger.info(f"Probing tip at {current_well} ({tx:.2f}, {ty:.2f})...")
+                                seated, cz = _adaptive_search_and_pick(tx, ty)
+                                if seated:
+                                    self.logger.info(f"Tip acquired at {current_well} (Z={cz:.2f}mm). HAS_TIP = True")
                                     tip_found = True
                                     self.root.after(0, lambda: self.has_tip_var.set(True))
                                     if self.lims.pipettor.hardware:
@@ -2679,50 +3125,18 @@ class LIMSMasterApp:
                                         except TypeError:
                                             self.lims.pipettor.hardware.move_z(0)
                                     break
-                                except Exception as e:
-                                    self.logger.warning(
-                                        f"Sensor exception at {current_well} (Empty). Tracking to next well...")
-                                    if self.lims.pipettor.hardware:
-                                        try:
-                                            self.lims.pipettor.hardware.z_speed = hw_speed
-                                            self.lims.pipettor.hardware.move_z(0)
-                                        except TypeError:
-                                            self.lims.pipettor.hardware.move_z(0)
+                                else:
+                                    self.logger.warning(f"Well {current_well} empty or passed. Tracking to next well...")
 
                             if not tip_found and not self.is_aborted:
                                 self.ask_error_resolution("Tip rack is completely empty!", i)
                         else:
-                            if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
-                            self.lims.hw.move_to(target_x, target_y, 0, speed=self.speed_var.get())
-                            time.sleep(0.05)
-                            try:
-                                if self.lims.pipettor.hardware:
-                                    self.lims.pipettor.hardware.z_speed = hw_speed
-                                    self.lims.pipettor.hardware.move_z(approach_z)
-                                    self.lims.pipettor.hardware.z_speed = 3
-                                    self.lims.pipettor.hardware.tip_pickup_force = 26
-                                    try:
-                                        self.lims.pipettor.hardware.pick_tip(pickup_limit)
-                                    except Exception as p_err:
-                                        curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                                        if curr_z < 60.0:
-                                            raise p_err
-                                    curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                                    if curr_z >= 60.0:
-                                        try:
-                                            push_z = min(curr_z + 2.5, pickup_limit + 2.0)
-                                            self.lims.pipettor.hardware.move_z(push_z)
-                                            time.sleep(0.35)
-                                        except Exception as pe:
-                                            self.logger.warning(f"Pushback seating completed with resistance: {pe}")
-                                else:
-                                    curr_z = 75.0
-                                self.logger.info(f"Tip pickup completed at Z={curr_z:.2f}mm (limit: {pickup_limit:.1f}mm).")
-                                time.sleep(0.35)
+                            seated, cz = _adaptive_search_and_pick(target_x, target_y)
+                            if seated:
+                                self.logger.info(f"Tip pickup completed at Z={cz:.2f}mm (limit: {pickup_limit:.1f}mm).")
                                 self.root.after(0, lambda: self.has_tip_var.set(True))
-                                self.logger.info("System state updated: HAS_TIP = True")
-                            except Exception as e:
-                                raise Exception("Tip detection failed. Manifold empty.")
+                            else:
+                                raise Exception(f"Tip pickup failed at Z={cz:.2f}mm. Manifold empty or rim obstructed.")
                             if self.lims.pipettor.hardware:
                                 try:
                                     self.lims.pipettor.hardware.z_speed = hw_speed
@@ -2801,26 +3215,81 @@ class LIMSMasterApp:
                                 else:
                                     self.has_air_cushion = False
 
-                                # --- Option 2: Live Software Liquid Level Tracking (well-wise, auto mode) ---
+                                # --- Liquid Level Tracking (Software Meniscus Tracking + Sensor LLD) ---
+                                slot_model = self.deck_manager.slots.get(slot_name) if hasattr(self, 'deck_manager') else None
+                                lw_model = slot_model.labware if slot_model else None
                                 lw_src_lower = str(getattr(self.lims.deck_labware.get(slot_name), 'source_file', '')).lower()
                                 lw_kind = self._lw_kind(self.lims.deck_labware.get(slot_name))
-                                is_reservoir = (
-                                    (self._is_front_slot(slot_name) and lw_kind in ("reservoir_3", None))
+
+                                is_2ml_falcon = isinstance(lw_model, TubeRack2x6_2mL) or (
+                                    (lw_kind == "tube_rack_2x6" or (self._is_front_slot(slot_name) and "2x6" in lw_src_lower))
+                                    and not isinstance(lw_model, (FalconRack50mL, Reservoir3Well))
+                                    and "50ml" not in lw_src_lower and "3x50ml" not in lw_src_lower and "30ml" not in lw_src_lower
+                                )
+                                is_reservoir = isinstance(lw_model, Reservoir3Well) or (
+                                    ((self._is_front_slot(slot_name) and lw_kind in ("reservoir_3", None))
                                     or "reservoir" in lw_src_lower
                                     or "3_well" in lw_src_lower
-                                    or "30ml" in lw_src_lower
+                                    or "30ml" in lw_src_lower)
+                                    and not is_2ml_falcon and not isinstance(lw_model, FalconRack50mL)
+                                    and "50ml" not in lw_src_lower
                                 )
-                                is_2ml_falcon = (
-                                    (lw_kind == "tube_rack_2x6" or (self._is_front_slot(slot_name) and "2x6" in lw_src_lower))
-                                    and not is_reservoir
-                                )
-                                use_dynamic_z = (
-                                    mode != "manual"
-                                    and (is_reservoir or is_2ml_falcon)
-                                    and step.get('track_liquid', True)
-                                )
+                                is_50ml_falcon = isinstance(lw_model, FalconRack50mL) or ("50ml" in lw_src_lower or "3x50ml" in lw_src_lower)
 
-                                if use_dynamic_z:
+                                # Live Sensor / Pressure Liquid Level Probing
+                                if getattr(self, 'lld_tracking_var', None) and self.lld_tracking_var.get() and mode != "manual":
+                                    try:
+                                        bottom_z = self._labware_bottom_z(self.lims.deck_labware.get(slot_name), slot_name)
+                                        while not self.is_aborted:
+                                            self.logger.info(f"[LLD SENSOR] Dynamic surface probing at {slot_name} {well_id} (Limit Z={bottom_z:.1f}mm)...")
+                                            z_found = self._probe_surface_and_wait(bottom_z, submerge_mm=2.5)
+                                            # Liquid is depleted if probe reached bottom limit without stopping at a higher meniscus
+                                            if z_found >= (bottom_z - 1.0):
+                                                self.logger.warning(
+                                                    f"[LLD SENSOR] Liquid depleted in {slot_name} {well_id} (Z_measured={z_found:.2f}mm >= Bottom-1.0mm). "
+                                                    f"Pipette detected liquid is over using sensor technology."
+                                                )
+                                                next_tube = self._get_next_tube_in_sequence(slot_name, well_id)
+                                                if next_tube:
+                                                    self.logger.info(
+                                                        f"[LLD AUTO-ADVANCE] Advancing from {well_id} -> {next_tube} in {slot_name}..."
+                                                    )
+                                                    well_id = next_tube
+                                                    if self.lims.pipettor.hardware:
+                                                        self.lims.pipettor.hardware.move_z(0)
+                                                    new_xy = self._calculate_xy(slot_name, well_id)
+                                                    if new_xy:
+                                                        target_x, target_y = new_xy
+                                                        self.lims.hw.move_to(target_x, target_y, 0, speed=self.speed_var.get())
+                                                        time.sleep(0.1)
+                                                    continue
+                                                else:
+                                                    self.logger.error(f"[LLD SENSOR] All available tubes/wells in {slot_name} are depleted!")
+                                                    self.refill_decision = None
+                                                    def _prompt_empty_rack():
+                                                        ans = messagebox.askyesno(
+                                                            "Liquid Depleted",
+                                                            f"LLD Sensor detected liquid is over in {slot_name} ({well_id}) and no further tubes are available in sequence.\n\n"
+                                                            f"Please refill liquid and click YES to re-probe, or NO to abort."
+                                                        )
+                                                        self.refill_decision = "refilled" if ans else "abort"
+                                                    self.root.after(0, _prompt_empty_rack)
+                                                    while self.refill_decision is None and not self.is_aborted:
+                                                        time.sleep(0.1)
+                                                    if self.refill_decision == "refilled":
+                                                        if self.lims.pipettor.hardware:
+                                                            self.lims.pipettor.hardware.move_z(0)
+                                                        continue
+                                                    else:
+                                                        raise Exception(f"Protocol aborted: Liquid depleted in {slot_name}.")
+                                            else:
+                                                tz = min(z_found, bottom_z - 0.5)
+                                                self.logger.info(f"[LLD SENSOR] Surface detected at Z={z_found:.2f}mm -> Submerging to Z={tz:.2f}mm.")
+                                                break
+                                    except Exception as lld_err:
+                                        self.logger.warning(f"[LLD SENSOR] Surface probe fallback: {lld_err}")
+
+                                elif mode != "manual" and (is_reservoir or is_2ml_falcon) and step.get('track_liquid', True):
                                     if not hasattr(self, 'liquid_ledger'):
                                         self.liquid_ledger = {}
                                     ledger_key = f"{slot_name}_{well_id}"
@@ -2861,7 +3330,6 @@ class LIMSMasterApp:
                                                     "area_mm2": 71.43
                                                 }
                                                 tube_info = self.liquid_ledger[ledger_key]
-                                                # Recalculate target XY for new tube
                                                 new_coords = self._calculate_xy(slot_name, well_id)
                                                 if new_coords and (new_coords[0] != 0 or new_coords[1] != 0):
                                                     target_x, target_y = new_coords
@@ -2889,11 +3357,9 @@ class LIMSMasterApp:
                                                 self.logger.info(f"[OPTION 2 TRACKER] {slot_name} {well_id} refilled -> surface reset to Z={start_z:.1f}mm")
 
                                     curr_surface = tube_info["surface_z"]
-                                    # Submerge 2.5mm for Falcon tube (5.0mm for reservoir), capped at tube bottom
                                     submerge_depth = 2.5 if is_2ml_falcon else 5.0
                                     tz = min(curr_surface + submerge_depth, tube_info["bottom_z"] - 0.5)
 
-                                    # Update meniscus depth for next aspiration
                                     dz = req_vol / tube_info["area_mm2"]
                                     new_surface = min(curr_surface + dz, tube_info["bottom_z"])
                                     tube_info["surface_z"] = new_surface
@@ -2988,6 +3454,8 @@ class LIMSMasterApp:
 
                 except Exception as e:
                     self.ask_error_resolution(e, i)
+                finally:
+                    self.current_step_idx += 1
                 time.sleep(0.05)
 
             if self.is_aborted:
@@ -3175,6 +3643,7 @@ class LIMSMasterApp:
         self.lims.deck_labware[self.selected_slot_name].source_file = fn
         if self.selected_slot_name not in self.placed_slots:
             self.placed_slots.append(self.selected_slot_name)
+        self.sync_deck_manager()
         self.logger.info(f"Assigned {fn} to {self.selected_slot_name}. Coordinates now follow this labware (press SAVE WORKSPACE to keep it).")
         self.draw_deck()
         try:
@@ -3183,8 +3652,10 @@ class LIMSMasterApp:
             pass
 
     def unassign_lw(self):
-        if self.selected_slot_name in self.lims.deck_labware: del self.lims.deck_labware[
-            self.selected_slot_name]; self.draw_deck()
+        if self.selected_slot_name in self.lims.deck_labware:
+            del self.lims.deck_labware[self.selected_slot_name]
+            self.sync_deck_manager()
+            self.draw_deck()
 
     def action_new_deck(self):
         self.lims.deck_slots.clear()
@@ -3197,6 +3668,7 @@ class LIMSMasterApp:
             self.lims.deck_slots[n] = slot
         self.selected_slot_name = None
         self.refresh_ui()
+        self.sync_deck_manager()
 
     def _serialize_workspace(self, path):
         data = {
@@ -3242,6 +3714,7 @@ class LIMSMasterApp:
                     self.lims.deck_labware[n] = Labware(lw_path)
                     self.lims.deck_labware[n].source_file = lab_file
         self.refresh_ui()
+        self.sync_deck_manager()
 
     def save_all(self):
         cal_path = self.get_calibration_path()
@@ -3281,6 +3754,7 @@ class LIMSMasterApp:
                 self.lims.deck_slots[name] = slot
                 self.placed_slots.append(name)
             self.refresh_ui()
+            self.sync_deck_manager()
 
     def action_save_workflow_as(self):
         if not self.workflow_sequence: return

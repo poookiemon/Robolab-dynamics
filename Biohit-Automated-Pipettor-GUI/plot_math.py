@@ -1,5 +1,26 @@
 import numpy as np
-from scipy.ndimage import minimum_filter1d, maximum_filter1d
+try:
+    from scipy.ndimage import minimum_filter1d, maximum_filter1d
+except (ImportError, AttributeError):
+    def minimum_filter1d(values: np.ndarray, size: int) -> np.ndarray:
+        pad = size // 2
+        out = np.empty_like(values)
+        n = len(values)
+        for i in range(n):
+            s = max(0, i - pad)
+            e = min(n, i + pad + 1)
+            out[i] = np.min(values[s:e])
+        return out
+
+    def maximum_filter1d(values: np.ndarray, size: int) -> np.ndarray:
+        pad = size // 2
+        out = np.empty_like(values)
+        n = len(values)
+        for i in range(n):
+            s = max(0, i - pad)
+            e = min(n, i + pad + 1)
+            out[i] = np.max(values[s:e])
+        return out
 
 
 def smooth(values: np.ndarray, buffer: int) -> np.ndarray:
