@@ -38,9 +38,9 @@ def test_deck_stacking_kinematics():
     print(f"Slot 2 A2 (Reagent): ({x2}, {y2})")
     print(f"Slot 2 A3 (Discard): ({x3}, {y3})")
     
-    assert (x1, y1) == (103.0, 13.0), f"Slot 2 A1 expected (103.0, 13.0), got ({x1}, {y1})"
-    assert (x2, y2) == (65.0, 13.0), f"Slot 2 A2 expected (65.0, 13.0), got ({x2}, {y2})"
-    assert (x3, y3) == (27.0, 13.0), f"Slot 2 A3 expected (27.0, 13.0), got ({x3}, {y3})"
+    assert (x1, y1) == (95.5, 13.0), f"Slot 2 A1 expected (95.5, 13.0), got ({x1}, {y1})"
+    assert (x2, y2) == (57.0, 13.0), f"Slot 2 A2 expected (57.0, 13.0), got ({x2}, {y2})"
+    assert (x3, y3) == (12.0, 13.0), f"Slot 2 A3 expected (12.0, 13.0), got ({x3}, {y3})"
     
     # Slot 2 Discard Z depth
     discard_z = dm.calculate_z("Discard Tip", "Slot_2", "A3")
@@ -72,7 +72,7 @@ def test_deck_stacking_kinematics():
     assert s3_mix_z == 91.0, f"Expected Slot 3 Mix Z=91.0mm (1mm higher), got {s3_mix_z}"
     assert s3_brim_z == 85.0, f"Expected Slot 3 Brim Z=85.0mm, got {s3_brim_z}"
 
-    # Waste container on Slot 2 must target Tube A3 (27.0, 13.0), NEVER center
+    # Waste container on Slot 2 must target Tube A3 (12.0, 13.0), NEVER center
     from labware_models import WasteTrough
     wt = WasteTrough()
     slot2_wt = DeckSlot("Slot_2", 0.0, 0.0, 127.8, 26.0, adapter=ADAPTER_90MM_BLOCK, labware=wt)
@@ -80,8 +80,8 @@ def test_deck_stacking_kinematics():
     wt_xy_a3 = dm.calculate_xy("Slot_2", "A3")
     wt_xy_none = dm.calculate_xy("Slot_2", "")
     print(f"Slot 2 Waste Trough A3: {wt_xy_a3}, default: {wt_xy_none}")
-    assert wt_xy_a3 == (27.0, 13.0), f"Slot 2 waste A3 must be (27.0, 13.0), got {wt_xy_a3}"
-    assert wt_xy_none == (27.0, 13.0), f"Slot 2 waste default must be (27.0, 13.0), got {wt_xy_none}"
+    assert wt_xy_a3 == (12.0, 13.0), f"Slot 2 waste A3 must be (12.0, 13.0), got {wt_xy_a3}"
+    assert wt_xy_none == (12.0, 13.0), f"Slot 2 waste default must be (12.0, 13.0), got {wt_xy_none}"
 
     print("PASS: Deck Stacking Kinematics verified.")
 

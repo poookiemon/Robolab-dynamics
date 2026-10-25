@@ -407,9 +407,18 @@ class FalconRack50mL(LabwareBase):
         return 0, 0
 
     def get_well_xy(self, slot: 'DeckSlot', well_id: str) -> Tuple[float, float]:
+        if slot.name == "Slot_2":
+            # Calibrated Slot 2 3-well rack/reservoir/trough: A1=95.5, A2=57.0, A3(Discard)=12.0
+            w_str = str(well_id or "").upper().strip()
+            if w_str in ("A1", "1"):
+                return 95.5, 13.0
+            elif w_str in ("A2", "2"):
+                return 57.0, 13.0
+            else:
+                return 12.0, 13.0
         _, c_idx = self.parse_well(well_id)
         if not well_id or str(well_id).upper().strip() in ("A3", "3", "DISCARD", "WASTE"):
-            ci = 2  # Default discard on 50mL Falcon rack is Tube A3 (X=27.0, Y=13.0)
+            ci = 2  # Default discard on 50mL Falcon rack is Tube A3
         else:
             ci = c_idx if (c_idx is not None and 0 <= c_idx < 3) else 0
         ox, oy = slot.origin_a1_xy
@@ -523,9 +532,17 @@ class WasteTrough(LabwareBase):
         super().__init__(**defaults)
 
     def get_well_xy(self, slot: 'DeckSlot', well_id: str) -> Tuple[float, float]:
-        if slot.name == "Slot_2" or str(well_id or "").upper().strip() in ("A3", "3", "DISCARD", "WASTE"):
-            # On Slot 2, waste discard is explicitly Falcon Tube A3 (X=27.0, Y=13.0)
-            return 27.0, 13.0
+        if slot.name == "Slot_2":
+            # Calibrated Slot 2 3-well rack/reservoir/trough: A1=95.5, A2=57.0, A3(Discard)=12.0
+            w_str = str(well_id or "").upper().strip()
+            if w_str in ("A1", "1"):
+                return 95.5, 13.0
+            elif w_str in ("A2", "2"):
+                return 57.0, 13.0
+            else:
+                return 12.0, 13.0
+        if str(well_id or "").upper().strip() in ("A3", "3", "DISCARD", "WASTE"):
+            return 12.0, 13.0
         return slot.center_x, slot.center_y
 
 
@@ -562,7 +579,7 @@ class DeckSlot:
         """Physical calibrated A1 origin based on slot location and side."""
         calibrated_origins = {
             "Slot_1": (238.2, 13.0),
-            "Slot_2": (103.0, 13.0),
+            "Slot_2": (95.5, 13.0),
             "Slot_3": (243.81, 53.0),
             "Slot_4": (105.0, 56.0),
             "Slot_5": (243.81, 149.23),

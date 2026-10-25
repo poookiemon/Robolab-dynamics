@@ -2157,7 +2157,7 @@ class LIMSMasterApp:
     # Machine XY of "well A1" for each slot (physically jog-calibrated where noted)
     SLOT_A1_ORIGINS = {
         "Slot_1": (238.2, 13.0),   # calibrated (front right, height-block slot)
-        "Slot_2": (103.0, 13.0),   # calibrated (front left, height-block slot)
+        "Slot_2": (95.5, 13.0),    # calibrated (front left, 3-well reservoir/waste trough A1)
         "Slot_3": (243.81, 53.0),  # calibrated (exact center: X=243.81, Y=53.0)
         "Slot_4": (105.0, 56.0),   # calibrated (96-well A1 X=105, Y=56)
         "Slot_5": (243.81, 149.23), # calibrated (exact center: X=243.81, Y=149.23)
@@ -2264,12 +2264,16 @@ class LIMSMasterApp:
         r_idx, c_idx = self._parse_well(well_id)
         raw = getattr(labware_obj, 'raw_data', None) or {}
 
-        # 1. WASTE DISCARD ON SLOT 2:
-        # On Slot 2, waste discard is explicitly Falcon Tube A3 (X=27.0, Y=13.0)
+        # 1. 3-WELL RESERVOIR / WASTE TROUGH ON SLOT 2:
+        # User physically calibrated: A1 is at X=95.5, A2 is at X=57.0, A3 (Waste Discard) is at X=12.0, Y=13.0
         if slot_name == "Slot_2":
             w_str = str(well_id or "").upper().strip()
-            if w_str in ("A3", "3", "DISCARD", "WASTE") or not w_str or kind == "waste":
-                return 27.0, 13.0
+            if w_str in ("A1", "1"):
+                return 95.5, 13.0
+            elif w_str in ("A2", "2"):
+                return 57.0, 13.0
+            elif w_str in ("A3", "3", "DISCARD", "WASTE") or not w_str or kind in ("waste", "reservoir_3", "tube_rack_3x50ml"):
+                return 12.0, 13.0
 
         # 1b. WASTE TROUGH: always the centre of Slot 6 (or generic single-cavity waste)
         if kind == "waste" or (kind is None and slot_name == "Slot_6"):
@@ -2297,8 +2301,14 @@ class LIMSMasterApp:
                 return ox + col_dx[c_idx], oy + row_dy[r_idx]
             return cx, cy
 
-        # 4. 3-WELL RESERVOIR (calibrated on Slot_1/2: col pitch 42.6 mm, Y = 13.0)
+        # 4. 3-WELL RESERVOIR (calibrated on Slot_1: pitch 42.6mm; Slot_2: A1=95.5, A2=57.0, A3=12.0)
         if kind == "reservoir_3" or (kind is None and front):
+            if slot_name == "Slot_2":
+                col_x = [95.5, 57.0, 12.0]
+                ci = c_idx if (c_idx is not None and 0 <= c_idx < 3) else 0
+                if c_idx is None and well_id in ("1", "2", "3"):
+                    ci = int(well_id) - 1
+                return col_x[ci], oy + (0.0 if front else 31.5)
             col_dx = [0.0, -42.6, -85.2]
             ci = c_idx if (c_idx is not None and 0 <= c_idx < 3) else 0
             if c_idx is None and well_id in ("1", "2", "3"):
