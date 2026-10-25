@@ -148,6 +148,14 @@ def test_lld_liquid_depleted_auto_advance():
     next_tube = app._get_next_tube_in_sequence("Slot_1", "B6")
     assert next_tube is None, f"Expected B6 -> None, got {next_tube}"
     print("PASS: 2mL Falcon auto-advances through all 12 tubes (A1..A6 -> B1..B6).")
+
+    # Guard Test: Drug plates and EHM plates must NEVER auto-advance!
+    dm.mount_labware("Slot_3", Plate96(name="Drug Plate", source_file="plate96.json"))
+    dm.mount_labware("Slot_5", Plate96(name="EHM Plate", source_file="plate96.json"))
+    assert app._get_next_tube_in_sequence("Slot_3", "A1") is None, "Drug plate must NEVER auto-advance!"
+    assert app._get_next_tube_in_sequence("Slot_3", "A2") is None, "Drug plate must NEVER auto-advance!"
+    assert app._get_next_tube_in_sequence("Slot_5", "A1") is None, "EHM plate must NEVER auto-advance!"
+    print("PASS: Guard verified: Drug plates and EHM plates strictly NEVER auto-advance.")
     
     # Test LLD depletion detection condition
     bottom_z = 103.0

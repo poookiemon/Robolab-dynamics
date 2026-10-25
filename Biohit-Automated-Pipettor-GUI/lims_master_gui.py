@@ -2064,11 +2064,13 @@ class LIMSMasterApp:
             time.sleep(1.0)
             return max(0.0, safe_limit_z - 15.0)
 
-        saved_z_speed = getattr(hw, 'z_speed', 5)
+        hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9))) if hasattr(self, 'speed_var') else 7
+        saved_z_speed = getattr(hw, 'z_speed', hw_speed)
         try:
-            # Set gentle speed for surface probing (speed 3 = gentle descent)
-            hw.z_speed = 3
-            self.logger.info(f"[SURFACE PROBE] Descending toward safe limit Z={safe_limit_z:.1f}mm (depth={submerge_mm:.1f}mm, Cap<=102.0mm)...")
+            # Set responsive probe speed (probe at speed 5-7 instead of crawling at 3)
+            probe_speed = max(5, min(hw_speed, 7))
+            hw.z_speed = probe_speed
+            self.logger.info(f"[SURFACE PROBE] Descending toward safe limit Z={safe_limit_z:.1f}mm (depth={submerge_mm:.1f}mm, speed={probe_speed}, Cap<=102.0mm)...")
 
             # Execute move_to_surface
             called_ok = False
@@ -2125,12 +2127,12 @@ class LIMSMasterApp:
             self.logger.info(f"[SURFACE PROBE] Surface detected/stopped at Z={z_measured:.2f}mm (limit={limit_z:.1f}mm)")
 
             # Visual confirmation pause
-            time.sleep(1.0)
+            time.sleep(0.15)
             return float(z_measured)
 
         finally:
             try:
-                hw.z_speed = saved_z_speed
+                hw.z_speed = hw_speed
             except Exception:
                 pass
 
@@ -2364,14 +2366,29 @@ class LIMSMasterApp:
         return 90.0
 
     def _get_next_tube_in_sequence(self, slot_name, current_well):
-        """Returns the next well/tube ID in sequence for auto-advancing when liquid is depleted."""
+        """Returns the next well/tube ID in sequence for auto-advancing when liquid is depleted.
+        STRICTLY for tubes and reservoirs only. NEVER advances on plates!"""
         slot_model = self.deck_manager.slots.get(slot_name) if hasattr(self, 'deck_manager') else None
         lw = slot_model.labware if slot_model else None
         lw_obj = self.lims.deck_labware.get(slot_name)
         lw_src = str(getattr(lw_obj, 'source_file', '')).lower()
+        lw_kind = self._lw_kind(lw_obj)
+
+        # Guard: NEVER auto-advance on plates (drug plates, 96-well plates, 48-well plates, etc.)!
+        if (
+            lw_kind in ("plate96", "ehm48")
+            or "plate" in lw_src
+            or "96" in lw_src
+            or "48" in lw_src
+            or "ehm" in lw_src
+            or "drug" in lw_src
+            or "pcr" in lw_src
+            or "assay" in lw_src
+        ):
+            return None
 
         # 1. 2mL Falcon Rack
-        if isinstance(lw, TubeRack2x6_2mL) or "2x6" in lw_src:
+        if isinstance(lw, TubeRack2x6_2mL) or "2x6" in lw_src or lw_kind == "tube_rack_2x6":
             tube_order = ["A1", "A2", "A3", "A4", "A5", "A6", "B1", "B2", "B3", "B4", "B5", "B6"]
             if current_well in tube_order:
                 c_idx = tube_order.index(current_well)
@@ -2388,22 +2405,14 @@ class LIMSMasterApp:
                     return tube_order[c_idx + 1]
             return None
 
-        # 3. 3-Well Reservoir
-        if isinstance(lw, Reservoir3Well) or "reservoir_3" in lw_src or "3_well" in lw_src:
-            tube_order = ["A1", "A2", "A3"] if current_well.startswith("A") else ["1", "2", "3"]
+        # 3. 3-Well Reservoir (Slot 2 has A3 as Discard)
+        if isinstance(lw, Reservoir3Well) or "reservoir_3" in lw_src or "3_well" in lw_src or "30ml" in lw_src or "reservoir" in lw_src:
+            tube_order = ["A1", "A2"] if slot_name == "Slot_2" else (["A1", "A2", "A3"] if current_well.startswith("A") else ["1", "2", "3"])
             if current_well in tube_order:
                 c_idx = tube_order.index(current_well)
                 if c_idx + 1 < len(tube_order):
                     return tube_order[c_idx + 1]
             return None
-
-        # 4. Generic Labware: iterate through all wells
-        if lw_obj and hasattr(lw_obj, 'wells') and lw_obj.wells:
-            well_keys = list(lw_obj.wells.keys())
-            if current_well in well_keys:
-                c_idx = well_keys.index(current_well)
-                if c_idx + 1 < len(well_keys):
-                    return well_keys[c_idx + 1]
 
         return None
 
@@ -3088,7 +3097,11 @@ class LIMSMasterApp:
                             if seated:
                                 # Immediately retract to clearance Z=0; never microsearch when tip acquired!
                                 if self.lims.pipettor.hardware:
-                                    self.lims.pipettor.hardware.move_z(0)
+                                    try:
+                                        self.lims.pipettor.hardware.z_speed = hw_speed
+                                        self.lims.pipettor.hardware.move_z(0)
+                                    except Exception:
+                                        self.lims.pipettor.hardware.move_z(0)
                                 return True, curr_z
 
                             # If cone went down to bottom limit, the well is completely empty.
@@ -3096,7 +3109,11 @@ class LIMSMasterApp:
                             if curr_z >= 84.5 or curr_z >= (pickup_limit - 2.0) or curr_z >= 82.5:
                                 self.logger.info(f"Socket empty at ({base_x:.2f}, {base_y:.2f}) (Z={curr_z:.2f}mm reached limit). Skipping to next well.")
                                 if self.lims.pipettor.hardware:
-                                    self.lims.pipettor.hardware.move_z(0)
+                                    try:
+                                        self.lims.pipettor.hardware.z_speed = hw_speed
+                                        self.lims.pipettor.hardware.move_z(0)
+                                    except Exception:
+                                        self.lims.pipettor.hardware.move_z(0)
                                 return False, curr_z
 
                             # If cone stalled shallowly (Z < 72.0mm), it made contact with the tip collar rim!
@@ -3133,14 +3150,22 @@ class LIMSMasterApp:
                                             getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))[1] + dy
                                         )
                                         if self.lims.pipettor.hardware:
-                                            self.lims.pipettor.hardware.move_z(0)
+                                            try:
+                                                self.lims.pipettor.hardware.z_speed = hw_speed
+                                                self.lims.pipettor.hardware.move_z(0)
+                                            except Exception:
+                                                self.lims.pipettor.hardware.move_z(0)
                                         return True, s_cz
                                     else:
                                         if self.lims.pipettor.hardware:
                                             self.lims.pipettor.hardware.move_z(hover_z)
 
                             if self.lims.pipettor.hardware:
-                                self.lims.pipettor.hardware.move_z(0)
+                                try:
+                                    self.lims.pipettor.hardware.z_speed = hw_speed
+                                    self.lims.pipettor.hardware.move_z(0)
+                                except Exception:
+                                    self.lims.pipettor.hardware.move_z(0)
                             return False, curr_z
 
                         if mode == "manual":
@@ -3248,7 +3273,13 @@ class LIMSMasterApp:
                         self.logger.info(
                             f"Absolute Z-Depth Override Executed: Z={tz:.1f}mm for {well_id if mode != 'manual' else 'Manual Target'}")
 
-                        if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
+                        hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
+                        if self.lims.pipettor.hardware:
+                            try:
+                                self.lims.pipettor.hardware.z_speed = hw_speed
+                                self.lims.pipettor.hardware.move_z(0)
+                            except Exception:
+                                self.lims.pipettor.hardware.move_z(0)
                         self.lims.hw.move_to(target_x, target_y, 0, speed=self.speed_var.get())
                         time.sleep(0.05)
 
@@ -3274,25 +3305,54 @@ class LIMSMasterApp:
                                 lw_src_lower = str(getattr(self.lims.deck_labware.get(slot_name), 'source_file', '')).lower()
                                 lw_kind = self._lw_kind(self.lims.deck_labware.get(slot_name))
 
-                                is_2ml_falcon = isinstance(lw_model, TubeRack2x6_2mL) or (
-                                    (lw_kind == "tube_rack_2x6" or (self._is_front_slot(slot_name) and "2x6" in lw_src_lower))
-                                    and not isinstance(lw_model, (FalconRack50mL, Reservoir3Well))
-                                    and "50ml" not in lw_src_lower and "3x50ml" not in lw_src_lower and "30ml" not in lw_src_lower
+                                # Explicit check: Is this labware a plate? Plates NEVER auto-advance or probe meniscus!
+                                is_plate = (
+                                    lw_kind in ("plate96", "ehm48")
+                                    or "plate" in lw_src_lower
+                                    or "96" in lw_src_lower
+                                    or "48" in lw_src_lower
+                                    or "ehm" in lw_src_lower
+                                    or "drug" in lw_src_lower
+                                    or "pcr" in lw_src_lower
+                                    or "assay" in lw_src_lower
                                 )
-                                is_reservoir = isinstance(lw_model, Reservoir3Well) or (
-                                    ((self._is_front_slot(slot_name) and lw_kind in ("reservoir_3", None))
-                                    or "reservoir" in lw_src_lower
-                                    or "3_well" in lw_src_lower
-                                    or "30ml" in lw_src_lower)
-                                    and not is_2ml_falcon and not isinstance(lw_model, FalconRack50mL)
-                                    and "50ml" not in lw_src_lower
-                                )
-                                is_50ml_falcon = isinstance(lw_model, FalconRack50mL) or ("50ml" in lw_src_lower or "3x50ml" in lw_src_lower)
+
+                                is_2ml_falcon = (
+                                    isinstance(lw_model, TubeRack2x6_2mL) or (
+                                        (lw_kind == "tube_rack_2x6" or (self._is_front_slot(slot_name) and "2x6" in lw_src_lower))
+                                        and not isinstance(lw_model, (FalconRack50mL, Reservoir3Well))
+                                        and "50ml" not in lw_src_lower and "3x50ml" not in lw_src_lower and "30ml" not in lw_src_lower
+                                    )
+                                ) and not is_plate
+
+                                is_reservoir = (
+                                    isinstance(lw_model, Reservoir3Well) or (
+                                        ((self._is_front_slot(slot_name) and lw_kind in ("reservoir_3", None))
+                                        or "reservoir" in lw_src_lower
+                                        or "3_well" in lw_src_lower
+                                        or "30ml" in lw_src_lower)
+                                        and not is_2ml_falcon and not isinstance(lw_model, FalconRack50mL)
+                                        and "50ml" not in lw_src_lower
+                                    )
+                                ) and not is_plate
+
+                                is_50ml_falcon = (
+                                    isinstance(lw_model, FalconRack50mL) or ("50ml" in lw_src_lower or "3x50ml" in lw_src_lower)
+                                ) and not is_plate
+
+                                is_tube_or_reservoir = (
+                                    is_2ml_falcon or is_reservoir or is_50ml_falcon
+                                    or ("tube" in lw_src_lower or "falcon" in lw_src_lower or "reservoir" in lw_src_lower)
+                                ) and not is_plate
 
                                 # Pipettor Automated Liquid Tracking System (Sensor LLD / Dynamic Height)
+                                # STRICTLY for Reservoirs and Tubes only! Plates (e.g. drug plates, EHM plates)
+                                # must NEVER auto-advance or probe meniscus.
                                 auto_track_active = (
-                                    (getattr(self, 'lld_tracking_var', None) and self.lld_tracking_var.get()) or
-                                    (getattr(self, 'dynamic_z_var', None) and self.dynamic_z_var.get())
+                                    is_tube_or_reservoir and (
+                                        (getattr(self, 'lld_tracking_var', None) and self.lld_tracking_var.get()) or
+                                        (getattr(self, 'dynamic_z_var', None) and self.dynamic_z_var.get())
+                                    )
                                 )
                                 if auto_track_active and mode != "manual":
                                     try:
@@ -3440,6 +3500,11 @@ class LIMSMasterApp:
                                     )
 
                             safe_tz = min(float(tz), 102.0)
+                            hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
+                            try:
+                                self.lims.pipettor.hardware.z_speed = hw_speed
+                            except Exception:
+                                pass
                             self.lims.pipettor.hardware.move_z(safe_tz)
 
                             if action == "Aspirate Media":
@@ -3517,8 +3582,10 @@ class LIMSMasterApp:
                                 self.logger.info("System state updated: HAS_TIP = False")
 
                             try:
+                                if self.lims.pipettor.hardware:
+                                    self.lims.pipettor.hardware.z_speed = hw_speed
                                 self.lims.pipettor.hardware.move_z(0)
-                            except TypeError:
+                            except Exception:
                                 self.lims.pipettor.hardware.move_z(0)
 
                 except Exception as e:
