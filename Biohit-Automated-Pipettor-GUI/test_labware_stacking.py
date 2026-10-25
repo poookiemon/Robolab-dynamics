@@ -182,15 +182,67 @@ def test_lld_liquid_depleted_auto_advance():
     print("PASS: Guard verified: Drug plates and EHM plates strictly NEVER auto-advance.")
     
     # Test LLD depletion detection condition
-    bottom_z = 103.0
-    z_found_depleted = 102.5  # Reached bottom limit - 0.5mm -> liquid is over!
-    z_found_liquid = 82.0     # Liquid detected 21mm above bottom
+    bottom_z = 99.5
+    z_found_depleted = 99.0   # Reached bottom limit - 0.5mm -> liquid is over!
+    z_found_liquid = 82.0     # Liquid detected 17.5mm above bottom
     
     is_depleted_1 = z_found_depleted >= (bottom_z - 1.0)
     is_depleted_2 = z_found_liquid >= (bottom_z - 1.0)
     assert is_depleted_1 is True, "Sensor probe reaching bottom floor must trigger liquid-depleted auto-advance!"
     assert is_depleted_2 is False, "Sensor probe detecting liquid surface must NOT trigger depletion!"
     print("PASS: Technology LLD sensor depletion detection logic verified.")
+    root.destroy()
+
+
+def test_lld_probe_safety_clamp_and_shallow_rejection():
+    print("\n--- 7. Testing LLD Probe Sensor Firmware Clamp (<=99.5mm) & Shallow Rejection ---")
+    import tkinter as tk
+    from lims_master_gui import LIMSMasterApp
+    
+    root = tk.Tk()
+    root.withdraw()
+    app = LIMSMasterApp(root)
+
+    # 1. Simulator fallback test: safe_limit_z = min(99.5, 103.5) = 99.5
+    # Returns 99.5 - 15.0 = 84.5mm (valid simulated liquid depth)
+    sim_z = app._probe_surface_and_wait(103.5, submerge_mm=1.0)
+    assert sim_z == 84.5, f"Expected 84.5mm from simulator probe, got {sim_z}"
+    print("PASS: Simulator mode respects 99.5mm firmware ceiling.")
+
+    # 2. Mock Hardware testing for firmware clamp and shallow rejection
+    class MockHW:
+        def __init__(self, stopped_z=0.28, succeed_call=True):
+            self.z_position = stopped_z
+            self.z_speed = 7
+            self.called_limit = None
+            self.called_depth = None
+            self.succeed_call = succeed_call
+
+        def move_to_surface(self, limit, distance_from_surface):
+            self.called_limit = limit
+            self.called_depth = distance_from_surface
+            if not self.succeed_call:
+                raise Exception("CommandFailed: limit > 100.0f")
+
+    # Verify clamp <= 99.5mm passed to hardware
+    mock_hw = MockHW(stopped_z=78.5)
+    app.lims.pipettor.hardware = mock_hw
+    measured_z = app._probe_surface_and_wait(103.5, submerge_mm=2.5)
+    assert mock_hw.called_limit == 99.5, f"Limit must be clamped strictly to 99.5mm, got {mock_hw.called_limit}"
+    assert measured_z == 78.5, f"Expected measured Z=78.5mm, got {measured_z}"
+    print("PASS: Hardware move_to_surface correctly receives limit capped at 99.5mm.")
+
+    # Verify shallow stall rejection (pipette remaining near ceiling at Z=0.28mm must raise RuntimeError)
+    mock_stall_hw = MockHW(stopped_z=0.28)
+    app.lims.pipettor.hardware = mock_stall_hw
+    try:
+        app._probe_surface_and_wait(102.0, submerge_mm=2.5)
+        assert False, "Surface probe at ceiling Z=0.28mm must raise RuntimeError!"
+    except RuntimeError as r_err:
+        assert "ceiling" in str(r_err) or "<=25mm" in str(r_err)
+        print("PASS: Shallow false surface detection at Z=0.28mm strictly rejected with RuntimeError.")
+
+    app.lims.pipettor.hardware = None
     root.destroy()
 
 
@@ -254,10 +306,11 @@ def main():
     test_falcon_vs_reservoir_rollover()
     test_adaptive_tip_pickup_and_learning()
     test_lld_liquid_depleted_auto_advance()
+    test_lld_probe_safety_clamp_and_shallow_rejection()
     test_time_estimation()
     test_deck_2_ehm_multiplate_json()
     print("\n======================================================================")
-    print("ALL TESTS PASSED SUCCESSFULLY! (6/6 test suites)")
+    print("ALL TESTS PASSED SUCCESSFULLY! (7/7 test suites)")
     print("======================================================================")
 
 
