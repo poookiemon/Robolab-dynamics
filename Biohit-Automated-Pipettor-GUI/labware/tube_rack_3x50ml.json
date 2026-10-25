@@ -41,6 +41,6 @@
     "z_limits": {
         "recommended_aspirate_z": 98.0,
         "recommended_dispense_z": 75.0,
-        "max_safe_bottom_z": 102.5
+        "max_safe_bottom_z": 102.0
     }
 }

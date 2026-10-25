@@ -1189,7 +1189,7 @@ class LIMSMasterApp:
         ttk.Checkbutton(pane_ctrl, text="Auto-Height Detection (Liquids ONLY)", variable=self.dynamic_z_var).pack(
             fill=tk.X, pady=(0, 2))
 
-        self.lld_tracking_var = tk.BooleanVar(value=False)
+        self.lld_tracking_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(pane_ctrl, text="Sensor Liquid Level Detection (LLD)", variable=self.lld_tracking_var).pack(
             fill=tk.X, pady=(0, 2))
 
@@ -2054,23 +2054,26 @@ class LIMSMasterApp:
         Safely probes downward for liquid meniscus using Biohit tip frequency sensor.
         Blocks until physical movement completes, pauses for visual confirmation,
         and returns the measured liquid surface Z coordinate (in mm).
+        Strict safety floor: never allows auto tracking to exceed Z=102.0mm.
         """
+        # Strict hard cap: auto tracking must never go below 102.0mm
+        safe_limit_z = min(102.0, float(limit_z))
         hw = getattr(self.lims.pipettor, 'hardware', None)
         if not hw:
             # Simulator mode fallback
             time.sleep(1.0)
-            return max(0.0, float(limit_z) - 15.0)
+            return max(0.0, safe_limit_z - 15.0)
 
         saved_z_speed = getattr(hw, 'z_speed', 5)
         try:
             # Set gentle speed for surface probing (speed 3 = gentle descent)
             hw.z_speed = 3
-            self.logger.info(f"[SURFACE PROBE] Descending toward limit Z={limit_z:.1f}mm (depth={submerge_mm:.1f}mm)...")
+            self.logger.info(f"[SURFACE PROBE] Descending toward safe limit Z={safe_limit_z:.1f}mm (depth={submerge_mm:.1f}mm, Cap<=102.0mm)...")
 
             # Execute move_to_surface
             called_ok = False
             try:
-                hw.move_to_surface(limit=float(limit_z), distance_from_surface=float(submerge_mm))
+                hw.move_to_surface(limit=float(safe_limit_z), distance_from_surface=float(submerge_mm))
                 called_ok = True
             except Exception as e_wrap:
                 self.logger.warning(f"[SURFACE PROBE] pipettor.move_to_surface: {e_wrap}")
@@ -3236,23 +3239,29 @@ class LIMSMasterApp:
                                 )
                                 is_50ml_falcon = isinstance(lw_model, FalconRack50mL) or ("50ml" in lw_src_lower or "3x50ml" in lw_src_lower)
 
-                                # Live Sensor / Pressure Liquid Level Probing
-                                if getattr(self, 'lld_tracking_var', None) and self.lld_tracking_var.get() and mode != "manual":
+                                # Pipettor Automated Liquid Tracking System (Sensor LLD / Dynamic Height)
+                                auto_track_active = (
+                                    (getattr(self, 'lld_tracking_var', None) and self.lld_tracking_var.get()) or
+                                    (getattr(self, 'dynamic_z_var', None) and self.dynamic_z_var.get())
+                                )
+                                if auto_track_active and mode != "manual":
                                     try:
-                                        bottom_z = self._labware_bottom_z(self.lims.deck_labware.get(slot_name), slot_name)
+                                        # Strict floor safety cap: auto tracking must NEVER go below 102.0mm
+                                        raw_bottom_z = self._labware_bottom_z(self.lims.deck_labware.get(slot_name), slot_name)
+                                        bottom_z = min(102.0, raw_bottom_z)
                                         while not self.is_aborted:
-                                            self.logger.info(f"[LLD SENSOR] Dynamic surface probing at {slot_name} {well_id} (Limit Z={bottom_z:.1f}mm)...")
+                                            self.logger.info(f"[AUTO LIQUID TRACKING] Probing meniscus at {slot_name} {well_id} (Safety Cap Z<={bottom_z:.1f}mm)...")
                                             z_found = self._probe_surface_and_wait(bottom_z, submerge_mm=2.5)
                                             # Liquid is depleted if probe reached bottom limit without stopping at a higher meniscus
                                             if z_found >= (bottom_z - 1.0):
                                                 self.logger.warning(
-                                                    f"[LLD SENSOR] Liquid depleted in {slot_name} {well_id} (Z_measured={z_found:.2f}mm >= Bottom-1.0mm). "
-                                                    f"Pipette detected liquid is over using sensor technology."
+                                                    f"[AUTO LIQUID TRACKING] Liquid depleted in {slot_name} {well_id} (Z_measured={z_found:.2f}mm >= {bottom_z - 1.0:.1f}mm floor). "
+                                                    f"Pipette detected liquid is over using auto liquid tracking."
                                                 )
                                                 next_tube = self._get_next_tube_in_sequence(slot_name, well_id)
                                                 if next_tube:
                                                     self.logger.info(
-                                                        f"[LLD AUTO-ADVANCE] Advancing from {well_id} -> {next_tube} in {slot_name}..."
+                                                        f"[AUTO-ADVANCE] Advancing from {well_id} -> {next_tube} in {slot_name}..."
                                                     )
                                                     well_id = next_tube
                                                     if self.lims.pipettor.hardware:
@@ -3264,12 +3273,12 @@ class LIMSMasterApp:
                                                         time.sleep(0.1)
                                                     continue
                                                 else:
-                                                    self.logger.error(f"[LLD SENSOR] All available tubes/wells in {slot_name} are depleted!")
+                                                    self.logger.error(f"[AUTO LIQUID TRACKING] All available tubes/wells in {slot_name} are depleted!")
                                                     self.refill_decision = None
                                                     def _prompt_empty_rack():
                                                         ans = messagebox.askyesno(
                                                             "Liquid Depleted",
-                                                            f"LLD Sensor detected liquid is over in {slot_name} ({well_id}) and no further tubes are available in sequence.\n\n"
+                                                            f"Auto liquid tracking detected liquid is over in {slot_name} ({well_id}) and reached floor limit (Z={bottom_z:.1f}mm).\n\n"
                                                             f"Please refill liquid and click YES to re-probe, or NO to abort."
                                                         )
                                                         self.refill_decision = "refilled" if ans else "abort"
@@ -3283,11 +3292,20 @@ class LIMSMasterApp:
                                                     else:
                                                         raise Exception(f"Protocol aborted: Liquid depleted in {slot_name}.")
                                             else:
-                                                tz = min(z_found, bottom_z - 0.5)
-                                                self.logger.info(f"[LLD SENSOR] Surface detected at Z={z_found:.2f}mm -> Submerging to Z={tz:.2f}mm.")
+                                                # Liquid present: Calculate depth and volume left based on pipette's auto tracking
+                                                tz = min(z_found, bottom_z - 0.5, 102.0)
+                                                depth_left_mm = max(0.0, bottom_z - z_found)
+                                                rad_mm = getattr(lw_model, 'well_radius_mm', 14.0) if lw_model else 14.0
+                                                area_mm2 = math.pi * (rad_mm ** 2)
+                                                rem_vol_ml = (depth_left_mm * area_mm2) / 1000.0
+                                                self.logger.info(
+                                                    f"[AUTO LIQUID TRACKING] Surface detected at Z={z_found:.2f}mm. "
+                                                    f"Liquid depth left: {depth_left_mm:.1f}mm (~{rem_vol_ml:.1f}mL remaining). "
+                                                    f"Submerging to Z={tz:.2f}mm (Safety Floor Cap = {bottom_z:.1f}mm)."
+                                                )
                                                 break
                                     except Exception as lld_err:
-                                        self.logger.warning(f"[LLD SENSOR] Surface probe fallback: {lld_err}")
+                                        self.logger.warning(f"[AUTO LIQUID TRACKING] Surface probe fallback: {lld_err}")
 
                                 elif mode != "manual" and (is_reservoir or is_2ml_falcon) and step.get('track_liquid', True):
                                     if not hasattr(self, 'liquid_ledger'):
@@ -3371,7 +3389,8 @@ class LIMSMasterApp:
                                         f"[{tracker_name}] {slot_name} {well_id}: Meniscus Z={curr_surface:.1f}mm -> Submerging to Z={tz:.1f}mm (Bottom={tube_info['bottom_z']:.1f}mm). Est. Remaining: ~{rem_ml:.2f}mL"
                                     )
 
-                            self.lims.pipettor.hardware.move_z(tz)
+                            safe_tz = min(float(tz), 102.0)
+                            self.lims.pipettor.hardware.move_z(safe_tz)
 
                             if action == "Aspirate Media":
                                 # --- GUI SAFETY MANIFOLD CAP & EQUILIBRATION ---

@@ -413,8 +413,8 @@ class FalconRack50mL(LabwareBase):
         return 68.0
 
     def get_bottom_z(self, slot: 'DeckSlot') -> float:
-        # Bottom of conical tip
-        return 102.5
+        # Bottom of conical tip (capped strictly at 102.0mm max depth)
+        return 102.0
 
     def get_dispense_z(self, slot: 'DeckSlot', well_id: str, in_liquid: bool = False) -> float:
         # Discard into A3 or dispense below rim
