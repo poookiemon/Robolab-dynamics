@@ -7,7 +7,8 @@
         "height_mm": 26.0,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "reservoir_3_well.json"
+        "labware_file": "tube_rack_3x50ml.json",
+        "description": "50mL Falcon Media for Plate 1 (Well A1)"
     },
     "Slot_2": {
         "name": "Slot_2",
@@ -17,7 +18,8 @@
         "height_mm": 26.0,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "reservoir_3_well.json"
+        "labware_file": "tube_rack_3x50ml.json",
+        "description": "50mL Falcon Rack: A1 Media Plt 2, A2 Reagent, A3 DISCARD"
     },
     "Slot_3": {
         "name": "Slot_3",
@@ -27,7 +29,8 @@
         "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "tip_rack_1000ul.json"
+        "labware_file": "generic_96_well_plate.json",
+        "description": "96-Well Drug Plate (Concentrated Stocks / Dilution)"
     },
     "Slot_4": {
         "name": "Slot_4",
@@ -37,7 +40,8 @@
         "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "myriamed_48_well.json"
+        "labware_file": "tip_rack_1000ul.json",
+        "description": "1000 \u00b5L Tip Rack (96 Tips)"
     },
     "Slot_5": {
         "name": "Slot_5",
@@ -47,7 +51,8 @@
         "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "generic_96_well_plate.json"
+        "labware_file": "myriamed_48_well.json",
+        "description": "Myriamed 48-Well EHM Plate 1"
     },
     "Slot_6": {
         "name": "Slot_6",
@@ -57,6 +62,7 @@
         "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "waste_trough.json"
+        "labware_file": "myriamed_48_well.json",
+        "description": "Myriamed 48-Well EHM Plate 2 (Sixth Slot)"
     }
 }

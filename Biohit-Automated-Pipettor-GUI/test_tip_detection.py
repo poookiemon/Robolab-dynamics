@@ -45,17 +45,21 @@ class MockHardware:
             # Wedges nicely at 75.0mm
             self.z_position = 75.0
             return True
+        elif self.scenario == 'seated_force_exception_70mm':
+            # Typical B1 case: wedges firmly at 70.5mm, but driver raises force-stall exception
+            self.z_position = 70.5
+            raise Exception("CommandFailed: Actuator stalled on force 26")
         elif self.scenario == 'rim_then_seat':
             if self.probe_count == 1:
-                # First attempt hits rim at 69.5mm
-                self.z_position = 69.5
-                return True # or force triggered at rim
+                # First attempt hits flat rim above socket at 55.0mm
+                self.z_position = 55.0
+                return True
             else:
                 # Microsearch offset drops into bore at 74.8mm
                 self.z_position = 74.8
                 return True
         elif self.scenario == 'rim_all_fail':
-            self.z_position = 69.5
+            self.z_position = 55.0
             return True
 
     def sensor_value(self):
@@ -95,18 +99,19 @@ def test_empty_socket():
             hw.move_z(approach_z)
         hw.z_speed = 3
         hw.tip_pickup_force = 26
-        pick_ok = False
         try:
             hw.pick_tip(pickup_limit)
-            pick_ok = True
         except Exception:
-            pick_ok = False
+            pass
         curr_z = getattr(hw, 'z_position', 0.0)
 
-        if curr_z >= 84.5 or curr_z >= (pickup_limit - 2.0) or (not pick_ok and curr_z >= 82.5):
+        # Case 1: Empty Socket (Z >= 84.0mm)
+        if curr_z >= 84.0 or curr_z >= (pickup_limit - 2.5):
             return False, curr_z
-        if pick_ok and 71.5 <= curr_z < 84.0:
+        # Case 2: Tip acquired (62.0mm <= Z < 84.0mm)
+        if 62.0 <= curr_z < 84.0:
             return True, curr_z
+        # Case 3: Rim collision (Z < 62.0mm)
         return False, curr_z
 
     def _adaptive_search_and_pick(base_x, base_y):
@@ -114,11 +119,10 @@ def test_empty_socket():
         if seated:
             hw.move_z(0)
             return True, curr_z
-        if curr_z >= 84.5 or curr_z >= (pickup_limit - 2.0) or curr_z >= 82.5:
+        if curr_z >= 84.0 or curr_z >= (pickup_limit - 2.5):
             print(f"Socket empty at ({base_x}, {base_y}) (Z={curr_z:.2f}mm reached limit). Skipping to next well.")
             hw.move_z(0)
             return False, curr_z
-        # microsearch would go here
         return False, curr_z
 
     seated, cz = _adaptive_search_and_pick(100.0, 50.0)
@@ -145,17 +149,15 @@ def test_seated_tip():
             hw.move_z(approach_z)
         hw.z_speed = 3
         hw.tip_pickup_force = 26
-        pick_ok = False
         try:
             hw.pick_tip(pickup_limit)
-            pick_ok = True
         except Exception:
-            pick_ok = False
+            pass
         curr_z = getattr(hw, 'z_position', 0.0)
 
-        if curr_z >= 84.5 or curr_z >= (pickup_limit - 2.0) or (not pick_ok and curr_z >= 82.5):
+        if curr_z >= 84.0 or curr_z >= (pickup_limit - 2.5):
             return False, curr_z
-        if pick_ok and 71.5 <= curr_z < 84.0:
+        if 62.0 <= curr_z < 84.0:
             return True, curr_z
         return False, curr_z
 
@@ -164,10 +166,9 @@ def test_seated_tip():
         if seated:
             hw.move_z(0)
             return True, curr_z
-        if curr_z >= 84.5:
+        if curr_z >= 84.0:
             hw.move_z(0)
             return False, curr_z
-        # Microsearch would be here
         return False, curr_z
 
     seated, cz = _adaptive_search_and_pick(100.0, 50.0)
@@ -177,8 +178,54 @@ def test_seated_tip():
     assert hw.z_position == 0.0, "Must retract to Z=0 clearance!"
     print("PASS: Nominal tip pickup acquired immediately with no extra push and no microsearch.")
 
+def test_b1_tip_seated_with_force_stall():
+    print("\n--- Test 3: B1 Tip Seated with Force Stall (Z=70.5mm, Driver Exception) ---")
+    app = MockApp()
+    hw = app.lims.pipettor.hardware
+    hw.scenario = 'seated_force_exception_70mm'
+    pickup_limit = 87.0
+    hw_speed = 9
+    approach_z = 55.0
+
+    def _attempt_tip_seat(tx_coord, ty_coord, from_hover=False, hover_z=None):
+        if not from_hover:
+            hw.move_z(0)
+            hw.z_speed = hw_speed
+            hw.move_z(approach_z)
+        hw.z_speed = 3
+        hw.tip_pickup_force = 26
+        try:
+            hw.pick_tip(pickup_limit)
+        except Exception:
+            pass
+        curr_z = getattr(hw, 'z_position', 0.0)
+
+        if curr_z >= 84.0 or curr_z >= (pickup_limit - 2.5):
+            return False, curr_z
+        if 62.0 <= curr_z < 84.0:
+            return True, curr_z
+        return False, curr_z
+
+    def _adaptive_search_and_pick(base_x, base_y):
+        seated, curr_z = _attempt_tip_seat(base_x, base_y, from_hover=False)
+        if seated:
+            hw.move_z(0)
+            return True, curr_z
+        if curr_z >= 84.0:
+            hw.move_z(0)
+            return False, curr_z
+        # Must NEVER reach microsearch when tip is seated!
+        return False, curr_z
+
+    seated, cz = _adaptive_search_and_pick(100.0, 50.0)
+    assert seated, "B1 Tip MUST be declared seated despite driver exception!"
+    assert cz == 70.5, f"Expected Z=70.5, got {cz}"
+    assert len(hw.pick_tip_calls) == 1, "Must only probe ONCE and NEVER microsearch when tip is acquired!"
+    assert hw.z_position == 0.0, "Must immediately retract to clearance Z=0!"
+    print("PASS: B1 tip with force-stall exception at Z=70.5mm acquired immediately without microsearch.")
+
 def test_rim_stall_and_microsearch():
-    print("\n--- Test 3: Collar Rim Stall with Microsearch ---")
+    print("\n--- Test 4: Collar Rim Stall with Microsearch ---")
     app = MockApp()
     hw = app.lims.pipettor.hardware
     hw.scenario = 'rim_then_seat'
@@ -193,17 +240,15 @@ def test_rim_stall_and_microsearch():
             hw.move_z(approach_z)
         hw.z_speed = 3
         hw.tip_pickup_force = 26
-        pick_ok = False
         try:
             hw.pick_tip(pickup_limit)
-            pick_ok = True
         except Exception:
-            pick_ok = False
+            pass
         curr_z = getattr(hw, 'z_position', 0.0)
 
-        if curr_z >= 84.5 or curr_z >= (pickup_limit - 2.0) or (not pick_ok and curr_z >= 82.5):
+        if curr_z >= 84.0 or curr_z >= (pickup_limit - 2.5):
             return False, curr_z
-        if pick_ok and 71.5 <= curr_z < 84.0:
+        if 62.0 <= curr_z < 84.0:
             return True, curr_z
         return False, curr_z
 
@@ -212,12 +257,12 @@ def test_rim_stall_and_microsearch():
         if seated:
             hw.move_z(0)
             return True, curr_z
-        if curr_z >= 84.5:
+        if curr_z >= 84.0:
             hw.move_z(0)
             return False, curr_z
 
-        # Rim stall
-        if curr_z < 72.0:
+        # Rim stall (< 62.0mm)
+        if curr_z < 62.0:
             hover_z = max(0.0, curr_z - 3.0)
             hw.move_z(hover_z)
             search_pattern = [(0.3, 0.0), (-0.3, 0.0), (0.0, 0.3)]
@@ -244,5 +289,6 @@ def test_rim_stall_and_microsearch():
 if __name__ == '__main__':
     test_empty_socket()
     test_seated_tip()
+    test_b1_tip_seated_with_force_stall()
     test_rim_stall_and_microsearch()
     print("\nALL TIP DETECTION UNIT TESTS PASSED!")

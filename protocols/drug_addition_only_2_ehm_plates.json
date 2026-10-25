@@ -2,13 +2,15 @@
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "A1"
+        "well": "A1",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "A1",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -16,7 +18,8 @@
         "well": "A1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -24,7 +27,8 @@
         "well": "B1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -32,23 +36,27 @@
         "well": "C1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "B1"
+        "well": "B1",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "A2",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -56,7 +64,8 @@
         "well": "A2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -64,7 +73,8 @@
         "well": "B2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -72,23 +82,27 @@
         "well": "C2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "C1"
+        "well": "C1",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "A3",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -96,7 +110,8 @@
         "well": "A3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -104,7 +119,8 @@
         "well": "B3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -112,23 +128,27 @@
         "well": "C3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "D1"
+        "well": "D1",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "A4",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -136,7 +156,8 @@
         "well": "A4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -144,7 +165,8 @@
         "well": "B4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -152,23 +174,27 @@
         "well": "C4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "E1"
+        "well": "E1",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "A5",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -176,7 +202,8 @@
         "well": "A5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -184,7 +211,8 @@
         "well": "B5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -192,23 +220,27 @@
         "well": "C5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "F1"
+        "well": "F1",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "A6",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -216,7 +248,8 @@
         "well": "A6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -224,7 +257,8 @@
         "well": "B6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -232,23 +266,27 @@
         "well": "C6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "G1"
+        "well": "G1",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "B1",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -256,7 +294,8 @@
         "well": "D1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -264,7 +303,8 @@
         "well": "E1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -272,23 +312,27 @@
         "well": "F1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "H1"
+        "well": "H1",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "B2",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -296,7 +340,8 @@
         "well": "D2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -304,7 +349,8 @@
         "well": "E2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -312,23 +358,27 @@
         "well": "F2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "A2"
+        "well": "A2",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "B3",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -336,7 +386,8 @@
         "well": "D3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -344,7 +395,8 @@
         "well": "E3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -352,23 +404,27 @@
         "well": "F3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "B2"
+        "well": "B2",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "B4",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -376,7 +432,8 @@
         "well": "D4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -384,7 +441,8 @@
         "well": "E4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -392,23 +450,27 @@
         "well": "F4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "C2"
+        "well": "C2",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "B5",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -416,7 +478,8 @@
         "well": "D5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -424,7 +487,8 @@
         "well": "E5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -432,23 +496,27 @@
         "well": "F5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "D2"
+        "well": "D2",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "B6",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -456,7 +524,8 @@
         "well": "D6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -464,7 +533,8 @@
         "well": "E6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -472,23 +542,27 @@
         "well": "F6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "E2"
+        "well": "E2",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "C1",
-        "volume": 10.0
+        "volume": 10.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -496,7 +570,8 @@
         "well": "G1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -504,23 +579,27 @@
         "well": "H1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "F2"
+        "well": "F2",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "C1",
-        "volume": 5.0
+        "volume": 5.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -528,23 +607,27 @@
         "well": "A1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "G2"
+        "well": "G2",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "C2",
-        "volume": 10.0
+        "volume": 10.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -552,7 +635,8 @@
         "well": "G2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -560,23 +644,27 @@
         "well": "H2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "H2"
+        "well": "H2",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "C2",
-        "volume": 5.0
+        "volume": 5.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -584,23 +672,27 @@
         "well": "A2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "C3",
-        "volume": 10.0
+        "volume": 10.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -608,7 +700,8 @@
         "well": "G3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -616,23 +709,27 @@
         "well": "H3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "B3"
+        "well": "B3",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "C3",
-        "volume": 5.0
+        "volume": 5.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -640,23 +737,27 @@
         "well": "A3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "C3"
+        "well": "C3",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "C4",
-        "volume": 10.0
+        "volume": 10.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -664,7 +765,8 @@
         "well": "G4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -672,23 +774,27 @@
         "well": "H4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "D3"
+        "well": "D3",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "C4",
-        "volume": 5.0
+        "volume": 5.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -696,23 +802,27 @@
         "well": "A4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "E3"
+        "well": "E3",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "C5",
-        "volume": 10.0
+        "volume": 10.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -720,7 +830,8 @@
         "well": "G5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -728,23 +839,27 @@
         "well": "H5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "F3"
+        "well": "F3",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "C5",
-        "volume": 5.0
+        "volume": 5.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -752,23 +867,27 @@
         "well": "A5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "G3"
+        "well": "G3",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "C6",
-        "volume": 10.0
+        "volume": 10.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -776,7 +895,8 @@
         "well": "G6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -784,23 +904,27 @@
         "well": "H6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "H3"
+        "well": "H3",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "C6",
-        "volume": 5.0
+        "volume": 5.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -808,23 +932,27 @@
         "well": "A6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "A4"
+        "well": "A4",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "D1",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -832,7 +960,8 @@
         "well": "B1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -840,7 +969,8 @@
         "well": "C1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -848,23 +978,27 @@
         "well": "D1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "B4"
+        "well": "B4",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "D2",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -872,7 +1006,8 @@
         "well": "B2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -880,7 +1015,8 @@
         "well": "C2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -888,23 +1024,27 @@
         "well": "D2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "C4"
+        "well": "C4",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "D3",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -912,7 +1052,8 @@
         "well": "B3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -920,7 +1061,8 @@
         "well": "C3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -928,23 +1070,27 @@
         "well": "D3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "D4"
+        "well": "D4",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "D4",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -952,7 +1098,8 @@
         "well": "B4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -960,7 +1107,8 @@
         "well": "C4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -968,23 +1116,27 @@
         "well": "D4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "E4"
+        "well": "E4",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "D5",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -992,7 +1144,8 @@
         "well": "B5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1000,7 +1153,8 @@
         "well": "C5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1008,23 +1162,27 @@
         "well": "D5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "F4"
+        "well": "F4",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "D6",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -1032,7 +1190,8 @@
         "well": "B6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1040,7 +1199,8 @@
         "well": "C6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1048,23 +1208,27 @@
         "well": "D6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "G4"
+        "well": "G4",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "E1",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -1072,7 +1236,8 @@
         "well": "E1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1080,7 +1245,8 @@
         "well": "F1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1088,23 +1254,27 @@
         "well": "G1",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "H4"
+        "well": "H4",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "E2",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -1112,7 +1282,8 @@
         "well": "E2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1120,7 +1291,8 @@
         "well": "F2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1128,23 +1300,27 @@
         "well": "G2",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "A5"
+        "well": "A5",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "E3",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -1152,7 +1328,8 @@
         "well": "E3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1160,7 +1337,8 @@
         "well": "F3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1168,23 +1346,27 @@
         "well": "G3",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "B5"
+        "well": "B5",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "E4",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -1192,7 +1374,8 @@
         "well": "E4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1200,7 +1383,8 @@
         "well": "F4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1208,23 +1392,27 @@
         "well": "G4",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "C5"
+        "well": "C5",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "D6",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -1232,7 +1420,8 @@
         "well": "E5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1240,7 +1429,8 @@
         "well": "F5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1248,23 +1438,27 @@
         "well": "G5",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     },
     {
         "action": "Pick Up Tip",
         "slot": "Slot_4",
-        "well": "D5"
+        "well": "D5",
+        "labware": "tip_rack_1000ul.json"
     },
     {
         "action": "Aspirate Media",
         "slot": "Slot_3",
         "well": "E6",
-        "volume": 15.0
+        "volume": 15.0,
+        "labware": "generic_96_well_plate.json"
     },
     {
         "action": "Dispense Media",
@@ -1272,7 +1466,8 @@
         "well": "E6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1280,7 +1475,8 @@
         "well": "F6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Dispense Media",
@@ -1288,11 +1484,13 @@
         "well": "G6",
         "volume": 5.0,
         "mix_cycles": 2,
-        "mix_volume": 200.0
+        "mix_volume": 200.0,
+        "labware": "myriamed_48_well.json"
     },
     {
         "action": "Discard Tip",
         "slot": "Slot_2",
-        "well": "A3"
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
     }
 ]
