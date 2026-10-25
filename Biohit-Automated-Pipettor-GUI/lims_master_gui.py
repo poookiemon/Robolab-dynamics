@@ -1501,10 +1501,10 @@ class LIMSMasterApp:
     def action_load_liquid_test_protocol(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
         cand_paths = [
+            os.path.join(script_dir, "protocols", "test_lld_slot1_a1_media_removal.json"),
+            os.path.join(os.path.dirname(script_dir), "protocols", "test_lld_slot1_a1_media_removal.json"),
             os.path.join(script_dir, "protocols", "Test_Liquid_Level_Detection.json"),
             os.path.join(os.path.dirname(script_dir), "protocols", "Test_Liquid_Level_Detection.json"),
-            os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "protocols", "Test_Liquid_Level_Detection.json"),
-            os.path.join(os.getcwd(), "protocols", "Test_Liquid_Level_Detection.json"),
         ]
         target_path = None
         for p in cand_paths:
@@ -1518,11 +1518,11 @@ class LIMSMasterApp:
             self.wf_box.delete(0, tk.END)
             lw_dir = self.get_labware_dir()
 
-            # Auto-assign Slot 6 = biohit_rack_4x6_17a.json, Slot 2 = waste_trough.json, Slot 3 = tip_rack_1000ul.json
+            # Auto-assign Slot 1 = 50mL Falcon Media, Slot 2 = 50mL Falcon Discard (A3), Slot 4 = 1000uL Tip Rack
             deck_setup = {
-                "Slot_2": "waste_trough.json",
-                "Slot_3": "tip_rack_1000ul.json",
-                "Slot_6": "biohit_rack_4x6_17a.json"
+                "Slot_1": "tube_rack_3x50ml.json",
+                "Slot_2": "tube_rack_3x50ml.json",
+                "Slot_4": "tip_rack_1000ul.json"
             }
             for s_name, lw_file in deck_setup.items():
                 lp = os.path.join(lw_dir, lw_file)
@@ -1531,6 +1531,7 @@ class LIMSMasterApp:
                     self.lims.deck_labware[s_name].source_file = lw_file
                 if s_name not in self.placed_slots:
                     self.placed_slots.append(s_name)
+            self.sync_deck_manager()
 
             for step in loaded_sequence:
                 self.workflow_sequence.append(step)
@@ -2157,6 +2158,7 @@ class LIMSMasterApp:
 
     # Calibrated per-slot Z for 96-well microplates: (deep / aspirate / mix, brim / dispense)
     SLOT_96_PLATE_Z = {
+        "Slot_3": (91.0, 85.0),
         "Slot_4": (90.0, 85.0),
         "Slot_5": (92.0, 85.0),
     }
@@ -2249,7 +2251,14 @@ class LIMSMasterApp:
         r_idx, c_idx = self._parse_well(well_id)
         raw = getattr(labware_obj, 'raw_data', None) or {}
 
-        # 1. WASTE TROUGH: always the centre of whatever slot it sits on
+        # 1. WASTE DISCARD ON SLOT 2:
+        # On Slot 2, waste discard is explicitly Falcon Tube A3 (X=27.0, Y=13.0)
+        if slot_name == "Slot_2":
+            w_str = str(well_id or "").upper().strip()
+            if w_str in ("A3", "3", "DISCARD", "WASTE") or not w_str or kind == "waste":
+                return 27.0, 13.0
+
+        # 1b. WASTE TROUGH: always the centre of Slot 6 (or generic single-cavity waste)
         if kind == "waste" or (kind is None and slot_name == "Slot_6"):
             return cx, cy
 

@@ -59,6 +59,30 @@ def test_deck_stacking_kinematics():
     assert p96_brim_z == 85.0, f"Expected brim Z=85.0mm, got {p96_brim_z}"
     assert p96_deep_z == 92.0, f"Expected deep Z=92.0mm, got {p96_deep_z}"
     assert p96_mix_z == 92.0, f"Expected mix Z=92.0mm, got {p96_mix_z}"
+
+    # Slot 3 Generic 96-well plate (calibrated 1mm above Slot 5: 91.0mm aspirate/mix)
+    p96_s3 = Plate96()
+    slot3 = DeckSlot("Slot_3", 135.2, 45.0, 127.8, 85.5, adapter=ADAPTER_NONE, labware=p96_s3)
+    dm.slots["Slot_3"] = slot3
+    s3_deep_z = dm.calculate_z("Aspirate Media", "Slot_3", "A1")
+    s3_mix_z = dm.calculate_z("Mix Well", "Slot_3", "A1")
+    s3_brim_z = dm.calculate_z("Dispense Media", "Slot_3", "A1", in_liquid=False)
+    print(f"Slot 3 96-well A1: Deep Z: {s3_deep_z}, Mix Z: {s3_mix_z}, Brim Z: {s3_brim_z}")
+    assert s3_deep_z == 91.0, f"Expected Slot 3 Deep Z=91.0mm (1mm higher), got {s3_deep_z}"
+    assert s3_mix_z == 91.0, f"Expected Slot 3 Mix Z=91.0mm (1mm higher), got {s3_mix_z}"
+    assert s3_brim_z == 85.0, f"Expected Slot 3 Brim Z=85.0mm, got {s3_brim_z}"
+
+    # Waste container on Slot 2 must target Tube A3 (27.0, 13.0), NEVER center
+    from labware_models import WasteTrough
+    wt = WasteTrough()
+    slot2_wt = DeckSlot("Slot_2", 0.0, 0.0, 127.8, 26.0, adapter=ADAPTER_90MM_BLOCK, labware=wt)
+    dm.slots["Slot_2"] = slot2_wt
+    wt_xy_a3 = dm.calculate_xy("Slot_2", "A3")
+    wt_xy_none = dm.calculate_xy("Slot_2", "")
+    print(f"Slot 2 Waste Trough A3: {wt_xy_a3}, default: {wt_xy_none}")
+    assert wt_xy_a3 == (27.0, 13.0), f"Slot 2 waste A3 must be (27.0, 13.0), got {wt_xy_a3}"
+    assert wt_xy_none == (27.0, 13.0), f"Slot 2 waste default must be (27.0, 13.0), got {wt_xy_none}"
+
     print("PASS: Deck Stacking Kinematics verified.")
 
 

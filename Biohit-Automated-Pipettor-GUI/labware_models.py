@@ -169,6 +169,9 @@ class Plate96(LabwareBase):
     def get_aspirate_z(self, slot: 'DeckSlot', well_id: str, current_vol_ul: float = 0.0, submerge_mm: float = 2.0) -> float:
         if self.aspirate_depth_override is not None:
             return self.aspirate_depth_override
+        # Slot 3 calibrated deep aspirate / mix is 91.0mm (1mm above 92.0mm to prevent bottom contact)
+        if slot.name == "Slot_3":
+            return 91.0
         # Slot 5 calibrated deep aspirate / mix is 92.0mm
         if slot.name == "Slot_5":
             return 92.0
@@ -177,12 +180,13 @@ class Plate96(LabwareBase):
     def get_dispense_z(self, slot: 'DeckSlot', well_id: str, in_liquid: bool = False) -> float:
         if self.dispense_depth_override is not None and not in_liquid:
             return self.dispense_depth_override
-        # Slot 5 calibrated dispense brim is 85.0mm
-        if slot.name == "Slot_5" and not in_liquid:
+        if slot.name in ("Slot_3", "Slot_5") and not in_liquid:
             return 85.0
         return super().get_dispense_z(slot, well_id, in_liquid)
 
     def get_mix_z(self, slot: 'DeckSlot', well_id: str) -> float:
+        if slot.name == "Slot_3":
+            return 91.0
         if slot.name == "Slot_5":
             return 92.0
         return super().get_mix_z(slot, well_id)
@@ -404,7 +408,10 @@ class FalconRack50mL(LabwareBase):
 
     def get_well_xy(self, slot: 'DeckSlot', well_id: str) -> Tuple[float, float]:
         _, c_idx = self.parse_well(well_id)
-        ci = c_idx if (c_idx is not None and 0 <= c_idx < 3) else 0
+        if not well_id or str(well_id).upper().strip() in ("A3", "3", "DISCARD", "WASTE"):
+            ci = 2  # Default discard on 50mL Falcon rack is Tube A3 (X=27.0, Y=13.0)
+        else:
+            ci = c_idx if (c_idx is not None and 0 <= c_idx < 3) else 0
         ox, oy = slot.origin_a1_xy
         return ox - (ci * self.pitch_x_mm), oy
 
@@ -516,6 +523,9 @@ class WasteTrough(LabwareBase):
         super().__init__(**defaults)
 
     def get_well_xy(self, slot: 'DeckSlot', well_id: str) -> Tuple[float, float]:
+        if slot.name == "Slot_2" or str(well_id or "").upper().strip() in ("A3", "3", "DISCARD", "WASTE"):
+            # On Slot 2, waste discard is explicitly Falcon Tube A3 (X=27.0, Y=13.0)
+            return 27.0, 13.0
         return slot.center_x, slot.center_y
 
 

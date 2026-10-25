@@ -1,0 +1,39 @@
+[
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A1",
+        "labware": "tip_rack_1000ul.json"
+    },
+    {
+        "action": "Detect Liquid Level",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "labware": "tube_rack_3x50ml.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 500.0,
+        "labware": "tube_rack_3x50ml.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A3",
+        "volume": 500.0,
+        "labware": "tube_rack_3x50ml.json"
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A3",
+        "labware": "tube_rack_3x50ml.json"
+    }
+]
