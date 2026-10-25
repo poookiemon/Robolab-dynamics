@@ -2593,24 +2593,63 @@ class LIMSMasterApp:
                     self.lims.pipettor.hardware.move_z(approach_z)
                     self.lims.pipettor.hardware.z_speed = 3
                     self.lims.pipettor.hardware.tip_pickup_force = 26
+                    pick_ok = False
                     try:
                         self.lims.pipettor.hardware.pick_tip(87.0)
+                        pick_ok = True
                     except Exception as p_err:
-                        curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                        if curr_z < 60.0:
-                            raise p_err
+                        pick_ok = False
+
                     curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                    if curr_z >= 60.0:
-                        try:
-                            push_z = min(curr_z + 2.5, 89.0)
-                            self.lims.pipettor.hardware.move_z(push_z)
-                            time.sleep(0.35)
-                        except Exception as pe:
-                            self.logger.warning(f"Pushback seating completed with resistance: {pe}")
+                    self.logger.info(f"[FIND TIP] Probed {current_well}: Z={curr_z:.2f}mm, pick_ok={pick_ok}")
+
+                    # Empty socket check: cone reached 84.5mm or deeper, or limit without pickup
+                    if curr_z >= 84.5 or (not pick_ok and curr_z >= 82.5):
+                        raise Exception(f"No tip present in {current_well} (Z={curr_z:.2f}mm reached bottom limit)")
+
+                    # Rim stall check (<71.5mm)
+                    if curr_z < 71.5:
+                        if getattr(self, 'adaptive_tip_centering_var', None) and self.adaptive_tip_centering_var.get() and not self.is_aborted:
+                            hover_z = max(0.0, curr_z - 3.0)
+                            self.logger.warning(f"Tip probe stalled on rim at Z={curr_z:.2f}mm (<71.5mm). Engaging micro-search around {current_well}...")
+                            self.lims.pipettor.hardware.move_z(hover_z)
+                            search_pattern = [
+                                (0.3, 0.0), (-0.3, 0.0), (0.0, 0.3), (0.0, -0.3),
+                                (0.5, 0.5), (-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5),
+                                (0.7, 0.0), (-0.7, 0.0), (0.0, 0.7), (0.0, -0.7),
+                                (1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.0, -1.0)
+                            ]
+                            for dx, dy in search_pattern:
+                                if self.is_aborted: break
+                                self.lims.hw.move_to(tx + dx, ty + dy, hover_z, speed=self.speed_var.get())
+                                time.sleep(0.03)
+                                self.lims.pipettor.hardware.z_speed = 3
+                                self.lims.pipettor.hardware.tip_pickup_force = 26
+                                s_ok = False
+                                try:
+                                    self.lims.pipettor.hardware.pick_tip(87.0)
+                                    s_ok = True
+                                except Exception:
+                                    s_ok = False
+                                s_cz = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
+                                if s_ok and 71.5 <= s_cz < 84.0:
+                                    self.logger.info(f"🎯 Tip Opening Acquired at offset dx={dx:+.2f}mm, dy={dy:+.2f}mm (Z={s_cz:.2f}mm)!")
+                                    self.tip_rack_learned_offset = (
+                                        getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))[0] + dx,
+                                        getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))[1] + dy
+                                    )
+                                    pick_ok = True
+                                    curr_z = s_cz
+                                    break
+                                else:
+                                    self.lims.pipettor.hardware.move_z(hover_z)
+
+                    if not pick_ok or curr_z >= 84.5 or curr_z < 71.5:
+                        raise Exception(f"No tip seated in {current_well} (Z={curr_z:.2f}mm, pick_ok={pick_ok})")
                 else:
                     curr_z = 75.0
-                self.logger.info(f"Tip acquired at {current_well} (Z={curr_z:.2f}mm). System state updated: HAS_TIP = True")
-                time.sleep(0.35)
+                self.logger.info(f"🎯 Tip acquired at {current_well} (Z={curr_z:.2f}mm). HAS_TIP = True")
+                time.sleep(0.2)
                 tip_found = True
                 self.root.after(0, lambda: self.has_tip_var.set(True))
                 if self.lims.pipettor.hardware:
@@ -3008,7 +3047,7 @@ class LIMSMasterApp:
                                 time.sleep(0.03)
 
                             if not self.lims.pipettor.hardware:
-                                return True, 79.0
+                                return True, 75.0
 
                             hw = self.lims.pipettor.hardware
                             if not from_hover:
@@ -3016,45 +3055,55 @@ class LIMSMasterApp:
                                 hw.move_z(approach_z)
                             hw.z_speed = 3
                             hw.tip_pickup_force = 26
+                            pick_ok = False
                             try:
                                 hw.pick_tip(pickup_limit)
+                                pick_ok = True
                             except Exception:
-                                pass
+                                pick_ok = False
+
                             curr_z = getattr(hw, 'z_position', 0.0)
-                            if curr_z >= 78.5 and curr_z <= (pickup_limit - 1.5):
-                                # Cone successfully dropped into tip collar opening!
-                                try:
-                                    push_z = min(curr_z + 2.5, pickup_limit + 2.0)
-                                    hw.move_z(push_z)
-                                    time.sleep(0.35)
-                                except Exception as pe:
-                                    self.logger.warning(f"Pushback seating completed with resistance: {pe}")
+                            self.logger.info(f"[TIP PROBE] Target ({tx_coord:.2f}, {ty_coord:.2f}): Z={curr_z:.2f}mm, pick_ok={pick_ok}, limit={pickup_limit:.1f}mm")
+
+                            # Case 1: Empty Socket (Z reached limit or bottom floor >= 84.5mm)
+                            # Cone plunged straight down without tip friction
+                            if curr_z >= 84.5 or curr_z >= (pickup_limit - 2.0) or (not pick_ok and curr_z >= 82.5):
+                                return False, curr_z
+
+                            # Case 2: Tip successfully wedged inside opening (71.5mm <= Z < 84.0mm and pick_ok is True)
+                            if pick_ok and 71.5 <= curr_z < 84.0:
                                 if hasattr(hw, 'sensor_value'):
                                     try:
-                                        s_val = hw.sensor_value()
+                                        s_val = hw.sensor_value() if callable(hw.sensor_value) else hw.sensor_value
                                         self.logger.info(f"Tip seal verified via frequency sensor: {s_val} counts.")
                                     except Exception:
                                         pass
-                                return True, getattr(hw, 'z_position', curr_z)
+                                return True, curr_z
+
+                            # Case 3: Rim collision / shallow stall (Z < 71.5mm)
                             return False, curr_z
 
                         def _adaptive_search_and_pick(base_x, base_y):
                             seated, curr_z = _attempt_tip_seat(base_x, base_y, from_hover=False)
                             if seated:
+                                # Immediately retract to clearance Z=0; never microsearch when tip acquired!
+                                if self.lims.pipettor.hardware:
+                                    self.lims.pipettor.hardware.move_z(0)
                                 return True, curr_z
 
-                            # If cone went down to bottom limit, the well is completely empty
-                            if curr_z >= (pickup_limit - 1.5):
-                                self.logger.info(f"Well empty at ({base_x:.2f}, {base_y:.2f}) (Z={curr_z:.2f}mm reached limit).")
+                            # If cone went down to bottom limit, the well is completely empty.
+                            # NEVER execute micro-search on an empty socket!
+                            if curr_z >= 84.5 or curr_z >= (pickup_limit - 2.0) or curr_z >= 82.5:
+                                self.logger.info(f"Socket empty at ({base_x:.2f}, {base_y:.2f}) (Z={curr_z:.2f}mm reached limit). Skipping to next well.")
                                 if self.lims.pipettor.hardware:
                                     self.lims.pipettor.hardware.move_z(0)
                                 return False, curr_z
 
-                            # If cone stalled at Z < 77.5mm, it made contact with the tip collar rim!
+                            # If cone stalled shallowly (Z < 72.0mm), it made contact with the tip collar rim!
                             if getattr(self, 'adaptive_tip_centering_var', None) and self.adaptive_tip_centering_var.get() and not self.is_aborted:
-                                hover_z = max(0.0, curr_z - 2.5)
+                                hover_z = max(0.0, curr_z - 3.0)
                                 self.logger.warning(
-                                    f"Tip pickup stalled at Z={curr_z:.2f}mm (<77.5mm, cone hit tip collar rim). "
+                                    f"Tip pickup stalled at Z={curr_z:.2f}mm (<72.0mm, cone hit tip collar rim). "
                                     f"Hovering at Z={hover_z:.2f}mm and engaging polar micro-search around ({base_x:.2f}, {base_y:.2f})..."
                                 )
                                 if self.lims.pipettor.hardware:
@@ -3083,10 +3132,11 @@ class LIMSMasterApp:
                                             getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))[0] + dx,
                                             getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))[1] + dy
                                         )
+                                        if self.lims.pipettor.hardware:
+                                            self.lims.pipettor.hardware.move_z(0)
                                         return True, s_cz
                                     else:
                                         if self.lims.pipettor.hardware:
-                                            hover_z = max(0.0, s_cz - 2.5)
                                             self.lims.pipettor.hardware.move_z(hover_z)
 
                             if self.lims.pipettor.hardware:
