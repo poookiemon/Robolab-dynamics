@@ -1,19 +1,27 @@
 #!/usr/bin/env python3
 """
-Unit test for Tip Pickup Detection & Micro-Search logic.
+Unit test for Tip Pickup Detection & Auto-Advance logic.
 Verifies:
-1. Empty socket (Z >= 84.5mm) is identified as EMPTY:
-   - Does NOT trigger double push (move_z(push_z))
-   - Does NOT enter microsearch
-   - Returns False
-2. Firmly seated tip (71.5mm <= Z < 84.0mm, pick_ok=True) is identified as ACQUIRED:
-   - Does NOT trigger double push
-   - Ceases all microsearch immediately
-   - Returns True
-3. Collar rim stall (Z < 71.5mm):
-   - Correctly recognized as collar rim collision
-   - Hovers 3mm above rim and engages polar microsearch
-   - Upon finding tip at offset, immediately terminates search and learns offset
+1. Empty socket (Z >= 84.0mm or stalled shallowly Z < 60.0mm):
+   - Probes exactly once with pick_tip()
+   - No second push
+   - No microsearch / hovering
+   - Retracts immediately to clearance Z=0
+   - Returns False, allowing clean auto-advance to next well
+2. Seated tip (60.0mm <= Z < 84.0mm):
+   - Probes exactly once with pick_tip()
+   - No second push
+   - Retracts immediately to clearance Z=0
+   - Returns True (HAS_TIP = True) and breaks out of search immediately
+3. Force-stall exception when pressing into tip collar (e.g. at Z=70.5mm):
+   - Absorbs force-stall exception gracefully
+   - Verifies 60.0 <= Z < 84.0mm
+   - Declares tip seated (True)
+   - Retracts immediately to clearance Z=0
+4. Auto-advance sequence (e.g. A1 empty -> advances to B1 seated):
+   - A1 probed once -> detected empty -> retracted to Z=0
+   - B1 probed once -> detected seated -> retracted to Z=0 -> completes!
+   - Zero microsearch or double pushing at any point.
 """
 
 import sys
@@ -26,9 +34,9 @@ class MockHardware:
         self.tip_pickup_force = 0
         self.move_z_history = []
         self.pick_tip_calls = []
-        # Simulation scenario: 'empty', 'seated', 'rim_then_seat'
+        # Simulation scenario: 'empty', 'seated', 'seated_force_exception_70mm', 'shallow_stall_55mm'
         self.scenario = 'seated'
-        self.probe_count = 0
+        self.well_scenarios = {}
 
     def move_z(self, z):
         self.z_position = float(z)
@@ -36,34 +44,19 @@ class MockHardware:
 
     def pick_tip(self, limit):
         self.pick_tip_calls.append(limit)
-        self.probe_count += 1
-        if self.scenario == 'empty':
-            # Plunge all the way to 85.5mm
+        sc = self.scenario
+        if sc == 'empty':
             self.z_position = 85.5
             raise Exception("CommandFailed: limit reached")
-        elif self.scenario == 'seated':
-            # Wedges nicely at 75.0mm
+        elif sc == 'shallow_stall_55mm':
+            self.z_position = 55.0
+            raise Exception("CommandFailed: Actuator stalled")
+        elif sc == 'seated':
             self.z_position = 75.0
             return True
-        elif self.scenario == 'seated_force_exception_70mm':
-            # Typical B1 case: wedges firmly at 70.5mm, but driver raises force-stall exception
+        elif sc == 'seated_force_exception_70mm':
             self.z_position = 70.5
             raise Exception("CommandFailed: Actuator stalled on force 26")
-        elif self.scenario == 'rim_then_seat':
-            if self.probe_count == 1:
-                # First attempt hits flat rim above socket at 55.0mm
-                self.z_position = 55.0
-                return True
-            else:
-                # Microsearch offset drops into bore at 74.8mm
-                self.z_position = 74.8
-                return True
-        elif self.scenario == 'rim_all_fail':
-            self.z_position = 55.0
-            return True
-
-    def sensor_value(self):
-        return 34500
 
 class MockLIMS:
     def __init__(self):
@@ -73,64 +66,65 @@ class MockLIMS:
 class MockApp:
     def __init__(self):
         self.lims = MockLIMS()
-        self.speed_var = type("V", (), {"get": lambda: 100})()
-        self.adaptive_tip_centering_var = type("V", (), {"get": lambda: True})()
+        class V:
+            def get(self): return 100
+        self.speed_var = V()
         self.is_aborted = False
         self.logger = type("Log", (), {
             "info": lambda self, msg: print(f"[INFO] {msg}"),
             "warning": lambda self, msg: print(f"[WARN] {msg}"),
             "error": lambda self, msg: print(f"[ERR] {msg}")
         })()
-        self.tip_rack_learned_offset = (0.0, 0.0)
 
-def test_empty_socket():
-    print("\n--- Test 1: Empty Socket Detection ---")
-    app = MockApp()
+def _make_do_pick(app, pickup_limit=87.0, approach_z=55.0, hw_speed=9):
     hw = app.lims.pipettor.hardware
-    hw.scenario = 'empty'
-    pickup_limit = 87.0
-    hw_speed = 9
-    approach_z = 55.0
-
-    def _attempt_tip_seat(tx_coord, ty_coord, from_hover=False, hover_z=None):
-        if not from_hover:
+    def _do_pick(tx, ty):
+        if hw:
             hw.move_z(0)
-            hw.z_speed = hw_speed
-            hw.move_z(approach_z)
+        app.lims.hw.move_to(tx, ty, 0, speed=app.speed_var.get())
+        if not hw:
+            return True, 75.0
+
+        hw.z_speed = hw_speed
+        hw.move_z(approach_z)
         hw.z_speed = 3
         hw.tip_pickup_force = 26
         try:
             hw.pick_tip(pickup_limit)
         except Exception:
             pass
+
         curr_z = getattr(hw, 'z_position', 0.0)
-
-        # Case 1: Empty Socket (Z >= 84.0mm)
-        if curr_z >= 84.0 or curr_z >= (pickup_limit - 2.5):
-            return False, curr_z
-        # Case 2: Tip acquired (62.0mm <= Z < 84.0mm)
-        if 62.0 <= curr_z < 84.0:
+        if 60.0 <= curr_z < 84.0:
+            try:
+                hw.z_speed = hw_speed
+                hw.move_z(0)
+            except Exception:
+                hw.move_z(0)
             return True, curr_z
-        # Case 3: Rim collision (Z < 62.0mm)
+
+        try:
+            hw.z_speed = hw_speed
+            hw.move_z(0)
+        except Exception:
+            hw.move_z(0)
         return False, curr_z
 
-    def _adaptive_search_and_pick(base_x, base_y):
-        seated, curr_z = _attempt_tip_seat(base_x, base_y, from_hover=False)
-        if seated:
-            hw.move_z(0)
-            return True, curr_z
-        if curr_z >= 84.0 or curr_z >= (pickup_limit - 2.5):
-            print(f"Socket empty at ({base_x}, {base_y}) (Z={curr_z:.2f}mm reached limit). Skipping to next well.")
-            hw.move_z(0)
-            return False, curr_z
-        return False, curr_z
+    return _do_pick
 
-    seated, cz = _adaptive_search_and_pick(100.0, 50.0)
+def test_empty_socket():
+    print("\n--- Test 1: Empty Socket Detection ---")
+    app = MockApp()
+    hw = app.lims.pipettor.hardware
+    hw.scenario = 'empty'
+    _do_pick = _make_do_pick(app)
+
+    seated, cz = _do_pick(100.0, 50.0)
     assert not seated, "Empty socket must NOT be declared seated!"
     assert cz == 85.5, f"Expected Z=85.5, got {cz}"
-    assert len(hw.pick_tip_calls) == 1, "Must only probe once on empty socket (no microsearch)!"
-    # Verify no second push (push_z) occurred
-    assert not any(z > 85.5 for z in hw.move_z_history), "Must NOT push deeper than limit on empty socket!"
+    assert len(hw.pick_tip_calls) == 1, "Must only probe once on empty socket!"
+    assert hw.z_position == 0.0, "Must retract to clearance Z=0!"
+    assert not any(z > 85.5 for z in hw.move_z_history), "Must NOT push deeper than limit!"
     print("PASS: Empty socket correctly detected without double push or microsearch.")
 
 def test_seated_tip():
@@ -138,40 +132,9 @@ def test_seated_tip():
     app = MockApp()
     hw = app.lims.pipettor.hardware
     hw.scenario = 'seated'
-    pickup_limit = 87.0
-    hw_speed = 9
-    approach_z = 55.0
+    _do_pick = _make_do_pick(app)
 
-    def _attempt_tip_seat(tx_coord, ty_coord, from_hover=False, hover_z=None):
-        if not from_hover:
-            hw.move_z(0)
-            hw.z_speed = hw_speed
-            hw.move_z(approach_z)
-        hw.z_speed = 3
-        hw.tip_pickup_force = 26
-        try:
-            hw.pick_tip(pickup_limit)
-        except Exception:
-            pass
-        curr_z = getattr(hw, 'z_position', 0.0)
-
-        if curr_z >= 84.0 or curr_z >= (pickup_limit - 2.5):
-            return False, curr_z
-        if 62.0 <= curr_z < 84.0:
-            return True, curr_z
-        return False, curr_z
-
-    def _adaptive_search_and_pick(base_x, base_y):
-        seated, curr_z = _attempt_tip_seat(base_x, base_y, from_hover=False)
-        if seated:
-            hw.move_z(0)
-            return True, curr_z
-        if curr_z >= 84.0:
-            hw.move_z(0)
-            return False, curr_z
-        return False, curr_z
-
-    seated, cz = _adaptive_search_and_pick(100.0, 50.0)
+    seated, cz = _do_pick(100.0, 50.0)
     assert seated, "Tip should be declared seated!"
     assert cz == 75.0, f"Expected Z=75.0, got {cz}"
     assert len(hw.pick_tip_calls) == 1, "Must only probe once when tip is acquired!"
@@ -183,112 +146,50 @@ def test_b1_tip_seated_with_force_stall():
     app = MockApp()
     hw = app.lims.pipettor.hardware
     hw.scenario = 'seated_force_exception_70mm'
-    pickup_limit = 87.0
-    hw_speed = 9
-    approach_z = 55.0
+    _do_pick = _make_do_pick(app)
 
-    def _attempt_tip_seat(tx_coord, ty_coord, from_hover=False, hover_z=None):
-        if not from_hover:
-            hw.move_z(0)
-            hw.z_speed = hw_speed
-            hw.move_z(approach_z)
-        hw.z_speed = 3
-        hw.tip_pickup_force = 26
-        try:
-            hw.pick_tip(pickup_limit)
-        except Exception:
-            pass
-        curr_z = getattr(hw, 'z_position', 0.0)
-
-        if curr_z >= 84.0 or curr_z >= (pickup_limit - 2.5):
-            return False, curr_z
-        if 62.0 <= curr_z < 84.0:
-            return True, curr_z
-        return False, curr_z
-
-    def _adaptive_search_and_pick(base_x, base_y):
-        seated, curr_z = _attempt_tip_seat(base_x, base_y, from_hover=False)
-        if seated:
-            hw.move_z(0)
-            return True, curr_z
-        if curr_z >= 84.0:
-            hw.move_z(0)
-            return False, curr_z
-        # Must NEVER reach microsearch when tip is seated!
-        return False, curr_z
-
-    seated, cz = _adaptive_search_and_pick(100.0, 50.0)
+    seated, cz = _do_pick(100.0, 50.0)
     assert seated, "B1 Tip MUST be declared seated despite driver exception!"
     assert cz == 70.5, f"Expected Z=70.5, got {cz}"
-    assert len(hw.pick_tip_calls) == 1, "Must only probe ONCE and NEVER microsearch when tip is acquired!"
+    assert len(hw.pick_tip_calls) == 1, "Must only probe ONCE and NEVER microsearch!"
     assert hw.z_position == 0.0, "Must immediately retract to clearance Z=0!"
     print("PASS: B1 tip with force-stall exception at Z=70.5mm acquired immediately without microsearch.")
 
-def test_rim_stall_and_microsearch():
-    print("\n--- Test 4: Collar Rim Stall with Microsearch ---")
+def test_auto_advance_a1_empty_to_b1_seated():
+    print("\n--- Test 4: Auto-Advance from A1 (empty) to B1 (seated) ---")
     app = MockApp()
     hw = app.lims.pipettor.hardware
-    hw.scenario = 'rim_then_seat'
-    pickup_limit = 87.0
-    hw_speed = 9
-    approach_z = 55.0
+    _do_pick = _make_do_pick(app)
 
-    def _attempt_tip_seat(tx_coord, ty_coord, from_hover=False, hover_z=None):
-        if not from_hover:
-            hw.move_z(0)
-            hw.z_speed = hw_speed
-            hw.move_z(approach_z)
-        hw.z_speed = 3
-        hw.tip_pickup_force = 26
-        try:
-            hw.pick_tip(pickup_limit)
-        except Exception:
-            pass
-        curr_z = getattr(hw, 'z_position', 0.0)
+    wells = ["A1", "B1", "C1"]
+    tip_found = False
+    coords_map = {"A1": (100.0, 50.0), "B1": (100.0, 59.0), "C1": (100.0, 68.0)}
 
-        if curr_z >= 84.0 or curr_z >= (pickup_limit - 2.5):
-            return False, curr_z
-        if 62.0 <= curr_z < 84.0:
-            return True, curr_z
-        return False, curr_z
+    for current_well in wells:
+        # A1 is empty (e.g. stalled shallowly at 55mm or plunged to 85.5mm)
+        if current_well == "A1":
+            hw.scenario = 'empty'
+        else:
+            hw.scenario = 'seated'
 
-    def _adaptive_search_and_pick(base_x, base_y):
-        seated, curr_z = _attempt_tip_seat(base_x, base_y, from_hover=False)
+        tx, ty = coords_map[current_well]
+        seated, cz = _do_pick(tx, ty)
         if seated:
-            hw.move_z(0)
-            return True, curr_z
-        if curr_z >= 84.0:
-            hw.move_z(0)
-            return False, curr_z
+            print(f"Tip acquired at {current_well} (Z={cz:.2f}mm). HAS_TIP = True")
+            tip_found = True
+            break
+        else:
+            print(f"Well {current_well} empty or passed (Z={cz:.2f}mm). Tracking to next well...")
 
-        # Rim stall (< 62.0mm)
-        if curr_z < 62.0:
-            hover_z = max(0.0, curr_z - 3.0)
-            hw.move_z(hover_z)
-            search_pattern = [(0.3, 0.0), (-0.3, 0.0), (0.0, 0.3)]
-            for dx, dy in search_pattern:
-                s_ok, s_cz = _attempt_tip_seat(base_x + dx, base_y + dy, from_hover=True, hover_z=hover_z)
-                if s_ok:
-                    app.tip_rack_learned_offset = (dx, dy)
-                    hw.move_z(0)
-                    return True, s_cz
-                else:
-                    hw.move_z(hover_z)
-
-        hw.move_z(0)
-        return False, curr_z
-
-    seated, cz = _adaptive_search_and_pick(100.0, 50.0)
-    assert seated, "Microsearch should find and seat the tip!"
-    assert cz == 74.8, f"Expected Z=74.8, got {cz}"
-    assert len(hw.pick_tip_calls) == 2, f"Expected 2 probes (1 rim, 1 microsearch), got {len(hw.pick_tip_calls)}"
-    assert app.tip_rack_learned_offset == (0.3, 0.0), "Offset should be learned!"
-    assert hw.z_position == 0.0, "Must retract to clearance Z=0!"
-    print("PASS: Collar rim stall correctly engaged microsearch, acquired tip at offset, and learned offset.")
+    assert tip_found, "Must find tip in B1!"
+    assert current_well == "B1", f"Expected tip to be found in B1, got {current_well}"
+    assert len(hw.pick_tip_calls) == 2, f"Expected exactly 2 probes (1 for A1, 1 for B1), got {len(hw.pick_tip_calls)}"
+    assert hw.z_position == 0.0, "Must finish at clearance Z=0!"
+    print("PASS: Clean auto-advance from A1 to B1 without any microsearch or stalling.")
 
 if __name__ == '__main__':
     test_empty_socket()
     test_seated_tip()
     test_b1_tip_seated_with_force_stall()
-    test_rim_stall_and_microsearch()
-    print("\nALL TIP DETECTION UNIT TESTS PASSED!")
+    test_auto_advance_a1_empty_to_b1_seated()
+    print("\nALL TIP DETECTION & AUTO-ADVANCE UNIT TESTS PASSED!")

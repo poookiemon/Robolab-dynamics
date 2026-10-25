@@ -1181,9 +1181,7 @@ class LIMSMasterApp:
         ttk.Checkbutton(pane_ctrl, text="Auto-Search Tips (Skip empty wells)", variable=self.auto_tip_search_var).pack(
             fill=tk.X, pady=(5, 2))
 
-        self.adaptive_tip_centering_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(pane_ctrl, text="Adaptive Tip Auto-Centering (±0.5mm)", variable=self.adaptive_tip_centering_var).pack(
-            fill=tk.X, pady=(0, 2))
+        self.adaptive_tip_centering_var = tk.BooleanVar(value=False)
 
         self.dynamic_z_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(pane_ctrl, text="Auto-Height Detection (Liquids ONLY)", variable=self.dynamic_z_var).pack(
@@ -2602,60 +2600,15 @@ class LIMSMasterApp:
                     self.lims.pipettor.hardware.move_z(approach_z)
                     self.lims.pipettor.hardware.z_speed = 3
                     self.lims.pipettor.hardware.tip_pickup_force = 26
-                    # Probe tip
                     try:
                         self.lims.pipettor.hardware.pick_tip(87.0)
-                    except Exception as p_err:
+                    except Exception:
                         pass
 
                     curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                    self.logger.info(f"[FIND TIP] Probed {current_well}: Z={curr_z:.2f}mm")
-
-                    # Empty socket check: cone reached 84.0mm or deeper without tip friction
-                    if curr_z >= 84.0:
-                        raise Exception(f"No tip present in {current_well} (Z={curr_z:.2f}mm reached bottom limit)")
-
-                    # Case 2: Tip firmly seated (62.0mm <= Z < 84.0mm)
-                    if 62.0 <= curr_z < 84.0:
-                        pick_ok = True
-
-                    # Case 3: Rim collision (<62.0mm) - cone hit flat rim above socket
-                    elif curr_z < 62.0:
-                        if getattr(self, 'adaptive_tip_centering_var', None) and self.adaptive_tip_centering_var.get() and not self.is_aborted:
-                            hover_z = max(0.0, curr_z - 3.0)
-                            self.logger.warning(f"Tip probe stalled on rim at Z={curr_z:.2f}mm (<62.0mm). Engaging micro-search around {current_well}...")
-                            self.lims.pipettor.hardware.move_z(hover_z)
-                            search_pattern = [
-                                (0.3, 0.0), (-0.3, 0.0), (0.0, 0.3), (0.0, -0.3),
-                                (0.5, 0.5), (-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5),
-                                (0.7, 0.0), (-0.7, 0.0), (0.0, 0.7), (0.0, -0.7),
-                                (1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.0, -1.0)
-                            ]
-                            for dx, dy in search_pattern:
-                                if self.is_aborted: break
-                                self.lims.hw.move_to(tx + dx, ty + dy, hover_z, speed=self.speed_var.get())
-                                time.sleep(0.03)
-                                self.lims.pipettor.hardware.z_speed = 3
-                                self.lims.pipettor.hardware.tip_pickup_force = 26
-                                try:
-                                    self.lims.pipettor.hardware.pick_tip(87.0)
-                                except Exception:
-                                    pass
-                                s_cz = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                                if 62.0 <= s_cz < 84.0:
-                                    self.logger.info(f"🎯 Tip Opening Acquired at offset dx={dx:+.2f}mm, dy={dy:+.2f}mm (Z={s_cz:.2f}mm)!")
-                                    self.tip_rack_learned_offset = (
-                                        getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))[0] + dx,
-                                        getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))[1] + dy
-                                    )
-                                    curr_z = s_cz
-                                    pick_ok = True
-                                    break
-                                else:
-                                    self.lims.pipettor.hardware.move_z(hover_z)
-
-                    if curr_z < 62.0 or curr_z >= 84.0:
-                        raise Exception(f"No tip seated in {current_well} (Z={curr_z:.2f}mm)")
+                    if curr_z < 60.0 or curr_z >= 84.0:
+                        raise Exception(f"No tip present in {current_well} (Z={curr_z:.2f}mm)")
+                    time.sleep(0.2)
                 else:
                     curr_z = 75.0
                 self.logger.info(f"🎯 Tip acquired at {current_well} (Z={curr_z:.2f}mm). HAS_TIP = True")
@@ -2670,7 +2623,7 @@ class LIMSMasterApp:
                         self.lims.pipettor.hardware.move_z(0)
                 break
             except Exception as e:
-                self.logger.warning(f"Sensor exception at {current_well} (Empty). Tracking to next well...")
+                self.logger.warning(f"Well {current_well} empty or passed. Tracking to next well...")
                 if self.lims.pipettor.hardware:
                     try:
                         hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
@@ -3045,24 +2998,17 @@ class LIMSMasterApp:
                             if isinstance(lw_cand, TipRack96):
                                 tip_rack_model = lw_cand
 
-                        def _attempt_tip_seat(tx_coord, ty_coord, from_hover=False, hover_z=None):
-                            if not from_hover:
-                                if self.lims.pipettor.hardware:
-                                    self.lims.pipettor.hardware.move_z(0)
-                                self.lims.hw.move_to(tx_coord, ty_coord, 0, speed=self.speed_var.get())
-                                time.sleep(0.05)
-                            else:
-                                # Fast jog at hover height directly above rim
-                                self.lims.hw.move_to(tx_coord, ty_coord, hover_z, speed=self.speed_var.get())
-                                time.sleep(0.03)
-
+                        def _do_pick(tx, ty):
+                            if self.lims.pipettor.hardware:
+                                self.lims.pipettor.hardware.move_z(0)
+                            self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
+                            time.sleep(0.05)
                             if not self.lims.pipettor.hardware:
                                 return True, 75.0
 
                             hw = self.lims.pipettor.hardware
-                            if not from_hover:
-                                hw.z_speed = hw_speed
-                                hw.move_z(approach_z)
+                            hw.z_speed = hw_speed
+                            hw.move_z(approach_z)
                             hw.z_speed = 3
                             hw.tip_pickup_force = 26
                             try:
@@ -3071,115 +3017,30 @@ class LIMSMasterApp:
                                 pass
 
                             curr_z = getattr(hw, 'z_position', 0.0)
-                            self.logger.info(f"[TIP PROBE] Target ({tx_coord:.2f}, {ty_coord:.2f}): Z={curr_z:.2f}mm, limit={pickup_limit:.1f}mm")
-
-                            # Case 1: Empty Socket (Z reached limit or bottom floor >= 84.0mm)
-                            # Cone plunged straight down without tip friction
-                            if curr_z >= 84.0 or curr_z >= (pickup_limit - 2.5):
-                                return False, curr_z
-
-                            # Case 2: Tip successfully wedged inside opening (62.0mm <= Z < 84.0mm)
-                            # Force resistance engaged the cone inside tip opening.
-                            # Reaching resistance in this zone confirms tip acquisition.
-                            if 62.0 <= curr_z < 84.0:
-                                if hasattr(hw, 'sensor_value'):
-                                    try:
-                                        s_val = hw.sensor_value() if callable(hw.sensor_value) else hw.sensor_value
-                                        self.logger.info(f"Tip seal verified via frequency sensor: {s_val} counts.")
-                                    except Exception:
-                                        pass
-                                return True, curr_z
-
-                            # Case 3: Rim collision / shallow stall above bore (Z < 62.0mm)
-                            return False, curr_z
-
-                        def _adaptive_search_and_pick(base_x, base_y):
-                            seated, curr_z = _attempt_tip_seat(base_x, base_y, from_hover=False)
-                            if seated:
-                                # Immediately retract to clearance Z=0; never microsearch when tip acquired!
-                                if self.lims.pipettor.hardware:
-                                    try:
-                                        self.lims.pipettor.hardware.z_speed = hw_speed
-                                        self.lims.pipettor.hardware.move_z(0)
-                                    except Exception:
-                                        self.lims.pipettor.hardware.move_z(0)
-                                return True, curr_z
-
-                            # If cone went down to bottom limit, the well is completely empty.
-                            # NEVER execute micro-search on an empty socket!
-                            if curr_z >= 84.0 or curr_z >= (pickup_limit - 2.5):
-                                self.logger.info(f"Socket empty at ({base_x:.2f}, {base_y:.2f}) (Z={curr_z:.2f}mm reached limit). Skipping to next well.")
-                                if self.lims.pipettor.hardware:
-                                    try:
-                                        self.lims.pipettor.hardware.z_speed = hw_speed
-                                        self.lims.pipettor.hardware.move_z(0)
-                                    except Exception:
-                                        self.lims.pipettor.hardware.move_z(0)
-                                return False, curr_z
-
-                            # ONLY execute micro-search if cone stalled shallowly on flat rim (Z < 62.0mm)
-                            if curr_z < 62.0 and getattr(self, 'adaptive_tip_centering_var', None) and self.adaptive_tip_centering_var.get() and not self.is_aborted:
-                                hover_z = max(0.0, curr_z - 3.0)
-                                self.logger.warning(
-                                    f"Tip pickup stalled shallowly at Z={curr_z:.2f}mm (<62.0mm, cone hit rack/collar rim). "
-                                    f"Hovering at Z={hover_z:.2f}mm and engaging polar micro-search around ({base_x:.2f}, {base_y:.2f})..."
-                                )
-                                if self.lims.pipettor.hardware:
-                                    self.lims.pipettor.hardware.move_z(hover_z)
-
-                                search_pattern = tip_rack_model.get_pickup_search_pattern() if tip_rack_model else [
-                                    (0.3, 0.0), (-0.3, 0.0), (0.0, 0.3), (0.0, -0.3),
-                                    (0.5, 0.5), (-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5),
-                                    (0.7, 0.0), (-0.7, 0.0), (0.0, 0.7), (0.0, -0.7),
-                                    (1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.0, -1.0)
-                                ]
-                                for dx, dy in search_pattern:
-                                    if (dx, dy) == (0.0, 0.0):
-                                        continue
-                                    if self.is_aborted: break
-                                    self.logger.info(f"Micro-search testing rim offset dx={dx:+.2f}mm, dy={dy:+.2f}mm (hovering Z={hover_z:.1f}mm)...")
-                                    s_ok, s_cz = _attempt_tip_seat(base_x + dx, base_y + dy, from_hover=True, hover_z=hover_z)
-                                    if s_ok:
-                                        self.logger.info(
-                                            f"🎯 Tip Opening Acquired at offset dx={dx:+.2f}mm, dy={dy:+.2f}mm (Z={s_cz:.2f}mm)! "
-                                            f"Auto-learning offset for all remaining tips in rack."
-                                        )
-                                        if tip_rack_model:
-                                            tip_rack_model.apply_learned_offset(dx, dy)
-                                        self.tip_rack_learned_offset = (
-                                            getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))[0] + dx,
-                                            getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))[1] + dy
-                                        )
-                                        if self.lims.pipettor.hardware:
-                                            try:
-                                                self.lims.pipettor.hardware.z_speed = hw_speed
-                                                self.lims.pipettor.hardware.move_z(0)
-                                            except Exception:
-                                                self.lims.pipettor.hardware.move_z(0)
-                                        return True, s_cz
-                                    else:
-                                        if self.lims.pipettor.hardware:
-                                            self.lims.pipettor.hardware.move_z(hover_z)
-
-                            if self.lims.pipettor.hardware:
+                            if 60.0 <= curr_z < 84.0:
+                                time.sleep(0.2)
                                 try:
-                                    self.lims.pipettor.hardware.z_speed = hw_speed
-                                    self.lims.pipettor.hardware.move_z(0)
+                                    hw.z_speed = hw_speed
+                                    hw.move_z(0)
                                 except Exception:
-                                    self.lims.pipettor.hardware.move_z(0)
+                                    hw.move_z(0)
+                                return True, curr_z
+
+                            # Socket empty (Z >= 84.0) or stalled high (Z < 60.0)
+                            try:
+                                hw.z_speed = hw_speed
+                                hw.move_z(0)
+                            except Exception:
+                                hw.move_z(0)
                             return False, curr_z
 
                         if mode == "manual":
-                            seated, cz = _adaptive_search_and_pick(target_x, target_y)
+                            seated, cz = _do_pick(target_x, target_y)
                             if seated:
-                                self.logger.info(f"Manual tip pickup succeeded at Z={cz:.2f}mm.")
+                                self.logger.info(f"🎯 Manual tip pickup succeeded at Z={cz:.2f}mm. HAS_TIP = True")
                                 self.root.after(0, lambda: self.has_tip_var.set(True))
-                            if self.lims.pipettor.hardware:
-                                try:
-                                    self.lims.pipettor.hardware.z_speed = hw_speed
-                                    self.lims.pipettor.hardware.move_z(0)
-                                except TypeError:
-                                    self.lims.pipettor.hardware.move_z(0)
+                            else:
+                                self.logger.warning(f"Manual tip pick: No tip detected (Z={cz:.2f}mm).")
 
                         elif self.auto_tip_search_var.get():
                             wells = list(labware_obj.wells.keys()) if labware_obj else []
@@ -3191,37 +3052,25 @@ class LIMSMasterApp:
                                 current_well = wells[idx]
                                 coords = self._calculate_xy(slot_name, current_well)
                                 tx, ty = coords if coords else (0, 0)
-                                self.logger.info(f"Probing tip at {current_well} ({tx:.2f}, {ty:.2f})...")
-                                seated, cz = _adaptive_search_and_pick(tx, ty)
+                                self.logger.info(f"Checking tip at {current_well} ({tx:.2f}, {ty:.2f})...")
+                                seated, cz = _do_pick(tx, ty)
                                 if seated:
-                                    self.logger.info(f"Tip acquired at {current_well} (Z={cz:.2f}mm). HAS_TIP = True")
+                                    self.logger.info(f"🎯 Tip acquired at {current_well} (Z={cz:.2f}mm). HAS_TIP = True")
                                     tip_found = True
                                     self.root.after(0, lambda: self.has_tip_var.set(True))
-                                    if self.lims.pipettor.hardware:
-                                        try:
-                                            self.lims.pipettor.hardware.z_speed = hw_speed
-                                            self.lims.pipettor.hardware.move_z(0)
-                                        except TypeError:
-                                            self.lims.pipettor.hardware.move_z(0)
                                     break
                                 else:
-                                    self.logger.warning(f"Well {current_well} empty or passed. Tracking to next well...")
+                                    self.logger.warning(f"Well {current_well} empty or passed (Z={cz:.2f}mm). Tracking to next well...")
 
                             if not tip_found and not self.is_aborted:
                                 self.ask_error_resolution("Tip rack is completely empty!", i)
                         else:
-                            seated, cz = _adaptive_search_and_pick(target_x, target_y)
+                            seated, cz = _do_pick(target_x, target_y)
                             if seated:
-                                self.logger.info(f"Tip pickup completed at Z={cz:.2f}mm (limit: {pickup_limit:.1f}mm).")
+                                self.logger.info(f"🎯 Tip acquired at {well_id} (Z={cz:.2f}mm). HAS_TIP = True")
                                 self.root.after(0, lambda: self.has_tip_var.set(True))
                             else:
-                                raise Exception(f"Tip pickup failed at Z={cz:.2f}mm. Manifold empty or rim obstructed.")
-                            if self.lims.pipettor.hardware:
-                                try:
-                                    self.lims.pipettor.hardware.z_speed = hw_speed
-                                    self.lims.pipettor.hardware.move_z(0)
-                                except TypeError:
-                                    self.lims.pipettor.hardware.move_z(0)
+                                raise Exception(f"Tip pickup failed at {well_id} (Z={cz:.2f}mm).")
 
                     elif action == "Detect Liquid Level":
                         labware_obj = self.lims.deck_labware.get(slot_name)
