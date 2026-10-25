@@ -1,0 +1,1298 @@
+[
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "A1"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "A1",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "B1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "C1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "B1"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "A2",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "A2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "B2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "C2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "C1"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "A3",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "A3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "B3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "C3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "D1"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "A4",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "A4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "B4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "C4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "E1"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "A5",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "A5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "B5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "C5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "F1"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "A6",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "A6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "B6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "C6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "G1"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "B1",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "D1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "E1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "F1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "H1"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "B2",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "D2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "E2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "F2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "A2"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "B3",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "D3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "E3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "F3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "B2"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "B4",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "D4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "E4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "F4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "C2"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "B5",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "D5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "E5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "F5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "D2"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "B6",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "D6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "E6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "F6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "E2"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "C1",
+        "volume": 10.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "G1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "H1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "F2"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "C1",
+        "volume": 5.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "G2"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "C2",
+        "volume": 10.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "G2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "H2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "H2"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "C2",
+        "volume": 5.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "A2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "A3"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "C3",
+        "volume": 10.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "G3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "H3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "B3"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "C3",
+        "volume": 5.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "A3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "C3"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "C4",
+        "volume": 10.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "G4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "H4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "D3"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "C4",
+        "volume": 5.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "A4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "E3"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "C5",
+        "volume": 10.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "G5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "H5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "F3"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "C5",
+        "volume": 5.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "A5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "G3"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "C6",
+        "volume": 10.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "G6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_5",
+        "well": "H6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "H3"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "C6",
+        "volume": 5.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "A6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "A4"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "D1",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "B1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "C1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "D1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "B4"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "D2",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "B2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "C2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "D2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "C4"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "D3",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "B3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "C3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "D3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "D4"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "D4",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "B4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "C4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "D4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "E4"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "D5",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "B5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "C5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "D5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "F4"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "D6",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "B6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "C6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "D6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "G4"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "E1",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "E1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "F1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "G1",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "H4"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "E2",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "E2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "F2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "G2",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "A5"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "E3",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "E3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "F3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "G3",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "B5"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "E4",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "E4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "F4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "G4",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "C5"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "D6",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "E5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "F5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "G5",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "slot": "Slot_4",
+        "well": "D5"
+    },
+    {
+        "action": "Aspirate Media",
+        "slot": "Slot_3",
+        "well": "E6",
+        "volume": 15.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "E6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "F6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Dispense Media",
+        "slot": "Slot_6",
+        "well": "G6",
+        "volume": 5.0,
+        "mix_cycles": 2,
+        "mix_volume": 200.0
+    },
+    {
+        "action": "Discard Tip",
+        "slot": "Slot_2",
+        "well": "A3"
+    }
+]
