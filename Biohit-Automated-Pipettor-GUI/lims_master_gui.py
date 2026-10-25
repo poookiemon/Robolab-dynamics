@@ -2594,7 +2594,7 @@ class LIMSMasterApp:
                 hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                 labware_obj = self.lims.deck_labware.get(slot_name)
                 z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
-                approach_z = max(0.0, min(55.0, z_height - 18.0))
+                approach_z = max(0.0, min(48.0, z_height - 25.0))
                 if self.lims.pipettor.hardware:
                     self.lims.pipettor.hardware.z_speed = hw_speed
                     self.lims.pipettor.hardware.move_z(approach_z)
@@ -2606,7 +2606,7 @@ class LIMSMasterApp:
                         pass
 
                     curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                    if curr_z < 60.0 or curr_z >= 84.0:
+                    if curr_z < 48.0 or curr_z >= 84.0:
                         raise Exception(f"No tip present in {current_well} (Z={curr_z:.2f}mm)")
                     time.sleep(0.2)
                 else:
@@ -2990,7 +2990,7 @@ class LIMSMasterApp:
                         hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                         labware_obj = self.lims.deck_labware.get(slot_name)
                         z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
-                        approach_z = max(0.0, min(55.0, z_height - 18.0))
+                        approach_z = max(0.0, min(48.0, z_height - 25.0))
 
                         tip_rack_model = None
                         if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
@@ -3017,7 +3017,7 @@ class LIMSMasterApp:
                                 pass
 
                             curr_z = getattr(hw, 'z_position', 0.0)
-                            if 60.0 <= curr_z < 84.0:
+                            if 48.0 <= curr_z < 84.0:
                                 time.sleep(0.2)
                                 try:
                                     hw.z_speed = hw_speed
@@ -3026,7 +3026,7 @@ class LIMSMasterApp:
                                     hw.move_z(0)
                                 return True, curr_z
 
-                            # Socket empty (Z >= 84.0) or stalled high (Z < 60.0)
+                            # Socket empty (Z >= 84.0) or stalled high (Z < 48.0)
                             try:
                                 hw.z_speed = hw_speed
                                 hw.move_z(0)
