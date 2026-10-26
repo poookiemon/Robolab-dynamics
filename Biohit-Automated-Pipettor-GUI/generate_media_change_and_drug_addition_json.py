@@ -44,8 +44,8 @@ for header, body in step_blocks:
             
         all_removal_wells = [("Slot_5", w) for w in p1_wells] + [("Slot_6", w) for w in p2_wells]
         for slot, well in all_removal_wells:
-            # Remove > 750 uL in 190 uL chunks (4 x 190 uL = 760 uL total) to guarantee complete emptying
-            for chunk_vol in [190.0, 190.0, 190.0, 190.0]:
+            # 3 x 190 uL removal = 570 uL total
+            for chunk_vol in [190.0, 190.0, 190.0]:
                 biohit_steps.append({
                     "action": "Aspirate Media",
                     "mode": "auto",
@@ -86,9 +86,9 @@ for header, body in step_blocks:
             "labware": "tip_rack_1000ul.json"
         })
             
-        # Target wells for Plate 1 (Slot 5) receive fresh media from Slot 1 Well A1
+        # Target wells for Plate 1 (Slot 5) receive fresh media: 3 x 165 uL = 495 uL from Slot 1 Well A1
         for w in p1_wells:
-            for chunk_vol in [200.0, 200.0, 95.0]:
+            for chunk_vol in [165.0, 165.0, 165.0]:
                 biohit_steps.append({
                     "action": "Aspirate Media",
                     "mode": "auto",
@@ -106,9 +106,9 @@ for header, body in step_blocks:
                     "labware": "myriamed_48_well.json"
                 })
                 
-        # Target wells for Plate 2 (Slot 6) receive fresh media from Slot 1 Well A2
+        # Target wells for Plate 2 (Slot 6) receive fresh media: 3 x 165 uL = 495 uL from Slot 1 Well A2
         for w in p2_wells:
-            for chunk_vol in [200.0, 200.0, 95.0]:
+            for chunk_vol in [165.0, 165.0, 165.0]:
                 biohit_steps.append({
                     "action": "Aspirate Media",
                     "mode": "auto",
