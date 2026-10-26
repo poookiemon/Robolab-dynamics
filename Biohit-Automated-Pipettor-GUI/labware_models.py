@@ -219,7 +219,7 @@ class Plate48Myriamed(LabwareBase):
         if r_idx is None or c_idx is None:
             return slot.center_x, slot.center_y
         ox, oy = slot.origin_a1_xy
-        cx = ox + self.col_dx[c_idx] if c_idx < len(self.col_dx) else ox - (c_idx * 18.0)
+        cx = ox + self.col_dx[c_idx] + 1.0 if c_idx < len(self.col_dx) else ox - (c_idx * 18.0) + 1.0
         cy = oy + self.row_dy[r_idx] if r_idx < len(self.row_dy) else oy + (r_idx * 9.0)
         return cx, cy
 
@@ -279,8 +279,11 @@ class Reservoir3Well(LabwareBase):
         _, c_idx = self.parse_well(well_id)
         ci = c_idx if (c_idx is not None and 0 <= c_idx < 3) else 0
         ox, oy = slot.origin_a1_xy
-        col_dx = [0.0, -42.6, -85.2]
         front = slot.is_front_slot
+        if slot.name == "Slot_2":
+            col_x = [95.5, 57.0, 12.0]
+            return col_x[ci], oy + (0.0 if front else 31.5)
+        col_dx = [0.0, -42.6, -85.2]
         return ox + col_dx[ci], oy + (0.0 if front else 31.5)
 
     def get_rim_z(self, slot: 'DeckSlot') -> float:
