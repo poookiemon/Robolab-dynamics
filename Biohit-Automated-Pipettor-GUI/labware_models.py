@@ -224,15 +224,15 @@ class Plate48Myriamed(LabwareBase):
         return cx, cy
 
     def get_aspirate_z(self, slot: 'DeckSlot', well_id: str, current_vol_ul: float = 0.0, submerge_mm: float = 2.0) -> float:
-        # Calibrated EHM deep liquid aspiration
-        return 86.0
+        # Calibrated EHM deep liquid aspiration (+1mm lower: 87.0mm)
+        return 87.0
 
     def get_dispense_z(self, slot: 'DeckSlot', well_id: str, in_liquid: bool = False) -> float:
         # Calibrated EHM brim dispense
-        return 86.0 if in_liquid else 81.0
+        return 87.0 if in_liquid else 81.0
 
     def get_mix_z(self, slot: 'DeckSlot', well_id: str) -> float:
-        return 86.0
+        return 87.0
 
 
 class Reservoir3Well(LabwareBase):
