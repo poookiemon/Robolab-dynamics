@@ -2358,12 +2358,12 @@ class LIMSMasterApp:
                 return tx, oy + (r_idx * 9.0)
             return cx, cy
 
-        # 3. MYRIAMED 48-WELL EHM PLATE (calibrated on Slot_4: cols 105..15, rows 57..119, +1.0mm X offset)
+        # 3. MYRIAMED 48-WELL EHM PLATE (calibrated on Slot_4: cols 105..15, rows 57..119, +1.0mm X offset, -2.0mm Y offset)
         if kind == "ehm48":
             col_dx = [0.0, -18.0, -36.0, -54.0, -72.0, -90.0]
             row_dy = [1.0, 9.0, 18.0, 26.0, 35.0, 44.0, 54.0, 63.0]
             if r_idx is not None and r_idx < len(row_dy) and c_idx < len(col_dx):
-                return ox + col_dx[c_idx] + 1.0, oy + row_dy[r_idx]
+                return ox + col_dx[c_idx] + 1.0, oy + row_dy[r_idx] - 2.0
             return cx, cy
 
         # 4. 3-WELL RESERVOIR (calibrated on Slot_1: pitch 42.6mm; Slot_2: A1=95.5, A2=57.0, A3=12.0)

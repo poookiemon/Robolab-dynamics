@@ -220,7 +220,7 @@ class Plate48Myriamed(LabwareBase):
             return slot.center_x, slot.center_y
         ox, oy = slot.origin_a1_xy
         cx = ox + self.col_dx[c_idx] + 1.0 if c_idx < len(self.col_dx) else ox - (c_idx * 18.0) + 1.0
-        cy = oy + self.row_dy[r_idx] if r_idx < len(self.row_dy) else oy + (r_idx * 9.0)
+        cy = oy + self.row_dy[r_idx] - 2.0 if r_idx < len(self.row_dy) else oy + (r_idx * 9.0) - 2.0
         return cx, cy
 
     def get_aspirate_z(self, slot: 'DeckSlot', well_id: str, current_vol_ul: float = 0.0, submerge_mm: float = 2.0) -> float:
