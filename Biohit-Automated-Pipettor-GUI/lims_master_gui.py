@@ -1243,6 +1243,7 @@ class LIMSMasterApp:
         ttk.Button(pane_ctrl, text="🧪 Load EHM 48-Well Test", command=self.action_load_ehm_test_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="🎯 Load 96-Well Row A (A1-A12)", command=self.action_load_slot5_rowA_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="🌊 Load LLD Media Test (Slot 1 -> Slot 2)", command=self.action_load_liquid_test_protocol).pack(fill=tk.X, pady=2)
+        ttk.Button(pane_ctrl, text="🧪 Load Media Change + Drug (2 Plates)", command=self.action_load_unified_media_and_drug_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="🧬 Load 2-EHM Multi-Plate Deck", command=self.action_load_deck_2_ehm_multiplate).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="📥 Convert & Import Python (.py)", command=self.action_import_python_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="📂 Load JSON Protocol", command=self.action_load_workflow).pack(fill=tk.X, pady=2)
@@ -1554,6 +1555,67 @@ class LIMSMasterApp:
             self.logger.info(f"Loaded Liquid Height Test Protocol ({len(loaded_sequence)} steps). Slot 6 Rack & Slot 2 Waste auto-assigned.")
         else:
             messagebox.showerror("File Not Found", "Could not locate Test_Liquid_Level_Detection.json")
+
+    def action_load_unified_media_and_drug_protocol(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        cand_paths = [
+            os.path.join(script_dir, "protocols", "media_change_and_drug_addition_2_plates.json"),
+            os.path.join(os.path.dirname(script_dir), "protocols", "media_change_and_drug_addition_2_plates.json"),
+            os.path.join(script_dir, "protocols", "2_EHM_Media_Change_and_Drug_Addition.json"),
+            os.path.join(os.path.dirname(script_dir), "protocols", "2_EHM_Media_Change_and_Drug_Addition.json"),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if target_path:
+            with open(target_path, 'r') as f:
+                loaded_sequence = json.load(f)
+            self.workflow_sequence.clear()
+            self.wf_box.delete(0, tk.END)
+            lw_dir = self.get_labware_dir()
+
+            # 6-slot deck configuration:
+            # Slot 1: Media Reservoir (A1 Plt 1, A2 Plt 2)
+            # Slot 2: Discard Reservoir (A1 Media Discard & Tip Discard)
+            # Slot 3: Drug Plate (generic 96 well)
+            # Slot 4: Tip Rack (1000uL)
+            # Slot 5: Plate 1 (Myriamed 48 well)
+            # Slot 6: Plate 2 (Myriamed 48 well)
+            deck_setup = {
+                "Slot_1": "reservoir_3_well.json",
+                "Slot_2": "reservoir_3_well.json",
+                "Slot_3": "generic_96_well_plate.json",
+                "Slot_4": "tip_rack_1000ul.json",
+                "Slot_5": "myriamed_48_well.json",
+                "Slot_6": "myriamed_48_well.json"
+            }
+            for s_name, lw_file in deck_setup.items():
+                lp = os.path.join(lw_dir, lw_file)
+                if os.path.exists(lp):
+                    self.lims.deck_labware[s_name] = Labware(lp)
+                    self.lims.deck_labware[s_name].source_file = lw_file
+                if s_name not in self.placed_slots:
+                    self.placed_slots.append(s_name)
+            self.sync_deck_manager()
+            if hasattr(self, 'draw_deck'): self.draw_deck()
+
+            for step in loaded_sequence:
+                self.workflow_sequence.append(step)
+                act = step['action']
+                slot = step.get('slot', '')
+                well = step.get('well', '')
+                vol = step.get('volume', 0.0)
+                mix_str = f" [Mix 2x 200\u03bcL]" if step.get('mix_cycles') else ""
+                vol_str = f" {vol:.0f}\u03bcL" if vol > 0 else ""
+                if act == "Pick Up Tip":
+                    msg = f"[{act.upper()}] from {slot}, Well {well}"
+                elif act == "Discard Tip":
+                    msg = f"[{act.upper()}] into {slot}, Well {well}"
+                else:
+                    msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
+                self.wf_box.insert(tk.END, msg)
+
+            self.logger.info(f"Loaded Media Change + Drug Addition Protocol ({len(loaded_sequence)} steps). Deck configured: Slot 1 Media (A1/A2), Slot 2 Discard A1, Slot 3 Drug Plate, Slot 4 Tips, Slot 5 Plt 1, Slot 6 Plt 2.")
+        else:
+            messagebox.showerror("File Not Found", "Could not locate media_change_and_drug_addition_2_plates.json")
 
     def add_wf_step(self):
         action = self.wf_action.get()
@@ -1870,6 +1932,9 @@ class LIMSMasterApp:
     def action_load_deck_2_ehm_multiplate(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
         cand_paths = [
+            os.path.join(script_dir, "deck_2_ehm_plates_slot2_discard_a1.json"),
+            os.path.join(script_dir, "protocols", "deck_2_ehm_plates_slot2_discard_a1.json"),
+            os.path.join(os.path.dirname(script_dir), "protocols", "deck_2_ehm_plates_slot2_discard_a1.json"),
             os.path.join(script_dir, "deck_2_ehm_plates_slot2_discard_50ml.json"),
             os.path.join(script_dir, "deck_configurations", "deck_2_ehm_plates_slot2_discard_50ml.json"),
             os.path.join(os.getcwd(), "deck_2_ehm_plates_slot2_discard_50ml.json"),
@@ -1879,9 +1944,9 @@ class LIMSMasterApp:
         target_path = next((p for p in cand_paths if os.path.exists(p)), None)
         if target_path:
             self._deserialize_workspace(target_path)
-            self.logger.info("Loaded 2-EHM Multi-Plate Deck Configuration (Slot 2 A3 Discard, Slot 1 & 2 50mL Falcon Media).")
+            self.logger.info("Loaded 2-EHM Multi-Plate Deck Configuration (Slot 1 Media A1/A2, Slot 2 Discard A1, Slot 3 Drug Plate, Slot 4 Tips, Slot 5 Plt 1, Slot 6 Plt 2).")
         else:
-            messagebox.showerror("Error", "Could not locate deck_2_ehm_plates_slot2_discard_50ml.json")
+            messagebox.showerror("Error", "Could not locate deck_2_ehm_plates_slot2_discard_a1.json")
 
     def sync_deck_manager(self):
         """

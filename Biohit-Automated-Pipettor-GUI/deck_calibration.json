@@ -7,8 +7,8 @@
         "height_mm": 26.0,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "tube_rack_3x50ml.json",
-        "description": "50mL Falcon Media for Plate 1 (Well A1)"
+        "labware_file": "reservoir_3_well.json",
+        "description": "3-Well Reservoir Media: A1 for Plate 1, A2 for Plate 2"
     },
     "Slot_2": {
         "name": "Slot_2",
@@ -18,8 +18,8 @@
         "height_mm": 26.0,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "tube_rack_3x50ml.json",
-        "description": "50mL Falcon Rack: A1 Media Plt 2, A2 Reagent, A3 DISCARD"
+        "labware_file": "reservoir_3_well.json",
+        "description": "3-Well Reservoir: A1 Media Discard & Tip Discard"
     },
     "Slot_3": {
         "name": "Slot_3",
