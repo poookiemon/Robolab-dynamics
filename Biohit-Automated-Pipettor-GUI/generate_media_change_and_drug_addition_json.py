@@ -1,7 +1,12 @@
 import json
 import re
+import os
 
-with open("Bakar/23.10 MediaChange with drug .py", "r") as f:
+py_source = "Bakar/26.10 Initianl Media with drug .py"
+if not os.path.exists(py_source):
+    py_source = "/Users/shri/Downloads/26.10 Initianl Media with drug .py"
+
+with open(py_source, "r") as f:
     orig_code = f.read()
 
 # Tip tracking: columns 1..12, rows A..H (A1..H1, A2..H2, ...)
@@ -139,6 +144,9 @@ for header, body in step_blocks:
         p2_dests = re.findall(r"well_plate_2\[\"([^\"]+)\"\]", body)
         all_dests = [("Slot_5", w) for w in p1_dests] + [("Slot_6", w) for w in p2_dests]
         
+        vol_match = re.search(r"volume=([0-9.]+)", body)
+        drug_vol = float(vol_match.group(1)) if vol_match else 7.5
+        
         # Pick fresh tip for each drug concentration step
         biohit_steps.append({
             "action": "Pick Up Tip",
@@ -148,27 +156,25 @@ for header, body in step_blocks:
             "labware": "tip_rack_1000ul.json"
         })
         
-        # Aspirate total volume needed for this concentration (len(all_dests) * 5 uL)
-        tot_vol = float(len(all_dests) * 5.0)
-        biohit_steps.append({
-            "action": "Aspirate Media",
-            "mode": "auto",
-            "slot": "Slot_3",
-            "well": src,
-            "volume": tot_vol,
-            "labware": "generic_96_well_plate.json"
-        })
-        
-        # Dispense 5 uL into each destination well with 2x 200 uL mixing
+        # Discrete Aspirate (drug_vol) -> Dispense (drug_vol) -> Mix (2x 100 uL) per destination well
+        # Eliminates multi-dispense blowout dumping bug completely!
         for slot, well in all_dests:
+            biohit_steps.append({
+                "action": "Aspirate Media",
+                "mode": "auto",
+                "slot": "Slot_3",
+                "well": src,
+                "volume": drug_vol,
+                "labware": "generic_96_well_plate.json"
+            })
             biohit_steps.append({
                 "action": "Dispense Media",
                 "mode": "auto",
                 "slot": slot,
                 "well": well,
-                "volume": 5.0,
+                "volume": drug_vol,
                 "mix_cycles": 2,
-                "mix_volume": 200.0,
+                "mix_volume": 100.0,
                 "labware": "myriamed_48_well.json"
             })
             
@@ -196,6 +202,7 @@ out_paths = [
 ]
 
 for p in out_paths:
+    os.makedirs(os.path.dirname(p), exist_ok=True)
     with open(p, "w") as out:
         json.dump(biohit_steps, out, indent=4)
     print(f"Saved {p}")
