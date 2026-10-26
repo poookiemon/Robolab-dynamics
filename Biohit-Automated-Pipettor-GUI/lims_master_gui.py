@@ -1602,9 +1602,11 @@ class LIMSMasterApp:
                 act = step['action']
                 slot = step.get('slot', '')
                 well = step.get('well', '')
-                vol = step.get('volume', 0.0)
-                mix_str = f" [Mix 2x 200\u03bcL]" if step.get('mix_cycles') else ""
-                vol_str = f" {vol:.0f}\u03bcL" if vol > 0 else ""
+                vol = float(step.get('volume', 0.0))
+                mix_cycles = int(step.get('mix_cycles', 0))
+                mix_vol = float(step.get('mix_volume', 100.0))
+                mix_str = f" [Mix {mix_cycles}x {mix_vol:g}\u03bcL]" if mix_cycles > 0 else ""
+                vol_str = f" {vol:.1f}\u03bcL" if vol % 1 != 0 else (f" {vol:.0f}\u03bcL" if vol > 0 else "")
                 if act == "Pick Up Tip":
                     msg = f"[{act.upper()}] from {slot}, Well {well}"
                 elif act == "Discard Tip":
