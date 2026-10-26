@@ -2350,10 +2350,10 @@ class LIMSMasterApp:
         if kind in ("tip_rack", "plate96") or (kind is None and not front):
             if r_idx is not None and 0 <= r_idx < 8 and 0 <= c_idx < 12:
                 if kind == "tip_rack":
-                    # Tip rack A1 physically calibrated at X=104.0, Y=54.0 on Slot 5 and Slot 4
+                    # Tip rack A1 physically calibrated at X=105.0, Y=55.0 on Slot 5 and Slot 4 (+1mm left, +1mm backwards)
                     learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
                     if slot_name in ("Slot_5", "Slot_4"):
-                        return (104.0 - (c_idx * 9.0)) + learned_dx, (54.0 + (r_idx * 9.0)) + learned_dy
+                        return (105.0 - (c_idx * 9.0)) + learned_dx, (55.0 + (r_idx * 9.0)) + learned_dy
                     return (ox - (c_idx * 9.0)) + learned_dx, (oy + (r_idx * 9.0)) + learned_dy
                 col_table = self.SLOT_96_COL_OVERRIDES.get(slot_name)
                 tx = col_table[c_idx] if col_table else ox - (c_idx * 9.0)

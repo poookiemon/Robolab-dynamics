@@ -117,8 +117,8 @@ def test_adaptive_tip_pickup_and_learning():
     nominal_a2 = tip_rack.get_well_xy(slot, "A2")
     nominal_b1 = tip_rack.get_well_xy(slot, "B1")
     print(f"Nominal A1: {nominal_a1}, A2: {nominal_a2}, B1: {nominal_b1}")
-    assert nominal_a1 == (104.0, 54.0)
-    assert nominal_a2 == (95.0, 54.0)
+    assert nominal_a1 == (105.0, 55.0)
+    assert nominal_a2 == (96.0, 55.0)
     assert nominal_a1[0] - nominal_a2[0] == 9.0  # 9mm pitch
     
     # Micro-search pattern
@@ -137,9 +137,9 @@ def test_adaptive_tip_pickup_and_learning():
     new_a2 = tip_rack.get_well_xy(slot, "A2")
     new_b1 = tip_rack.get_well_xy(slot, "B1")
     print(f"Learned A1: {new_a1}, A2: {new_a2}, B1: {new_b1}")
-    assert round(new_a1[0], 2) == 104.4 and round(new_a1[1], 2) == 53.5
-    assert round(new_a2[0], 2) == 95.4 and round(new_a2[1], 2) == 53.5
-    assert round(new_b1[0], 2) == 104.4 and round(new_b1[1], 2) == 62.5
+    assert round(new_a1[0], 2) == 105.4 and round(new_a1[1], 2) == 54.5
+    assert round(new_a2[0], 2) == 96.4 and round(new_a2[1], 2) == 54.5
+    assert round(new_b1[0], 2) == 105.4 and round(new_b1[1], 2) == 63.5
     print("PASS: Discovered offset successfully learned and propagated to all 96 tips.")
 
 
