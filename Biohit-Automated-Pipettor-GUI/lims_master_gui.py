@@ -2226,7 +2226,7 @@ class LIMSMasterApp:
         "Slot_1": (238.2, 13.0),   # calibrated (front right, height-block slot)
         "Slot_2": (95.5, 13.0),    # calibrated (front left, 3-well reservoir/waste trough A1)
         "Slot_3": (243.81, 53.0),  # calibrated (exact center: X=243.81, Y=53.0)
-        "Slot_4": (105.0, 56.0),   # calibrated (96-well A1 X=105, Y=56)
+        "Slot_4": (105.0, 53.0),   # calibrated (96-well A1 X=105, Y=53)
         "Slot_5": (243.81, 149.23), # calibrated (exact center: X=243.81, Y=149.23)
         "Slot_6": (105.0, 149.23), # derived (Slot_4 X column + Slot_5 Y row)
     }
@@ -2350,10 +2350,10 @@ class LIMSMasterApp:
         if kind in ("tip_rack", "plate96") or (kind is None and not front):
             if r_idx is not None and 0 <= r_idx < 8 and 0 <= c_idx < 12:
                 if kind == "tip_rack":
-                    # Tip rack A1 physically calibrated at X=105.0, Y=55.0 on Slot 4 (+1mm left, +1mm backwards)
+                    # Tip rack A1 physically calibrated at X=105.0, Y=53.0 on Slot 4
                     learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
                     if slot_name == "Slot_4":
-                        return (105.0 - (c_idx * 9.0)) + learned_dx, (55.0 + (r_idx * 9.0)) + learned_dy
+                        return (105.0 - (c_idx * 9.0)) + learned_dx, (53.0 + (r_idx * 9.0)) + learned_dy
                     return (ox - (c_idx * 9.0)) + learned_dx, (oy + (r_idx * 9.0)) + learned_dy
                 col_table = self.SLOT_96_COL_OVERRIDES.get(slot_name)
                 tx = col_table[c_idx] if col_table else ox - (c_idx * 9.0)

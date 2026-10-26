@@ -465,7 +465,7 @@ class TipRack96(LabwareBase):
                 defaults[k] = kwargs.pop(k)
         super().__init__(**defaults)
         self.calibrated_a1_x = kwargs.get("calibrated_a1_x", 105.0)
-        self.calibrated_a1_y = kwargs.get("calibrated_a1_y", 55.0)
+        self.calibrated_a1_y = kwargs.get("calibrated_a1_y", 53.0)
         self.pickup_approach_z = kwargs.get("pickup_approach_z", 55.0)
         self.pickup_limit_z = kwargs.get("pickup_limit_z", 90.0)
         self.pickup_force = kwargs.get("pickup_force", 26)
@@ -584,7 +584,7 @@ class DeckSlot:
             "Slot_1": (238.2, 13.0),
             "Slot_2": (95.5, 13.0),
             "Slot_3": (243.81, 53.0),
-            "Slot_4": (105.0, 56.0),
+            "Slot_4": (105.0, 53.0),
             "Slot_5": (243.81, 149.23),
             "Slot_6": (105.0, 149.23),
         }
