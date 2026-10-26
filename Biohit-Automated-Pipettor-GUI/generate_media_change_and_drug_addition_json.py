@@ -44,8 +44,8 @@ for header, body in step_blocks:
             
         all_removal_wells = [("Slot_5", w) for w in p1_wells] + [("Slot_6", w) for w in p2_wells]
         for slot, well in all_removal_wells:
-            # 500 uL removal split into 200 + 200 + 100
-            for chunk_vol in [200.0, 200.0, 100.0]:
+            # Remove > 750 uL in 190 uL chunks (4 x 190 uL = 760 uL total) to guarantee complete emptying
+            for chunk_vol in [190.0, 190.0, 190.0, 190.0]:
                 biohit_steps.append({
                     "action": "Aspirate Media",
                     "mode": "auto",
