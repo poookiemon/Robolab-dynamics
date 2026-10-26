@@ -3242,8 +3242,8 @@ class LIMSMasterApp:
                             if action == "Aspirate Media":
                                 next_step = self.workflow_sequence[i] if i < len(self.workflow_sequence) else {}
                                 next_has_mix = int(next_step.get('mix_cycles', 0)) > 0 and getattr(self, 'enable_mixing_for_run', True)
-                                is_drug_or_micro_vol = (float(vol) <= 50.0) or (slot_name == "Slot_5")
-                                if (0 < float(vol) <= 150.0 and not next_has_mix) or is_drug_or_micro_vol:
+                                is_micro_vol = 0 < float(vol) <= 50.0
+                                if is_micro_vol and not next_has_mix:
                                     try:
                                         self.lims.pipettor.hardware.aspirate(50.0)
                                         self.has_air_cushion = True
