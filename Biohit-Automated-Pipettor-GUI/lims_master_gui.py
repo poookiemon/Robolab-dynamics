@@ -2542,9 +2542,12 @@ class LIMSMasterApp:
                 elif 'recommended_dispense_z' in zl:
                     base_z = float(zl['recommended_dispense_z'])
                 elif self._is_front_slot(slot_name):
-                    base_z = 75.0
+                    # For 3-well reservoir on 90mm block (rim=47mm), safe discard height is Z=35.0mm (above rim).
+                    # For 50mL Falcon rack on 90mm block (rim=68mm), safe discard depth into tube mouth is Z=75.0mm.
+                    is_3well = kind == "reservoir_3" or "3_well" in str(getattr(labware_obj, 'source_file', '')).lower()
+                    base_z = 35.0 if is_3well else 75.0
                 else:
-                    base_z = 90.0
+                    base_z = 45.0
             elif kind == "tube_rack_2x6":
                 base_z = self._rim_calibrated_z(labware_obj, deep)
             elif kind == "reservoir_3" or (kind is None and self._is_front_slot(slot_name)):
@@ -2699,17 +2702,25 @@ class LIMSMasterApp:
                     self.lims.pipettor.hardware.move_z(approach_z)
                     self.lims.pipettor.hardware.z_speed = 3
                     self.lims.pipettor.hardware.tip_pickup_force = 26
+                    pick_ok = False
                     try:
                         self.lims.pipettor.hardware.pick_tip(87.0)
-                    except Exception:
-                        pass
+                        pick_ok = True
+                    except Exception as pe:
+                        self.logger.warning(f"pick_tip hardware return/exception: {pe}")
+                        pick_ok = False
 
                     curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                    if curr_z < 48.0 or curr_z >= 84.0:
-                        raise Exception(f"No tip present in {current_well} (Z={curr_z:.2f}mm)")
+                    is_1000 = "1000" in (getattr(labware_obj, 'name', '') + getattr(labware_obj, 'source_file', '')).lower()
+                    valid_collar = (50.0 <= curr_z <= 59.5) if is_1000 else (68.0 <= curr_z <= 78.0)
+
+                    if curr_z < 50.0:
+                        raise RuntimeError(f"CRITICAL DOUBLE-TIP DETECTED: Stalled high at Z={curr_z:.2f}mm (<50mm)! Pipette already has a tip.")
+                    if not (valid_collar and (pick_ok or getattr(self.lims.pipettor.hardware, 'tip_pickup_force', 0) >= 20)):
+                        raise Exception(f"No tip present in {current_well} (Z={curr_z:.2f}mm, pick_ok={pick_ok})")
                     time.sleep(0.2)
                 else:
-                    curr_z = 75.0
+                    curr_z = 55.09
                 self.logger.info(f"🎯 Tip acquired at {current_well} (Z={curr_z:.2f}mm). HAS_TIP = True")
                 time.sleep(0.2)
                 tip_found = True
@@ -3103,20 +3114,50 @@ class LIMSMasterApp:
                             self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
                             time.sleep(0.05)
                             if not self.lims.pipettor.hardware:
-                                return True, 75.0
+                                return True, 55.09
 
                             hw = self.lims.pipettor.hardware
                             hw.z_speed = hw_speed
                             hw.move_z(approach_z)
                             hw.z_speed = 3
                             hw.tip_pickup_force = 26
+                            
+                            pick_ok = False
                             try:
                                 hw.pick_tip(pickup_limit)
-                            except Exception:
-                                pass
+                                pick_ok = True
+                            except Exception as pe:
+                                self.logger.warning(f"pick_tip hardware return/exception: {pe}")
+                                pick_ok = False
 
                             curr_z = getattr(hw, 'z_position', 0.0)
-                            if 48.0 <= curr_z < 84.0:
+
+                            # 1. DOUBLE-TIP / HIGH-STALL COLLISION INTERLOCK:
+                            # 1000uL tip collar physically sits at Z ~ 53.0-56.5mm.
+                            # If mandrel stopped at Z < 50.0mm, an already-mounted tip or obstruction was hit!
+                            if curr_z < 50.0:
+                                try:
+                                    hw.z_speed = hw_speed
+                                    hw.move_z(0)
+                                except Exception:
+                                    hw.move_z(0)
+                                self.root.after(0, lambda: self.has_tip_var.set(True))
+                                self.logger.critical(
+                                    f"🚨 DOUBLE-TIP COLLISION DETECTED at Z={curr_z:.2f}mm (<50mm)! "
+                                    f"A tip was already physically on the pipettor. Aborting protocol."
+                                )
+                                raise RuntimeError(
+                                    f"CRITICAL SAFETY INTERLOCK: High stall at Z={curr_z:.2f}mm (<50mm)! "
+                                    f"Double-tip collision detected. Protocol halted for machine safety."
+                                )
+
+                            # 2. VALID SEATED TIP (1000uL nominal ~55.09mm):
+                            # Must have valid collar height (50.0mm <= Z <= 59.5mm)
+                            # On empty sockets, bare nose cone penetrates past collar to Z >= 60mm (typically 65-87mm).
+                            is_1000 = "1000" in (getattr(labware_obj, 'name', '') + getattr(labware_obj, 'source_file', '')).lower()
+                            valid_collar = (50.0 <= curr_z <= 59.5) if is_1000 else (68.0 <= curr_z <= 78.0)
+
+                            if valid_collar and (pick_ok or getattr(hw, 'tip_pickup_force', 0) >= 20):
                                 time.sleep(0.2)
                                 try:
                                     hw.z_speed = hw_speed
@@ -3125,7 +3166,8 @@ class LIMSMasterApp:
                                     hw.move_z(0)
                                 return True, curr_z
 
-                            # Socket empty (Z >= 84.0) or stalled high (Z < 48.0)
+                            # 3. EMPTY SOCKET (Z >= 60.0mm or failed pick):
+                            self.logger.warning(f"Empty socket detected at Z={curr_z:.2f}mm (pick_ok={pick_ok}). Advancing...")
                             try:
                                 hw.z_speed = hw_speed
                                 hw.move_z(0)
@@ -3535,9 +3577,21 @@ class LIMSMasterApp:
                                     pass
 
                             elif action == "Discard Tip":
-                                self.lims.pipettor.hardware.eject_tip()
-                                self.root.after(0, lambda: self.has_tip_var.set(False))
-                                self.logger.info("System state updated: HAS_TIP = False")
+                                try:
+                                    if self.lims.pipettor.hardware:
+                                        self.lims.pipettor.hardware.eject_tip()
+                                        time.sleep(0.25)
+                                        # Pulse eject a second time to guarantee mechanical separation
+                                        try:
+                                            self.lims.pipettor.hardware.eject_tip()
+                                        except Exception:
+                                            pass
+                                    self.root.after(0, lambda: self.has_tip_var.set(False))
+                                    self.logger.info("System state updated: Tip successfully ejected -> HAS_TIP = False")
+                                except Exception as e_err:
+                                    self.logger.critical(f"Eject Tip Failed: {e_err}")
+                                    self.root.after(0, lambda: self.has_tip_var.set(True))
+                                    raise RuntimeError(f"CRITICAL: Tip ejection failed! Tip is still attached to the cone. Halting: {e_err}")
 
                             try:
                                 if self.lims.pipettor.hardware:

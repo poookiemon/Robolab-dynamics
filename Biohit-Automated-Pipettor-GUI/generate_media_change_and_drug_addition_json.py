@@ -42,15 +42,14 @@ for header, body in step_blocks:
             "labware": "tip_rack_1000ul.json"
         })
             
-        all_removal_wells = [("Slot_5", w) for w in p1_wells] + [("Slot_6", w) for w in p2_wells]
-        for slot, well in all_removal_wells:
-            # 3 x 190 uL removal = 570 uL total
+        # Plate 1 removal -> Slot 2 Well A1 (max 27.36 mL, fits safely in 35 mL well)
+        for w in p1_wells:
             for chunk_vol in [190.0, 190.0, 190.0]:
                 biohit_steps.append({
                     "action": "Aspirate Media",
                     "mode": "auto",
-                    "slot": slot,
-                    "well": well,
+                    "slot": "Slot_5",
+                    "well": w,
                     "volume": chunk_vol,
                     "labware": "myriamed_48_well.json"
                 })
@@ -62,13 +61,33 @@ for header, body in step_blocks:
                     "volume": chunk_vol,
                     "labware": "reservoir_3_well.json"
                 })
+
+        # Plate 2 removal -> Slot 2 Well A2 (max 23.94 mL, fits safely in 35 mL well)
+        for w in p2_wells:
+            for chunk_vol in [190.0, 190.0, 190.0]:
+                biohit_steps.append({
+                    "action": "Aspirate Media",
+                    "mode": "auto",
+                    "slot": "Slot_6",
+                    "well": w,
+                    "volume": chunk_vol,
+                    "labware": "myriamed_48_well.json"
+                })
+                biohit_steps.append({
+                    "action": "Dispense Media",
+                    "mode": "auto",
+                    "slot": "Slot_2",
+                    "well": "A2",
+                    "volume": chunk_vol,
+                    "labware": "reservoir_3_well.json"
+                })
                 
-        # Drop tip into Slot 2 A1
+        # Drop tip into Slot 2 Well A3 (Dry Tip Discard cavity)
         biohit_steps.append({
             "action": "Discard Tip",
             "mode": "auto",
             "slot": "Slot_2",
-            "well": "A1",
+            "well": "A3",
             "labware": "reservoir_3_well.json"
         })
 
@@ -126,12 +145,12 @@ for header, body in step_blocks:
                     "labware": "myriamed_48_well.json"
                 })
                 
-        # Discard tip into Slot 2 A1
+        # Discard tip into Slot 2 Well A3 (Dry Tip Discard cavity)
         biohit_steps.append({
             "action": "Discard Tip",
             "mode": "auto",
             "slot": "Slot_2",
-            "well": "A1",
+            "well": "A3",
             "labware": "reservoir_3_well.json"
         })
 
@@ -178,12 +197,12 @@ for header, body in step_blocks:
                 "labware": "myriamed_48_well.json"
             })
             
-        # Discard tip into Slot 2 Well A1
+        # Discard tip into Slot 2 Well A3 (Dry Tip Discard cavity)
         biohit_steps.append({
             "action": "Discard Tip",
             "mode": "auto",
             "slot": "Slot_2",
-            "well": "A1",
+            "well": "A3",
             "labware": "reservoir_3_well.json"
         })
 
@@ -194,11 +213,14 @@ actions = [s["action"] for s in biohit_steps]
 print("Action counts:", {a: actions.count(a) for a in set(actions)})
 
 # Save to destination paths
+script_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.dirname(script_dir)
+
 out_paths = [
-    "protocols/media_change_and_drug_addition_2_plates.json",
-    "Biohit-Automated-Pipettor-GUI/protocols/media_change_and_drug_addition_2_plates.json",
-    "protocols/2_EHM_Media_Change_and_Drug_Addition.json",
-    "Biohit-Automated-Pipettor-GUI/protocols/2_EHM_Media_Change_and_Drug_Addition.json"
+    os.path.join(repo_root, "protocols", "media_change_and_drug_addition_2_plates.json"),
+    os.path.join(script_dir, "protocols", "media_change_and_drug_addition_2_plates.json"),
+    os.path.join(repo_root, "protocols", "2_EHM_Media_Change_and_Drug_Addition.json"),
+    os.path.join(script_dir, "protocols", "2_EHM_Media_Change_and_Drug_Addition.json")
 ]
 
 for p in out_paths:

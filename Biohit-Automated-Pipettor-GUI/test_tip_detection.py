@@ -35,7 +35,7 @@ class MockHardware:
         self.tip_pickup_force = 0
         self.move_z_history = []
         self.pick_tip_calls = []
-        # Simulation scenario: 'empty', 'seated_1000ul_55mm', 'seated_300ul_75mm', 'seated_force_exception_70mm'
+        # Simulation scenario: 'empty', 'seated_1000ul_55mm', 'seated_300ul_75mm', 'seated_force_exception_70mm', 'double_tip_collision_35mm'
         self.scenario = 'seated_1000ul_55mm'
 
     def move_z(self, z):
@@ -58,6 +58,9 @@ class MockHardware:
         elif sc == 'seated_force_exception_70mm':
             self.z_position = 70.5
             raise Exception("CommandFailed: Actuator stalled on force 26")
+        elif sc == 'double_tip_collision_35mm':
+            self.z_position = 35.0
+            raise Exception("CommandFailed: Collision stall on existing tip")
 
 class MockLIMS:
     def __init__(self):
@@ -77,26 +80,36 @@ class MockApp:
             "error": lambda self, msg: print(f"[ERR] {msg}")
         })()
 
-def _make_do_pick(app, pickup_limit=87.0, approach_z=48.0, hw_speed=9):
+def _make_do_pick(app, pickup_limit=87.0, approach_z=48.0, hw_speed=9, is_1000=True):
     hw = app.lims.pipettor.hardware
     def _do_pick(tx, ty):
         if hw:
             hw.move_z(0)
         app.lims.hw.move_to(tx, ty, 0, speed=app.speed_var.get())
         if not hw:
-            return True, 75.0
+            return True, 55.09
 
         hw.z_speed = hw_speed
         hw.move_z(approach_z)
         hw.z_speed = 3
         hw.tip_pickup_force = 26
+        pick_ok = False
         try:
             hw.pick_tip(pickup_limit)
+            pick_ok = True
         except Exception:
-            pass
+            pick_ok = False
 
         curr_z = getattr(hw, 'z_position', 0.0)
-        if 48.0 <= curr_z < 84.0:
+
+        # 1. Double-tip / High stall collision interlock
+        if curr_z < 50.0:
+            hw.move_z(0)
+            raise RuntimeError(f"CRITICAL: Double-tip collision detected at Z={curr_z:.2f}mm (<50mm)!")
+
+        # 2. Valid seated tip
+        valid_collar = (50.0 <= curr_z <= 59.5) if is_1000 else (68.0 <= curr_z <= 78.0)
+        if valid_collar and (pick_ok or getattr(hw, 'tip_pickup_force', 0) >= 20):
             try:
                 hw.z_speed = hw_speed
                 hw.move_z(0)
@@ -104,6 +117,7 @@ def _make_do_pick(app, pickup_limit=87.0, approach_z=48.0, hw_speed=9):
                 hw.move_z(0)
             return True, curr_z
 
+        # 3. Empty socket (Z >= 60mm or unseated probe)
         try:
             hw.z_speed = hw_speed
             hw.move_z(0)
@@ -147,7 +161,7 @@ def test_seated_tip_300ul():
     app = MockApp()
     hw = app.lims.pipettor.hardware
     hw.scenario = 'seated_300ul_75mm'
-    _do_pick = _make_do_pick(app)
+    _do_pick = _make_do_pick(app, is_1000=False)
 
     seated, cz = _do_pick(100.0, 50.0)
     assert seated, "Tip should be declared seated!"
@@ -161,7 +175,7 @@ def test_b1_tip_seated_with_force_stall():
     app = MockApp()
     hw = app.lims.pipettor.hardware
     hw.scenario = 'seated_force_exception_70mm'
-    _do_pick = _make_do_pick(app)
+    _do_pick = _make_do_pick(app, is_1000=False)
 
     seated, cz = _do_pick(100.0, 50.0)
     assert seated, "B1 Tip MUST be declared seated despite driver exception!"
@@ -169,6 +183,22 @@ def test_b1_tip_seated_with_force_stall():
     assert len(hw.pick_tip_calls) == 1, "Must only probe ONCE and NEVER microsearch!"
     assert hw.z_position == 0.0, "Must immediately retract to clearance Z=0!"
     print("PASS: B1 tip with force-stall exception at Z=70.5mm acquired immediately without microsearch.")
+
+def test_double_tip_collision():
+    print("\n--- Test 6: Double-Tip Collision Interlock (Z=35.0mm) ---")
+    app = MockApp()
+    hw = app.lims.pipettor.hardware
+    hw.scenario = 'double_tip_collision_35mm'
+    _do_pick = _make_do_pick(app, is_1000=True)
+
+    collision_caught = False
+    try:
+        _do_pick(105.0, 53.0)
+    except RuntimeError as re:
+        collision_caught = True
+        print(f"PASS: Double-tip collision correctly caught and halted: {re}")
+    assert collision_caught, "Double-tip collision MUST raise RuntimeError!"
+    assert hw.z_position == 0.0, "Must immediately retract to clearance Z=0!"
 
 def test_auto_advance_a1_empty_to_b1_seated():
     print("\n--- Test 5: Auto-Advance from A1 (empty) to B1 (seated at 55.09mm) ---")
@@ -210,4 +240,5 @@ if __name__ == '__main__':
     test_seated_tip_300ul()
     test_b1_tip_seated_with_force_stall()
     test_auto_advance_a1_empty_to_b1_seated()
+    test_double_tip_collision()
     print("\nALL TIP DETECTION & AUTO-ADVANCE UNIT TESTS PASSED!")

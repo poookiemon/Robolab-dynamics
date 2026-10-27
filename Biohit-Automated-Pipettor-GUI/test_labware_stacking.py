@@ -42,10 +42,17 @@ def test_deck_stacking_kinematics():
     assert (x2, y2) == (57.0, 13.0), f"Slot 2 A2 expected (57.0, 13.0), got ({x2}, {y2})"
     assert (x3, y3) == (12.0, 13.0), f"Slot 2 A3 expected (12.0, 13.0), got ({x3}, {y3})"
     
-    # Slot 2 Discard Z depth
+    # Slot 2 Discard Z depth (50mL Falcon)
     discard_z = dm.calculate_z("Discard Tip", "Slot_2", "A3")
     print(f"Slot 2 A3 Discard Z: {discard_z} mm")
     assert discard_z == 75.0, f"Expected discard Z=75.0mm into Falcon mouth, got {discard_z}"
+    
+    # Slot 2 Discard Z depth (3-Well Reservoir - must be 35.0 mm above rim)
+    res3 = Reservoir3Well()
+    dm.mount_labware("Slot_2", res3, ADAPTER_90MM_BLOCK)
+    res_discard_z = dm.calculate_z("Discard Tip", "Slot_2", "A3")
+    print(f"Slot 2 Reservoir3Well A3 Discard Z: {res_discard_z} mm")
+    assert res_discard_z == 35.0, f"Expected discard Z=35.0mm above reservoir rim, got {res_discard_z}"
     
     # Slot 5 96-well plate (direct deck bed, no adapter)
     p96 = Plate96()

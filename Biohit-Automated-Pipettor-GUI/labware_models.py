@@ -293,6 +293,11 @@ class Reservoir3Well(LabwareBase):
     def get_bottom_z(self, slot: 'DeckSlot') -> float:
         return self.floor_bottom_z
 
+    def get_discard_tip_z(self, slot: 'DeckSlot') -> float:
+        # Top rim is at 47.0mm on 90mm block.
+        # Safe tip discard height is Z=35.0mm (above rim, dropping freely into cavity by gravity, never touching liquid/floor).
+        return 35.0
+
     def get_aspirate_z(self, slot: 'DeckSlot', well_id: str, current_vol_ul: float = 0.0, submerge_mm: float = 5.0) -> float:
         # Static default: 52.0mm (47.0 surface + 5.0 submerge)
         return min(self.start_surface_z + submerge_mm, self.floor_bottom_z - 0.5)
@@ -641,6 +646,8 @@ class DeckManager:
                 return lw.pickup_limit_z
             return 90.0
         elif action == "Discard Tip":
+            if hasattr(lw, 'get_discard_tip_z'):
+                return lw.get_discard_tip_z(slot)
             return lw.get_dispense_z(slot, well_id, in_liquid=False)
         elif action == "Aspirate Media":
             return lw.get_aspirate_z(slot, well_id, volume_ul)
