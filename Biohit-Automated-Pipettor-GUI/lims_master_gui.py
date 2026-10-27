@@ -1239,12 +1239,20 @@ class LIMSMasterApp:
         ttk.Button(pane_ctrl, text="Clear Protocol",
                    command=lambda: [self.wf_box.delete(0, tk.END), self.workflow_sequence.clear()]).pack(fill=tk.X)
         ttk.Separator(pane_ctrl, orient="horizontal").pack(fill=tk.X, pady=8)
-        ttk.Button(pane_ctrl, text="⚡ Load Quick 5-Slot Mock", command=self.action_load_quick_mock_protocol).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="🧪 Load EHM 48-Well Test", command=self.action_load_ehm_test_protocol).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="🎯 Load 96-Well Row A (A1-A12)", command=self.action_load_slot5_rowA_protocol).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="🌊 Load LLD Media Test (Slot 1 -> Slot 2)", command=self.action_load_liquid_test_protocol).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="🧪 Load Media Change + Drug (2 Plates)", command=self.action_load_unified_media_and_drug_protocol).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="🧬 Load 2-EHM Multi-Plate Deck", command=self.action_load_deck_2_ehm_multiplate).pack(fill=tk.X, pady=2)
+
+        # Instant Load Protocols (DMSO-Drug and Media+Drug Only)
+        lbl_inst = ttk.Label(pane_ctrl, text="⚡ INSTANT PROTOCOL LOAD", font=("Arial", 10, "bold"), foreground="#007bff")
+        lbl_inst.pack(fill=tk.X, pady=(2, 4))
+
+        # Media Change + Drug Protocols (2 Plates)
+        ttk.Button(pane_ctrl, text="🧫 Media Change + Drug (7.5 µL)", command=lambda: self.action_load_media_and_drug_protocol(7.5)).pack(fill=tk.X, pady=2)
+        ttk.Button(pane_ctrl, text="🧫 Media Change + Drug (5.0 µL)", command=lambda: self.action_load_media_and_drug_protocol(5.0)).pack(fill=tk.X, pady=2)
+
+        # DMSO & Drug Protocols
+        ttk.Button(pane_ctrl, text="💊 Drug Addition Only (2 Plates, 5 µL)", command=self.action_load_drug_addition_only_protocol).pack(fill=tk.X, pady=2)
+        ttk.Button(pane_ctrl, text="🧪 DMSO Dilution Plate (12 Tubes -> 96 Well)", command=self.action_load_dmso_dilution_protocol).pack(fill=tk.X, pady=2)
+
+        ttk.Separator(pane_ctrl, orient="horizontal").pack(fill=tk.X, pady=6)
         ttk.Button(pane_ctrl, text="📥 Convert & Import Python (.py)", command=self.action_import_python_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="📂 Load JSON Protocol", command=self.action_load_workflow).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="💾 Save Protocol As JSON...", command=self.action_save_workflow_as).pack(fill=tk.X, pady=2)
@@ -1556,13 +1564,17 @@ class LIMSMasterApp:
         else:
             messagebox.showerror("File Not Found", "Could not locate Test_Liquid_Level_Detection.json")
 
-    def action_load_unified_media_and_drug_protocol(self):
+    def action_load_media_and_drug_protocol(self, volume: float = 7.5):
         script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        vol_suffix = f"_{volume:.1f}uL" if volume == 5.0 else "_7.5uL"
         cand_paths = [
+            os.path.join(script_dir, "protocols", f"media_change_and_drug_addition_2_plates{vol_suffix}.json"),
+            os.path.join(repo_root, "protocols", f"media_change_and_drug_addition_2_plates{vol_suffix}.json"),
+            os.path.join(script_dir, "protocols", f"2_EHM_Media_Change_and_Drug_Addition{vol_suffix}.json"),
+            os.path.join(repo_root, "protocols", f"2_EHM_Media_Change_and_Drug_Addition{vol_suffix}.json"),
             os.path.join(script_dir, "protocols", "media_change_and_drug_addition_2_plates.json"),
-            os.path.join(os.path.dirname(script_dir), "protocols", "media_change_and_drug_addition_2_plates.json"),
-            os.path.join(script_dir, "protocols", "2_EHM_Media_Change_and_Drug_Addition.json"),
-            os.path.join(os.path.dirname(script_dir), "protocols", "2_EHM_Media_Change_and_Drug_Addition.json"),
+            os.path.join(repo_root, "protocols", "media_change_and_drug_addition_2_plates.json"),
         ]
         target_path = next((p for p in cand_paths if os.path.exists(p)), None)
         if target_path:
@@ -1574,7 +1586,7 @@ class LIMSMasterApp:
 
             # 6-slot deck configuration:
             # Slot 1: Media Reservoir (A1 Plt 1, A2 Plt 2)
-            # Slot 2: Discard Reservoir (A1 Media Discard & Tip Discard)
+            # Slot 2: Discard Falcon Rack / Reservoir (A1 Media Waste, A2 Plt 1 Tips, A3 Plt 2 Tips)
             # Slot 3: Drug Plate (generic 96 well)
             # Slot 4: Tip Rack (1000uL)
             # Slot 5: Plate 1 (Myriamed 48 well)
@@ -1615,9 +1627,122 @@ class LIMSMasterApp:
                     msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
                 self.wf_box.insert(tk.END, msg)
 
-            self.logger.info(f"Loaded Media Change + Drug Addition Protocol ({len(loaded_sequence)} steps). Deck configured: Slot 1 Media (A1/A2), Slot 2 Discard A1, Slot 3 Drug Plate, Slot 4 Tips, Slot 5 Plt 1, Slot 6 Plt 2.")
+            self.logger.info(f"Loaded Media Change + Drug Addition ({volume:.1f}µL) Protocol ({len(loaded_sequence)} steps). Deck configured: Slot 1 Media (A1/A2), Slot 2 Falcon A Waste, B/C Tips, Slot 3 Drug Plate, Slot 4 Tips, Slot 5 Plt 1, Slot 6 Plt 2.")
         else:
-            messagebox.showerror("File Not Found", "Could not locate media_change_and_drug_addition_2_plates.json")
+            messagebox.showerror("File Not Found", f"Could not locate media_change_and_drug_addition_2_plates{vol_suffix}.json")
+
+    def action_load_unified_media_and_drug_protocol(self):
+        return self.action_load_media_and_drug_protocol(7.5)
+
+    def action_load_drug_addition_only_protocol(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        cand_paths = [
+            os.path.join(script_dir, "protocols", "drug_addition_only_2_ehm_plates.json"),
+            os.path.join(repo_root, "protocols", "drug_addition_only_2_ehm_plates.json"),
+            os.path.join(script_dir, "protocols", "2b_EHM_Drug_Addition.json"),
+            os.path.join(repo_root, "protocols", "2b_EHM_Drug_Addition.json"),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if target_path:
+            with open(target_path, 'r') as f:
+                loaded_sequence = json.load(f)
+            self.workflow_sequence.clear()
+            self.wf_box.delete(0, tk.END)
+            lw_dir = self.get_labware_dir()
+
+            deck_setup = {
+                "Slot_2": "tube_rack_3x50ml.json",
+                "Slot_3": "generic_96_well_plate.json",
+                "Slot_4": "tip_rack_1000ul.json",
+                "Slot_5": "myriamed_48_well.json",
+                "Slot_6": "myriamed_48_well.json"
+            }
+            for s_name, lw_file in deck_setup.items():
+                lp = os.path.join(lw_dir, lw_file)
+                if os.path.exists(lp):
+                    self.lims.deck_labware[s_name] = Labware(lp)
+                    self.lims.deck_labware[s_name].source_file = lw_file
+                if s_name not in self.placed_slots:
+                    self.placed_slots.append(s_name)
+            self.sync_deck_manager()
+            if hasattr(self, 'draw_deck'): self.draw_deck()
+
+            for step in loaded_sequence:
+                self.workflow_sequence.append(step)
+                act = step['action']
+                slot = step.get('slot', '')
+                well = step.get('well', '')
+                vol = float(step.get('volume', 0.0))
+                mix_cycles = int(step.get('mix_cycles', 0))
+                mix_vol = float(step.get('mix_volume', 100.0))
+                mix_str = f" [Mix {mix_cycles}x {mix_vol:g}\u03bcL]" if mix_cycles > 0 else ""
+                vol_str = f" {vol:.1f}\u03bcL" if vol % 1 != 0 else (f" {vol:.0f}\u03bcL" if vol > 0 else "")
+                if act == "Pick Up Tip":
+                    msg = f"[{act.upper()}] from {slot}, Well {well}"
+                elif act == "Discard Tip":
+                    msg = f"[{act.upper()}] into {slot}, Well {well}"
+                else:
+                    msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
+                self.wf_box.insert(tk.END, msg)
+
+            self.logger.info(f"Loaded Drug Addition Only Protocol ({len(loaded_sequence)} steps). Slot 3 Drug Plate, Slot 4 Tips, Slot 5/6 EHM Plates.")
+        else:
+            messagebox.showerror("File Not Found", "Could not locate drug_addition_only_2_ehm_plates.json")
+
+    def action_load_dmso_dilution_protocol(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        cand_paths = [
+            os.path.join(script_dir, "protocols", "1_Serial_Dilution_Plate.json"),
+            os.path.join(repo_root, "protocols", "1_Serial_Dilution_Plate.json"),
+            os.path.join(script_dir, "protocols", "bakar_v2_drug_dmso_initial_loading.json"),
+            os.path.join(repo_root, "protocols", "bakar_v2_drug_dmso_initial_loading.json"),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if target_path:
+            with open(target_path, 'r') as f:
+                loaded_sequence = json.load(f)
+            self.workflow_sequence.clear()
+            self.wf_box.delete(0, tk.END)
+            lw_dir = self.get_labware_dir()
+
+            deck_setup = {
+                "Slot_1": "tube_rack_2x6_2ml.json",
+                "Slot_4": "tip_rack_1000ul.json",
+                "Slot_5": "generic_96_well_plate.json"
+            }
+            for s_name, lw_file in deck_setup.items():
+                lp = os.path.join(lw_dir, lw_file)
+                if os.path.exists(lp):
+                    self.lims.deck_labware[s_name] = Labware(lp)
+                    self.lims.deck_labware[s_name].source_file = lw_file
+                if s_name not in self.placed_slots:
+                    self.placed_slots.append(s_name)
+            self.sync_deck_manager()
+            if hasattr(self, 'draw_deck'): self.draw_deck()
+
+            for step in loaded_sequence:
+                self.workflow_sequence.append(step)
+                act = step['action']
+                slot = step.get('slot', '')
+                well = step.get('well', '')
+                vol = float(step.get('volume', 0.0))
+                mix_cycles = int(step.get('mix_cycles', 0))
+                mix_vol = float(step.get('mix_volume', 100.0))
+                mix_str = f" [Mix {mix_cycles}x {mix_vol:g}\u03bcL]" if mix_cycles > 0 else ""
+                vol_str = f" {vol:.1f}\u03bcL" if vol % 1 != 0 else (f" {vol:.0f}\u03bcL" if vol > 0 else "")
+                if act == "Pick Up Tip":
+                    msg = f"[{act.upper()}] from {slot}, Well {well}"
+                elif act == "Discard Tip":
+                    msg = f"[{act.upper()}] into {slot}, Well {well}"
+                else:
+                    msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
+                self.wf_box.insert(tk.END, msg)
+
+            self.logger.info(f"Loaded DMSO Dilution Plate Protocol ({len(loaded_sequence)} steps). Slot 1 2mL Rack, Slot 4 Tips, Slot 5 96-Well Plate.")
+        else:
+            messagebox.showerror("File Not Found", "Could not locate 1_Serial_Dilution_Plate.json")
 
     def add_wf_step(self):
         action = self.wf_action.get()
