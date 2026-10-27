@@ -7,7 +7,8 @@
         "height_mm": 26.0,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "reservoir_3_well.json"
+        "labware_file": "reservoir_3_well.json",
+        "description": "3-Well Reservoir Media: A1 for Plate 1 (~24 mL), A2 for Plate 2 (~21 mL)"
     },
     "Slot_2": {
         "name": "Slot_2",
@@ -17,46 +18,51 @@
         "height_mm": 26.0,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "reservoir_3_well.json"
+        "labware_file": "reservoir_3_well.json",
+        "description": "Slot 2 Waste & Tips: A1 Media Waste, A2 Plate 1 Tips, A3 Plate 2 Tips"
     },
     "Slot_3": {
         "name": "Slot_3",
         "x_abs": 135.2,
-        "y_abs": 60.0,
+        "y_abs": 45.0,
         "width_mm": 127.8,
         "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "tip_rack_1000ul.json"
+        "labware_file": "generic_96_well_plate.json",
+        "description": "96-Well Drug Plate (Rows A-E: 5 Compounds x 6 Concs)"
     },
     "Slot_4": {
         "name": "Slot_4",
         "x_abs": 0.0,
-        "y_abs": 60.0,
+        "y_abs": 45.0,
         "width_mm": 127.8,
         "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "myriamed_48_well.json"
+        "labware_file": "tip_rack_1000ul.json",
+        "description": "1000 µL Tip Rack (18 Tips in A1-B3)"
     },
     "Slot_5": {
         "name": "Slot_5",
         "x_abs": 135.2,
-        "y_abs": 165.5,
+        "y_abs": 144.0,
         "width_mm": 127.8,
         "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "generic_96_well_plate.json"
+        "labware_file": "myriamed_48_well.json",
+        "description": "Myriamed 48-Well EHM Plate 1 (Full 48 Wells)"
     },
     "Slot_6": {
         "name": "Slot_6",
         "x_abs": 0.0,
-        "y_abs": 165.5,
+        "y_abs": 144.0,
         "width_mm": 127.8,
         "height_mm": 85.5,
         "z_offset": 0.0,
         "is_placed": true,
-        "labware_file": "waste_trough.json"
+        "labware_file": "myriamed_48_well.json",
+        "description": "Myriamed 48-Well EHM Plate 2 (Rows A-G, 42 Wells)"
     }
 }
