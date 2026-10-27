@@ -265,7 +265,155 @@ def generate_protocol(drug_vol: float = 7.5):
             "labware": "reservoir_3_well.json"
         })
 
+    # -------------------------------------------------------------
+    # PHASE 3: PLATE 2 ROW H MEDIA CHANGE ONLY (Wells H1..H6)
+    # Tips from Slot 4 (C3, D3) -> Discard to Falcon C (Slot 2 Well A3)
+    # -------------------------------------------------------------
+    p2_row_h = [f"H{c}" for c in range(1, 7)]
+    # 1. Media Removal (1 clean tip: C3)
+    steps.append({
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": get_tip(),
+        "labware": "tip_rack_1000ul.json"
+    })
+    for w in p2_row_h:
+        for cv in [190.0, 190.0, 190.0]:
+            steps.append({
+                "action": "Aspirate Media",
+                "mode": "auto",
+                "slot": "Slot_6",
+                "well": w,
+                "volume": cv,
+                "labware": "myriamed_48_well.json"
+            })
+            steps.append({
+                "action": "Dispense Media",
+                "mode": "auto",
+                "slot": "Slot_2",
+                "well": "A1",  # Falcon A: Media Waste
+                "volume": cv,
+                "labware": "reservoir_3_well.json"
+            })
+    steps.append({
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A3",  # Falcon C: Plate 2 Tips
+        "labware": "reservoir_3_well.json"
+    })
+
+    # 2. Fresh Media Addition (1 clean tip: D3)
+    steps.append({
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": get_tip(),
+        "labware": "tip_rack_1000ul.json"
+    })
+    for w in p2_row_h:
+        for cv in [165.0, 165.0, 165.0]:
+            steps.append({
+                "action": "Aspirate Media",
+                "mode": "auto",
+                "slot": "Slot_1",
+                "well": "A2",  # Reservoir Well A2: Plate 2 Media
+                "volume": cv,
+                "labware": "reservoir_3_well.json"
+            })
+            steps.append({
+                "action": "Dispense Media",
+                "mode": "auto",
+                "slot": "Slot_6",
+                "well": w,
+                "volume": cv,
+                "labware": "myriamed_48_well.json"
+            })
+    steps.append({
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A3",  # Falcon C: Plate 2 Tips
+        "labware": "reservoir_3_well.json"
+    })
+
     return steps, tip_idx
+
+
+def generate_plate2_row_h_only_protocol():
+    """Generates standalone protocol for JUST the last row (H1..H6) of Plate 2,
+    taking tips C3 and D3 (where the full protocol ends)."""
+    steps = []
+    p2_row_h = [f"H{c}" for c in range(1, 7)]
+    # 1. Media Removal (Tip C3)
+    steps.append({
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C3",
+        "labware": "tip_rack_1000ul.json"
+    })
+    for w in p2_row_h:
+        for cv in [190.0, 190.0, 190.0]:
+            steps.append({
+                "action": "Aspirate Media",
+                "mode": "auto",
+                "slot": "Slot_6",
+                "well": w,
+                "volume": cv,
+                "labware": "myriamed_48_well.json"
+            })
+            steps.append({
+                "action": "Dispense Media",
+                "mode": "auto",
+                "slot": "Slot_2",
+                "well": "A1",
+                "volume": cv,
+                "labware": "reservoir_3_well.json"
+            })
+    steps.append({
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A3",
+        "labware": "reservoir_3_well.json"
+    })
+
+    # 2. Fresh Media Addition (Tip D3)
+    steps.append({
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "D3",
+        "labware": "tip_rack_1000ul.json"
+    })
+    for w in p2_row_h:
+        for cv in [165.0, 165.0, 165.0]:
+            steps.append({
+                "action": "Aspirate Media",
+                "mode": "auto",
+                "slot": "Slot_1",
+                "well": "A2",
+                "volume": cv,
+                "labware": "reservoir_3_well.json"
+            })
+            steps.append({
+                "action": "Dispense Media",
+                "mode": "auto",
+                "slot": "Slot_6",
+                "well": w,
+                "volume": cv,
+                "labware": "myriamed_48_well.json"
+            })
+    steps.append({
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A3",
+        "labware": "reservoir_3_well.json"
+    })
+    return steps
 
 
 if __name__ == "__main__":
@@ -299,3 +447,38 @@ if __name__ == "__main__":
             with open(p, "w") as out:
                 json.dump(steps, out, indent=4)
             print(f"Saved {p}")
+
+        # Also write resume from G1 (sliced from Step 516)
+        resume_steps = steps[516:]
+        resume_paths = [
+            os.path.join(repo_root, "protocols", f"media_change_and_drug_addition_2_plates_resume_G1{vol_suffix}.json"),
+            os.path.join(script_dir, "protocols", f"media_change_and_drug_addition_2_plates_resume_G1{vol_suffix}.json"),
+            os.path.join(repo_root, "protocols", f"2_EHM_Media_Change_and_Drug_Addition_resume_G1{vol_suffix}.json"),
+            os.path.join(script_dir, "protocols", f"2_EHM_Media_Change_and_Drug_Addition_resume_G1{vol_suffix}.json"),
+        ]
+        if vol == 7.5:
+            resume_paths.extend([
+                os.path.join(repo_root, "protocols", "media_change_and_drug_addition_2_plates_resume_G1.json"),
+                os.path.join(script_dir, "protocols", "media_change_and_drug_addition_2_plates_resume_G1.json"),
+                os.path.join(repo_root, "protocols", "2_EHM_Media_Change_and_Drug_Addition_resume_G1.json"),
+                os.path.join(script_dir, "protocols", "2_EHM_Media_Change_and_Drug_Addition_resume_G1.json")
+            ])
+        for rp in resume_paths:
+            os.makedirs(os.path.dirname(rp), exist_ok=True)
+            with open(rp, "w") as out:
+                json.dump(resume_steps, out, indent=4)
+            print(f"Saved resume protocol {rp} ({len(resume_steps)} steps)")
+
+    # Generate standalone Plate 2 Row H Media Change Only protocol (76 steps, tips C3 and D3)
+    row_h_steps = generate_plate2_row_h_only_protocol()
+    row_h_paths = [
+        os.path.join(repo_root, "protocols", "media_change_plate2_rowH_only.json"),
+        os.path.join(script_dir, "protocols", "media_change_plate2_rowH_only.json"),
+        os.path.join(repo_root, "protocols", "plate2_rowH_media_change_only.json"),
+        os.path.join(script_dir, "protocols", "plate2_rowH_media_change_only.json")
+    ]
+    for hp in row_h_paths:
+        os.makedirs(os.path.dirname(hp), exist_ok=True)
+        with open(hp, "w") as out:
+            json.dump(row_h_steps, out, indent=4)
+        print(f"Saved Plate 2 Row H standalone protocol {hp} ({len(row_h_steps)} steps)")
