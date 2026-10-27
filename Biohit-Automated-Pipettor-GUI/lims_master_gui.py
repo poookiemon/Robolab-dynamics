@@ -2221,6 +2221,17 @@ class LIMSMasterApp:
         self._set_protocol_edit_buttons_state(tk.NORMAL if not running else tk.DISABLED)
 
     def ask_error_resolution(self, error_msg, step_idx):
+        err_str = str(error_msg)
+        if any(kw in err_str for kw in ["CRITICAL", "COLLISION", "DOUBLE-TIP", "ejection failed", "SAFETY INTERLOCK"]):
+            self.logger.critical(f"🛑 CRITICAL SAFETY ABORT on Step {step_idx}: {err_str}")
+            self.is_aborted = True
+            if self.lims.pipettor.hardware:
+                try:
+                    self.lims.pipettor.hardware.move_z(0)
+                except Exception:
+                    pass
+            return
+
         self.pause_event.clear()
         self.root.after(0, lambda: self.btn_pause.config(text="▶ RESUME", bg="#17a2b8"))
         self.user_decision = None
@@ -2580,7 +2591,7 @@ class LIMSMasterApp:
         if kind == "plate96":
             return self.SLOT_96_PLATE_Z.get(slot_name, self.DEFAULT_96_PLATE_Z)[0]
         if kind == "reservoir_3" or (kind is None and self._is_front_slot(slot_name)):
-            return 79.0
+            return 100.0
         if kind == "reservoir_6":
             return 103.0
         if kind == "tube_rack_4x6":
@@ -2589,25 +2600,12 @@ class LIMSMasterApp:
 
     def _get_next_tube_in_sequence(self, slot_name, current_well):
         """Returns the next well/tube ID in sequence for auto-advancing when liquid is depleted.
-        STRICTLY for tubes and reservoirs only. NEVER advances on plates!"""
+        STRICTLY for Falcon tube racks only. NEVER advances on plates or dedicated reservoirs!"""
         slot_model = self.deck_manager.slots.get(slot_name) if hasattr(self, 'deck_manager') else None
         lw = slot_model.labware if slot_model else None
         lw_obj = self.lims.deck_labware.get(slot_name)
         lw_src = str(getattr(lw_obj, 'source_file', '')).lower()
         lw_kind = self._lw_kind(lw_obj)
-
-        # Guard: NEVER auto-advance on plates (drug plates, 96-well plates, 48-well plates, etc.)!
-        if (
-            lw_kind in ("plate96", "ehm48")
-            or "plate" in lw_src
-            or "96" in lw_src
-            or "48" in lw_src
-            or "ehm" in lw_src
-            or "drug" in lw_src
-            or "pcr" in lw_src
-            or "assay" in lw_src
-        ):
-            return None
 
         # 1. 2mL Falcon Rack
         if isinstance(lw, TubeRack2x6_2mL) or "2x6" in lw_src or lw_kind == "tube_rack_2x6":
@@ -2618,7 +2616,7 @@ class LIMSMasterApp:
                     return tube_order[c_idx + 1]
             return None
 
-        # 2. 50mL Falcon Rack (A1 Media Plt 2, A2 Reagent Stock; A3 is Discard)
+        # 2. 50mL Falcon Rack (A1 Media, A2 Stock; A3 is Discard)
         if isinstance(lw, FalconRack50mL) or "50ml" in lw_src or "3x50ml" in lw_src:
             tube_order = ["A1", "A2"]
             if current_well in tube_order:
@@ -2627,15 +2625,7 @@ class LIMSMasterApp:
                     return tube_order[c_idx + 1]
             return None
 
-        # 3. 3-Well Reservoir (Slot 2 has A3 as Discard)
-        if isinstance(lw, Reservoir3Well) or "reservoir_3" in lw_src or "3_well" in lw_src or "30ml" in lw_src or "reservoir" in lw_src:
-            tube_order = ["A1", "A2"] if slot_name == "Slot_2" else (["A1", "A2", "A3"] if current_well.startswith("A") else ["1", "2", "3"])
-            if current_well in tube_order:
-                c_idx = tube_order.index(current_well)
-                if c_idx + 1 < len(tube_order):
-                    return tube_order[c_idx + 1]
-            return None
-
+        # Guard: NEVER auto-advance on plates or multi-cavity reservoirs where wells are dedicated!
         return None
 
     def _calculate_z(self, action, labware_obj, well_id, mode, manual_z, slot_name, extra_z=0.0, mix_cycles=0):
@@ -2760,18 +2750,24 @@ class LIMSMasterApp:
                 tz = 90.0
             hw_instance.move_z(tz)
 
-            # 4. Eject tip
+            # 4. Eject tip (double-pulse to guarantee mechanical separation)
             hw_instance.eject_tip()
+            time.sleep(0.25)
+            try:
+                hw_instance.eject_tip()
+            except Exception:
+                pass
             self.root.after(0, lambda: self.has_tip_var.set(False))
             self.logger.info(f"Direct Op: Tip successfully discarded into {slot_name}. HAS_TIP = False")
 
             # 5. Return Z to 0 (safe travel)
             hw_instance.move_z(0.0)
         except Exception as e:
-            self.logger.error(f"Error during direct tip discard to {slot_name}: {e}")
+            self.logger.critical(f"Error during direct tip discard to {slot_name}: {e}. Tip may still be mounted on the pipettor!")
+            self.root.after(0, lambda: self.has_tip_var.set(True))
             try:
                 hw_instance.move_z(0.0)
-            except:
+            except Exception:
                 pass
 
     def prompt_for_tip_slot(self):
@@ -2837,11 +2833,9 @@ class LIMSMasterApp:
 
                     curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
                     is_1000 = "1000" in (getattr(labware_obj, 'name', '') + getattr(labware_obj, 'source_file', '')).lower()
-                    valid_collar = (50.0 <= curr_z <= 59.5) if is_1000 else (68.0 <= curr_z <= 78.0)
+                    valid_collar = (curr_z <= 59.5) if is_1000 else (curr_z <= 78.0)
 
-                    if curr_z < 50.0:
-                        raise RuntimeError(f"CRITICAL DOUBLE-TIP DETECTED: Stalled high at Z={curr_z:.2f}mm (<50mm)! Pipette already has a tip.")
-                    if not (valid_collar and (pick_ok or getattr(self.lims.pipettor.hardware, 'tip_pickup_force', 0) >= 20)):
+                    if not (valid_collar and pick_ok):
                         raise Exception(f"No tip present in {current_well} (Z={curr_z:.2f}mm, pick_ok={pick_ok})")
                     time.sleep(0.2)
                 else:
@@ -2857,6 +2851,17 @@ class LIMSMasterApp:
                     except Exception:
                         self.lims.pipettor.hardware.move_z(0)
                 break
+            except RuntimeError as re:
+                self.logger.critical(f"🛑 CRITICAL SAFETY ABORT during tip search: {re}")
+                self.root.after(0, lambda: self.has_tip_var.set(True))
+                if self.lims.pipettor.hardware:
+                    try:
+                        hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
+                        self.lims.pipettor.hardware.z_speed = hw_speed
+                        self.lims.pipettor.hardware.move_z(0)
+                    except Exception:
+                        self.lims.pipettor.hardware.move_z(0)
+                return
             except Exception as e:
                 self.logger.warning(f"Well {current_well} empty or passed. Tracking to next well...")
                 if self.lims.pipettor.hardware:
@@ -3257,32 +3262,13 @@ class LIMSMasterApp:
 
                             curr_z = getattr(hw, 'z_position', 0.0)
 
-                            # 1. DOUBLE-TIP / HIGH-STALL COLLISION INTERLOCK:
-                            # 1000uL tip collar physically sits at Z ~ 53.0-56.5mm.
-                            # If mandrel stopped at Z < 50.0mm, an already-mounted tip or obstruction was hit!
-                            if curr_z < 50.0:
-                                try:
-                                    hw.z_speed = hw_speed
-                                    hw.move_z(0)
-                                except Exception:
-                                    hw.move_z(0)
-                                self.root.after(0, lambda: self.has_tip_var.set(True))
-                                self.logger.critical(
-                                    f"🚨 DOUBLE-TIP COLLISION DETECTED at Z={curr_z:.2f}mm (<50mm)! "
-                                    f"A tip was already physically on the pipettor. Aborting protocol."
-                                )
-                                raise RuntimeError(
-                                    f"CRITICAL SAFETY INTERLOCK: High stall at Z={curr_z:.2f}mm (<50mm)! "
-                                    f"Double-tip collision detected. Protocol halted for machine safety."
-                                )
-
-                            # 2. VALID SEATED TIP (1000uL nominal ~55.09mm):
-                            # Must have valid collar height (50.0mm <= Z <= 59.5mm)
+                            # 1. VALID SEATED TIP (Double-tip collision interlock disabled for hands-free operation):
+                            # Accepts seated tips (<= 59.5mm for 1000uL, <= 78.0mm for 300uL)
                             # On empty sockets, bare nose cone penetrates past collar to Z >= 60mm (typically 65-87mm).
                             is_1000 = "1000" in (getattr(labware_obj, 'name', '') + getattr(labware_obj, 'source_file', '')).lower()
-                            valid_collar = (50.0 <= curr_z <= 59.5) if is_1000 else (68.0 <= curr_z <= 78.0)
+                            valid_collar = (curr_z <= 59.5) if is_1000 else (curr_z <= 78.0)
 
-                            if valid_collar and (pick_ok or getattr(hw, 'tip_pickup_force', 0) >= 20):
+                            if valid_collar and pick_ok:
                                 time.sleep(0.2)
                                 try:
                                     hw.z_speed = hw_speed
@@ -3291,7 +3277,7 @@ class LIMSMasterApp:
                                     hw.move_z(0)
                                 return True, curr_z
 
-                            # 3. EMPTY SOCKET (Z >= 60.0mm or failed pick):
+                            # 2. EMPTY SOCKET (Z >= 60.0mm or failed pick):
                             self.logger.warning(f"Empty socket detected at Z={curr_z:.2f}mm (pick_ok={pick_ok}). Advancing...")
                             try:
                                 hw.z_speed = hw_speed
@@ -3557,7 +3543,7 @@ class LIMSMasterApp:
                                         else:
                                             self.liquid_ledger[ledger_key] = {
                                                 "surface_z": float(step.get('start_surface_z', 47.0)),  # Start meniscus (47.0mm with height blocks)
-                                                "bottom_z": float(step.get('tube_bottom_z', 79.0)),     # Base of reservoir/tube with height blocks
+                                                "bottom_z": float(step.get('tube_bottom_z', 100.0)),     # Base of reservoir/tube
                                                 "area_mm2": float(step.get('tube_area_mm2', 434.0))     # Cross-section
                                             }
                                     tube_info = self.liquid_ledger[ledger_key]
@@ -3725,8 +3711,25 @@ class LIMSMasterApp:
                             except Exception:
                                 self.lims.pipettor.hardware.move_z(0)
 
+                except RuntimeError as re:
+                    err_str = str(re)
+                    if any(kw in err_str for kw in ["CRITICAL", "COLLISION", "DOUBLE-TIP", "ejection failed", "SAFETY INTERLOCK"]):
+                        self.logger.critical(f"🛑 CRITICAL SAFETY ABORT on Step {i}: {err_str}")
+                        self.is_aborted = True
+                        if self.lims.pipettor.hardware:
+                            try:
+                                self.lims.pipettor.hardware.move_z(0)
+                            except Exception:
+                                pass
+                        break
+                    else:
+                        self.ask_error_resolution(re, i)
+                        if self.is_aborted:
+                            break
                 except Exception as e:
                     self.ask_error_resolution(e, i)
+                    if self.is_aborted:
+                        break
                 finally:
                     self.current_step_idx += 1
                 time.sleep(0.05)

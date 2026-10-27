@@ -246,7 +246,7 @@ class Reservoir3Well(LabwareBase):
             "z_height_mm": 35.0,
             "well_depth_mm": 32.0,
             "well_radius_mm": 12.0,
-            "max_safe_bottom_z": 79.0,
+            "max_safe_bottom_z": 100.0,
             "dead_volume_ul": 2000.0,
             "max_volume_ul": 40000.0,
             "pitch_x_mm": 42.6,
@@ -258,7 +258,7 @@ class Reservoir3Well(LabwareBase):
         super().__init__(**defaults)
         self.cross_section_area_mm2 = kwargs.get("cross_section_area_mm2", 434.0)
         self.start_surface_z = kwargs.get("start_surface_z", 47.0)
-        self.floor_bottom_z = kwargs.get("floor_bottom_z", 79.0)
+        self.floor_bottom_z = kwargs.get("floor_bottom_z", 100.0)
         self.submerge_depth_mm = kwargs.get("submerge_depth_mm", 5.0)
 
     def parse_well(self, well_id: str) -> Tuple[Optional[int], Optional[int]]:
