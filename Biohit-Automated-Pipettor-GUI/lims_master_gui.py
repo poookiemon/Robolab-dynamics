@@ -134,6 +134,7 @@ class LIMSMasterApp:
         filemenu.add_command(label="Load Workspace...", command=self.action_load_deck)
         filemenu.add_command(label="Save Workspace As...", command=self.action_save_deck_as)
         filemenu.add_command(label="Load JSON Protocol...", command=self.action_load_workflow)
+        filemenu.add_command(label="Resume from G1 (Plt 1 G-H + Plt 2)...", command=self.action_load_media_and_drug_resume_g1_protocol)
         filemenu.add_command(label="Save JSON Protocol As...", command=self.action_save_workflow_as)
         filemenu.add_separator()
         filemenu.add_command(label="Import Python Protocol (.py)...", command=self.action_import_python_protocol)
@@ -1247,6 +1248,8 @@ class LIMSMasterApp:
         # Media Change + Drug Protocols (2 Plates)
         ttk.Button(pane_ctrl, text="🧫 Media Change + Drug (7.5 µL)", command=lambda: self.action_load_media_and_drug_protocol(7.5)).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="🧫 Media Change + Drug (5.0 µL)", command=lambda: self.action_load_media_and_drug_protocol(5.0)).pack(fill=tk.X, pady=2)
+        ttk.Button(pane_ctrl, text="⏯ Resume from G1 (Plt 1 G-H + Plt 2, 7.5 µL)", command=lambda: self.action_load_media_and_drug_resume_g1_protocol(7.5)).pack(fill=tk.X, pady=2)
+        ttk.Button(pane_ctrl, text="⏯ Resume from G1 (Plt 1 G-H + Plt 2, 5.0 µL)", command=lambda: self.action_load_media_and_drug_resume_g1_protocol(5.0)).pack(fill=tk.X, pady=2)
 
         # DMSO & Drug Protocols
         ttk.Button(pane_ctrl, text="💊 Drug Addition Only (2 Plates, 5 µL)", command=self.action_load_drug_addition_only_protocol).pack(fill=tk.X, pady=2)
@@ -1633,6 +1636,66 @@ class LIMSMasterApp:
 
     def action_load_unified_media_and_drug_protocol(self):
         return self.action_load_media_and_drug_protocol(7.5)
+
+    def action_load_media_and_drug_resume_g1_protocol(self, volume: float = 7.5):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        vol_suffix = f"_{volume:.1f}uL" if volume == 5.0 else "_7.5uL"
+        cand_paths = [
+            os.path.join(script_dir, "protocols", f"media_change_and_drug_addition_2_plates_resume_G1{vol_suffix}.json"),
+            os.path.join(repo_root, "protocols", f"media_change_and_drug_addition_2_plates_resume_G1{vol_suffix}.json"),
+            os.path.join(script_dir, "protocols", f"2_EHM_Media_Change_and_Drug_Addition_resume_G1{vol_suffix}.json"),
+            os.path.join(repo_root, "protocols", f"2_EHM_Media_Change_and_Drug_Addition_resume_G1{vol_suffix}.json"),
+            os.path.join(script_dir, "protocols", "media_change_and_drug_addition_2_plates_resume_G1.json"),
+            os.path.join(repo_root, "protocols", "media_change_and_drug_addition_2_plates_resume_G1.json"),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if target_path:
+            with open(target_path, 'r') as f:
+                loaded_sequence = json.load(f)
+            self.workflow_sequence.clear()
+            self.wf_box.delete(0, tk.END)
+            lw_dir = self.get_labware_dir()
+
+            deck_setup = {
+                "Slot_1": "reservoir_3_well.json",
+                "Slot_2": "reservoir_3_well.json",
+                "Slot_3": "generic_96_well_plate.json",
+                "Slot_4": "tip_rack_1000ul.json",
+                "Slot_5": "myriamed_48_well.json",
+                "Slot_6": "myriamed_48_well.json"
+            }
+            for s_name, lw_file in deck_setup.items():
+                lp = os.path.join(lw_dir, lw_file)
+                if os.path.exists(lp):
+                    self.lims.deck_labware[s_name] = Labware(lp)
+                    self.lims.deck_labware[s_name].source_file = lw_file
+                if s_name not in self.placed_slots:
+                    self.placed_slots.append(s_name)
+            self.sync_deck_manager()
+            if hasattr(self, 'draw_deck'): self.draw_deck()
+
+            for step in loaded_sequence:
+                self.workflow_sequence.append(step)
+                act = step['action']
+                slot = step.get('slot', '')
+                well = step.get('well', '')
+                vol = float(step.get('volume', 0.0))
+                mix_cycles = int(step.get('mix_cycles', 0))
+                mix_vol = float(step.get('mix_volume', 100.0))
+                mix_str = f" [Mix {mix_cycles}x {mix_vol:g}\u03bcL]" if mix_cycles > 0 else ""
+                vol_str = f" {vol:.1f}\u03bcL" if vol % 1 != 0 else (f" {vol:.0f}\u03bcL" if vol > 0 else "")
+                if act == "Pick Up Tip":
+                    msg = f"[{act.upper()}] from {slot}, Well {well}"
+                elif act == "Discard Tip":
+                    msg = f"[{act.upper()}] into {slot}, Well {well}"
+                else:
+                    msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
+                self.wf_box.insert(tk.END, msg)
+
+            self.logger.info(f"Loaded Resume Protocol ({volume:.1f}µL, {len(loaded_sequence)} steps). Starts from Step 1: Pick Up Tip Slot 4 G1 -> Aspirate Slot 5 G1.")
+        else:
+            messagebox.showerror("File Not Found", f"Could not locate media_change_and_drug_addition_2_plates_resume_G1{vol_suffix}.json")
 
     def action_load_drug_addition_only_protocol(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
