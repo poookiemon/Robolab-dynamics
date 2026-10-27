@@ -10400,7 +10400,7 @@
         "action": "Aspirate Media",
         "mode": "auto",
         "slot": "Slot_3",
-        "well": "D6",
+        "well": "E5",
         "volume": 5.0,
         "labware": "generic_96_well_plate.json"
     },
@@ -10418,7 +10418,7 @@
         "action": "Aspirate Media",
         "mode": "auto",
         "slot": "Slot_3",
-        "well": "D6",
+        "well": "E5",
         "volume": 5.0,
         "labware": "generic_96_well_plate.json"
     },
@@ -10436,7 +10436,7 @@
         "action": "Aspirate Media",
         "mode": "auto",
         "slot": "Slot_3",
-        "well": "D6",
+        "well": "E5",
         "volume": 5.0,
         "labware": "generic_96_well_plate.json"
     },

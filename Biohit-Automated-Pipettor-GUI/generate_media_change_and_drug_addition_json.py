@@ -35,7 +35,7 @@ p2_sections = [
     ("S5", 
      [f"{r}{c}" for c in range(1, 7) for r in "EFG"], 
      [f"{r}{c}" for c in range(1, 7) for r in "EFG"], 
-     [("E1", ["E1","F1","G1"]), ("E2", ["E2","F2","G2"]), ("E3", ["E3","F3","G3"]), ("E4", ["E4","F4","G4"]), ("D6", ["E5","F5","G5"]), ("E6", ["E6","F6","G6"])])
+     [("E1", ["E1","F1","G1"]), ("E2", ["E2","F2","G2"]), ("E3", ["E3","F3","G3"]), ("E4", ["E4","F4","G4"]), ("E5", ["E5","F5","G5"]), ("E6", ["E6","F6","G6"])])
 ]
 
 def generate_protocol(drug_vol: float = 7.5):
