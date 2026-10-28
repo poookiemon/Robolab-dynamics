@@ -2795,7 +2795,7 @@ class LIMSMasterApp:
             elif kind == "reservoir_6":
                 base_z = 103.0
             elif kind == "ehm48":
-                base_z = 87.0 if deep else 81.0  # Calibrated: 87.0 inside well (+1mm lower), 81.0 brim
+                base_z = 86.0 if deep else 81.0  # Calibrated: 86.0 inside well (1mm higher to protect tissues), 81.0 brim
             elif kind == "tip_rack":
                 base_z = 98.0
             elif kind == "tube_rack_4x6":
