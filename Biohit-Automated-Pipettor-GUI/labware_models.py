@@ -303,6 +303,76 @@ class Reservoir3Well(LabwareBase):
         return min(self.start_surface_z + submerge_mm, self.floor_bottom_z - 0.5)
 
 
+class Reservoir6Column(LabwareBase):
+    """
+    6-Column Vertical Reagent Reservoir (lanes R1..R6 / A1..A6, ~50 mL per lane).
+    Supports full 8-channel vertical immersion (symmetric Y center = oy + 31.5 mm)
+    for drug-segregated media changes and vertical waste / tip-drop in Lane 6.
+    """
+    def __init__(self, **kwargs):
+        defaults = {
+            "name": "6-Column Reagent Reservoir",
+            "category": "reservoir_6",
+            "rows": 1,
+            "columns": 6,
+            "z_height_mm": 35.0,
+            "well_depth_mm": 32.0,
+            "well_radius_mm": 8.0,
+            "max_safe_bottom_z": 103.0,
+            "dead_volume_ul": 2000.0,
+            "max_volume_ul": 50000.0,
+            "pitch_x_mm": 16.5,
+            "pitch_y_mm": 0.0
+        }
+        for k in list(kwargs.keys()):
+            if k in defaults:
+                defaults[k] = kwargs.pop(k)
+        super().__init__(**defaults)
+        self.col_dx = kwargs.get("col_dx", [3.0, -12.0, -30.0, -46.5, -63.0, -79.5])
+        self.aspirate_z_mm = kwargs.get("aspirate_z_mm", 101.0)
+        self.dispense_brim_z_mm = kwargs.get("dispense_brim_z_mm", 78.0)
+        self.discard_tip_z_mm = kwargs.get("discard_tip_z_mm", 48.0)
+
+    def parse_well(self, well_id: str) -> Tuple[Optional[int], Optional[int]]:
+        if not well_id:
+            return 0, 0
+        w_clean = str(well_id).upper().strip()
+        if w_clean.startswith("R"):
+            w_clean = w_clean[1:]
+        if w_clean in ("1", "2", "3", "4", "5", "6"):
+            return 0, int(w_clean) - 1
+        if len(w_clean) >= 2 and w_clean[0] in "ABCDEFGH":
+            try:
+                c = int(w_clean[1:]) - 1
+                if 0 <= c < 6:
+                    return 0, c
+            except ValueError:
+                pass
+        return 0, 0
+
+    def get_well_xy(self, slot: 'DeckSlot', well_id: str) -> Tuple[float, float]:
+        _, c_idx = self.parse_well(well_id)
+        ci = c_idx if (c_idx is not None and 0 <= c_idx < len(self.col_dx)) else 0
+        ox, oy = slot.origin_a1_xy
+        front = slot.is_front_slot
+        return ox + self.col_dx[ci], oy + (0.0 if front else 31.5)
+
+    def get_rim_z(self, slot: 'DeckSlot') -> float:
+        return 75.0
+
+    def get_bottom_z(self, slot: 'DeckSlot') -> float:
+        return 102.5
+
+    def get_aspirate_z(self, slot: 'DeckSlot', well_id: str, current_vol_ul: float = 0.0, submerge_mm: float = 2.0) -> float:
+        return self.aspirate_z_mm
+
+    def get_dispense_z(self, slot: 'DeckSlot', well_id: str, in_liquid: bool = False) -> float:
+        return self.aspirate_z_mm if in_liquid else self.dispense_brim_z_mm
+
+    def get_discard_tip_z(self, slot: 'DeckSlot') -> float:
+        return self.discard_tip_z_mm
+
+
 class TubeRack2x6_2mL(LabwareBase):
     """
     12-tube rack (2 rows A-B x 6 cols 1-6) for 2mL Falcon microcentrifuge tubes.

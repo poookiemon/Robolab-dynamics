@@ -112,24 +112,53 @@ class Labware:
 
 class Pipettor:
     def __init__(self, tip_volume: float = 200.0, multichannel: bool = False):
-        self.tip_volume = tip_volume
-        self.multichannel = multichannel
-        self.channels = 8 if multichannel else 1
+        self.multichannel = bool(multichannel)
+        self.tip_volume = 1000.0 if (self.multichannel or tip_volume >= 1000.0) else float(tip_volume)
+        self.channels = 8 if self.multichannel else 1
         self.hardware_context = None
         self.hardware = None
+        self._open_hardware()
 
+    def _open_hardware(self) -> Tuple[bool, str]:
         if HAS_BIOHIT_DLL:
             try:
-                # Biohit hardware driver strictly accepts 200 or 1000 uL (PipetType: 1=200uL, 2=1000uL)
-                vol_literal = 200
+                # Biohit hardware driver strictly accepts 200 or 1000 uL (PipetType: 1=200uL, 2=1000uL).
+                # Multi-channel manifold strictly requires 1000 uL (PipetType=2, 0.2 steps/uL).
+                vol_literal = 1000 if (self.multichannel or self.tip_volume >= 1000.0) else 200
                 self.hardware_context = RealBiohitPipettor(
                     tip_volume=vol_literal,
-                    multichannel=multichannel,
+                    multichannel=self.multichannel,
                     initialize=False
                 )
                 self.hardware = self.hardware_context.__enter__()
+                return True, f"Hardware driver configured ({'8x1000uL Multi' if self.multichannel else f'1x{vol_literal}uL Single'})."
             except Exception as e:
                 print(f"Hardware Initialization Error: {e}")
+                return False, f"Hardware Initialization Error: {e}"
+        return True, f"Simulation mode configured ({'8x1000uL Multi' if self.multichannel else f'1x{int(self.tip_volume)}uL Single'})."
+
+    def reconfigure(self, tip_volume: float, multichannel: bool) -> Tuple[bool, str]:
+        """Safely switches between Single-Channel (200uL) and 8-Channel (1000uL) driver configurations."""
+        self.multichannel = bool(multichannel)
+        self.tip_volume = 1000.0 if (self.multichannel or tip_volume >= 1000.0) else float(tip_volume)
+        self.channels = 8 if self.multichannel else 1
+        vol_literal = 1000 if (self.multichannel or self.tip_volume >= 1000.0) else 200
+
+        # Prefer in-place live driver reconfiguration when already connected to avoid CLR/COM handle teardown race
+        if self.hardware is not None:
+            try:
+                if self.multichannel:
+                    setattr(self.hardware, "_AbstractPipettor__multichannel", True)
+                    self.hardware.tip_volume = 1000
+                else:
+                    setattr(self.hardware, "_AbstractPipettor__multichannel", False)
+                    self.hardware.tip_volume = vol_literal
+                return True, f"Hardware driver reconfigured live ({'8x1000uL Multi' if self.multichannel else f'1x{vol_literal}uL Single'})."
+            except Exception as e:
+                print(f"Live reconfigure fallback to reopen: {e}")
+
+        self.close()
+        return self._open_hardware()
 
     def close(self):
         if self.hardware_context:

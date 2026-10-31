@@ -222,18 +222,20 @@
     {
         "action": "Dispense Media",
         "mode": "auto",
-        "slot": "Slot_6",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 46.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "labware": "waste_trough.json"
     },
     {
         "action": "Discard Tip",
         "mode": "auto",
-        "slot": "Slot_6",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 0.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "labware": "waste_trough.json"
     },
     {
         "action": "Pick Up Tip",
@@ -458,18 +460,20 @@
     {
         "action": "Dispense Media",
         "mode": "auto",
-        "slot": "Slot_6",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 46.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "labware": "waste_trough.json"
     },
     {
         "action": "Discard Tip",
         "mode": "auto",
-        "slot": "Slot_6",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 0.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "labware": "waste_trough.json"
     },
     {
         "action": "Pick Up Tip",
@@ -694,18 +698,20 @@
     {
         "action": "Dispense Media",
         "mode": "auto",
-        "slot": "Slot_6",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 46.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "labware": "waste_trough.json"
     },
     {
         "action": "Discard Tip",
         "mode": "auto",
-        "slot": "Slot_6",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 0.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "labware": "waste_trough.json"
     },
     {
         "action": "Pick Up Tip",
@@ -930,18 +936,20 @@
     {
         "action": "Dispense Media",
         "mode": "auto",
-        "slot": "Slot_6",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 46.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "labware": "waste_trough.json"
     },
     {
         "action": "Discard Tip",
         "mode": "auto",
-        "slot": "Slot_6",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 0.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "labware": "waste_trough.json"
     },
     {
         "action": "Pick Up Tip",
@@ -1166,17 +1174,19 @@
     {
         "action": "Dispense Media",
         "mode": "auto",
-        "slot": "Slot_6",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 46.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "labware": "waste_trough.json"
     },
     {
         "action": "Discard Tip",
         "mode": "auto",
-        "slot": "Slot_6",
+        "slot": "Slot_2",
         "well": "A1",
         "volume": 0.0,
-        "extra_z": 0.0
+        "extra_z": 0.0,
+        "labware": "waste_trough.json"
     }
 ]

@@ -11,9 +11,10 @@ except Exception:
 from labware_models import (
     DeckManager, DeckSlot as ModelDeckSlot, HeightAdapter,
     ADAPTER_NONE, ADAPTER_90MM_BLOCK, ADAPTER_45MM_BLOCK,
-    LabwareBase, Plate96, Plate48Myriamed, Reservoir3Well,
+    LabwareBase, Plate96, Plate48Myriamed, Reservoir3Well, Reservoir6Column,
     TubeRack2x6_2mL, FalconRack50mL, TipRack96, WasteTrough
 )
+from generate_8ch_1000ul_ehm_media_change import build_8ch_ehm_media_change_steps
 
 import xml.etree.ElementTree as ET
 try:
@@ -93,8 +94,14 @@ class LIMSMasterApp:
         self.current_step_idx = 0
         self.protocol_edit_buttons = []
         self.tip_rack_learned_offset = (0.0, 0.0)
+        self.eight_ch_cal_offset = {"X": 0.0, "Y": 0.0, "Z": 0.0}
+        self.head_mode_var = tk.StringVar(
+            value="8×1000 µL (8-Channel Manifold)" if is_multi else "1×200 µL (Single-Channel)"
+        )
 
         self.has_tip_var = tk.BooleanVar(value=False)
+        self._worker_has_tip = False
+        self.has_tip_var.trace_add("write", lambda *a: setattr(self, "_worker_has_tip", bool(self.has_tip_var.get())))
         self.current_pos = {"X": 0.0, "Y": 0.0, "Z": 0.0}
         self.telemetry_active = False
 
@@ -136,6 +143,8 @@ class LIMSMasterApp:
         filemenu.add_command(label="Load JSON Protocol...", command=self.action_load_workflow)
         filemenu.add_command(label="Resume from G1 (Plt 1 G-H + Plt 2)...", command=self.action_load_media_and_drug_resume_g1_protocol)
         filemenu.add_command(label="Plate 2 Row H Media Change Only...", command=self.action_load_plate2_rowH_protocol)
+        filemenu.add_command(label="8×1000 µL EHM Media Change (Plate 5 & Plate 6)...", command=self.action_load_8ch_1000ul_media_change_protocol)
+        filemenu.add_command(label="Bakar Dilution Plate (Media Change)...", command=self.action_load_bakar_media_change_serial_dilution_protocol)
         filemenu.add_command(label="Save JSON Protocol As...", command=self.action_save_workflow_as)
         filemenu.add_separator()
         filemenu.add_command(label="Import Python Protocol (.py)...", command=self.action_import_python_protocol)
@@ -144,6 +153,11 @@ class LIMSMasterApp:
         filemenu.add_separator()
         filemenu.add_command(label="Exit", command=self.on_closing)
         menubar.add_cascade(label="File", menu=filemenu)
+
+        hwmenu = tk.Menu(menubar, tearoff=0)
+        hwmenu.add_command(label="Switch to 1×200 µL (Single-Channel)", command=lambda: self.switch_pipettor_head(False))
+        hwmenu.add_command(label="Switch to 8×1000 µL (8-Channel Manifold)", command=lambda: self.switch_pipettor_head(True))
+        menubar.add_cascade(label="Hardware", menu=hwmenu)
         try:
             self.root.config(menu=menubar)
         except Exception:
@@ -581,19 +595,74 @@ class LIMSMasterApp:
                 
         ttk.Button(f_in, text="Calculate", command=calc).grid(row=3, column=0, columnspan=2, pady=15)
 
+    def _set_has_tip(self, val: bool):
+        """Thread-safe tip attachment state setter (updates worker flag synchronously + Tk BooleanVar on main thread)."""
+        bval = bool(val)
+        self._worker_has_tip = bval
+        if threading.current_thread() is threading.main_thread():
+            self.has_tip_var.set(bval)
+        else:
+            self.root.after(0, lambda v=bval: self.has_tip_var.set(v))
+
+    def switch_pipettor_head(self, multichannel: bool, quiet: bool = False):
+        if getattr(self, 'is_running', False):
+            messagebox.showwarning("Protocol Active", "Cannot switch pipettor head mode while a protocol is running.")
+            return
+        target_vol = 1000.0 if multichannel else 200.0
+        label = "8×1000 µL (8-Channel Manifold)" if multichannel else "1×200 µL (Single-Channel)"
+        self.head_mode_var.set(label)
+
+        ok, msg = self.lims.pipettor.reconfigure(tip_volume=target_vol, multichannel=multichannel)
+        # Keep BiohitInterface bound to the same pipettor object
+        self.lims.hw.pipettor = self.lims.pipettor
+
+        if multichannel:
+            # 8-channel manifold has no tip oscillation/capacitance sensor; disable LLD surface probing automatically
+            if hasattr(self, 'lld_tracking_var'):
+                self.lld_tracking_var.set(False)
+            if hasattr(self, 'dynamic_z_var'):
+                self.dynamic_z_var.set(False)
+
+        if hasattr(self, 'lbl_head_badge'):
+            badge_bg = "#6f42c1" if multichannel else "#0d6efd"
+            badge_txt = "HEAD: 8×1000 µL MULTI" if multichannel else "HEAD: 1×200 µL SINGLE"
+            self.lbl_head_badge.config(text=badge_txt, bg=badge_bg)
+
+        if hasattr(self, 'logger'):
+            sensor_note = "LLD Tip Sensor DISABLED (calibrated Z mode)" if multichannel else "LLD Tip Sensor AVAILABLE"
+            self.logger.info(f"[HEAD MODE] Switched to {label} ({msg}) | {sensor_note}")
+        if not quiet and not ok:
+            messagebox.showwarning("Hardware Driver Notice", msg)
+
+    def _on_head_mode_combo(self, event=None):
+        sel = self.head_mode_var.get()
+        is_multi = "8×1000" in sel or "8-Channel" in sel
+        self.switch_pipettor_head(is_multi, quiet=True)
+
     def build_jog_tab(self):
-        f_conn = ttk.LabelFrame(self.tab_jog, text="Hardware Handshake", padding=15)
+        f_conn = ttk.LabelFrame(self.tab_jog, text="Hardware Handshake & Pipettor Head", padding=15)
         f_conn.pack(fill=tk.X, padx=20, pady=10)
         self.port_var = tk.StringVar()
-        self.port_drop = ttk.Combobox(f_conn, textvariable=self.port_var, state="readonly", width=30)
+        self.port_drop = ttk.Combobox(f_conn, textvariable=self.port_var, state="readonly", width=22)
         self.port_drop.pack(side=tk.LEFT, padx=5)
         ttk.Button(f_conn, text="Scan Ports", command=self.hw_scan).pack(side=tk.LEFT, padx=5)
-        ttk.Button(f_conn, text="Connect & Initialize", command=self.hw_init).pack(side=tk.LEFT, padx=15)
+        ttk.Button(f_conn, text="Connect & Initialize", command=self.hw_init).pack(side=tk.LEFT, padx=10)
         self.hw_stat_can = tk.Canvas(f_conn, width=20, height=20, highlightthickness=0)
         self.hw_stat_can.pack(side=tk.LEFT, padx=5)
         self.hw_led = self.hw_stat_can.create_oval(2, 2, 18, 18, fill="gray")
         self.lbl_hw_stat = ttk.Label(f_conn, text="OFFLINE", font=("Arial", 9, "bold"))
-        self.lbl_hw_stat.pack(side=tk.LEFT)
+        self.lbl_hw_stat.pack(side=tk.LEFT, padx=(0, 12))
+
+        ttk.Label(f_conn, text="Pipettor Head:", font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=(8, 4))
+        head_cb = ttk.Combobox(
+            f_conn,
+            textvariable=self.head_mode_var,
+            values=["1×200 µL (Single-Channel)", "8×1000 µL (8-Channel Manifold)"],
+            state="readonly",
+            width=26,
+        )
+        head_cb.pack(side=tk.LEFT, padx=4)
+        head_cb.bind("<<ComboboxSelected>>", self._on_head_mode_combo)
 
         f_speed = ttk.LabelFrame(self.tab_jog, text="Global Kinematic Speed (%)", padding=15)
         f_speed.pack(fill=tk.X, padx=20, pady=5)
@@ -1169,7 +1238,30 @@ class LIMSMasterApp:
         pane_list = ttk.Frame(self.tab_workflow)
         pane_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        ttk.Label(pane_ctrl, text="Protocol Builder", font=("Arial", 11, "bold")).pack(pady=(10, 5))
+        head_bar = ttk.Frame(pane_ctrl)
+        head_bar.pack(fill=tk.X, pady=(6, 4))
+        init_multi = self.lims.pipettor.multichannel
+        self.lbl_head_badge = tk.Label(
+            head_bar,
+            text="HEAD: 8×1000 µL MULTI" if init_multi else "HEAD: 1×200 µL SINGLE",
+            bg="#6f42c1" if init_multi else "#0d6efd",
+            fg="white",
+            font=("Arial", 8, "bold"),
+            padx=6,
+            pady=3,
+        )
+        self.lbl_head_badge.pack(side=tk.LEFT)
+        wf_head_cb = ttk.Combobox(
+            head_bar,
+            textvariable=self.head_mode_var,
+            values=["1×200 µL (Single-Channel)", "8×1000 µL (8-Channel Manifold)"],
+            state="readonly",
+            width=24,
+        )
+        wf_head_cb.pack(side=tk.RIGHT, padx=(4, 0))
+        wf_head_cb.bind("<<ComboboxSelected>>", self._on_head_mode_combo)
+
+        ttk.Label(pane_ctrl, text="Protocol Builder", font=("Arial", 11, "bold")).pack(pady=(4, 5))
         ttk.Label(pane_ctrl, text="Action Type:").pack(anchor="w")
 
         self.wf_action = ttk.Combobox(pane_ctrl, state="readonly",
@@ -1246,6 +1338,16 @@ class LIMSMasterApp:
         lbl_inst = ttk.Label(pane_ctrl, text="⚡ INSTANT PROTOCOL LOAD", font=("Arial", 10, "bold"), foreground="#007bff")
         lbl_inst.pack(fill=tk.X, pady=(2, 4))
 
+        # 8-Channel 1000 uL Media Change (Dr. Tim Meyers' Offset Tip-Picking + Symmetric Transfer)
+        tk.Button(
+            pane_ctrl,
+            text="🚀 8×1000 µL EHM Media Change (Plate 5 & 6 — Offset Tips)",
+            bg="#6f42c1",
+            fg="white",
+            font=("Arial", 9, "bold"),
+            command=self.action_load_8ch_1000ul_media_change_protocol,
+        ).pack(fill=tk.X, pady=(2, 4))
+
         # Media Change + Drug Protocols (2 Plates)
         ttk.Button(pane_ctrl, text="🧫 Media Change + Drug (7.5 µL)", command=lambda: self.action_load_media_and_drug_protocol(7.5)).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="🧫 Media Change + Drug (5.0 µL)", command=lambda: self.action_load_media_and_drug_protocol(5.0)).pack(fill=tk.X, pady=2)
@@ -1254,6 +1356,7 @@ class LIMSMasterApp:
         ttk.Button(pane_ctrl, text="🧪 Plate 2 Row H Only (Media Change, Tips C3/D3)", command=self.action_load_plate2_rowH_protocol).pack(fill=tk.X, pady=2)
 
         # DMSO & Drug Protocols
+        ttk.Button(pane_ctrl, text="🧪 Bakar Dilution Plate (Media Change: 31.4 µL DMSO + 14.6 µL Drug)", command=self.action_load_bakar_media_change_serial_dilution_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="💊 Drug Addition Only (2 Plates, 5 µL)", command=self.action_load_drug_addition_only_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="🧪 DMSO Dilution Plate (12 Tubes -> 96 Well)", command=self.action_load_dmso_dilution_protocol).pack(fill=tk.X, pady=2)
 
@@ -1831,9 +1934,15 @@ class LIMSMasterApp:
 
             deck_setup = {
                 "Slot_1": "tube_rack_2x6_2ml.json",
+                "Slot_2": "waste_trough.json",
+                "Slot_3": "generic_96_well_plate.json",
                 "Slot_4": "tip_rack_1000ul.json",
                 "Slot_5": "generic_96_well_plate.json"
             }
+            if "Slot_6" in self.lims.deck_labware:
+                del self.lims.deck_labware["Slot_6"]
+            if "Slot_6" in self.placed_slots:
+                self.placed_slots.remove("Slot_6")
             for s_name, lw_file in deck_setup.items():
                 lp = os.path.join(lw_dir, lw_file)
                 if os.path.exists(lp):
@@ -1865,6 +1974,350 @@ class LIMSMasterApp:
             self.logger.info(f"Loaded DMSO Dilution Plate Protocol ({len(loaded_sequence)} steps). Slot 1 2mL Rack, Slot 4 Tips, Slot 5 96-Well Plate.")
         else:
             messagebox.showerror("File Not Found", "Could not locate 1_Serial_Dilution_Plate.json")
+
+    def prompt_drug_wells_and_load(self, loaded_sequence, protocol_name, deck_setup):
+        top = tk.Toplevel(self.root)
+        top.title("Stock Drug Wells Configuration (Slot 3)")
+        top.geometry("450x400")
+        top.transient(self.root)
+        top.grab_set()
+
+        try:
+            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 225
+            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 200
+            top.geometry(f"+{max(0, rx)}+{max(0, ry)}")
+        except Exception:
+            pass
+
+        ttk.Label(top, text="Select Stock Drug Wells (Slot 3)", font=("Arial", 11, "bold"), foreground="#007bff").pack(pady=(15, 4))
+        ttk.Label(top, text="Specify the source wells in the Slot 3 plate for each dilution series:\n(Target dilution plate rows A through E on Slot 5)",
+                  font=("Arial", 9), justify=tk.CENTER).pack(pady=(0, 12))
+
+        frame_inputs = ttk.Frame(top, padding=10)
+        frame_inputs.pack(fill=tk.BOTH, expand=True, padx=25)
+
+        # Identify all steps where liquid is aspirated from Slot 3
+        drug_steps_indices = [i for i, s in enumerate(loaded_sequence) if s.get('slot') == 'Slot_3' and 'Aspirate' in s.get('action', '')]
+        default_wells = [loaded_sequence[i].get('well', 'A1') for i in drug_steps_indices]
+        if not default_wells:
+            default_wells = ["A1", "A2", "A3", "A4", "B1"]
+
+        labels = [
+            "Drug 1 (Dilution Row A):",
+            "Drug 2 (Dilution Row B):",
+            "Drug 3 (Dilution Row C):",
+            "Drug 4 (Dilution Row D):",
+            "Drug 5 (Dilution Row E):"
+        ]
+
+        import re
+        well_vars = []
+        for idx in range(min(5, len(labels))):
+            lbl_text = labels[idx] if idx < len(labels) else f"Drug {idx+1}:"
+            def_val = default_wells[idx] if idx < len(default_wells) else f"A{idx+1}"
+            v = tk.StringVar(value=def_val)
+            well_vars.append(v)
+
+            ttk.Label(frame_inputs, text=lbl_text, font=("Arial", 9, "bold")).grid(row=idx, column=0, sticky="w", pady=6)
+            ent = ttk.Entry(frame_inputs, textvariable=v, width=12, font=("Consolas", 10, "bold"), justify="center")
+            ent.grid(row=idx, column=1, sticky="e", pady=6, padx=10)
+
+        btn_frame = ttk.Frame(top, padding=15)
+        btn_frame.pack(fill=tk.X, side=tk.BOTTOM)
+
+        def on_apply():
+            chosen_wells = []
+            for idx, v in enumerate(well_vars):
+                val = v.get().strip().upper()
+                if not re.match(r"^[A-H]([1-9]|1[0-2])$", val):
+                    messagebox.showerror("Invalid Well Format",
+                                         f"'{val}' is not a valid 96-well format.\nMust be between A1 and H12 (e.g. A1, B3, C6).",
+                                         parent=top)
+                    return
+                chosen_wells.append(val)
+
+            # Update the protocol sequence Slot 3 aspirate wells
+            for k, step_idx in enumerate(drug_steps_indices):
+                if k < len(chosen_wells):
+                    loaded_sequence[step_idx]['well'] = chosen_wells[k]
+
+            # Populate GUI with modified steps
+            self.workflow_sequence.clear()
+            self.wf_box.delete(0, tk.END)
+            lw_dir = self.get_labware_dir()
+
+            for s_name, lw_file in deck_setup.items():
+                lp = os.path.join(lw_dir, lw_file)
+                if os.path.exists(lp):
+                    self.lims.deck_labware[s_name] = Labware(lp)
+                    self.lims.deck_labware[s_name].source_file = lw_file
+                if s_name not in self.placed_slots:
+                    self.placed_slots.append(s_name)
+            if "Slot_6" in self.lims.deck_labware:
+                del self.lims.deck_labware["Slot_6"]
+            if "Slot_6" in self.placed_slots:
+                self.placed_slots.remove("Slot_6")
+
+            self.sync_deck_manager()
+            if hasattr(self, 'draw_deck'): self.draw_deck()
+
+            for step in loaded_sequence:
+                self.workflow_sequence.append(step)
+                act = step['action']
+                slot = step.get('slot', '')
+                well = step.get('well', '')
+                vol = float(step.get('volume', 0.0))
+                mix_cycles = int(step.get('mix_cycles', 0))
+                mix_vol = float(step.get('mix_volume', 100.0))
+                mix_str = f" [Mix {mix_cycles}x {mix_vol:g}\u03bcL]" if mix_cycles > 0 else ""
+                vol_str = f" {vol:.1f}\u03bcL" if vol % 1 != 0 else (f" {vol:.0f}\u03bcL" if vol > 0 else "")
+                if act == "Pick Up Tip":
+                    msg = f"[{act.upper()}] from {slot}, Well {well}"
+                elif act == "Discard Tip":
+                    msg = f"[{act.upper()}] into {slot}, Well {well}"
+                else:
+                    msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
+                self.wf_box.insert(tk.END, msg)
+
+            wells_summary = ", ".join([f"D{i+1}:{w}" for i, w in enumerate(chosen_wells)])
+            self.logger.info(f"Loaded {protocol_name} with Drug Wells [{wells_summary}]. Deck configured: Slot 1 DMSO (A1), Slot 2 Waste (A1), Slot 3 Drug Stock, Slot 4 Tips, Slot 5 Dilution Plate.")
+            top.destroy()
+
+        ttk.Button(btn_frame, text="Cancel", command=top.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text="Apply & Load Protocol", command=on_apply).pack(side=tk.RIGHT, padx=5)
+
+    def action_load_bakar_media_change_serial_dilution_protocol(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        cand_paths = [
+            os.path.join(script_dir, "protocols", "bakar_v2_drug_dmso_media_change_step.json"),
+            os.path.join(repo_root, "protocols", "bakar_v2_drug_dmso_media_change_step.json"),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if target_path:
+            with open(target_path, 'r') as f:
+                loaded_sequence = json.load(f)
+
+            deck_setup = {
+                "Slot_1": "reservoir_3_well.json",
+                "Slot_2": "waste_trough.json",
+                "Slot_3": "generic_96_well_plate.json",
+                "Slot_4": "tip_rack_1000ul.json",
+                "Slot_5": "generic_96_well_plate.json"
+            }
+
+            self.prompt_drug_wells_and_load(
+                loaded_sequence,
+                protocol_name="Bakar Serial Dilution (Media Change Step)",
+                deck_setup=deck_setup
+            )
+        else:
+            messagebox.showerror("File Not Found", "Could not locate bakar_v2_drug_dmso_media_change_step.json")
+
+    def action_load_8ch_1000ul_media_change_protocol(self):
+        """
+        Configures and loads Dr. Tim Meyers' 8x1000 uL EHM Media Change protocol for
+        Plate 5 (Slot_3) & Plate 6 (Slot_5) using offset tip-picking on Slot_4 and
+        symmetric transfers from the 6-column vertical reservoir on Slot_6.
+        """
+        # Auto-engage 8x1000 uL manifold driver configuration
+        self.switch_pipettor_head(True, quiet=True)
+
+        top = tk.Toplevel(self.root)
+        top.title("8×1000 µL EHM Media Change Configuration (Plate 5 & Plate 6)")
+        top.geometry("620x640")
+        top.transient(self.root)
+        top.grab_set()
+
+        try:
+            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 310
+            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 320
+            top.geometry(f"+{max(0, rx)}+{max(0, ry)}")
+        except Exception:
+            pass
+
+        ttk.Label(
+            top,
+            text="8×1000 µL Offset Tip-Picking & Symmetric Media Change",
+            font=("Arial", 12, "bold"),
+            foreground="#6f42c1",
+        ).pack(pady=(12, 3))
+        ttk.Label(
+            top,
+            text="100% Hands-Free • Plate 5 (Slot_3) + Plate 6 (Slot_5) • Tips (Slot_4) • 6-Col Reservoir (Slot_6)",
+            font=("Arial", 9),
+        ).pack(pady=(0, 8))
+
+        body = ttk.Frame(top, padding=12)
+        body.pack(fill=tk.BOTH, expand=True, padx=10)
+
+        # 1. Deck & Reservoir Cheat-Sheet
+        deck_lf = ttk.LabelFrame(body, text="Deck & Reservoir Map (Keep Slot_1 & Slot_2 EMPTY!)", padding=8)
+        deck_lf.pack(fill=tk.X, pady=(0, 8))
+        deck_info = (
+            "• Slot_1 & Slot_2: EMPTY (Slot_2 MUST have NO block/labware for -Y bare-nozzle overhang)\n"
+            "• Slot_3: Plate 5 (48-Well EHM: A-C = Drug 11, D-F = Drug 12, G-H = Drug 13)\n"
+            "• Slot_4: 1000 µL Tip Rack (Full Mode: load Tips in Cols 1-4; Fresh-Only: load Cols 1-2)\n"
+            "• Slot_5: Plate 6 (48-Well EHM: A = Drug 13, B-D = Drug 14, E-G = Drug 15, H = Control)\n"
+            "• Slot_6: 6-Col Vertical Reservoir -> R1:D11 | R2:D12 | R3:D13 | R4:Ctrl+D14 | R5:D15 | R6:Waste/Drop"
+        )
+        ttk.Label(deck_lf, text=deck_info, font=("Consolas", 8), justify=tk.LEFT).pack(anchor="w")
+
+        # 2. Workflow & Tip-Drop Options
+        opt_lf = ttk.LabelFrame(body, text="Workflow & Tip-Drop Strategy", padding=8)
+        opt_lf.pack(fill=tk.X, pady=(0, 8))
+
+        inc_rem_var = tk.BooleanVar(value=True)
+        tip_drop_var = tk.StringVar(value="rack_graveyard")
+        shovel_var = tk.BooleanVar(value=True)
+
+        def _on_rem_toggle():
+            if not inc_rem_var.get():
+                tip_drop_var.set("slot6_r6")
+            else:
+                tip_drop_var.set("rack_graveyard")
+
+        ttk.Checkbutton(
+            opt_lf,
+            text="Include Old Media Removal before Fresh Media Addition (100% Hands-Free)",
+            variable=inc_rem_var,
+            command=_on_rem_toggle,
+        ).pack(anchor="w", pady=2)
+
+        vol_row = ttk.Frame(opt_lf)
+        vol_row.pack(fill=tk.X, pady=4)
+        ttk.Label(vol_row, text="Remove Vol (µL/well):").pack(side=tk.LEFT)
+        rem_vol_var = tk.StringVar(value="550.0")
+        ttk.Entry(vol_row, textvariable=rem_vol_var, width=8, justify="center").pack(side=tk.LEFT, padx=(4, 16))
+        ttk.Label(vol_row, text="Fresh Media Vol (µL/well):").pack(side=tk.LEFT)
+        fresh_vol_var = tk.StringVar(value="500.0")
+        ttk.Entry(vol_row, textvariable=fresh_vol_var, width=8, justify="center").pack(side=tk.LEFT, padx=4)
+
+        ttk.Separator(opt_lf, orient="horizontal").pack(fill=tk.X, pady=6)
+        ttk.Label(opt_lf, text="Tip-Drop Destination:", font=("Arial", 9, "bold")).pack(anchor="w")
+        ttk.Radiobutton(
+            opt_lf,
+            text="Empty Tip-Rack Columns (Slot_4 Cols 5-12 left empty — keeps Slot_6 R6 purely for Liquid Waste)",
+            value="rack_graveyard",
+            variable=tip_drop_var,
+        ).pack(anchor="w", pady=1)
+        ttk.Radiobutton(
+            opt_lf,
+            text="Slot_6 Lane R6 (A6) Vertical 100 mL Tip-Drop Reservoir (Z = 48.0 mm)",
+            value="slot6_r6",
+            variable=tip_drop_var,
+        ).pack(anchor="w", pady=1)
+
+        ttk.Separator(opt_lf, orient="horizontal").pack(fill=tk.X, pady=6)
+        ttk.Label(opt_lf, text="Plate 6 Drug 14 (Rows B-D) Tip Loading:", font=("Arial", 9, "bold")).pack(anchor="w")
+        ttk.Radiobutton(
+            opt_lf,
+            text="Dr. Tim's Automated 1-Shovel (E-G -> Ch A-C -> empty B-D at Z=42mm; works on full tip cols)",
+            value=True,
+            variable=shovel_var,
+        ).pack(anchor="w", pady=1)
+        ttk.Radiobutton(
+            opt_lf,
+            text="Zero-Shovel Fallback (uses 1 extra col; pre-remove Tip E in Plate 6 fresh cols before run)",
+            value=False,
+            variable=shovel_var,
+        ).pack(anchor="w", pady=1)
+
+        # 3. 8-Channel Fine Calibration Nudge
+        cal_lf = ttk.LabelFrame(body, text="8-Channel Head Fine Calibration Offset (Optional Nudge)", padding=8)
+        cal_lf.pack(fill=tk.X, pady=(0, 6))
+        cal_row = ttk.Frame(cal_lf)
+        cal_row.pack(fill=tk.X)
+        dx_var = tk.StringVar(value=str(self.eight_ch_cal_offset.get("X", 0.0)))
+        dy_var = tk.StringVar(value=str(self.eight_ch_cal_offset.get("Y", 0.0)))
+        dz_var = tk.StringVar(value=str(self.eight_ch_cal_offset.get("Z", 0.0)))
+        for lbl_t, v_obj in [("ΔX (mm):", dx_var), ("ΔY (mm):", dy_var), ("ΔZ (mm):", dz_var)]:
+            ttk.Label(cal_row, text=lbl_t).pack(side=tk.LEFT, padx=(0, 3))
+            ttk.Entry(cal_row, textvariable=v_obj, width=7, justify="center").pack(side=tk.LEFT, padx=(0, 14))
+
+        btn_bar = ttk.Frame(top, padding=10)
+        btn_bar.pack(fill=tk.X, side=tk.BOTTOM)
+
+        def _apply_and_load():
+            try:
+                r_vol = float(rem_vol_var.get())
+                f_vol = float(fresh_vol_var.get())
+                cal_dx = float(dx_var.get())
+                cal_dy = float(dy_var.get())
+                cal_dz = float(dz_var.get())
+            except ValueError:
+                messagebox.showerror("Invalid Number", "Volumes and calibration offsets must be valid numbers.", parent=top)
+                return
+
+            if r_vol <= 0 or r_vol > 1000.0 or f_vol <= 0 or f_vol > 1000.0:
+                messagebox.showerror("Volume Out of Range", "Volumes must be between 1 and 1000 µL for 8×1000 µL tips.", parent=top)
+                return
+
+            self.eight_ch_cal_offset = {"X": cal_dx, "Y": cal_dy, "Z": cal_dz}
+            self.switch_pipettor_head(True, quiet=True)
+
+            steps = build_8ch_ehm_media_change_steps(
+                include_old_media_removal=inc_rem_var.get(),
+                remove_vol_ul=r_vol,
+                fresh_vol_ul=f_vol,
+                tip_drop_mode=tip_drop_var.get(),
+                use_shovel=shovel_var.get(),
+            )
+
+            # Configure 6-slot deck: Slot_1 & Slot_2 empty; Slot_3 Plate 5; Slot_4 Tips; Slot_5 Plate 6; Slot_6 6-Col Reservoir
+            lw_dir = self.get_labware_dir()
+            for empty_s in ("Slot_1", "Slot_2"):
+                if empty_s in self.lims.deck_labware:
+                    del self.lims.deck_labware[empty_s]
+
+            deck_setup = {
+                "Slot_3": "myriamed_48_well.json",
+                "Slot_4": "tip_rack_1000ul.json",
+                "Slot_5": "myriamed_48_well.json",
+                "Slot_6": "reservoir_6_column.json",
+            }
+            for s_name, lw_file in deck_setup.items():
+                lp = os.path.join(lw_dir, lw_file)
+                if os.path.exists(lp):
+                    self.lims.deck_labware[s_name] = Labware(lp)
+                    self.lims.deck_labware[s_name].source_file = lw_file
+                if s_name not in self.placed_slots:
+                    self.placed_slots.append(s_name)
+            for s_all in ("Slot_1", "Slot_2"):
+                if s_all not in self.placed_slots and s_all in self.lims.deck_slots:
+                    self.placed_slots.append(s_all)
+
+            self.sync_deck_manager()
+            if hasattr(self, 'draw_deck'):
+                self.draw_deck()
+
+            self.workflow_sequence.clear()
+            self.wf_box.delete(0, tk.END)
+            self.has_tip_var.set(False)
+
+            for st in steps:
+                self.workflow_sequence.append(st)
+                self.wf_box.insert(tk.END, self._format_step_msg(st))
+
+            mode_desc = "Full Media Change (Remove + Fresh)" if inc_rem_var.get() else "Fresh Media Only"
+            drop_desc = "Slot_4 Empty Cols" if tip_drop_var.get() == "rack_graveyard" else "Slot_6 R6 Vertical Trough"
+            self.logger.info(
+                f"Loaded 8×1000 µL EHM Protocol [{mode_desc} | {len(steps)} steps | Drop: {drop_desc} | "
+                f"8-Ch Offset: ({cal_dx:+.1f}, {cal_dy:+.1f}, {cal_dz:+.1f}) mm]."
+            )
+            top.destroy()
+
+        ttk.Button(btn_bar, text="Cancel", command=top.destroy).pack(side=tk.RIGHT, padx=5)
+        tk.Button(
+            btn_bar,
+            text="🚀 Apply & Load 8×1000 Protocol",
+            bg="#6f42c1",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            padx=12,
+            pady=4,
+            command=_apply_and_load,
+        ).pack(side=tk.RIGHT, padx=5)
 
     def add_wf_step(self):
         action = self.wf_action.get()
@@ -1973,6 +2426,8 @@ class LIMSMasterApp:
         self.workflow_sequence.append(step_data)
 
     def _format_step_msg(self, step_data):
+        if step_data.get('label'):
+            return str(step_data['label'])
         action = step_data.get('action', '')
         mode = step_data.get('mode', 'auto')
         vol = step_data.get('volume', 0.0)
@@ -2226,6 +2681,8 @@ class LIMSMasterApp:
                 typed_lw = TubeRack2x6_2mL(source_file=src)
             elif "reservoir_3" in src or "3_well" in src or "3-well" in name or "30ml" in both:
                 typed_lw = Reservoir3Well(source_file=src)
+            elif "reservoir_6" in src or "6_column" in src or "6-column" in name:
+                typed_lw = Reservoir6Column(source_file=src)
             elif "tip" in both or "tip_rack" in src:
                 existing_offset = (0.0, 0.0)
                 if slot_name in self.deck_manager.slots and isinstance(self.deck_manager.slots[slot_name].labware, TipRack96):
@@ -2285,7 +2742,7 @@ class LIMSMasterApp:
 
             slot = s.get('slot', '')
             well = s.get('well', '')
-            tx, ty = self._calculate_xy(slot, well) if slot else (current_x, current_y)
+            tx, ty = (self._resolve_step_xy(s, slot, well) or (current_x, current_y)) if slot else (current_x, current_y)
             travel_dist = math.hypot(tx - current_x, ty - current_y)
             current_x, current_y = tx, ty
             travel_time = (travel_dist / xy_speed) + 0.35
@@ -2643,8 +3100,10 @@ class LIMSMasterApp:
         # 5. 6-COLUMN RESERVOIR
         if kind == "reservoir_6":
             col_dx = [3.0, -12.0, -30.0, -46.5, -63.0, -79.5]
-            ci = c_idx if (c_idx is not None and 0 <= c_idx < 6) else 3
-            return ox + col_dx[ci], oy + (0.0 if front else 45.0)
+            ci = c_idx if (c_idx is not None and 0 <= c_idx < 6) else 0
+            if c_idx is None and str(well_id or "").upper().strip().lstrip("R") in ("1", "2", "3", "4", "5", "6"):
+                ci = int(str(well_id).upper().strip().lstrip("R")) - 1
+            return ox + col_dx[ci], oy + (0.0 if front else 31.5)
 
         # 6. 4x6 TUBE RACK (Biohit 17A, pitch 19.3 mm)
         if kind == "tube_rack_4x6":
@@ -2681,6 +3140,54 @@ class LIMSMasterApp:
                 return cx + ((lw_w / 2.0) - well_obj.x_rel), cy - (lw_h / 2.0) + well_obj.y_rel
 
         return cx, cy
+
+    def _resolve_step_xy(self, step, slot_name, well_id):
+        """
+        Resolves machine (X, Y) for a protocol step.
+        For 8-channel symmetric steps (`eight_ch_symmetric=True` or `pipettor.multichannel=True`):
+        - Centers the 8-channel manifold symmetrically between Row A and Row H of the target column
+          on 8-row labware (`ehm48`, `plate96`, `tip_rack`), or uses the symmetric lane center on `reservoir_6`.
+        - Applies `tip_offset_rows * 9.0` mm Y shift for offset partial tip-picking / tip-shoveling.
+        - Applies `self.eight_ch_cal_offset['X']` and `self.eight_ch_cal_offset['Y']` fine calibration trims.
+        """
+        is_8ch_step = bool((step and step.get('eight_ch_symmetric')) or self.lims.pipettor.multichannel)
+        if not is_8ch_step:
+            return self._calculate_xy(slot_name, well_id)
+
+        lw_obj = self.lims.deck_labware.get(slot_name)
+        kind = self._lw_kind(lw_obj)
+        w_str = str(well_id or "A1").strip().upper()
+        col_digits = "".join(ch for ch in w_str if ch.isdigit()) or "1"
+
+        if kind in ("ehm48", "plate96", "tip_rack"):
+            ca = self._calculate_xy(slot_name, f"A{col_digits}")
+            ch = self._calculate_xy(slot_name, f"H{col_digits}")
+            if ca and ch and (ca[0] != 0.0 or ca[1] != 0.0):
+                tx = ca[0]
+                ty = (ca[1] + ch[1]) / 2.0
+            else:
+                coords = self._calculate_xy(slot_name, well_id)
+                if not coords:
+                    return None
+                tx, ty = coords
+        else:
+            coords = self._calculate_xy(slot_name, well_id)
+            if not coords:
+                return None
+            tx, ty = coords
+
+        offset_rows = int((step or {}).get('tip_offset_rows', 0) or 0)
+        ty += offset_rows * 9.0
+
+        cal = getattr(self, 'eight_ch_cal_offset', {"X": 0.0, "Y": 0.0, "Z": 0.0})
+        tx += float(cal.get("X", 0.0))
+        ty += float(cal.get("Y", 0.0))
+
+        max_x = float(self.lims.machine_config.get("max_x_mm", 300.0))
+        max_y = float(self.lims.machine_config.get("max_y_mm", 300.0))
+        tx = max(0.0, min(tx, max_x))
+        ty = max(0.0, min(ty, max_y))
+        return tx, ty
 
     def _rim_calibrated_z(self, labware_obj, deep):
         """Z for labware calibrated by rim height (z_calibration block)."""
@@ -2793,7 +3300,7 @@ class LIMSMasterApp:
                 deep_z, brim_z = self.SLOT_96_PLATE_Z.get(slot_name, self.DEFAULT_96_PLATE_Z)
                 base_z = deep_z if deep else brim_z
             elif kind == "reservoir_6":
-                base_z = 103.0
+                base_z = 101.0 if deep else 78.0
             elif kind == "ehm48":
                 base_z = 86.0 if deep else 81.0  # Calibrated: 86.0 inside well (1mm higher to protect tissues), 81.0 brim
             elif kind == "tip_rack":
@@ -3002,6 +3509,13 @@ class LIMSMasterApp:
         if not self.lims.hw.is_initialized:
             messagebox.showerror("Safety Interlock", "Hardware must be initialized first.")
             return
+        if self.lims.pipettor.multichannel:
+            messagebox.showinfo(
+                "8-Channel Manifold Active",
+                "The 8×1000 µL 8-channel manifold does not have a single-tip capacitance/oscillation sensor.\n\n"
+                "8-channel protocols use calibrated Z heights automatically. Switch to 1×200 µL Single-Channel mode if using the single-channel head."
+            )
+            return
 
         top = tk.Toplevel(self.root)
         top.title("Auto-Read Liquid Level (Sensor Probing)")
@@ -3209,6 +3723,9 @@ class LIMSMasterApp:
                                  "Hardware must be homed via 'Connect & Initialize' before executing automated workflows.")
             return
         if not self.workflow_sequence: return
+        needs_8ch = any(s.get('eight_ch_symmetric') for s in self.workflow_sequence)
+        if needs_8ch and not self.lims.pipettor.multichannel:
+            self.switch_pipettor_head(True, quiet=True)
         has_mix_steps = any(int(s.get('mix_cycles', 0)) > 0 or s.get('action') == "Mix Well" for s in self.workflow_sequence)
         if has_mix_steps:
             self.enable_mixing_for_run = messagebox.askyesno(
@@ -3269,15 +3786,17 @@ class LIMSMasterApp:
 
                     action, mode, vol = step['action'], step.get('mode', 'auto'), step.get('volume', 0.0)
                     extra_z = step.get('extra_z', 0.0)
-                    self.logger.info(f"Executing Step {i}/{total_steps}: [{action}]")
+                    is_8ch = bool(self.lims.pipettor.multichannel or step.get('eight_ch_symmetric'))
+                    step_desc = step.get('label') or f"[{action}]"
+                    self.logger.info(f"Executing Step {i}/{total_steps}: {step_desc}")
 
                     if action == "Pick Up Tip" and mode != "manual":
-                        if self.has_tip_var.get():
+                        if self._worker_has_tip:
                             self.logger.info("Tip State: ATTACHED. Skipping redundant pickup step.")
                             time.sleep(0.05)
                             continue
                     elif action == "Discard Tip" and mode != "manual":
-                        if not self.has_tip_var.get():
+                        if not self._worker_has_tip:
                             self.logger.info("Tip State: EMPTY. Skipping redundant discard step.")
                             time.sleep(0.05)
                             continue
@@ -3337,7 +3856,7 @@ class LIMSMasterApp:
                                 self.ask_error_resolution(f"No labware assigned to {slot_name}. Assign one in the Deck tab.", i)
                                 continue
 
-                        coords = self._calculate_xy(slot_name, well_id)
+                        coords = self._resolve_step_xy(step, slot_name, well_id)
                         if coords and (coords[0] != 0.0 or coords[1] != 0.0):
                             target_x, target_y = coords
                         else:
@@ -3348,11 +3867,16 @@ class LIMSMasterApp:
                         continue
 
                     if action == "Pick Up Tip":
-                        pickup_limit = min(92.0, max(82.0, 87.0 + extra_z))
+                        cal_dz = float(self.eight_ch_cal_offset.get("Z", 0.0)) if is_8ch else 0.0
+                        pickup_limit = (
+                            min(94.0, max(80.0, 87.0 + extra_z + cal_dz))
+                            if is_8ch
+                            else min(92.0, max(82.0, 87.0 + extra_z))
+                        )
                         hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                         labware_obj = self.lims.deck_labware.get(slot_name)
                         z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
-                        approach_z = max(0.0, min(48.0, z_height - 25.0))
+                        approach_z = 38.0 if is_8ch else max(0.0, min(48.0, z_height - 25.0))
 
                         tip_rack_model = None
                         if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
@@ -3385,10 +3909,13 @@ class LIMSMasterApp:
                             curr_z = getattr(hw, 'z_position', 0.0)
 
                             # 1. VALID SEATED TIP (Double-tip collision interlock disabled for hands-free operation):
-                            # Accepts seated tips (<= 59.5mm for 1000uL, <= 78.0mm for 300uL)
-                            # On empty sockets, bare nose cone penetrates past collar to Z >= 60mm (typically 65-87mm).
-                            is_1000 = "1000" in (getattr(labware_obj, 'name', '') + getattr(labware_obj, 'source_file', '')).lower()
-                            valid_collar = (curr_z <= 59.5) if is_1000 else (curr_z <= 78.0)
+                            # Single-channel accepts seated tips (<= 59.5mm for 1000uL, <= 78.0mm for 300uL).
+                            # 8-channel partial/offset pickups (1, 2, 3, or 8 tips at force=26) seat anywhere well above pickup_limit.
+                            if is_8ch:
+                                valid_collar = (curr_z <= min(83.5, pickup_limit - 2.0))
+                            else:
+                                is_1000 = "1000" in (getattr(labware_obj, 'name', '') + getattr(labware_obj, 'source_file', '')).lower()
+                                valid_collar = (curr_z <= 59.5) if is_1000 else (curr_z <= 78.0)
 
                             if valid_collar and pick_ok:
                                 time.sleep(0.2)
@@ -3412,11 +3939,11 @@ class LIMSMasterApp:
                             seated, cz = _do_pick(target_x, target_y)
                             if seated:
                                 self.logger.info(f"🎯 Manual tip pickup succeeded at Z={cz:.2f}mm. HAS_TIP = True")
-                                self.root.after(0, lambda: self.has_tip_var.set(True))
+                                self._set_has_tip(True)
                             else:
                                 self.logger.warning(f"Manual tip pick: No tip detected (Z={cz:.2f}mm).")
 
-                        elif self.auto_tip_search_var.get():
+                        elif self.auto_tip_search_var.get() and not is_8ch:
                             wells = list(labware_obj.wells.keys()) if labware_obj else []
                             start_idx = wells.index(well_id) if well_id in wells else 0
                             tip_found = False
@@ -3431,7 +3958,7 @@ class LIMSMasterApp:
                                 if seated:
                                     self.logger.info(f"🎯 Tip acquired at {current_well} (Z={cz:.2f}mm). HAS_TIP = True")
                                     tip_found = True
-                                    self.root.after(0, lambda: self.has_tip_var.set(True))
+                                    self._set_has_tip(True)
                                     break
                                 else:
                                     self.logger.warning(f"Well {current_well} empty or passed (Z={cz:.2f}mm). Tracking to next well...")
@@ -3441,12 +3968,17 @@ class LIMSMasterApp:
                         else:
                             seated, cz = _do_pick(target_x, target_y)
                             if seated:
-                                self.logger.info(f"🎯 Tip acquired at {well_id} (Z={cz:.2f}mm). HAS_TIP = True")
-                                self.root.after(0, lambda: self.has_tip_var.set(True))
+                                ch_note = f" [Ch {step.get('mounted_channels')}]" if step.get('mounted_channels') else ""
+                                self.logger.info(f"🎯 Tip acquired at {well_id}{ch_note} (X={target_x:.1f}, Y={target_y:.1f}, Z={cz:.2f}mm). HAS_TIP = True")
+                                self._set_has_tip(True)
                             else:
-                                raise Exception(f"Tip pickup failed at {well_id} (Z={cz:.2f}mm).")
+                                raise Exception(f"Tip pickup failed at {well_id} (X={target_x:.1f}, Y={target_y:.1f}, Z={cz:.2f}mm).")
 
                     elif action == "Detect Liquid Level":
+                        if self.lims.pipettor.multichannel:
+                            self.logger.warning("Detect Liquid Level skipped: 8×1000 µL manifold has no single-tip sensor.")
+                            time.sleep(0.05)
+                            continue
                         labware_obj = self.lims.deck_labware.get(slot_name)
                         slot_obj = self.lims.deck_slots.get(slot_name)
                         slot_z_offset = getattr(slot_obj, 'z_offset', 0.0)
@@ -3496,10 +4028,25 @@ class LIMSMasterApp:
                             time.sleep(0.05)
                             continue
                         effective_mix = int(step.get('mix_cycles', 0)) if getattr(self, 'enable_mixing_for_run', True) else 0
-                        tz = target_z if mode == "manual" else self._calculate_z(action,
-                                                                                 self.lims.deck_labware.get(slot_name),
-                                                                                 well_id, mode, 0.0, slot_name, extra_z,
-                                                                                 mix_cycles=effective_mix)
+                        cal_dz = float(self.eight_ch_cal_offset.get("Z", 0.0)) if is_8ch else 0.0
+                        if action == "Discard Tip" and step.get('discard_z_override') is not None and mode != "manual":
+                            tz = min(float(step['discard_z_override']) + extra_z + cal_dz, 102.0)
+                        elif mode == "manual":
+                            tz = target_z
+                        else:
+                            tz = min(
+                                self._calculate_z(
+                                    action,
+                                    self.lims.deck_labware.get(slot_name),
+                                    well_id,
+                                    mode,
+                                    0.0,
+                                    slot_name,
+                                    extra_z,
+                                    mix_cycles=effective_mix,
+                                ) + cal_dz,
+                                103.5,
+                            )
                         self.logger.info(
                             f"Absolute Z-Depth Override Executed: Z={tz:.1f}mm for {well_id if mode != 'manual' else 'Manual Target'}")
 
@@ -3517,8 +4064,12 @@ class LIMSMasterApp:
                             if action == "Aspirate Media":
                                 next_step = self.workflow_sequence[i] if i < len(self.workflow_sequence) else {}
                                 next_has_mix = int(next_step.get('mix_cycles', 0)) > 0 and getattr(self, 'enable_mixing_for_run', True)
-                                is_micro_vol = 0 < float(vol) <= 50.0
-                                if is_micro_vol and not next_has_mix:
+                                use_air_cushion = (
+                                    (0 < float(vol) <= (self.lims.pipettor.tip_volume - 50.0))
+                                    if is_8ch
+                                    else (0 < float(vol) <= 50.0)
+                                ) and not step.get('no_air_cushion', False)
+                                if use_air_cushion and not next_has_mix:
                                     try:
                                         self.lims.pipettor.hardware.aspirate(50.0)
                                         self.has_air_cushion = True
@@ -3576,10 +4127,13 @@ class LIMSMasterApp:
                                 ) and not is_plate
 
                                 # Pipettor Automated Liquid Tracking System (Sensor LLD / Dynamic Height)
-                                # STRICTLY for Reservoirs and Tubes only! Plates (e.g. drug plates, EHM plates)
+                                # STRICTLY for Single-Channel Reservoirs and Tubes only! Plates and 8-channel manifold
                                 # must NEVER auto-advance or probe meniscus.
                                 auto_track_active = (
-                                    is_tube_or_reservoir and (
+                                    (not self.lims.pipettor.multichannel)
+                                    and (not is_8ch)
+                                    and is_tube_or_reservoir
+                                    and (
                                         (getattr(self, 'lld_tracking_var', None) and self.lld_tracking_var.get()) or
                                         (getattr(self, 'dynamic_z_var', None) and self.dynamic_z_var.get())
                                     )
@@ -3650,7 +4204,7 @@ class LIMSMasterApp:
                                     except Exception as lld_err:
                                         self.logger.warning(f"[AUTO LIQUID TRACKING] Surface probe fallback: {lld_err}. Submerging to calibrated depth Z={tz:.1f}mm")
 
-                                elif mode != "manual" and (is_reservoir or is_2ml_falcon) and step.get('track_liquid', True):
+                                elif mode != "manual" and (not is_8ch) and (lw_kind != "reservoir_6") and (is_reservoir or is_2ml_falcon) and step.get('track_liquid', True):
                                     if not hasattr(self, 'liquid_ledger'):
                                         self.liquid_ledger = {}
                                     ledger_key = f"{slot_name}_{well_id}"
@@ -3744,11 +4298,13 @@ class LIMSMasterApp:
                                 # --- GUI SAFETY MANIFOLD CAP & EQUILIBRATION ---
                                 requested_vol = float(vol)
                                 if requested_vol > 0:
-                                    actual_vol = min(requested_vol, self.lims.pipettor.tip_volume)
+                                    air_headroom = 50.0 if getattr(self, 'has_air_cushion', False) else 0.0
+                                    max_liq_vol = max(0.0, self.lims.pipettor.tip_volume - air_headroom)
+                                    actual_vol = min(requested_vol, max_liq_vol)
 
-                                    if requested_vol > self.lims.pipettor.tip_volume:
+                                    if requested_vol > max_liq_vol:
                                         self.logger.warning(
-                                            f"MANIFOLD FLOOD PREVENTED: {requested_vol}uL requested, but tip limit is {self.lims.pipettor.tip_volume}uL. Automatically capped to {actual_vol}uL.")
+                                            f"MANIFOLD FLOOD PREVENTED: {requested_vol}uL requested, but tip limit is {max_liq_vol}uL (tip={self.lims.pipettor.tip_volume}uL, air={air_headroom}uL). Automatically capped to {actual_vol}uL.")
 
                                     self.lims.pipettor.hardware.aspirate(actual_vol)
                                     time.sleep(1.5)
@@ -3819,11 +4375,11 @@ class LIMSMasterApp:
                                             self.lims.pipettor.hardware.eject_tip()
                                         except Exception:
                                             pass
-                                    self.root.after(0, lambda: self.has_tip_var.set(False))
+                                    self._set_has_tip(False)
                                     self.logger.info("System state updated: Tip successfully ejected -> HAS_TIP = False")
                                 except Exception as e_err:
                                     self.logger.critical(f"Eject Tip Failed: {e_err}")
-                                    self.root.after(0, lambda: self.has_tip_var.set(True))
+                                    self._set_has_tip(True)
                                     raise RuntimeError(f"CRITICAL: Tip ejection failed! Tip is still attached to the cone. Halting: {e_err}")
 
                             try:
@@ -3832,6 +4388,9 @@ class LIMSMasterApp:
                                 self.lims.pipettor.hardware.move_z(0)
                             except Exception:
                                 self.lims.pipettor.hardware.move_z(0)
+                        elif action == "Discard Tip":
+                            self._set_has_tip(False)
+                            self.logger.info("Simulation: Tip ejected -> HAS_TIP = False")
 
                 except RuntimeError as re:
                     err_str = str(re)
@@ -4184,6 +4743,9 @@ class LIMSMasterApp:
                         continue
 
                     self.workflow_sequence.append(step)
+                    if step.get('label'):
+                        self.wf_box.insert(tk.END, self._format_step_msg(step))
+                        continue
                     m = step.get('mode', 'auto')
 
                     if "System" in step['action']:
@@ -4215,9 +4777,16 @@ class LIMSMasterApp:
 
                     self.wf_box.insert(tk.END, msg)
 
+                # Auto-switch head mode if protocol declares 8-channel symmetric steps
+                if any(s.get('eight_ch_symmetric') for s in self.workflow_sequence):
+                    self._set_has_tip(False)
+                    if not self.lims.pipettor.multichannel:
+                        self.switch_pipettor_head(True, quiet=True)
+
                 # Labware sync: the protocol may DECLARE labware per step ('labware' field).
                 # Empty slots get the declared labware; occupied slots are only changed if the user agrees.
                 self._sync_protocol_labware(loaded_sequence)
+                self.sync_deck_manager()
                 if hasattr(self, 'draw_deck'): self.draw_deck()
 
             except Exception as e:
