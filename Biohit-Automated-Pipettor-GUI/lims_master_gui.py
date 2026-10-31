@@ -1,7 +1,8 @@
 from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-import json, logging, threading, time, os, subprocess, math
+import json, logging, threading, time, os, subprocess, math, sys, traceback
+from datetime import datetime, timedelta
 import ctypes  # Native Windows library for ghost mouse
 from working import LIMSOrchestrator, Labware, DeckSlot, Pipettor
 try:
@@ -26,6 +27,21 @@ except ImportError:
     sns = None
     plt = None
 import re, queue
+
+
+# Canonical column-major 96-well tip order (A1..H1, A2..H2, ..., A12..H12)
+TIP_ORDER_96 = [f"{r}{c}" for c in range(1, 13) for r in "ABCDEFGH"]
+
+
+class FlushingFileHandler(logging.FileHandler):
+    """Real-time streaming file handler that flushes every emitted record to disk."""
+
+    def emit(self, record):
+        super().emit(record)
+        try:
+            self.flush()
+        except Exception:
+            pass
 
 
 class TextHandler(logging.Handler):
@@ -111,6 +127,28 @@ class LIMSMasterApp:
         self.jog_nudge_btns = []
         self._jogging_in_progress = False
 
+        # 1. Automated Session Logging State
+        self.session_abort_status = None
+        self.active_session_log_handler = None
+        self.active_session_log_running_path = None
+        self.last_session_log_path = None
+        self._text_log_handler = None
+
+        # 2. Active Session Tip Memory (Virtual Tip Remapping across runs)
+        # Structure: {slot_name: {"cursor": 0, "consumed": set()}}
+        self.session_tip_tracker = {}
+
+        # 3. Weighted Dynamic Time Estimation & Live Speed Factor State
+        self.step_baseline_times = []
+        self.estimated_total_time = 0.0
+        self.completed_baseline_time = 0.0
+        self.live_speed_factor = 1.0
+        self.run_start_time = 0.0
+        self.total_paused_seconds = 0.0
+        self.pause_started_at = None
+        self.active_elapsed_at_step_start = 0.0
+        self.timer_running = False
+
         self.setup_menu()
         self.setup_ui()
         self.setup_logging()
@@ -130,7 +168,13 @@ class LIMSMasterApp:
         self.telemetry_active = False
         self.is_aborted = True
         self.pause_event.set()
-        if hasattr(self, 'logger'): self.logger.info("Releasing hardware COM locks and terminating...")
+        if hasattr(self, 'logger'):
+            self.logger.info("Releasing hardware COM locks and terminating...")
+            if getattr(self, '_text_log_handler', None):
+                try:
+                    self.logger.removeHandler(self._text_log_handler)
+                except Exception:
+                    pass
         if hasattr(self.lims.pipettor, 'close'): self.lims.pipettor.close()
         self.root.destroy()
 
@@ -145,9 +189,11 @@ class LIMSMasterApp:
         filemenu.add_command(label="Plate 2 Row H Media Change Only...", command=self.action_load_plate2_rowH_protocol)
         filemenu.add_command(label="8×1000 µL EHM Media Change (Plate 5 & Plate 6)...", command=self.action_load_8ch_1000ul_media_change_protocol)
         filemenu.add_command(label="Bakar Dilution Plate (Media Change)...", command=self.action_load_bakar_media_change_serial_dilution_protocol)
+        filemenu.add_command(label="DMSO-Drug Plate Prep (Initial Loading)...", command=self.action_load_dmso_dilution_protocol)
         filemenu.add_command(label="Save JSON Protocol As...", command=self.action_save_workflow_as)
         filemenu.add_separator()
         filemenu.add_command(label="Import Python Protocol (.py)...", command=self.action_import_python_protocol)
+        filemenu.add_command(label="View Session Logs Folder...", command=self.action_open_session_logs)
         filemenu.add_separator()
         filemenu.add_command(label="Machine Chassis Settings...", command=self.action_edit_machine_limits)
         filemenu.add_separator()
@@ -214,6 +260,386 @@ class LIMSMasterApp:
         th = TextHandler(self.console_text)
         th.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', datefmt='%H:%M:%S'))
         self.logger.addHandler(th)
+        self._text_log_handler = th
+
+    # =========================================================================
+    # 1. AUTOMATED SESSION LOGGING SYSTEM (DDMMYYYY_HHMMSS_Session_<STATUS>.log)
+    # =========================================================================
+    def get_logs_dir(self) -> str:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        logs_dir = os.path.join(script_dir, "logs")
+        os.makedirs(logs_dir, exist_ok=True)
+        return logs_dir
+
+    def action_open_session_logs(self):
+        logs_dir = self.get_logs_dir()
+        try:
+            if sys.platform.startswith("win") and hasattr(os, "startfile"):
+                os.startfile(logs_dir)
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", logs_dir])
+            else:
+                subprocess.Popen(["xdg-open", logs_dir])
+            self.logger.info(f"Opened Session Logs directory: {logs_dir}")
+        except Exception as e:
+            self.logger.warning(f"Could not launch file manager for {logs_dir}: {e}")
+            messagebox.showinfo("Session Logs Location", f"Session logs are saved in:\n{logs_dir}")
+
+    def _start_session_log(self, total_steps: int, est_seconds: float) -> str:
+        logs_dir = self.get_logs_dir()
+        dt = datetime.now()
+        existing = set(os.listdir(logs_dir))
+        while True:
+            ts_prefix = dt.strftime("%d%m%Y_%H%M%S")
+            if not any(fname.startswith(f"{ts_prefix}_Session_") for fname in existing):
+                break
+            dt = dt + timedelta(seconds=1)
+
+        running_path = os.path.join(logs_dir, f"{ts_prefix}_Session_RUNNING.log")
+        fh = FlushingFileHandler(running_path, mode="w", encoding="utf-8")
+        fh.setLevel(logging.INFO)
+        fh.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
+        self.logger.addHandler(fh)
+        self.active_session_log_handler = fh
+        self.active_session_log_running_path = running_path
+        self.session_abort_status = None
+
+        head_str = "8x1000 uL Multichannel Manifold" if self.lims.pipettor.multichannel else "1x200 uL Single-Channel"
+        speed_pct = self.speed_var.get() if hasattr(self, "speed_var") else 80.0
+        deck_summary = ", ".join(
+            f"{s}:{getattr(lw, 'source_file', getattr(lw, 'name', 'custom'))}"
+            for s, lw in sorted(self.lims.deck_labware.items())
+        ) or "None"
+        tip_mem_summary = ", ".join(
+            f"{s}(consumed={len(info.get('consumed', ()))})"
+            for s, info in sorted(self.session_tip_tracker.items())
+        ) or "Fresh (0 consumed)"
+
+        self.logger.info("======================================================================")
+        self.logger.info(f"SESSION LOG STARTED: {os.path.basename(running_path)}")
+        self.logger.info(f"Head Mode: {head_str} | Speed: {speed_pct:.0f}% | Mixing: {'ON' if getattr(self, 'enable_mixing_for_run', False) else 'OFF'}")
+        self.logger.info(f"Total Steps: {total_steps} | Initial Estimated Time: {self.format_hms(est_seconds)} ({est_seconds:.1f}s)")
+        self.logger.info(f"Deck Labware: {deck_summary}")
+        self.logger.info(f"Session Tip Memory: {tip_mem_summary}")
+        self.logger.info("======================================================================")
+        return running_path
+
+    def _classify_abort_reason(self, exc) -> str:
+        msg = str(exc or "").lower()
+        if any(k in msg for k in ("liquid depleted", "depleted", "reservoir empty", "tube empty", "all available tubes")):
+            return "AUTO_ABORTED_DEPLETED"
+        if any(k in msg for k in ("tip rack is completely empty", "empty tips", "all 96 tip", "tip sockets exhausted", "no unconsumed tips")):
+            return "AUTO_ABORTED_EMPTY_TIPS"
+        if any(
+            k in msg
+            for k in (
+                "critical", "collision", "double-tip", "ejection failed", "safety interlock",
+                "hardware", "motor", "com ", "timeout", "notconnected", "commandfailed",
+                "movetosurface", "ceiling", "tip pickup failed", "instrumentlib",
+            )
+        ):
+            return "AUTO_ABORTED_HARDWARE"
+        return "AUTO_ABORTED_ERROR"
+
+    def _finalize_session_log(self, final_status: str = None) -> str:
+        fh = getattr(self, "active_session_log_handler", None)
+        running_path = getattr(self, "active_session_log_running_path", None)
+        if not fh or not running_path:
+            return ""
+
+        status = (final_status or self.session_abort_status or ("ABORTED_USER" if self.is_aborted else "COMPLETED")).upper()
+        active_elapsed = self.get_active_elapsed_time() if getattr(self, "run_start_time", 0.0) > 0 else 0.0
+        total_steps = len(self.workflow_sequence)
+        done_steps = min(getattr(self, "current_step_idx", 0), total_steps)
+
+        self.logger.info("======================================================================")
+        self.logger.info(
+            f"SESSION SUMMARY | Status: {status} | Steps Executed: {done_steps}/{total_steps} | "
+            f"Active Elapsed: {self.format_hms(active_elapsed)} ({active_elapsed:.1f}s) | "
+            f"Paused: {self.total_paused_seconds:.1f}s | Final Speed Factor: {self.live_speed_factor:.3f}x"
+        )
+        self.logger.info("======================================================================")
+
+        try:
+            fh.flush()
+            fh.close()
+        except Exception:
+            pass
+        try:
+            self.logger.removeHandler(fh)
+        except Exception:
+            pass
+
+        self.active_session_log_handler = None
+        self.active_session_log_running_path = None
+
+        final_path = re.sub(r"_Session_RUNNING\.log$", f"_Session_{status}.log", running_path)
+        try:
+            if os.path.exists(running_path):
+                os.replace(running_path, final_path)
+        except Exception as ren_err:
+            self.logger.warning(f"Could not rename session log to {os.path.basename(final_path)}: {ren_err}")
+            final_path = running_path
+
+        self.last_session_log_path = final_path
+        return final_path
+
+    # =========================================================================
+    # 2. ACTIVE SESSION TIP MEMORY (VIRTUAL TIP REMAPPING & DECK VISUALIZER)
+    # =========================================================================
+    def _get_tip_tracker(self, slot_name: str = "Slot_4") -> dict:
+        if slot_name not in self.session_tip_tracker:
+            self.session_tip_tracker[slot_name] = {"cursor": 0, "consumed": set()}
+        return self.session_tip_tracker[slot_name]
+
+    def _ordered_tip_wells(self, slot_name: str = "Slot_4") -> list:
+        lw = self.lims.deck_labware.get(slot_name)
+        if lw and getattr(lw, "wells", None) and self._lw_kind(lw) == "tip_rack":
+            valid = {w.upper() for w in lw.wells.keys()}
+            ordered = [w for w in TIP_ORDER_96 if w in valid]
+            if ordered:
+                return ordered
+        return list(TIP_ORDER_96)
+
+    def _sync_tip_cursor(self, slot_name: str = "Slot_4"):
+        tracker = self._get_tip_tracker(slot_name)
+        ordered = self._ordered_tip_wells(slot_name)
+        consumed = tracker["consumed"]
+        next_idx = len(ordered)
+        for idx, w in enumerate(ordered):
+            if w not in consumed:
+                next_idx = idx
+                break
+        tracker["cursor"] = next_idx
+        self._refresh_tip_memory_badge(slot_name)
+
+    def _refresh_tip_memory_badge(self, slot_name: str = "Slot_4"):
+        lbl = getattr(self, "lbl_tip_memory", None)
+        if not lbl:
+            return
+        tracker = self._get_tip_tracker(slot_name)
+        ordered = self._ordered_tip_wells(slot_name)
+        consumed_count = len(tracker["consumed"])
+        free_count = max(0, len(ordered) - consumed_count)
+        next_well = ordered[tracker["cursor"]] if tracker["cursor"] < len(ordered) else "EMPTY"
+
+        def _upd():
+            try:
+                lbl.config(
+                    text=f"Tip Memory ({slot_name}): Next {next_well} ({free_count}/{len(ordered)} free)",
+                    foreground="#dc3545" if free_count == 0 else ("#fd7e14" if free_count <= 16 else "#0d6efd"),
+                )
+            except Exception:
+                pass
+
+        if threading.current_thread() is threading.main_thread():
+            _upd()
+        else:
+            try:
+                self.root.after(0, _upd)
+            except Exception:
+                pass
+
+    def _schedule_deck_redraw(self):
+        if not hasattr(self, "canvas"):
+            return
+        if threading.current_thread() is threading.main_thread():
+            try:
+                self.draw_deck()
+            except Exception:
+                pass
+        else:
+            try:
+                self.root.after(0, self.draw_deck)
+            except Exception:
+                pass
+
+    def mark_tip_consumed(self, slot_name: str, well_id: str, redraw: bool = True):
+        if not slot_name or not well_id:
+            return
+        tracker = self._get_tip_tracker(slot_name)
+        tracker["consumed"].add(well_id.strip().upper())
+        self._sync_tip_cursor(slot_name)
+        if redraw:
+            self._schedule_deck_redraw()
+
+    def mark_tip_restored(self, slot_name: str, well_id: str, redraw: bool = True):
+        if not slot_name or not well_id:
+            return
+        tracker = self._get_tip_tracker(slot_name)
+        tracker["consumed"].discard(well_id.strip().upper())
+        self._sync_tip_cursor(slot_name)
+        if redraw:
+            self._schedule_deck_redraw()
+
+    def resolve_session_tip(self, slot_name: str, requested_well: str):
+        """
+        Virtual Tip Remapping:
+        - If `requested_well` has NOT been consumed in this active GUI session, returns `(requested_well, False)`.
+        - If `requested_well` WAS already consumed in a previous run (or earlier in this session),
+          dynamically remaps to the next available unconsumed tip in column-major order (`A1..H1 -> A2..H2 -> ...`).
+        - Returns `(None, True)` if all 96 tips in `slot_name` are exhausted.
+        """
+        req = (requested_well or "A1").strip().upper()
+        tracker = self._get_tip_tracker(slot_name)
+        ordered = self._ordered_tip_wells(slot_name)
+        consumed = tracker["consumed"]
+
+        if len(consumed) >= len(ordered):
+            return None, True
+
+        if req in ordered and req not in consumed:
+            return req, False
+
+        start = min(tracker.get("cursor", 0), len(ordered))
+        for idx in list(range(start, len(ordered))) + list(range(0, start)):
+            cand = ordered[idx]
+            if cand not in consumed:
+                return cand, (cand != req)
+
+        return None, True
+
+    @staticmethod
+    def _expand_8ch_tip_sockets(step: dict, well_id: str) -> list:
+        """Return exact physical tip sockets (e.g. ['F1', 'G1', 'H1']) touched by an 8-channel tip step."""
+        m = re.match(r"^[A-H](\d+)$", (well_id or "").strip().upper())
+        if not m:
+            return []
+        col = int(m.group(1))
+        offset_rows = int((step or {}).get("tip_offset_rows", 0) or 0)
+        ch_spec = ((step or {}).get("mounted_channels") or "A-H").strip().upper()
+
+        ch_indices = []
+        for part in ch_spec.split(","):
+            part = part.strip()
+            if not part:
+                continue
+            if "-" in part and len(part) == 3:
+                c0, c1 = ord(part[0]) - ord("A"), ord(part[2]) - ord("A")
+                ch_indices.extend(range(min(c0, c1), max(c0, c1) + 1))
+            elif len(part) == 1 and "A" <= part <= "H":
+                ch_indices.append(ord(part) - ord("A"))
+
+        rows = "ABCDEFGH"
+        sockets = []
+        for ch in ch_indices:
+            r_idx = ch + offset_rows
+            if 0 <= r_idx < 8:
+                sockets.append(f"{rows[r_idx]}{col}")
+        return sockets
+
+    def reset_tip_rack_memory(self, slot_name: str = None, announce: bool = True):
+        if slot_name:
+            target_slots = [slot_name]
+        else:
+            target_slots = sorted(
+                set(self.session_tip_tracker.keys())
+                | {s for s, lw in self.lims.deck_labware.items() if self._lw_kind(lw) == "tip_rack"}
+                | {"Slot_4"}
+            )
+        for s_name in target_slots:
+            self.session_tip_tracker[s_name] = {"cursor": 0, "consumed": set()}
+            self._sync_tip_cursor(s_name)
+        self._schedule_deck_redraw()
+        if announce and hasattr(self, "logger"):
+            joined = ", ".join(target_slots)
+            self.logger.info(f"🔄 Tip Rack Reset ({joined}): Active session tip pointer reset to A1 (all 96 tips marked fresh).")
+
+    def _on_canvas_right_click(self, e):
+        rx, ry = self.get_m_x(e.x), e.y / self.scale
+        clicked_slot = None
+        for name in reversed(self.placed_slots):
+            s = self.lims.deck_slots[name]
+            if s.x_abs <= rx <= s.x_abs + s.width_mm and s.y_abs <= ry <= s.y_abs + s.height_mm:
+                clicked_slot = name
+                break
+
+        ctx = tk.Menu(self.root, tearoff=0)
+        if clicked_slot:
+            lw = self.lims.deck_labware.get(clicked_slot)
+            is_tips = (self._lw_kind(lw) == "tip_rack") or (clicked_slot in self.session_tip_tracker)
+            if is_tips:
+                consumed_n = len(self._get_tip_tracker(clicked_slot)["consumed"])
+                ctx.add_command(
+                    label=f"🔄 Reset Tip Rack on {clicked_slot} -> A1 ({consumed_n} consumed)",
+                    command=lambda s=clicked_slot: self.reset_tip_rack_memory(s),
+                )
+                ctx.add_separator()
+        ctx.add_command(
+            label="🔄 Reset All Tip Racks -> A1 (Fresh 96-Tip Box)",
+            command=lambda: self.reset_tip_rack_memory(None),
+        )
+        try:
+            ctx.tk_popup(e.x_root, e.y_root)
+        finally:
+            ctx.grab_release()
+
+    # =========================================================================
+    # 3. WEIGHTED DYNAMIC TIME ESTIMATION, SPEED FACTOR & PAUSE COMPENSATION
+    # =========================================================================
+    @staticmethod
+    def format_hms(seconds: float) -> str:
+        total_sec = max(0, int(round(float(seconds or 0.0))))
+        hrs, rem = divmod(total_sec, 3600)
+        mins, secs = divmod(rem, 60)
+        return f"{hrs:02d}h {mins:02d}m {secs:02d}s"
+
+    def _begin_pause_tracking(self, now: float = None):
+        if self.pause_started_at is None:
+            self.pause_started_at = time.time() if now is None else float(now)
+
+    def _end_pause_tracking(self, now: float = None):
+        if self.pause_started_at is not None:
+            t_now = time.time() if now is None else float(now)
+            self.total_paused_seconds += max(0.0, t_now - self.pause_started_at)
+            self.pause_started_at = None
+
+    def get_active_elapsed_time(self, now: float = None) -> float:
+        if getattr(self, "run_start_time", 0.0) <= 0.0:
+            return 0.0
+        t_now = time.time() if now is None else float(now)
+        in_flight_pause = max(0.0, t_now - self.pause_started_at) if self.pause_started_at is not None else 0.0
+        return max(0.0, t_now - self.run_start_time - self.total_paused_seconds - in_flight_pause)
+
+    def record_step_completion_for_timer(self, step_baseline: float, now: float = None):
+        t_now = time.time() if now is None else float(now)
+        active_elapsed = self.get_active_elapsed_time(t_now)
+        self.completed_baseline_time += max(0.0, float(step_baseline))
+        if self.completed_baseline_time >= 0.5 and active_elapsed > 0.0:
+            raw_factor = active_elapsed / self.completed_baseline_time
+            self.live_speed_factor = max(0.05, min(10.0, raw_factor))
+        self.active_elapsed_at_step_start = active_elapsed
+
+    def compute_remaining_time(self, now: float = None) -> float:
+        t_now = time.time() if now is None else float(now)
+        idx = max(0, int(getattr(self, "current_step_idx", 0)))
+        seq = getattr(self, "workflow_sequence", [])
+        if idx >= len(seq):
+            return 0.0
+
+        if len(getattr(self, "step_baseline_times", [])) == len(seq):
+            rem_baselines = self.step_baseline_times[idx:]
+        else:
+            rem_baselines = self._estimate_step_durations(seq[idx:])
+
+        remaining_baseline = sum(rem_baselines)
+        factor = getattr(self, "live_speed_factor", 1.0) or 1.0
+        scaled_remaining = remaining_baseline * factor
+
+        active_elapsed = self.get_active_elapsed_time(t_now)
+        in_step_elapsed = max(0.0, active_elapsed - getattr(self, "active_elapsed_at_step_start", 0.0))
+        curr_step_cap = (rem_baselines[0] * factor * 0.95) if rem_baselines else 0.0
+        deduction = min(in_step_elapsed, curr_step_cap)
+        return max(0.0, scaled_remaining - deduction)
+
+    def _update_estimated_timer_preview(self):
+        if getattr(self, "is_running", False) or not hasattr(self, "lbl_timer"):
+            return
+        if not self.workflow_sequence:
+            self.lbl_timer.config(text="Time Remaining: --h --m --s", foreground="blue")
+            return
+        est_s = self.estimate_workflow_time(self.workflow_sequence)
+        self.lbl_timer.config(text=f"Time Remaining: {self.format_hms(est_s)}", foreground="blue")
 
     def setup_ui(self):
         con_f = ttk.LabelFrame(self.root, text="Diagnostic Output")
@@ -622,6 +1048,12 @@ class LIMSMasterApp:
                 self.lld_tracking_var.set(False)
             if hasattr(self, 'dynamic_z_var'):
                 self.dynamic_z_var.set(False)
+        else:
+            # Single-channel head supports tip oscillation/LLD and dynamic Z tracking; restore defaults
+            if hasattr(self, 'lld_tracking_var'):
+                self.lld_tracking_var.set(True)
+            if hasattr(self, 'dynamic_z_var'):
+                self.dynamic_z_var.set(True)
 
         if hasattr(self, 'lbl_head_badge'):
             badge_bg = "#6f42c1" if multichannel else "#0d6efd"
@@ -1089,6 +1521,8 @@ class LIMSMasterApp:
                 cy = s.y_abs + (s.height_mm / 2.0)
 
                 # --- VISUAL UI FIX: Render all labware wells matching physical kinematics ---
+                is_tip_rack_lw = (self._lw_kind(lab) == "tip_rack")
+                consumed_tips_for_slot = self.session_tip_tracker.get(name, {}).get("consumed", set()) if is_tip_rack_lw else set()
                 for w in lab.wells.values():
                     coords = self._calculate_xy(name, w.name)
                     if coords:
@@ -1099,8 +1533,16 @@ class LIMSMasterApp:
 
                     wx, wy, r = self.get_v_x(phys_wx), phys_wy * self.scale, w.radius * self.scale
 
-                    self.canvas.create_oval(wx - r, wy - r, wx + r, wy + r, fill="white", outline="#dee2e6")
-                    if r > 4: self.canvas.create_text(wx, wy, text=w.name, font=("Arial", int(r * 0.8)), fill="#666")
+                    if is_tip_rack_lw:
+                        if w.name.upper() in consumed_tips_for_slot:
+                            w_fill, w_outline, w_txt = "#d6d8db", "#adb5bd", "#868e96"
+                        else:
+                            w_fill, w_outline, w_txt = "#e7f5ff", "#339af0", "#1864ab"
+                    else:
+                        w_fill, w_outline, w_txt = "white", "#dee2e6", "#666"
+
+                    self.canvas.create_oval(wx - r, wy - r, wx + r, wy + r, fill=w_fill, outline=w_outline)
+                    if r > 4: self.canvas.create_text(wx, wy, text=w.name, font=("Arial", int(r * 0.8)), fill=w_txt)
                 # ----------------------------------------------------------------------
 
             if is_sel:
@@ -1141,6 +1583,9 @@ class LIMSMasterApp:
         self.canvas.bind("<ButtonPress-1>", self.drag_start)
         self.canvas.bind("<B1-Motion>", self.drag_move)
         self.canvas.bind("<ButtonRelease-1>", self.drag_end)
+        self.canvas.bind("<Button-2>", self._on_canvas_right_click)
+        self.canvas.bind("<Button-3>", self._on_canvas_right_click)
+        self.canvas.bind("<Control-Button-1>", self._on_canvas_right_click)
 
         f_jog = ttk.LabelFrame(right_f, text="Live Calibration Jog Control", padding=10)
         f_jog.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
@@ -1205,6 +1650,11 @@ class LIMSMasterApp:
         self.lw_drop.pack(fill=tk.X, pady=10)
         ttk.Button(pane_m, text="Assign Labware", command=self.assign_lw).pack(fill=tk.X)
         ttk.Button(pane_m, text="Unassign Labware", command=self.unassign_lw).pack(fill=tk.X, pady=2)
+        ttk.Button(
+            pane_m,
+            text="🔄 Reset Tip Rack",
+            command=lambda: self.reset_tip_rack_memory(self.selected_slot_name if self.selected_slot_name in self.session_tip_tracker else None),
+        ).pack(fill=tk.X, pady=(6, 2))
         ttk.Button(pane_m, text="SAVE WORKSPACE", command=self.save_all).pack(side=tk.BOTTOM, fill=tk.X, pady=20)
 
     def check_alignment(self):
@@ -1331,7 +1781,7 @@ class LIMSMasterApp:
 
         ttk.Button(pane_ctrl, text="+ Add Step to Protocol", command=self.add_wf_step).pack(fill=tk.X, pady=10)
         ttk.Button(pane_ctrl, text="Clear Protocol",
-                   command=lambda: [self.wf_box.delete(0, tk.END), self.workflow_sequence.clear()]).pack(fill=tk.X)
+                   command=lambda: [self.wf_box.delete(0, tk.END), self.workflow_sequence.clear(), self._update_estimated_timer_preview()]).pack(fill=tk.X)
         ttk.Separator(pane_ctrl, orient="horizontal").pack(fill=tk.X, pady=8)
 
         # Instant Load Protocols (DMSO-Drug and Media+Drug Only)
@@ -1357,8 +1807,8 @@ class LIMSMasterApp:
 
         # DMSO & Drug Protocols
         ttk.Button(pane_ctrl, text="🧪 Bakar Dilution Plate (Media Change: 31.4 µL DMSO + 14.6 µL Drug)", command=self.action_load_bakar_media_change_serial_dilution_protocol).pack(fill=tk.X, pady=2)
+        ttk.Button(pane_ctrl, text="🧪 DMSO-Drug Plate Prep (Initial: 24 µL DMSO + 22 µL Drug)", command=self.action_load_dmso_dilution_protocol).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="💊 Drug Addition Only (2 Plates, 5 µL)", command=self.action_load_drug_addition_only_protocol).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="🧪 DMSO Dilution Plate (12 Tubes -> 96 Well)", command=self.action_load_dmso_dilution_protocol).pack(fill=tk.X, pady=2)
 
         ttk.Separator(pane_ctrl, orient="horizontal").pack(fill=tk.X, pady=6)
         ttk.Button(pane_ctrl, text="📥 Convert & Import Python (.py)", command=self.action_import_python_protocol).pack(fill=tk.X, pady=2)
@@ -1390,9 +1840,23 @@ class LIMSMasterApp:
         self.progress_bar = ttk.Progressbar(run_frame, variable=self.progress_var, maximum=100)
         self.progress_bar.pack(fill=tk.X, pady=(0, 5))
 
-        self.lbl_timer = ttk.Label(run_frame, text="Time Remaining: --:--", font=("Consolas", 11, "bold"),
+        self.lbl_timer = ttk.Label(run_frame, text="Time Remaining: --h --m --s", font=("Consolas", 11, "bold"),
                                    foreground="blue")
-        self.lbl_timer.pack(pady=(0, 10))
+        self.lbl_timer.pack(pady=(0, 6))
+
+        util_bar = ttk.Frame(run_frame)
+        util_bar.pack(fill=tk.X, pady=(0, 8))
+        self.lbl_tip_memory = ttk.Label(
+            util_bar,
+            text="Tip Memory (Slot_4): Next A1 (96/96 free)",
+            font=("Consolas", 9, "bold"),
+            foreground="#0d6efd",
+        )
+        self.lbl_tip_memory.pack(side=tk.LEFT, padx=(2, 6))
+        self.btn_view_logs = ttk.Button(util_bar, text="📁 View Session Logs", command=self.action_open_session_logs)
+        self.btn_view_logs.pack(side=tk.RIGHT, padx=2)
+        self.btn_reset_tips = ttk.Button(util_bar, text="🔄 Reset Tip Rack", command=lambda: self.reset_tip_rack_memory(None))
+        self.btn_reset_tips.pack(side=tk.RIGHT, padx=2)
 
         ctrl_frame = ttk.Frame(run_frame)
         ctrl_frame.pack(fill=tk.X)
@@ -1735,6 +2199,7 @@ class LIMSMasterApp:
                     msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
                 self.wf_box.insert(tk.END, msg)
 
+            self._update_estimated_timer_preview()
             self.logger.info(f"Loaded Media Change + Drug Addition ({volume:.1f}µL) Protocol ({len(loaded_sequence)} steps). Deck configured: Slot 1 Media (A1/A2), Slot 2 Falcon A Waste, B/C Tips, Slot 3 Drug Plate, Slot 4 Tips, Slot 5 Plt 1, Slot 6 Plt 2.")
         else:
             messagebox.showerror("File Not Found", f"Could not locate media_change_and_drug_addition_2_plates{vol_suffix}.json")
@@ -1798,6 +2263,7 @@ class LIMSMasterApp:
                     msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
                 self.wf_box.insert(tk.END, msg)
 
+            self._update_estimated_timer_preview()
             self.logger.info(f"Loaded Resume Protocol ({volume:.1f}µL, {len(loaded_sequence)} steps). Starts from Step 1: Pick Up Tip Slot 4 G1 -> Aspirate Slot 5 G1.")
         else:
             messagebox.showerror("File Not Found", f"Could not locate media_change_and_drug_addition_2_plates_resume_G1{vol_suffix}.json")
@@ -1855,6 +2321,7 @@ class LIMSMasterApp:
                     msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
                 self.wf_box.insert(tk.END, msg)
 
+            self._update_estimated_timer_preview()
             self.logger.info(f"Loaded Plate 2 Row H Media Change Only Protocol ({len(loaded_sequence)} steps). Tips used: C3 (Removal) and D3 (Fresh Media).")
         else:
             messagebox.showerror("File Not Found", "Could not locate media_change_plate2_rowH_only.json")
@@ -1911,6 +2378,7 @@ class LIMSMasterApp:
                     msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
                 self.wf_box.insert(tk.END, msg)
 
+            self._update_estimated_timer_preview()
             self.logger.info(f"Loaded Drug Addition Only Protocol ({len(loaded_sequence)} steps). Slot 3 Drug Plate, Slot 4 Tips, Slot 5/6 EHM Plates.")
         else:
             messagebox.showerror("File Not Found", "Could not locate drug_addition_only_2_ehm_plates.json")
@@ -1928,159 +2396,193 @@ class LIMSMasterApp:
         if target_path:
             with open(target_path, 'r') as f:
                 loaded_sequence = json.load(f)
-            self.workflow_sequence.clear()
-            self.wf_box.delete(0, tk.END)
-            lw_dir = self.get_labware_dir()
 
             deck_setup = {
                 "Slot_1": "tube_rack_2x6_2ml.json",
                 "Slot_2": "waste_trough.json",
                 "Slot_3": "generic_96_well_plate.json",
                 "Slot_4": "tip_rack_1000ul.json",
-                "Slot_5": "generic_96_well_plate.json"
+                "Slot_5": "generic_96_well_plate.json",
             }
+            self.prompt_drug_wells_and_load(
+                loaded_sequence,
+                protocol_name="DMSO-Drug Plate Prep (Initial: 24 µL DMSO + 22 µL Drug)",
+                deck_setup=deck_setup,
+            )
+        else:
+            messagebox.showerror("File Not Found", "Could not locate 1_Serial_Dilution_Plate.json or bakar_v2_drug_dmso_initial_loading.json")
+
+    def apply_drug_well_mapping_and_load(self, loaded_sequence, protocol_name, deck_setup, chosen_wells, dmso_labware=None):
+        """
+        Validates custom Slot 3 stock drug source wells, normalizes Slot 1 DMSO labware
+        and Slot 2 A1 waste routing, switches to 1x200 uL single-channel mode, and loads
+        the protocol onto the Deck & Workflow Runner.
+        """
+        cleaned_wells = []
+        for val in chosen_wells:
+            w = str(val or "").strip().upper()
+            if not re.match(r"^[A-H]([1-9]|1[0-2])$", w):
+                raise ValueError(f"'{val}' is not a valid 96-well format (must be A1 through H12).")
+            cleaned_wells.append(w)
+
+        if self.lims.pipettor.multichannel:
+            self.switch_pipettor_head(False, quiet=True)
+
+        eff_deck = dict(deck_setup or {})
+        if dmso_labware:
+            eff_deck["Slot_1"] = dmso_labware
+
+        drug_steps_indices = [
+            i for i, s in enumerate(loaded_sequence)
+            if s.get("slot") == "Slot_3" and "Aspirate" in s.get("action", "")
+        ]
+        for k, step_idx in enumerate(drug_steps_indices):
+            if k < len(cleaned_wells):
+                loaded_sequence[step_idx]["well"] = cleaned_wells[k]
+
+        slot1_lw = eff_deck.get("Slot_1")
+        route_waste_slot2 = (eff_deck.get("Slot_2") == "waste_trough.json")
+        for s in loaded_sequence:
+            if slot1_lw and s.get("slot") == "Slot_1":
+                s["labware"] = slot1_lw
+            if route_waste_slot2 and (s.get("action") == "Discard Tip" or s.get("slot") in ("Slot_2", "Slot_6")):
+                s["slot"] = "Slot_2"
+                s["well"] = "A1"
+                s["labware"] = "waste_trough.json"
+
+        self.workflow_sequence.clear()
+        self.wf_box.delete(0, tk.END)
+        lw_dir = self.get_labware_dir()
+
+        for s_name, lw_file in eff_deck.items():
+            lp = os.path.join(lw_dir, lw_file)
+            if os.path.exists(lp):
+                self.lims.deck_labware[s_name] = Labware(lp)
+                self.lims.deck_labware[s_name].source_file = lw_file
+            if s_name not in self.placed_slots:
+                self.placed_slots.append(s_name)
+        if "Slot_6" not in eff_deck:
             if "Slot_6" in self.lims.deck_labware:
                 del self.lims.deck_labware["Slot_6"]
             if "Slot_6" in self.placed_slots:
                 self.placed_slots.remove("Slot_6")
-            for s_name, lw_file in deck_setup.items():
-                lp = os.path.join(lw_dir, lw_file)
-                if os.path.exists(lp):
-                    self.lims.deck_labware[s_name] = Labware(lp)
-                    self.lims.deck_labware[s_name].source_file = lw_file
-                if s_name not in self.placed_slots:
-                    self.placed_slots.append(s_name)
-            self.sync_deck_manager()
-            if hasattr(self, 'draw_deck'): self.draw_deck()
 
-            for step in loaded_sequence:
-                self.workflow_sequence.append(step)
-                act = step['action']
-                slot = step.get('slot', '')
-                well = step.get('well', '')
-                vol = float(step.get('volume', 0.0))
-                mix_cycles = int(step.get('mix_cycles', 0))
-                mix_vol = float(step.get('mix_volume', 100.0))
-                mix_str = f" [Mix {mix_cycles}x {mix_vol:g}\u03bcL]" if mix_cycles > 0 else ""
-                vol_str = f" {vol:.1f}\u03bcL" if vol % 1 != 0 else (f" {vol:.0f}\u03bcL" if vol > 0 else "")
-                if act == "Pick Up Tip":
-                    msg = f"[{act.upper()}] from {slot}, Well {well}"
-                elif act == "Discard Tip":
-                    msg = f"[{act.upper()}] into {slot}, Well {well}"
-                else:
-                    msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
-                self.wf_box.insert(tk.END, msg)
+        self.sync_deck_manager()
+        if hasattr(self, "draw_deck"):
+            self.draw_deck()
 
-            self.logger.info(f"Loaded DMSO Dilution Plate Protocol ({len(loaded_sequence)} steps). Slot 1 2mL Rack, Slot 4 Tips, Slot 5 96-Well Plate.")
-        else:
-            messagebox.showerror("File Not Found", "Could not locate 1_Serial_Dilution_Plate.json")
+        for step in loaded_sequence:
+            self.workflow_sequence.append(step)
+            act = step["action"]
+            slot = step.get("slot", "")
+            well = step.get("well", "")
+            vol = float(step.get("volume", 0.0))
+            mix_cycles = int(step.get("mix_cycles", 0))
+            mix_vol = float(step.get("mix_volume", 100.0))
+            mix_str = f" [Mix {mix_cycles}x {mix_vol:g}\u03bcL]" if mix_cycles > 0 else ""
+            vol_str = f" {vol:.1f}\u03bcL" if vol % 1 != 0 else (f" {vol:.0f}\u03bcL" if vol > 0 else "")
+            if act == "Pick Up Tip":
+                msg = f"[{act.upper()}] from {slot}, Well {well}"
+            elif act == "Discard Tip":
+                msg = f"[{act.upper()}] into {slot}, Well {well}"
+            else:
+                msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
+            self.wf_box.insert(tk.END, msg)
+
+        self._update_estimated_timer_preview()
+        self._refresh_tip_memory_badge("Slot_4")
+        wells_summary = ", ".join([f"D{i+1}:{w}" for i, w in enumerate(cleaned_wells)])
+        self.logger.info(
+            f"Loaded {protocol_name} ({len(loaded_sequence)} steps) with Drug Wells [{wells_summary}]. "
+            f"Deck: Slot 1 DMSO ({eff_deck.get('Slot_1', 'A1')}), Slot 2 Waste (A1), Slot 3 Drug Stock, Slot 4 Tips, Slot 5 Dilution Plate."
+        )
 
     def prompt_drug_wells_and_load(self, loaded_sequence, protocol_name, deck_setup):
+        drug_steps_indices = [
+            i for i, s in enumerate(loaded_sequence)
+            if s.get("slot") == "Slot_3" and "Aspirate" in s.get("action", "")
+        ]
+        default_wells = [loaded_sequence[i].get("well", "A1") for i in drug_steps_indices]
+        if not default_wells:
+            default_wells = ["A1", "A2", "A3", "A4", "B1"]
+        num_drugs = len(default_wells)
+
         top = tk.Toplevel(self.root)
         top.title("Stock Drug Wells Configuration (Slot 3)")
-        top.geometry("450x400")
+        win_h = max(440, 220 + num_drugs * 38)
+        top.geometry(f"490x{min(680, win_h)}")
         top.transient(self.root)
         top.grab_set()
 
         try:
-            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 225
-            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 200
+            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 245
+            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - (min(680, win_h) // 2)
             top.geometry(f"+{max(0, rx)}+{max(0, ry)}")
         except Exception:
             pass
 
-        ttk.Label(top, text="Select Stock Drug Wells (Slot 3)", font=("Arial", 11, "bold"), foreground="#007bff").pack(pady=(15, 4))
-        ttk.Label(top, text="Specify the source wells in the Slot 3 plate for each dilution series:\n(Target dilution plate rows A through E on Slot 5)",
-                  font=("Arial", 9), justify=tk.CENTER).pack(pady=(0, 12))
+        ttk.Label(top, text="Select Stock Drug Wells (Slot 3)", font=("Arial", 11, "bold"), foreground="#007bff").pack(pady=(14, 3))
+        ttk.Label(
+            top,
+            text=f"{protocol_name}\nSpecify source wells in Slot 3 for each dilution series on Slot 5:",
+            font=("Arial", 9),
+            justify=tk.CENTER,
+        ).pack(pady=(0, 8))
 
-        frame_inputs = ttk.Frame(top, padding=10)
+        dmso_frame = ttk.LabelFrame(top, text="Slot 1 DMSO Source Labware", padding=8)
+        dmso_frame.pack(fill=tk.X, padx=22, pady=(0, 8))
+        dmso_options = {
+            "12-Tube 2 mL Falcon Rack (tube_rack_2x6_2ml.json)": "tube_rack_2x6_2ml.json",
+            "3-Well Reservoir (reservoir_3_well.json)": "reservoir_3_well.json",
+        }
+        init_s1 = (deck_setup or {}).get("Slot_1", "tube_rack_2x6_2ml.json")
+        init_disp = next((k for k, v in dmso_options.items() if v == init_s1), list(dmso_options.keys())[0])
+        dmso_var = tk.StringVar(value=init_disp)
+        cb_dmso = ttk.Combobox(dmso_frame, textvariable=dmso_var, values=list(dmso_options.keys()), state="readonly")
+        cb_dmso.pack(fill=tk.X)
+
+        frame_inputs = ttk.Frame(top, padding=8)
         frame_inputs.pack(fill=tk.BOTH, expand=True, padx=25)
 
-        # Identify all steps where liquid is aspirated from Slot 3
-        drug_steps_indices = [i for i, s in enumerate(loaded_sequence) if s.get('slot') == 'Slot_3' and 'Aspirate' in s.get('action', '')]
-        default_wells = [loaded_sequence[i].get('well', 'A1') for i in drug_steps_indices]
-        if not default_wells:
-            default_wells = ["A1", "A2", "A3", "A4", "B1"]
-
-        labels = [
-            "Drug 1 (Dilution Row A):",
-            "Drug 2 (Dilution Row B):",
-            "Drug 3 (Dilution Row C):",
-            "Drug 4 (Dilution Row D):",
-            "Drug 5 (Dilution Row E):"
-        ]
-
-        import re
+        row_letters = "ABCDEFGH"
         well_vars = []
-        for idx in range(min(5, len(labels))):
-            lbl_text = labels[idx] if idx < len(labels) else f"Drug {idx+1}:"
+        for idx in range(num_drugs):
+            target_well = ""
+            if idx < len(drug_steps_indices):
+                step_i = drug_steps_indices[idx]
+                if step_i + 1 < len(loaded_sequence) and loaded_sequence[step_i + 1].get("slot") == "Slot_5":
+                    target_well = loaded_sequence[step_i + 1].get("well", "")
+            row_hint = f"Dilution Row {target_well[0]}" if target_well else (f"Dilution Row {row_letters[idx]}" if idx < 8 else f"Series {idx+1}")
+            lbl_text = f"Drug {idx+1} ({row_hint}):"
             def_val = default_wells[idx] if idx < len(default_wells) else f"A{idx+1}"
             v = tk.StringVar(value=def_val)
             well_vars.append(v)
 
-            ttk.Label(frame_inputs, text=lbl_text, font=("Arial", 9, "bold")).grid(row=idx, column=0, sticky="w", pady=6)
+            ttk.Label(frame_inputs, text=lbl_text, font=("Arial", 9, "bold")).grid(row=idx, column=0, sticky="w", pady=5)
             ent = ttk.Entry(frame_inputs, textvariable=v, width=12, font=("Consolas", 10, "bold"), justify="center")
-            ent.grid(row=idx, column=1, sticky="e", pady=6, padx=10)
+            ent.grid(row=idx, column=1, sticky="e", pady=5, padx=10)
 
-        btn_frame = ttk.Frame(top, padding=15)
+        btn_frame = ttk.Frame(top, padding=14)
         btn_frame.pack(fill=tk.X, side=tk.BOTTOM)
 
         def on_apply():
-            chosen_wells = []
-            for idx, v in enumerate(well_vars):
-                val = v.get().strip().upper()
-                if not re.match(r"^[A-H]([1-9]|1[0-2])$", val):
-                    messagebox.showerror("Invalid Well Format",
-                                         f"'{val}' is not a valid 96-well format.\nMust be between A1 and H12 (e.g. A1, B3, C6).",
-                                         parent=top)
-                    return
-                chosen_wells.append(val)
-
-            # Update the protocol sequence Slot 3 aspirate wells
-            for k, step_idx in enumerate(drug_steps_indices):
-                if k < len(chosen_wells):
-                    loaded_sequence[step_idx]['well'] = chosen_wells[k]
-
-            # Populate GUI with modified steps
-            self.workflow_sequence.clear()
-            self.wf_box.delete(0, tk.END)
-            lw_dir = self.get_labware_dir()
-
-            for s_name, lw_file in deck_setup.items():
-                lp = os.path.join(lw_dir, lw_file)
-                if os.path.exists(lp):
-                    self.lims.deck_labware[s_name] = Labware(lp)
-                    self.lims.deck_labware[s_name].source_file = lw_file
-                if s_name not in self.placed_slots:
-                    self.placed_slots.append(s_name)
-            if "Slot_6" in self.lims.deck_labware:
-                del self.lims.deck_labware["Slot_6"]
-            if "Slot_6" in self.placed_slots:
-                self.placed_slots.remove("Slot_6")
-
-            self.sync_deck_manager()
-            if hasattr(self, 'draw_deck'): self.draw_deck()
-
-            for step in loaded_sequence:
-                self.workflow_sequence.append(step)
-                act = step['action']
-                slot = step.get('slot', '')
-                well = step.get('well', '')
-                vol = float(step.get('volume', 0.0))
-                mix_cycles = int(step.get('mix_cycles', 0))
-                mix_vol = float(step.get('mix_volume', 100.0))
-                mix_str = f" [Mix {mix_cycles}x {mix_vol:g}\u03bcL]" if mix_cycles > 0 else ""
-                vol_str = f" {vol:.1f}\u03bcL" if vol % 1 != 0 else (f" {vol:.0f}\u03bcL" if vol > 0 else "")
-                if act == "Pick Up Tip":
-                    msg = f"[{act.upper()}] from {slot}, Well {well}"
-                elif act == "Discard Tip":
-                    msg = f"[{act.upper()}] into {slot}, Well {well}"
-                else:
-                    msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
-                self.wf_box.insert(tk.END, msg)
-
-            wells_summary = ", ".join([f"D{i+1}:{w}" for i, w in enumerate(chosen_wells)])
-            self.logger.info(f"Loaded {protocol_name} with Drug Wells [{wells_summary}]. Deck configured: Slot 1 DMSO (A1), Slot 2 Waste (A1), Slot 3 Drug Stock, Slot 4 Tips, Slot 5 Dilution Plate.")
+            chosen_wells = [v.get().strip().upper() for v in well_vars]
+            chosen_dmso_lw = dmso_options.get(dmso_var.get(), init_s1)
+            try:
+                self.apply_drug_well_mapping_and_load(
+                    loaded_sequence,
+                    protocol_name=protocol_name,
+                    deck_setup=deck_setup,
+                    chosen_wells=chosen_wells,
+                    dmso_labware=chosen_dmso_lw,
+                )
+            except ValueError as ve:
+                messagebox.showerror(
+                    "Invalid Well Format",
+                    f"{ve}\nMust be between A1 and H12 (e.g. A1, B3, C6).",
+                    parent=top,
+                )
+                return
             top.destroy()
 
         ttk.Button(btn_frame, text="Cancel", command=top.destroy).pack(side=tk.RIGHT, padx=5)
@@ -2298,6 +2800,8 @@ class LIMSMasterApp:
             for st in steps:
                 self.workflow_sequence.append(st)
                 self.wf_box.insert(tk.END, self._format_step_msg(st))
+
+            self._update_estimated_timer_preview()
 
             mode_desc = "Full Media Change (Remove + Fresh)" if inc_rem_var.get() else "Fresh Media Only"
             drop_desc = "Slot_4 Empty Cols" if tip_drop_var.get() == "rack_graveyard" else "Slot_6 R6 Vertical Trough"
@@ -2713,11 +3217,23 @@ class LIMSMasterApp:
 
             self.deck_manager.mount_labware(slot_name, typed_lw, adapter=adapter)
 
-    def estimate_workflow_time(self, sequence) -> float:
-        total_time = 0.0
+    def _estimate_step_durations(self, sequence) -> list:
+        """
+        Compute calibrated physical baseline durations (in seconds) for each step:
+        - Tip pickup / eject: ~3.2-3.5s + XY travel (~4-4.5s)
+        - Removal / standard aspirate or dispense: ~8-10s + XY travel
+        - Reservoir/tube single-channel LLD meniscus probing: +4.6s probe descent
+        - Dispense with 2x in-well mixing: ~21-24s including XY travel
+        Calibrated so the full 1,372-step 2-plate Media Change + Drug protocol estimates ~4.5-4.8 hours.
+        """
+        durations = []
         current_x, current_y = 0.0, 0.0
         speed_pct = self.speed_var.get() if hasattr(self, 'speed_var') else 80.0
         xy_speed = max(50.0, 250.0 * (speed_pct / 100.0))
+        lld_enabled = (
+            (not hasattr(self, 'lld_tracking_var') or bool(self.lld_tracking_var.get()))
+            or (hasattr(self, 'dynamic_z_var') and bool(self.dynamic_z_var.get()))
+        )
 
         for s in sequence:
             action = s.get('action', '')
@@ -2725,19 +3241,19 @@ class LIMSMasterApp:
             mix_cycles = int(s.get('mix_cycles', 0)) if getattr(self, 'enable_mixing_for_run', True) else 0
 
             if "Incubate" in action:
-                total_time += vol
+                durations.append(max(0.0, vol))
                 continue
             elif "FOC48" in action:
-                total_time += 150.0
+                durations.append(150.0)
                 continue
             elif "Data Analysis" in action:
-                total_time += 5.0
+                durations.append(5.0)
                 continue
             elif "DB Upload" in action:
-                total_time += 3.0
+                durations.append(3.0)
                 continue
             elif "Calcium Curve" in action:
-                total_time += 60.0
+                durations.append(60.0)
                 continue
 
             slot = s.get('slot', '')
@@ -2747,35 +3263,56 @@ class LIMSMasterApp:
             current_x, current_y = tx, ty
             travel_time = (travel_dist / xy_speed) + 0.35
 
-            if action == "Pick Up Tip":
-                total_time += travel_time + 8.5
-            elif action == "Discard Tip":
-                total_time += travel_time + 4.5
-            elif action == "Aspirate Media":
-                has_air = (vol <= 50.0) or (slot == "Slot_5")
-                air_time = 1.5 if has_air else 0.0
-                draw_time = max(1.0, vol * 0.005)
-                total_time += travel_time + 3.5 + air_time + draw_time
-            elif action == "Dispense Media":
-                disp_time = max(0.5, vol * 0.004)
-                mix_time = mix_cycles * 2.8
-                total_time += travel_time + 3.0 + disp_time + 0.5 + mix_time
-            elif action == "Mix Well":
-                total_time += travel_time + 3.0 + (mix_cycles * 2.8)
-            elif action == "Detect Liquid Level":
-                total_time += travel_time + 8.0
-            else:
-                total_time += travel_time + 2.0
+            is_8ch = bool(self.lims.pipettor.multichannel or s.get('eight_ch_symmetric'))
 
-        return round(total_time, 1)
+            if action == "Pick Up Tip":
+                step_t = travel_time + 3.5
+            elif action == "Discard Tip":
+                step_t = travel_time + 3.2
+            elif action == "Aspirate Media":
+                has_air = (0.0 < vol <= 50.0) and not s.get('no_air_cushion', False)
+                air_time = 1.2 if has_air else 0.0
+                draw_time = max(0.8, vol * 0.005)
+
+                step_lw = str(s.get('labware') or '').lower()
+                if not step_lw and slot in self.lims.deck_labware:
+                    step_lw = str(getattr(self.lims.deck_labware.get(slot), 'source_file', '') or '').lower()
+                is_plate_lw = any(k in step_lw for k in ('plate', '96', '48', 'ehm', 'myriamed', 'corning'))
+                is_tube_or_res = (
+                    any(k in step_lw for k in ('reservoir', 'tube', 'falcon', '2x6', '50ml', '3_well'))
+                    and not is_plate_lw
+                )
+                uses_lld = (not is_8ch) and lld_enabled and is_tube_or_res
+                lld_time = 6.0 if uses_lld else 0.0
+                step_t = travel_time + 8.3 + air_time + draw_time + lld_time
+            elif action == "Dispense Media":
+                disp_time = max(0.6, vol * 0.004)
+                mix_time = mix_cycles * 4.7
+                step_t = travel_time + 8.0 + disp_time + 0.4 + mix_time
+            elif action == "Mix Well":
+                step_t = travel_time + 4.0 + (mix_cycles * 4.7)
+            elif action == "Detect Liquid Level":
+                step_t = travel_time + 8.5
+            else:
+                step_t = travel_time + 2.0
+
+            durations.append(step_t)
+
+        return durations
+
+    def estimate_workflow_time(self, sequence) -> float:
+        return round(sum(self._estimate_step_durations(sequence)), 1)
 
     def pause_resume_run(self):
         if self.pause_event.is_set():
+            self._begin_pause_tracking()
             self.pause_event.clear()
             self.btn_pause.config(text="▶ RESUME", bg="#17a2b8")
             self._set_protocol_edit_buttons_state(tk.NORMAL)
-            self.logger.info("Protocol Paused by User. Steps can be edited, added, reordered, or deleted.")
+            self.logger.info("Protocol Paused by User. Timer & Speed Factor frozen. Steps can be edited, added, reordered, or deleted.")
         else:
+            self._end_pause_tracking()
+            self.step_baseline_times = self._estimate_step_durations(self.workflow_sequence)
             self.pause_event.set()
             self.btn_pause.config(text="⏸ PAUSE", bg="#ffc107")
             self._set_protocol_edit_buttons_state(tk.DISABLED)
@@ -2783,9 +3320,12 @@ class LIMSMasterApp:
             self.logger.info(f"Protocol Resumed at Step {cur_i + 1}/{len(self.workflow_sequence)}.")
 
     def stop_run(self):
+        if getattr(self, 'session_abort_status', None) is None:
+            self.session_abort_status = "ABORTED_USER"
         self.is_aborted = True
+        self._end_pause_tracking()
         self.pause_event.set()
-        self.logger.info("Protocol Abort Signal Sent. Halting sequence...")
+        self.logger.info("Protocol Abort Signal Sent by Operator. Halting sequence...")
         try:
             self.btn_stop.config(state=tk.DISABLED, text="Stopping...")
         except Exception:
@@ -2801,8 +3341,10 @@ class LIMSMasterApp:
 
     def ask_error_resolution(self, error_msg, step_idx):
         err_str = str(error_msg)
+        classified = self._classify_abort_reason(error_msg)
         if any(kw in err_str for kw in ["CRITICAL", "COLLISION", "DOUBLE-TIP", "ejection failed", "SAFETY INTERLOCK"]):
             self.logger.critical(f"🛑 CRITICAL SAFETY ABORT on Step {step_idx}: {err_str}")
+            self.session_abort_status = "AUTO_ABORTED_HARDWARE"
             self.is_aborted = True
             if self.lims.pipettor.hardware:
                 try:
@@ -2811,6 +3353,7 @@ class LIMSMasterApp:
                     pass
             return
 
+        self._begin_pause_tracking()
         self.pause_event.clear()
         self.root.after(0, lambda: self.btn_pause.config(text="▶ RESUME", bg="#17a2b8"))
         self.user_decision = None
@@ -2821,12 +3364,17 @@ class LIMSMasterApp:
             self.user_decision = "ignore" if ans else "abort"
 
         self.root.after(0, prompt)
-        while self.user_decision is None: time.sleep(0.1)
+        while self.user_decision is None and not self.is_aborted:
+            time.sleep(0.1)
 
-        if self.user_decision == "abort":
+        self._end_pause_tracking()
+        if self.user_decision == "abort" or self.is_aborted:
+            if self.session_abort_status is None:
+                self.session_abort_status = classified
             self.is_aborted = True
         else:
             self.logger.warning(f"User overrode hardware interlock on Step {step_idx}. Forcing continuation.")
+            self.session_abort_status = None
             self.pause_event.set()
             self.root.after(0, lambda: self.btn_pause.config(text="⏸ PAUSE", bg="#ffc107"))
 
@@ -3701,15 +4249,8 @@ class LIMSMasterApp:
             self.lbl_timer.config(text="Time Remaining: ABORTED", foreground="red")
             return
 
-        if not self.pause_event.is_set():
-            # If the protocol is paused, push the start time forward so the countdown freezes
-            self.run_start_time += 1.0
-
-        elapsed = time.time() - self.run_start_time
-        remaining = max(0, self.estimated_total_time - elapsed)
-
-        mins, secs = divmod(int(remaining), 60)
-        self.lbl_timer.config(text=f"Time Remaining: {mins:02d}:{secs:02d}", foreground="blue")
+        remaining = self.compute_remaining_time()
+        self.lbl_timer.config(text=f"Time Remaining: {self.format_hms(remaining)}", foreground="blue")
 
         if self.timer_running:
             self.root.after(1000, self.update_timer)
@@ -3750,10 +4291,13 @@ class LIMSMasterApp:
             self.logger.warning(f"Could not auto-save to desktop: {e}")
 
         # ---------------------------------------------
+        threading.Thread(target=self.run_sequence, daemon=True).start()
 
-        def run_sequence():
-            self.logger.info("--- Protocol Sequence Initiated ---")
+    def run_sequence(self):
+        def _worker():
+            self.is_running = True
             self.is_aborted = False
+            self.session_abort_status = None
             # Fresh liquid-level ledger for every run (tubes assumed refilled to start level)
             self.liquid_ledger = {}
             self.has_air_cushion = False
@@ -3762,12 +4306,20 @@ class LIMSMasterApp:
             total_steps = len(self.workflow_sequence)
 
             self.sync_deck_manager()
-            # --- PHYSICS-BASED TIME ESTIMATION ---
-            self.estimated_total_time = self.estimate_workflow_time(self.workflow_sequence)
+            # --- WEIGHTED TIME ESTIMATION & LIVE SPEED FACTOR INIT ---
+            self.step_baseline_times = self._estimate_step_durations(self.workflow_sequence)
+            self.estimated_total_time = round(sum(self.step_baseline_times), 1)
+            self.completed_baseline_time = 0.0
+            self.live_speed_factor = 1.0
+            self.total_paused_seconds = 0.0
+            self.pause_started_at = None
+            self.active_elapsed_at_step_start = 0.0
+            self._start_session_log(total_steps=total_steps, est_seconds=self.estimated_total_time)
+            self.logger.info("--- Protocol Sequence Initiated ---")
             self.run_start_time = time.time()
             self.timer_running = True
             self.root.after(0, self.update_timer)
-            # ----------------------------------------
+            # ---------------------------------------------------------
 
             self.current_step_idx = 0
             while self.current_step_idx < len(self.workflow_sequence):
@@ -3777,6 +4329,7 @@ class LIMSMasterApp:
                 step = self.workflow_sequence[self.current_step_idx]
                 i = self.current_step_idx + 1
                 total_steps = len(self.workflow_sequence)
+                step_skipped_fast = False
 
                 try:
                     self.root.after(0, lambda idx=i - 1: self.wf_box.selection_clear(0, tk.END))
@@ -3793,11 +4346,13 @@ class LIMSMasterApp:
                     if action == "Pick Up Tip" and mode != "manual":
                         if self._worker_has_tip:
                             self.logger.info("Tip State: ATTACHED. Skipping redundant pickup step.")
+                            step_skipped_fast = True
                             time.sleep(0.05)
                             continue
                     elif action == "Discard Tip" and mode != "manual":
                         if not self._worker_has_tip:
                             self.logger.info("Tip State: EMPTY. Skipping redundant discard step.")
+                            step_skipped_fast = True
                             time.sleep(0.05)
                             continue
 
@@ -3833,6 +4388,7 @@ class LIMSMasterApp:
                                 self.logger.info("Calcium Curve executed successfully.")
 
                         except Exception as e:
+                            self.logger.error(f"System step {i} error: {e}\n{traceback.format_exc()}")
                             self.ask_error_resolution(e, i)
                         time.sleep(0.05)
                         continue
@@ -3855,6 +4411,24 @@ class LIMSMasterApp:
                             elif action != "Discard Tip":
                                 self.ask_error_resolution(f"No labware assigned to {slot_name}. Assign one in the Deck tab.", i)
                                 continue
+
+                        # --- ACTIVE SESSION TIP MEMORY (Virtual Tip Remapping) ---
+                        if action == "Pick Up Tip" and not is_8ch:
+                            resolved_well, was_remapped = self.resolve_session_tip(slot_name, well_id)
+                            if resolved_well is None:
+                                self.session_abort_status = "AUTO_ABORTED_EMPTY_TIPS"
+                                self.logger.critical(
+                                    f"🛑 All 96 tip sockets in {slot_name} are exhausted in this session! "
+                                    f"Load a fresh tip box and click '🔄 Reset Tip Rack'."
+                                )
+                                self.is_aborted = True
+                                break
+                            if was_remapped:
+                                self.logger.info(
+                                    f"[TIP MEMORY] Virtual Tip Remap on {slot_name}: Requested {well_id} -> Remapped to {resolved_well}"
+                                )
+                            well_id = resolved_well
+                        # ---------------------------------------------------------
 
                         coords = self._resolve_step_xy(step, slot_name, well_id)
                         if coords and (coords[0] != 0.0 or coords[1] != 0.0):
@@ -3944,35 +4518,55 @@ class LIMSMasterApp:
                                 self.logger.warning(f"Manual tip pick: No tip detected (Z={cz:.2f}mm).")
 
                         elif self.auto_tip_search_var.get() and not is_8ch:
-                            wells = list(labware_obj.wells.keys()) if labware_obj else []
-                            start_idx = wells.index(well_id) if well_id in wells else 0
+                            ordered_wells = self._ordered_tip_wells(slot_name)
+                            consumed_now = self._get_tip_tracker(slot_name)["consumed"]
+                            start_idx = ordered_wells.index(well_id) if well_id in ordered_wells else 0
+                            search_indices = list(range(start_idx, len(ordered_wells))) + list(range(0, start_idx))
                             tip_found = False
 
-                            for idx in range(start_idx, len(wells)):
-                                if self.is_aborted: break
-                                current_well = wells[idx]
+                            for idx in search_indices:
+                                if self.is_aborted:
+                                    break
+                                current_well = ordered_wells[idx]
+                                if current_well in consumed_now:
+                                    continue
                                 coords = self._calculate_xy(slot_name, current_well)
                                 tx, ty = coords if coords else (0, 0)
-                                self.logger.info(f"Checking tip at {current_well} ({tx:.2f}, {ty:.2f})...")
+                                self.logger.info(f"Checking tip at {slot_name} {current_well} ({tx:.2f}, {ty:.2f})...")
                                 seated, cz = _do_pick(tx, ty)
+                                self.mark_tip_consumed(slot_name, current_well)
                                 if seated:
-                                    self.logger.info(f"🎯 Tip acquired at {current_well} (Z={cz:.2f}mm). HAS_TIP = True")
+                                    self.logger.info(f"🎯 Tip acquired at {slot_name} {current_well} (Z={cz:.2f}mm). HAS_TIP = True")
                                     tip_found = True
                                     self._set_has_tip(True)
                                     break
                                 else:
-                                    self.logger.warning(f"Well {current_well} empty or passed (Z={cz:.2f}mm). Tracking to next well...")
+                                    self.logger.warning(
+                                        f"Well {current_well} empty or passed (Z={cz:.2f}mm). Marked consumed & tracking to next column-major well..."
+                                    )
 
                             if not tip_found and not self.is_aborted:
-                                self.ask_error_resolution("Tip rack is completely empty!", i)
+                                self.session_abort_status = "AUTO_ABORTED_EMPTY_TIPS"
+                                self.logger.critical(f"🛑 Tip rack on {slot_name} is completely empty! All 96 sockets exhausted.")
+                                self.is_aborted = True
+                                break
                         else:
                             seated, cz = _do_pick(target_x, target_y)
                             if seated:
+                                if is_8ch:
+                                    for sock in self._expand_8ch_tip_sockets(step, well_id):
+                                        self.mark_tip_consumed(slot_name, sock, redraw=False)
+                                    self._schedule_deck_redraw()
+                                else:
+                                    self.mark_tip_consumed(slot_name, well_id)
                                 ch_note = f" [Ch {step.get('mounted_channels')}]" if step.get('mounted_channels') else ""
                                 self.logger.info(f"🎯 Tip acquired at {well_id}{ch_note} (X={target_x:.1f}, Y={target_y:.1f}, Z={cz:.2f}mm). HAS_TIP = True")
                                 self._set_has_tip(True)
                             else:
-                                raise Exception(f"Tip pickup failed at {well_id} (X={target_x:.1f}, Y={target_y:.1f}, Z={cz:.2f}mm).")
+                                if not is_8ch:
+                                    self.mark_tip_consumed(slot_name, well_id)
+                                self.session_abort_status = "AUTO_ABORTED_HARDWARE"
+                                raise RuntimeError(f"Tip pickup failed at {well_id} (X={target_x:.1f}, Y={target_y:.1f}, Z={cz:.2f}mm).")
 
                     elif action == "Detect Liquid Level":
                         if self.lims.pipettor.multichannel:
@@ -4025,6 +4619,7 @@ class LIMSMasterApp:
                     elif action in ["Aspirate Media", "Dispense Media", "Discard Tip", "Mix Well"]:
                         if action == "Mix Well" and not getattr(self, 'enable_mixing_for_run', True):
                             self.logger.info("Mixing opted out for this run. Skipping Mix Well step.")
+                            step_skipped_fast = True
                             time.sleep(0.05)
                             continue
                         effective_mix = int(step.get('mix_cycles', 0)) if getattr(self, 'enable_mixing_for_run', True) else 0
@@ -4169,6 +4764,7 @@ class LIMSMasterApp:
                                                 else:
                                                     self.logger.error(f"[AUTO LIQUID TRACKING] All available tubes/wells in {slot_name} are depleted!")
                                                     self.refill_decision = None
+                                                    self._begin_pause_tracking()
                                                     def _prompt_empty_rack():
                                                         ans = messagebox.askyesno(
                                                             "Liquid Depleted",
@@ -4179,12 +4775,17 @@ class LIMSMasterApp:
                                                     self.root.after(0, _prompt_empty_rack)
                                                     while self.refill_decision is None and not self.is_aborted:
                                                         time.sleep(0.1)
+                                                    self._end_pause_tracking()
                                                     if self.refill_decision == "refilled":
                                                         if self.lims.pipettor.hardware:
                                                             self.lims.pipettor.hardware.move_z(0)
                                                         continue
                                                     else:
-                                                        raise Exception(f"Protocol aborted: Liquid depleted in {slot_name}.")
+                                                        if self.session_abort_status is None:
+                                                            self.session_abort_status = "AUTO_ABORTED_DEPLETED"
+                                                        self.is_aborted = True
+                                                        self.logger.critical(f"🛑 Protocol auto-aborted: Liquid depleted in {slot_name} ({well_id}).")
+                                                        break
                                             else:
                                                 # Liquid present: Calculate depth and volume left based on pipette's auto tracking
                                                 rad_mm = getattr(lw_model, 'well_radius_mm', 14.0) if lw_model else 14.0
@@ -4203,6 +4804,8 @@ class LIMSMasterApp:
                                                 break
                                     except Exception as lld_err:
                                         self.logger.warning(f"[AUTO LIQUID TRACKING] Surface probe fallback: {lld_err}. Submerging to calibrated depth Z={tz:.1f}mm")
+                                    if self.is_aborted:
+                                        break
 
                                 elif mode != "manual" and (not is_8ch) and (lw_kind != "reservoir_6") and (is_reservoir or is_2ml_falcon) and step.get('track_liquid', True):
                                     if not hasattr(self, 'liquid_ledger'):
@@ -4264,9 +4867,11 @@ class LIMSMasterApp:
                                                     f"Press NO to continue without refilling (tip will go near the bottom).")
                                                 self.refill_decision = "refilled" if ok else "continue"
 
+                                            self._begin_pause_tracking()
                                             self.root.after(0, _ask_refill)
                                             while self.refill_decision is None and not self.is_aborted:
                                                 time.sleep(0.1)
+                                            self._end_pause_tracking()
                                             if self.refill_decision == "refilled":
                                                 tube_info["surface_z"] = start_z
                                                 self.logger.info(f"[OPTION 2 TRACKER] {slot_name} {well_id} refilled -> surface reset to Z={start_z:.1f}mm")
@@ -4375,11 +4980,16 @@ class LIMSMasterApp:
                                             self.lims.pipettor.hardware.eject_tip()
                                         except Exception:
                                             pass
+                                    if is_8ch and step.get("is_shovel_place"):
+                                        for sock in self._expand_8ch_tip_sockets(step, well_id):
+                                            self.mark_tip_restored(slot_name, sock, redraw=False)
+                                        self._schedule_deck_redraw()
                                     self._set_has_tip(False)
                                     self.logger.info("System state updated: Tip successfully ejected -> HAS_TIP = False")
                                 except Exception as e_err:
                                     self.logger.critical(f"Eject Tip Failed: {e_err}")
                                     self._set_has_tip(True)
+                                    self.session_abort_status = "AUTO_ABORTED_HARDWARE"
                                     raise RuntimeError(f"CRITICAL: Tip ejection failed! Tip is still attached to the cone. Halting: {e_err}")
 
                             try:
@@ -4389,13 +4999,19 @@ class LIMSMasterApp:
                             except Exception:
                                 self.lims.pipettor.hardware.move_z(0)
                         elif action == "Discard Tip":
+                            if is_8ch and step.get("is_shovel_place"):
+                                for sock in self._expand_8ch_tip_sockets(step, well_id):
+                                    self.mark_tip_restored(slot_name, sock, redraw=False)
+                                self._schedule_deck_redraw()
                             self._set_has_tip(False)
                             self.logger.info("Simulation: Tip ejected -> HAS_TIP = False")
 
-                except RuntimeError as re:
-                    err_str = str(re)
+                except RuntimeError as rt_err:
+                    err_str = str(rt_err)
+                    self.logger.error(f"RuntimeError on Step {i}: {err_str}\n{traceback.format_exc()}")
                     if any(kw in err_str for kw in ["CRITICAL", "COLLISION", "DOUBLE-TIP", "ejection failed", "SAFETY INTERLOCK"]):
                         self.logger.critical(f"🛑 CRITICAL SAFETY ABORT on Step {i}: {err_str}")
+                        self.session_abort_status = "AUTO_ABORTED_HARDWARE"
                         self.is_aborted = True
                         if self.lims.pipettor.hardware:
                             try:
@@ -4404,36 +5020,59 @@ class LIMSMasterApp:
                                 pass
                         break
                     else:
-                        self.ask_error_resolution(re, i)
+                        self.ask_error_resolution(rt_err, i)
                         if self.is_aborted:
                             break
                 except Exception as e:
+                    self.logger.error(f"Exception on Step {i}: {e}\n{traceback.format_exc()}")
                     self.ask_error_resolution(e, i)
                     if self.is_aborted:
                         break
                 finally:
-                    self.current_step_idx += 1
+                    if not self.is_aborted:
+                        expected_b = (
+                            0.05
+                            if step_skipped_fast
+                            else (
+                                self.step_baseline_times[self.current_step_idx]
+                                if self.current_step_idx < len(self.step_baseline_times)
+                                else 2.0
+                            )
+                        )
+                        self.record_step_completion_for_timer(expected_b)
+                        self.current_step_idx += 1
                 time.sleep(0.05)
 
-            if self.is_aborted:
-                self.logger.info("--- Protocol Aborted ---")
-            else:
-                self.logger.info("--- Protocol Completed Successfully ---")
-
+        try:
+            _worker()
+        except Exception as fatal_err:
+            self.is_aborted = True
+            if self.session_abort_status is None:
+                self.session_abort_status = "AUTO_ABORTED_ERROR"
+            self.logger.critical(f"Unhandled session runtime exception: {fatal_err}\n{traceback.format_exc()}")
+        finally:
+            self._end_pause_tracking()
             self.timer_running = False
-            if not self.is_aborted:
-                self.root.after(0, lambda: self.lbl_timer.config(text="Time Remaining: 00:00", foreground="green"))
+            all_done = (not self.is_aborted) and (self.current_step_idx >= len(self.workflow_sequence))
+            if all_done:
+                final_status = "COMPLETED"
+                self.logger.info("--- Protocol Completed Successfully ---")
+                self.root.after(0, lambda: self.lbl_timer.config(text="Time Remaining: 00h 00m 00s", foreground="green"))
+            else:
+                final_status = self.session_abort_status or "ABORTED_USER"
+                self.logger.info(f"--- Protocol Aborted ({final_status}) ---")
+                self.root.after(0, lambda: self.lbl_timer.config(text="Time Remaining: ABORTED", foreground="red"))
 
             if self.lims.pipettor.hardware:
                 try:
                     self.lims.pipettor.hardware.move_z(0)
                 except Exception as ze:
                     self.logger.warning(f"Z clearance move warning: {ze}")
+
+            self._finalize_session_log(final_status)
             self.is_running = False
             self.root.after(0, lambda: self.update_ui_state(False))
             self.root.after(0, lambda: self.progress_var.set(0))
-
-        threading.Thread(target=run_sequence, daemon=True).start()
 
     def hw_scan(self):
         ports = self.lims.hw.scan_ports()
@@ -4788,6 +5427,7 @@ class LIMSMasterApp:
                 self._sync_protocol_labware(loaded_sequence)
                 self.sync_deck_manager()
                 if hasattr(self, 'draw_deck'): self.draw_deck()
+                self._update_estimated_timer_preview()
 
             except Exception as e:
                 self.logger.error(f"Import Exception: {str(e)}")
@@ -5001,6 +5641,26 @@ class LIMSMasterApp:
                         top.destroy()
                         return
 
+                    # Detect if converted script is a DMSO-Drug Dilution / Plate Prep protocol (1..12 stock drug aspirations from Slot_3)
+                    drug_steps_in_py = [
+                        i for i, s in enumerate(converted_steps)
+                        if s.get("slot") == "Slot_3" and "Aspirate" in s.get("action", "")
+                    ]
+                    if 1 <= len(drug_steps_in_py) <= 12:
+                        eff_deck = dict(labware_map)
+                        eff_deck.setdefault("Slot_1", "tube_rack_2x6_2ml.json")
+                        eff_deck["Slot_2"] = "waste_trough.json"
+                        eff_deck.setdefault("Slot_3", "generic_96_well_plate.json")
+                        eff_deck.setdefault("Slot_4", "tip_rack_1000ul.json")
+                        eff_deck.setdefault("Slot_5", "generic_96_well_plate.json")
+                        top.destroy()
+                        self.prompt_drug_wells_and_load(
+                            converted_steps,
+                            protocol_name=f"Imported DMSO-Drug Prep ({os.path.basename(filepath)})",
+                            deck_setup=eff_deck,
+                        )
+                        return
+
                     # Configure physical deck labware in orchestrator
                     for b_slot, lw_file in labware_map.items():
                         if b_slot and lw_file:
@@ -5012,6 +5672,7 @@ class LIMSMasterApp:
                                     self.placed_slots.append(b_slot)
                                 self.logger.info(f"Deck Configured: {b_slot} ➔ {lw_file}")
 
+                    self.sync_deck_manager()
                     # Redraw visual canvas with newly mounted labware
                     if hasattr(self, 'draw_deck'):
                         self.draw_deck()
@@ -5034,6 +5695,7 @@ class LIMSMasterApp:
                             msg = f"[{action.upper()}] {step.get('volume', 0.0)}\u03bcL at {step.get('slot', '')}, Well {step.get('well', '')}{z_msg}{mix_msg}"
                         self.wf_box.insert(tk.END, msg)
 
+                    self._update_estimated_timer_preview()
                     top.destroy()
                     self.logger.info(f"Imported {len(converted_steps)} steps from Python script {os.path.basename(filepath)}.")
                     messagebox.showinfo(
