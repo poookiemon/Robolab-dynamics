@@ -68,6 +68,119 @@ def test_head_reconfigure():
     print("PASS: Live in-place driver head switching verified without COM teardown or OperationNotSupported.")
 
 
+def simulate_all_8ch_media_change(app: LIMSMasterApp, name: str, steps, loaded_cols):
+    print(f"\n--- Simulating All 8 Channels Variant: {name} ({len(steps)} steps) ---")
+    lw_dir = app.get_labware_dir()
+    for empty_s in ("Slot_1", "Slot_2"):
+        app.lims.deck_labware.pop(empty_s, None)
+    for s_name, lw_file in {
+        "Slot_3": "myriamed_48_well.json",
+        "Slot_4": "tip_rack_1000ul.json",
+        "Slot_5": "myriamed_48_well.json",
+        "Slot_6": "reservoir_7_column.json",
+    }.items():
+        lp = os.path.join(lw_dir, lw_file)
+        app.lims.deck_labware[s_name] = Labware(lp)
+        app.lims.deck_labware[s_name].source_file = lw_file
+    app.sync_deck_manager()
+    app.switch_pipettor_head(True, quiet=True)
+    app.eight_ch_cal_offset = {"X": 0.0, "Y": 0.0, "Z": 0.0}
+
+    # Initialize Slot_4 96-socket rack state: True = tip standing in socket
+    rack = {
+        (r_idx, c_idx): ((c_idx + 1) in loaded_cols)
+        for r_idx in range(8)
+        for c_idx in range(12)
+    }
+
+    mounted = [False] * 8
+    removed_wells = {"Slot_3": set(), "Slot_5": set()}
+    filled_wells = {"Slot_3": set(), "Slot_5": set()}
+    held_media = None
+
+    for idx, step in enumerate(steps, 1):
+        action = step["action"]
+        slot = step["slot"]
+        well = step["well"]
+        tx, ty = app._resolve_step_xy(step, slot, well)
+
+        is_8ch = bool(app.lims.pipettor.multichannel or step.get("eight_ch_symmetric"))
+        if action == "Pick Up Tip":
+            tz = 90.50 if is_8ch else 55.09
+        elif action == "Discard Tip" and step.get("discard_z_override") is not None:
+            tz = float(step["discard_z_override"])
+        else:
+            tz = app._calculate_z(action, app.lims.deck_labware.get(slot), well, "auto", 0.0, slot)
+            lw_kind = app._lw_kind(app.lims.deck_labware.get(slot))
+            is_already_cal = getattr(app.lims.deck_labware.get(slot), 'is_8ch_calibrated', False) or lw_kind in ("ehm48", "reservoir_7")
+            if is_8ch and not is_already_cal:
+                tz = max(0.0, tz - app.EIGHT_CH_TIP_Z_COMP_MM)
+
+        # Strict workspace envelope checks
+        assert 0.0 <= tx <= 263.0, f"Step {idx} X out of bounds: {tx}"
+        assert 0.0 <= ty <= 212.0, f"Step {idx} Y out of bounds: {ty} ({step.get('label')})"
+        assert 0.0 <= tz <= 102.0, f"Step {idx} Z out of bounds: {tz} ({step.get('label')})"
+
+        # All 8 channels MUST be mounted and active for every single step
+        assert step["mounted_channels"] == "A-H", f"Step {idx}: Expected A-H, got {step['mounted_channels']}"
+
+        if action == "Pick Up Tip":
+            assert not any(mounted), f"Step {idx}: Pick Up Tip called while tips still mounted"
+            c_idx = round((105.12 - tx) / 9.0)
+            assert 0 <= c_idx < 12
+            for r_idx in range(8):
+                assert rack[(r_idx, c_idx)], f"Step {idx}: Tip missing at Slot 4 {ROWS[r_idx]}{c_idx+1}"
+                rack[(r_idx, c_idx)] = False
+            mounted = [True] * 8
+
+        elif action == "Discard Tip":
+            assert all(mounted), f"Step {idx}: Discard called without 8 tips mounted"
+            if slot == "Slot_4":
+                assert abs(tz - 42.0) < 1e-6
+                c_idx = round((105.12 - tx) / 9.0)
+                for r_idx in range(8):
+                    assert not rack[(r_idx, c_idx)], f"Step {idx}: Drop collision at Slot 4 {ROWS[r_idx]}{c_idx+1}"
+                    rack[(r_idx, c_idx)] = True
+            else:
+                assert slot == "Slot_6"
+            mounted = [False] * 8
+            held_media = None
+
+        elif action == "Aspirate Media":
+            assert all(mounted)
+            if slot in ("Slot_3", "Slot_5"):
+                assert abs(tz - 22.33) < 1e-6, f"Expected EHM aspirate 22.33mm, got {tz}"
+                col_num = int(well[1:])
+                for r in ROWS:
+                    removed_wells[slot].add(f"{r}{col_num}")
+                held_media = "OLD_MEDIA"
+            elif slot == "Slot_6":
+                assert abs(tz - 89.32) < 1e-6, f"Expected 7-well reservoir aspirate 89.32mm, got {tz}"
+                held_media = well
+
+        elif action == "Dispense Media":
+            assert all(mounted)
+            if slot == "Slot_6":
+                assert abs(tz - 78.0) < 1e-6, f"Expected 7-well reservoir dispense 78.0mm, got {tz}"
+                assert held_media == "OLD_MEDIA"
+            elif slot in ("Slot_3", "Slot_5"):
+                assert abs(tz - 17.33) < 1e-6, f"Expected EHM dispense 17.33mm, got {tz}"
+                col_num = int(well[1:])
+                for r in ROWS:
+                    w_id = f"{r}{col_num}"
+                    assert w_id not in filled_wells[slot], f"Step {idx}: Duplicate fill {w_id}"
+                    filled_wells[slot].add(w_id)
+
+    all_48 = {f"{r}{c}" for r in ROWS for c in range(1, 7)}
+    assert filled_wells["Slot_3"] == all_48, "Plate 5 fresh media fill incomplete!"
+    assert filled_wells["Slot_5"] == all_48, "Plate 6 fresh media fill incomplete!"
+    if len(steps) >= 50:
+        assert removed_wells["Slot_3"] == all_48, "Plate 5 old removal incomplete!"
+        assert removed_wells["Slot_5"] == all_48, "Plate 6 old removal incomplete!"
+
+    print(f"PASS: {name} -> 96/96 wells verified, All 8 Channels full parallel, 0 collisions, all XYZ in bounds!")
+
+
 def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols, pre_removed_tips=()):
     print(f"\n--- Simulating Variant: {name} ({len(steps)} steps) ---")
     lw_dir = app.get_labware_dir()
@@ -260,37 +373,63 @@ def main():
     try:
         app = LIMSMasterApp(root)
 
-        # Variant A: Default Full Hands-Free Media Change (Cols 1-4 loaded, Cols 5-12 empty graveyard)
-        steps_full = build_8ch_ehm_media_change_steps(
+        # 1. All 8 Channels Full Media Change (56 steps: 4 full tip cols, 96/96 wells)
+        steps_all8_full = build_8ch_ehm_media_change_steps(
+            include_old_media_removal=True,
+            remove_vol_ul=550.0,
+            fresh_vol_ul=500.0,
+            tip_drop_mode="rack_graveyard",
+            media_addition_mode="all_8ch",
+            p5_res_lane=1,
+            p6_res_lane=2,
+            waste_lane=7,
+            reservoir_labware="reservoir_7_column.json",
+        )
+        assert len(steps_all8_full) == 56, f"Expected 56 steps, got {len(steps_all8_full)}"
+        simulate_all_8ch_media_change(app, "All 8 Channels Full Media Change (56 steps)", steps_all8_full, loaded_cols={1, 2, 3, 4})
+
+        # 2. All 8 Channels Fresh Media Only (28 steps: 2 full tip cols, 96/96 wells)
+        steps_all8_fresh = build_8ch_ehm_media_change_steps(
+            include_old_media_removal=False,
+            fresh_vol_ul=500.0,
+            tip_drop_mode="rack_graveyard",
+            media_addition_mode="all_8ch",
+            p5_res_lane=1,
+            p6_res_lane=2,
+            waste_lane=7,
+            reservoir_labware="reservoir_7_column.json",
+        )
+        assert len(steps_all8_fresh) == 28, f"Expected 28 steps, got {len(steps_all8_fresh)}"
+        simulate_all_8ch_media_change(app, "All 8 Channels Fresh Media Only (28 steps)", steps_all8_fresh, loaded_cols={1, 2})
+
+        # 3. Legacy Multi-Drug Offset with Shovel (128 steps)
+        steps_legacy_shovel = build_8ch_ehm_media_change_steps(
             include_old_media_removal=True,
             remove_vol_ul=550.0,
             fresh_vol_ul=500.0,
             tip_drop_mode="rack_graveyard",
             use_shovel=True,
+            media_addition_mode="offset_drugs",
+            reservoir_labware="reservoir_6_column.json",
+            waste_lane=6,
         )
-        simulate_protocol_variant(app, "Full Media Change (Shovel + Rack Graveyard)", steps_full, loaded_cols={1, 2, 3, 4})
+        simulate_protocol_variant(app, "Legacy Offset (Shovel + Rack Graveyard)", steps_legacy_shovel, loaded_cols={1, 2, 3, 4})
 
-        # Variant B: Fresh Media Only (Cols 1-2 loaded, Slot_6 R6 Vertical Tip-Drop)
-        steps_fresh = build_8ch_ehm_media_change_steps(
-            include_old_media_removal=False,
-            fresh_vol_ul=500.0,
-            tip_drop_mode="slot6_r6",
-            use_shovel=True,
-        )
-        simulate_protocol_variant(app, "Fresh Media Only (Shovel + Slot_6 R6 Tip-Drop)", steps_fresh, loaded_cols={1, 2})
-
-        # Variant C: Zero-Shovel Fallback (Cols 1-5 loaded, E4 & E5 pre-removed)
-        steps_no_shovel = build_8ch_ehm_media_change_steps(
+        # 4. Legacy Multi-Drug Offset Zero-Shovel Fallback
+        steps_legacy_no_shovel = build_8ch_ehm_media_change_steps(
             include_old_media_removal=True,
             remove_vol_ul=550.0,
             fresh_vol_ul=500.0,
             tip_drop_mode="rack_graveyard",
             use_shovel=False,
+            media_addition_mode="offset_drugs",
+            reservoir_labware="reservoir_6_column.json",
+            waste_lane=6,
         )
         simulate_protocol_variant(
             app,
-            "Full Media Change (Zero-Shovel Fallback)",
-            steps_no_shovel,
+            "Legacy Offset (Zero-Shovel Fallback)",
+            steps_legacy_no_shovel,
             loaded_cols={1, 2, 3, 4, 5},
             pre_removed_tips=("E4", "E5"),
         )
@@ -301,7 +440,7 @@ def main():
             pass
 
     print("\n======================================================================")
-    print("ALL 8x1000 uL EHM MEDIA CHANGE VERIFICATION TESTS PASSED (4/4)!")
+    print("ALL 8x1000 uL EHM MEDIA CHANGE VERIFICATION TESTS PASSED (5/5)!")
     print("======================================================================")
 
 

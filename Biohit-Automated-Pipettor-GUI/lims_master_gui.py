@@ -1821,10 +1821,10 @@ class LIMSMasterApp:
         lbl_inst = ttk.Label(pane_ctrl, text="⚡ INSTANT PROTOCOL LOAD", font=("Arial", 10, "bold"), foreground="#007bff")
         lbl_inst.pack(fill=tk.X, pady=(2, 4))
 
-        # 8-Channel 1000 uL Media Change (Offset Tip-Picking + Symmetric Transfer)
+        # 8-Channel 1000 uL Media Change (All 8 Channels Full-Parallel)
         tk.Button(
             pane_ctrl,
-            text="🚀 8×1000 µL EHM Media Change (Plate 5 & 6 — Offset Tips)",
+            text="🚀 8×1000 µL EHM Media Change (Plate 5 & 6 — All 8 Channels)",
             bg="#6f42c1",
             fg="white",
             font=("Arial", 9, "bold"),
@@ -2676,34 +2676,34 @@ class LIMSMasterApp:
     def action_load_8ch_1000ul_media_change_protocol(self):
         """
         Configures and loads the 8x1000 uL EHM Media Change protocol for
-        Plate 5 (Slot_3) & Plate 6 (Slot_5) using offset tip-picking on Slot_4 and
-        symmetric transfers from the 6-column vertical reservoir on Slot_6.
+        Plate 5 (Slot_3) & Plate 6 (Slot_5) using all 8 channels across Rows A-H (or legacy offset mode)
+        and transfers to/from the reagent reservoir on Slot_6.
         """
         # Auto-engage 8x1000 uL manifold driver configuration
         self.switch_pipettor_head(True, quiet=True)
 
         top = tk.Toplevel(self.root)
         top.title("8×1000 µL EHM Media Change Configuration (Plate 5 & Plate 6)")
-        top.geometry("620x640")
+        top.geometry("640x720")
         top.transient(self.root)
         top.grab_set()
 
         try:
-            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 310
-            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 320
+            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 320
+            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 360
             top.geometry(f"+{max(0, rx)}+{max(0, ry)}")
         except Exception:
             pass
 
         ttk.Label(
             top,
-            text="8×1000 µL Offset Tip-Picking & Symmetric Media Change",
+            text="8×1000 µL EHM Media Change (All 8 Channels Full-Parallel)",
             font=("Arial", 12, "bold"),
             foreground="#6f42c1",
         ).pack(pady=(12, 3))
         ttk.Label(
             top,
-            text="100% Hands-Free • Plate 5 (Slot_3) + Plate 6 (Slot_5) • Tips (Slot_4) • 6-Col Reservoir (Slot_6)",
+            text="100% Hands-Free • Plate 5 (Slot_3) + Plate 6 (Slot_5) • Tips (Slot_4) • Reservoir (Slot_6)",
             font=("Arial", 9),
         ).pack(pady=(0, 8))
 
@@ -2711,28 +2711,47 @@ class LIMSMasterApp:
         body.pack(fill=tk.BOTH, expand=True, padx=10)
 
         # 1. Deck & Reservoir Cheat-Sheet
-        deck_lf = ttk.LabelFrame(body, text="Deck & Reservoir Map (Keep Slot_1 & Slot_2 EMPTY!)", padding=8)
+        deck_lf = ttk.LabelFrame(body, text="Deck & Reservoir Map", padding=8)
         deck_lf.pack(fill=tk.X, pady=(0, 8))
         deck_info = (
-            "• Slot_1 & Slot_2: EMPTY (Slot_2 MUST have NO block/labware for -Y bare-nozzle overhang)\n"
-            "• Slot_3: Plate 5 (48-Well EHM: A-C = Drug 11, D-F = Drug 12, G-H = Drug 13)\n"
-            "• Slot_4: 1000 µL Tip Rack (Full Mode: load Tips in Cols 1-4; Fresh-Only: load Cols 1-2)\n"
-            "• Slot_5: Plate 6 (48-Well EHM: A = Drug 13, B-D = Drug 14, E-G = Drug 15, H = Control)\n"
-            "• Slot_6: 6-Col Vertical Reservoir -> R1:D11 | R2:D12 | R3:D13 | R4:Ctrl+D14 | R5:D15 | R6:Waste/Drop"
+            "• Slot_1 & Slot_2: EMPTY (Clear clearance zone)\n"
+            "• Slot_3: Plate 5 (48-Well EHM Plate, Cols 1..6)\n"
+            "• Slot_4: 1000 µL Tip Rack (Full Mode: Cols 1-4 | Fresh-Only: Cols 1-2)\n"
+            "• Slot_5: Plate 6 (48-Well EHM Plate, Cols 1..6)\n"
+            "• Slot_6: Reagent Reservoir (R1: Plate 5 Fresh Media | R2: Plate 6 Fresh Media | Waste)"
         )
         ttk.Label(deck_lf, text=deck_info, font=("Consolas", 8), justify=tk.LEFT).pack(anchor="w")
 
-        # 2. Workflow & Tip-Drop Options
-        opt_lf = ttk.LabelFrame(body, text="Workflow & Tip-Drop Strategy", padding=8)
+        # 2. Workflow & Addition Mode
+        opt_lf = ttk.LabelFrame(body, text="Workflow & Channel Addition Strategy", padding=8)
         opt_lf.pack(fill=tk.X, pady=(0, 8))
 
+        mode_var = tk.StringVar(value="all_8ch")
         inc_rem_var = tk.BooleanVar(value=True)
         tip_drop_var = tk.StringVar(value="rack_graveyard")
         shovel_var = tk.BooleanVar(value=True)
 
+        mode_row = ttk.Frame(opt_lf)
+        mode_row.pack(fill=tk.X, pady=(0, 4))
+        ttk.Label(mode_row, text="Media Addition Mode:", font=("Arial", 9, "bold")).pack(anchor="w")
+        ttk.Radiobutton(
+            mode_row,
+            text="All 8 Channels Full-Parallel (Recommended — Fast, symmetrical media addition)",
+            value="all_8ch",
+            variable=mode_var,
+        ).pack(anchor="w", pady=1)
+        ttk.Radiobutton(
+            mode_row,
+            text="Legacy Offset Tip-Picking (Multi-drug conditions: D11..D15 + Control)",
+            value="offset_drugs",
+            variable=mode_var,
+        ).pack(anchor="w", pady=1)
+
+        ttk.Separator(opt_lf, orient="horizontal").pack(fill=tk.X, pady=4)
+
         def _on_rem_toggle():
             if not inc_rem_var.get():
-                tip_drop_var.set("slot6_r6")
+                tip_drop_var.set("slot6_waste")
             else:
                 tip_drop_var.set("rack_graveyard")
 
@@ -2752,34 +2771,50 @@ class LIMSMasterApp:
         fresh_vol_var = tk.StringVar(value="500.0")
         ttk.Entry(vol_row, textvariable=fresh_vol_var, width=8, justify="center").pack(side=tk.LEFT, padx=4)
 
-        ttk.Separator(opt_lf, orient="horizontal").pack(fill=tk.X, pady=6)
-        ttk.Label(opt_lf, text="Tip-Drop Destination:", font=("Arial", 9, "bold")).pack(anchor="w")
+        # Reservoir Lanes Configuration Frame
+        res_lf = ttk.LabelFrame(body, text="Slot 6 Reservoir Configuration", padding=8)
+        res_lf.pack(fill=tk.X, pady=(0, 8))
+
+        res_row1 = ttk.Frame(res_lf)
+        res_row1.pack(fill=tk.X, pady=2)
+        ttk.Label(res_row1, text="Reservoir Labware:").pack(side=tk.LEFT)
+        res_labware_var = tk.StringVar(value="reservoir_7_column.json")
+        ttk.Radiobutton(res_row1, text="7-Column (Calibrated)", value="reservoir_7_column.json", variable=res_labware_var).pack(side=tk.LEFT, padx=8)
+        ttk.Radiobutton(res_row1, text="6-Column", value="reservoir_6_column.json", variable=res_labware_var).pack(side=tk.LEFT, padx=4)
+
+        res_row2 = ttk.Frame(res_lf)
+        res_row2.pack(fill=tk.X, pady=4)
+        ttk.Label(res_row2, text="Plate 5 Media Lane:").pack(side=tk.LEFT)
+        p5_lane_var = tk.StringVar(value="1")
+        ttk.Entry(res_row2, textvariable=p5_lane_var, width=4, justify="center").pack(side=tk.LEFT, padx=(4, 12))
+
+        ttk.Label(res_row2, text="Plate 6 Media Lane:").pack(side=tk.LEFT)
+        p6_lane_var = tk.StringVar(value="2")
+        ttk.Entry(res_row2, textvariable=p6_lane_var, width=4, justify="center").pack(side=tk.LEFT, padx=(4, 12))
+
+        ttk.Label(res_row2, text="Liquid Waste Lane:").pack(side=tk.LEFT)
+        waste_lane_var = tk.StringVar(value="7")
+        ttk.Entry(res_row2, textvariable=waste_lane_var, width=4, justify="center").pack(side=tk.LEFT, padx=(4, 4))
+
+        def _update_waste_default(*_):
+            if "7" in res_labware_var.get():
+                waste_lane_var.set("7")
+            else:
+                waste_lane_var.set("6")
+        res_labware_var.trace_add("write", _update_waste_default)
+
+        ttk.Label(opt_lf, text="Tip-Drop Destination:", font=("Arial", 9, "bold")).pack(anchor="w", pady=(4, 1))
         ttk.Radiobutton(
             opt_lf,
-            text="Empty Tip-Rack Columns (Slot_4 Cols 5-12 left empty — keeps Slot_6 R6 purely for Liquid Waste)",
+            text="Empty Tip-Rack Columns (Slot_4 Cols 12..5 left empty — keeps Slot_6 purely for liquid)",
             value="rack_graveyard",
             variable=tip_drop_var,
         ).pack(anchor="w", pady=1)
         ttk.Radiobutton(
             opt_lf,
-            text="Slot_6 Lane R6 (A6) Vertical 100 mL Tip-Drop Reservoir (Z = 48.0 mm)",
-            value="slot6_r6",
+            text="Slot_6 Waste Lane Vertical Tip-Drop (Z = 48.0 mm)",
+            value="slot6_waste",
             variable=tip_drop_var,
-        ).pack(anchor="w", pady=1)
-
-        ttk.Separator(opt_lf, orient="horizontal").pack(fill=tk.X, pady=6)
-        ttk.Label(opt_lf, text="Plate 6 Drug 14 (Rows B-D) Tip Loading:", font=("Arial", 9, "bold")).pack(anchor="w")
-        ttk.Radiobutton(
-            opt_lf,
-            text="Automated 1-Shovel (E-G -> Ch A-C -> empty B-D at Z=42mm; works on full tip cols)",
-            value=True,
-            variable=shovel_var,
-        ).pack(anchor="w", pady=1)
-        ttk.Radiobutton(
-            opt_lf,
-            text="Zero-Shovel Fallback (uses 1 extra col; pre-remove Tip E in Plate 6 fresh cols before run)",
-            value=False,
-            variable=shovel_var,
         ).pack(anchor="w", pady=1)
 
         # 3. 8-Channel Fine Calibration Nudge
@@ -2804,13 +2839,19 @@ class LIMSMasterApp:
                 cal_dx = float(dx_var.get())
                 cal_dy = float(dy_var.get())
                 cal_dz = float(dz_var.get())
+                p5_l = int(p5_lane_var.get())
+                p6_l = int(p6_lane_var.get())
+                waste_l = int(waste_lane_var.get())
             except ValueError:
-                messagebox.showerror("Invalid Number", "Volumes and calibration offsets must be valid numbers.", parent=top)
+                messagebox.showerror("Invalid Number", "Volumes, lanes, and calibration offsets must be valid numbers.", parent=top)
                 return
 
             if r_vol <= 0 or r_vol > 1000.0 or f_vol <= 0 or f_vol > 1000.0:
                 messagebox.showerror("Volume Out of Range", "Volumes must be between 1 and 1000 µL for 8×1000 µL tips.", parent=top)
                 return
+
+            res_file = res_labware_var.get()
+            med_mode = mode_var.get()
 
             self.eight_ch_cal_offset = {"X": cal_dx, "Y": cal_dy, "Z": cal_dz}
             self.switch_pipettor_head(True, quiet=True)
@@ -2821,9 +2862,14 @@ class LIMSMasterApp:
                 fresh_vol_ul=f_vol,
                 tip_drop_mode=tip_drop_var.get(),
                 use_shovel=shovel_var.get(),
+                media_addition_mode=med_mode,
+                p5_res_lane=p5_l,
+                p6_res_lane=p6_l,
+                waste_lane=waste_l,
+                reservoir_labware=res_file,
             )
 
-            # Configure 6-slot deck: Slot_1 & Slot_2 empty; Slot_3 Plate 5; Slot_4 Tips; Slot_5 Plate 6; Slot_6 6-Col Reservoir
+            # Configure 6-slot deck: Slot_1 & Slot_2 empty; Slot_3 Plate 5; Slot_4 Tips; Slot_5 Plate 6; Slot_6 Reservoir
             lw_dir = self.get_labware_dir()
             for empty_s in ("Slot_1", "Slot_2"):
                 if empty_s in self.lims.deck_labware:
@@ -2833,7 +2879,7 @@ class LIMSMasterApp:
                 "Slot_3": "myriamed_48_well.json",
                 "Slot_4": "tip_rack_1000ul.json",
                 "Slot_5": "myriamed_48_well.json",
-                "Slot_6": "reservoir_6_column.json",
+                "Slot_6": res_file if os.path.exists(os.path.join(lw_dir, res_file)) else "reservoir_7_column.json",
             }
             for s_name, lw_file in deck_setup.items():
                 lp = os.path.join(lw_dir, lw_file)
@@ -2860,8 +2906,8 @@ class LIMSMasterApp:
 
             self._update_estimated_timer_preview()
 
-            mode_desc = "Full Media Change (Remove + Fresh)" if inc_rem_var.get() else "Fresh Media Only"
-            drop_desc = "Slot_4 Empty Cols" if tip_drop_var.get() == "rack_graveyard" else "Slot_6 R6 Vertical Trough"
+            mode_desc = f"{'All 8 Channels' if med_mode == 'all_8ch' else 'Offset Multi-Drug'} | {'Remove + Fresh' if inc_rem_var.get() else 'Fresh Only'}"
+            drop_desc = "Slot_4 Empty Cols" if tip_drop_var.get() == "rack_graveyard" else f"Slot_6 A{waste_l} Waste"
             self.logger.info(
                 f"Loaded 8×1000 µL EHM Protocol [{mode_desc} | {len(steps)} steps | Drop: {drop_desc} | "
                 f"8-Ch Offset: ({cal_dx:+.1f}, {cal_dy:+.1f}, {cal_dz:+.1f}) mm]."

@@ -27,13 +27,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A7",
     "volume": 550.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 R6 Waste (Plate 5 Col 1)"
+    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (Plate 5 Col 1)"
   },
   {
     "action": "Aspirate Media",
@@ -51,13 +51,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A7",
     "volume": 550.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 R6 Waste (Plate 5 Col 2)"
+    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (Plate 5 Col 2)"
   },
   {
     "action": "Aspirate Media",
@@ -75,13 +75,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A7",
     "volume": 550.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 R6 Waste (Plate 5 Col 3)"
+    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (Plate 5 Col 3)"
   },
   {
     "action": "Aspirate Media",
@@ -99,13 +99,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A7",
     "volume": 550.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 R6 Waste (Plate 5 Col 4)"
+    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (Plate 5 Col 4)"
   },
   {
     "action": "Aspirate Media",
@@ -123,13 +123,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A7",
     "volume": 550.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 R6 Waste (Plate 5 Col 5)"
+    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (Plate 5 Col 5)"
   },
   {
     "action": "Aspirate Media",
@@ -147,13 +147,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A7",
     "volume": 550.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 R6 Waste (Plate 5 Col 6)"
+    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (Plate 5 Col 6)"
   },
   {
     "action": "Discard Tip",
@@ -176,9 +176,9 @@
     "volume": 0.0,
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
-    "tip_offset_rows": 5,
-    "mounted_channels": "A-C",
-    "label": "[PICK 8-CH] Slot_4 Col 2 (F2-H2 -> Ch A-C, shift +5 rows) | Plate 5 Drug 11 (Rows A-C)"
+    "tip_offset_rows": 0,
+    "mounted_channels": "A-H",
+    "label": "[PICK 8-CH] Slot_4 Col 2 (A2-H2 -> Ch A-H, shift +0 rows) | Plate 5 Fresh Media (All 8 Channels)"
   },
   {
     "action": "Aspirate Media",
@@ -186,11 +186,11 @@
     "slot": "Slot_6",
     "well": "A1",
     "volume": 500.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A-C",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-C: Drug 11)"
+    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-H: Fresh Media, Col 1)"
   },
   {
     "action": "Dispense Media",
@@ -200,9 +200,9 @@
     "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A-C",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 (Rows A-C: Drug 11)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 (Rows A-H: Fresh Media)"
   },
   {
     "action": "Aspirate Media",
@@ -210,11 +210,11 @@
     "slot": "Slot_6",
     "well": "A1",
     "volume": 500.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A-C",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-C: Drug 11)"
+    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-H: Fresh Media, Col 2)"
   },
   {
     "action": "Dispense Media",
@@ -224,9 +224,9 @@
     "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A-C",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 (Rows A-C: Drug 11)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 (Rows A-H: Fresh Media)"
   },
   {
     "action": "Aspirate Media",
@@ -234,11 +234,11 @@
     "slot": "Slot_6",
     "well": "A1",
     "volume": 500.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A-C",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-C: Drug 11)"
+    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-H: Fresh Media, Col 3)"
   },
   {
     "action": "Dispense Media",
@@ -248,9 +248,9 @@
     "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A-C",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 (Rows A-C: Drug 11)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 (Rows A-H: Fresh Media)"
   },
   {
     "action": "Aspirate Media",
@@ -258,11 +258,11 @@
     "slot": "Slot_6",
     "well": "A1",
     "volume": 500.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A-C",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-C: Drug 11)"
+    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-H: Fresh Media, Col 4)"
   },
   {
     "action": "Dispense Media",
@@ -272,9 +272,9 @@
     "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A-C",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 (Rows A-C: Drug 11)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 (Rows A-H: Fresh Media)"
   },
   {
     "action": "Aspirate Media",
@@ -282,11 +282,11 @@
     "slot": "Slot_6",
     "well": "A1",
     "volume": 500.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A-C",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-C: Drug 11)"
+    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-H: Fresh Media, Col 5)"
   },
   {
     "action": "Dispense Media",
@@ -296,9 +296,9 @@
     "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A-C",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 (Rows A-C: Drug 11)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 (Rows A-H: Fresh Media)"
   },
   {
     "action": "Aspirate Media",
@@ -306,11 +306,11 @@
     "slot": "Slot_6",
     "well": "A1",
     "volume": 500.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A-C",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-C: Drug 11)"
+    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-H: Fresh Media, Col 6)"
   },
   {
     "action": "Dispense Media",
@@ -320,9 +320,9 @@
     "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A-C",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 (Rows A-C: Drug 11)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 (Rows A-H: Fresh Media)"
   },
   {
     "action": "Discard Tip",
@@ -334,346 +334,8 @@
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
     "discard_z_override": 42.0,
-    "mounted_channels": "A-C",
-    "label": "[DROP 8-CH] Ch A-C -> Slot_4 Empty Col 11 (Z=42.0mm) | Plate 5 Drug 11"
-  },
-  {
-    "action": "Pick Up Tip",
-    "mode": "auto",
-    "slot": "Slot_4",
-    "well": "A2",
-    "volume": 0.0,
-    "labware": "tip_rack_1000ul.json",
-    "eight_ch_symmetric": true,
-    "tip_offset_rows": -6,
-    "mounted_channels": "G-H",
-    "label": "[PICK 8-CH] Slot_4 Col 2 (A2-B2 -> Ch G-H, shift -6 rows) | Plate 5 Drug 13 (Rows G-H)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "G-H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch G-H: Drug 13)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_3",
-    "well": "A1",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "G-H",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 (Rows G-H: Drug 13)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "G-H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch G-H: Drug 13)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_3",
-    "well": "A2",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "G-H",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 (Rows G-H: Drug 13)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "G-H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch G-H: Drug 13)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_3",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "G-H",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 (Rows G-H: Drug 13)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "G-H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch G-H: Drug 13)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_3",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "G-H",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 (Rows G-H: Drug 13)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "G-H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch G-H: Drug 13)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_3",
-    "well": "A5",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "G-H",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 (Rows G-H: Drug 13)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "G-H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch G-H: Drug 13)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_3",
-    "well": "A6",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "G-H",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 (Rows G-H: Drug 13)"
-  },
-  {
-    "action": "Discard Tip",
-    "mode": "auto",
-    "slot": "Slot_4",
-    "well": "A10",
-    "volume": 0.0,
-    "labware": "tip_rack_1000ul.json",
-    "eight_ch_symmetric": true,
-    "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
-    "mounted_channels": "G-H",
-    "label": "[DROP 8-CH] Ch G-H -> Slot_4 Empty Col 10 (Z=42.0mm) | Plate 5 Drug 13"
-  },
-  {
-    "action": "Pick Up Tip",
-    "mode": "auto",
-    "slot": "Slot_4",
-    "well": "A2",
-    "volume": 0.0,
-    "labware": "tip_rack_1000ul.json",
-    "eight_ch_symmetric": true,
-    "tip_offset_rows": -1,
-    "mounted_channels": "D-F",
-    "label": "[PICK 8-CH] Slot_4 Col 2 (C2-E2 -> Ch D-F, shift -1 rows) | Plate 5 Drug 12 (Rows D-F)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A2",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "D-F",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch D-F: Drug 12)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_3",
-    "well": "A1",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "D-F",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 (Rows D-F: Drug 12)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A2",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "D-F",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch D-F: Drug 12)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_3",
-    "well": "A2",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "D-F",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 (Rows D-F: Drug 12)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A2",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "D-F",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch D-F: Drug 12)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_3",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "D-F",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 (Rows D-F: Drug 12)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A2",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "D-F",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch D-F: Drug 12)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_3",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "D-F",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 (Rows D-F: Drug 12)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A2",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "D-F",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch D-F: Drug 12)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_3",
-    "well": "A5",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "D-F",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 (Rows D-F: Drug 12)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A2",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "D-F",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch D-F: Drug 12)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_3",
-    "well": "A6",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "D-F",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 (Rows D-F: Drug 12)"
-  },
-  {
-    "action": "Discard Tip",
-    "mode": "auto",
-    "slot": "Slot_4",
-    "well": "A9",
-    "volume": 0.0,
-    "labware": "tip_rack_1000ul.json",
-    "eight_ch_symmetric": true,
-    "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
-    "mounted_channels": "D-F",
-    "label": "[DROP 8-CH] Ch D-F -> Slot_4 Empty Col 9 (Z=42.0mm) | Plate 5 Drug 12"
+    "mounted_channels": "A-H",
+    "label": "[DROP 8-CH] Ch A-H -> Slot_4 Empty Col 11 (Z=42.0mm) | Plate 5 Fresh Media Tips"
   },
   {
     "action": "Pick Up Tip",
@@ -703,13 +365,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A7",
     "volume": 550.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 R6 Waste (Plate 6 Col 1)"
+    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (Plate 6 Col 1)"
   },
   {
     "action": "Aspirate Media",
@@ -727,13 +389,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A7",
     "volume": 550.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 R6 Waste (Plate 6 Col 2)"
+    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (Plate 6 Col 2)"
   },
   {
     "action": "Aspirate Media",
@@ -751,13 +413,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A7",
     "volume": 550.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 R6 Waste (Plate 6 Col 3)"
+    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (Plate 6 Col 3)"
   },
   {
     "action": "Aspirate Media",
@@ -775,13 +437,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A7",
     "volume": 550.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 R6 Waste (Plate 6 Col 4)"
+    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (Plate 6 Col 4)"
   },
   {
     "action": "Aspirate Media",
@@ -799,13 +461,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A7",
     "volume": 550.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 R6 Waste (Plate 6 Col 5)"
+    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (Plate 6 Col 5)"
   },
   {
     "action": "Aspirate Media",
@@ -823,195 +485,26 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
-    "volume": 550.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A-H",
-    "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 R6 Waste (Plate 6 Col 6)"
-  },
-  {
-    "action": "Discard Tip",
-    "mode": "auto",
-    "slot": "Slot_4",
-    "well": "A8",
-    "volume": 0.0,
-    "labware": "tip_rack_1000ul.json",
-    "eight_ch_symmetric": true,
-    "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
-    "mounted_channels": "A-H",
-    "label": "[DROP 8-CH] Ch A-H -> Slot_4 Empty Col 8 (Z=42.0mm) | Plate 6 Old Media Tips"
-  },
-  {
-    "action": "Pick Up Tip",
-    "mode": "auto",
-    "slot": "Slot_4",
-    "well": "A4",
-    "volume": 0.0,
-    "labware": "tip_rack_1000ul.json",
-    "eight_ch_symmetric": true,
-    "tip_offset_rows": -7,
-    "mounted_channels": "H",
-    "label": "[PICK 8-CH] Slot_4 Col 4 (A4 -> Ch H, shift -7 rows) | Plate 6 Control (Row H from clean R4)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch H: Control (Clean R4))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A1",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "H",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 (Rows H: Control (Clean R4))"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch H: Control (Clean R4))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A2",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "H",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 (Rows H: Control (Clean R4))"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch H: Control (Clean R4))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "H",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 (Rows H: Control (Clean R4))"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch H: Control (Clean R4))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "H",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 (Rows H: Control (Clean R4))"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch H: Control (Clean R4))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A5",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "H",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 (Rows H: Control (Clean R4))"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch H: Control (Clean R4))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A6",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "H",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 (Rows H: Control (Clean R4))"
-  },
-  {
-    "action": "Discard Tip",
-    "mode": "auto",
-    "slot": "Slot_4",
     "well": "A7",
+    "volume": 550.0,
+    "labware": "reservoir_7_column.json",
+    "eight_ch_symmetric": true,
+    "mounted_channels": "A-H",
+    "track_liquid": false,
+    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (Plate 6 Col 6)"
+  },
+  {
+    "action": "Discard Tip",
+    "mode": "auto",
+    "slot": "Slot_4",
+    "well": "A10",
     "volume": 0.0,
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
     "discard_z_override": 42.0,
-    "mounted_channels": "H",
-    "label": "[DROP 8-CH] Ch H -> Slot_4 Empty Col 7 (Z=42.0mm) | Plate 6 Control"
+    "mounted_channels": "A-H",
+    "label": "[DROP 8-CH] Ch A-H -> Slot_4 Empty Col 10 (Z=42.0mm) | Plate 6 Old Media Tips"
   },
   {
     "action": "Pick Up Tip",
@@ -1021,21 +514,21 @@
     "volume": 0.0,
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
-    "tip_offset_rows": 7,
-    "mounted_channels": "A",
-    "label": "[PICK 8-CH] Slot_4 Col 4 (H4 -> Ch A, shift +7 rows) | Plate 6 Drug 13 (Row A)"
+    "tip_offset_rows": 0,
+    "mounted_channels": "A-H",
+    "label": "[PICK 8-CH] Slot_4 Col 4 (A4-H4 -> Ch A-H, shift +0 rows) | Plate 6 Fresh Media (All 8 Channels)"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A3",
+    "well": "A2",
     "volume": 500.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch A: Drug 13)"
+    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch A-H: Fresh Media, Col 1)"
   },
   {
     "action": "Dispense Media",
@@ -1045,21 +538,21 @@
     "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 (Rows A: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 (Rows A-H: Fresh Media)"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A3",
+    "well": "A2",
     "volume": 500.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch A: Drug 13)"
+    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch A-H: Fresh Media, Col 2)"
   },
   {
     "action": "Dispense Media",
@@ -1069,216 +562,21 @@
     "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "A",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 (Rows A: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 (Rows A-H: Fresh Media)"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch A: Drug 13)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 (Rows A: Drug 13)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch A: Drug 13)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 (Rows A: Drug 13)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch A: Drug 13)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A5",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 (Rows A: Drug 13)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch A: Drug 13)"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A6",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 (Rows A: Drug 13)"
-  },
-  {
-    "action": "Discard Tip",
-    "mode": "auto",
-    "slot": "Slot_4",
-    "well": "A6",
-    "volume": 0.0,
-    "labware": "tip_rack_1000ul.json",
-    "eight_ch_symmetric": true,
-    "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
-    "mounted_channels": "A",
-    "label": "[DROP 8-CH] Ch A -> Slot_4 Empty Col 6 (Z=42.0mm) | Plate 6 Drug 13"
-  },
-  {
-    "action": "Pick Up Tip",
-    "mode": "auto",
-    "slot": "Slot_4",
-    "well": "A4",
-    "volume": 0.0,
-    "labware": "tip_rack_1000ul.json",
-    "eight_ch_symmetric": true,
-    "tip_offset_rows": 4,
-    "mounted_channels": "A-C",
-    "label": "[PICK 8-CH] Slot_4 Col 4 (E4-G4 -> Ch A-C, shift +4 rows) | Shovel Pick -> move to B3-D3"
-  },
-  {
-    "action": "Discard Tip",
-    "mode": "auto",
-    "slot": "Slot_4",
-    "well": "A3",
-    "volume": 0.0,
-    "labware": "tip_rack_1000ul.json",
-    "eight_ch_symmetric": true,
-    "tip_offset_rows": 1,
-    "discard_z_override": 42.0,
-    "mounted_channels": "A-C",
-    "is_shovel_place": true,
-    "label": "[SHOVEL PLACE 8-CH] Ch A-C -> Slot_4 Empty B3-D3 (shift +1 row, Z=42.0mm)"
-  },
-  {
-    "action": "Pick Up Tip",
-    "mode": "auto",
-    "slot": "Slot_4",
-    "well": "A3",
-    "volume": 0.0,
-    "labware": "tip_rack_1000ul.json",
-    "eight_ch_symmetric": true,
-    "tip_offset_rows": 0,
-    "mounted_channels": "B-D",
-    "label": "[PICK 8-CH] Slot_4 Col 3 (B3-D3 -> Ch B-D, shift +0 rows) | Plate 6 Drug 14 (Rows B-D from still-clean R4)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "B-D",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch B-D: Drug 14 (R4))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A1",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "B-D",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 (Rows B-D: Drug 14 (R4))"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "B-D",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch B-D: Drug 14 (R4))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
     "well": "A2",
     "volume": 500.0,
-    "labware": "myriamed_48_well.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "B-D",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 (Rows B-D: Drug 14 (R4))"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "B-D",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch B-D: Drug 14 (R4))"
+    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch A-H: Fresh Media, Col 3)"
   },
   {
     "action": "Dispense Media",
@@ -1288,190 +586,21 @@
     "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "B-D",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 (Rows B-D: Drug 14 (R4))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 (Rows A-H: Fresh Media)"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "B-D",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch B-D: Drug 14 (R4))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "B-D",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 (Rows B-D: Drug 14 (R4))"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "B-D",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch B-D: Drug 14 (R4))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A5",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "B-D",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 (Rows B-D: Drug 14 (R4))"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A4",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "B-D",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch B-D: Drug 14 (R4))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A6",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "B-D",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 (Rows B-D: Drug 14 (R4))"
-  },
-  {
-    "action": "Discard Tip",
-    "mode": "auto",
-    "slot": "Slot_4",
-    "well": "A5",
-    "volume": 0.0,
-    "labware": "tip_rack_1000ul.json",
-    "eight_ch_symmetric": true,
-    "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
-    "mounted_channels": "B-D",
-    "label": "[DROP 8-CH] Ch B-D -> Slot_4 Empty Col 5 (Z=42.0mm) | Plate 6 Drug 14"
-  },
-  {
-    "action": "Pick Up Tip",
-    "mode": "auto",
-    "slot": "Slot_4",
-    "well": "A4",
-    "volume": 0.0,
-    "labware": "tip_rack_1000ul.json",
-    "eight_ch_symmetric": true,
-    "tip_offset_rows": -3,
-    "mounted_channels": "E-G",
-    "label": "[PICK 8-CH] Slot_4 Col 4 (B4-D4 -> Ch E-G, shift -3 rows) | Plate 6 Drug 15 (Rows E-G)"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A5",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "E-G",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R5 (Ch E-G: Drug 15 (R5))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A1",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "E-G",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 (Rows E-G: Drug 15 (R5))"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A5",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "E-G",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R5 (Ch E-G: Drug 15 (R5))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
     "well": "A2",
     "volume": 500.0,
-    "labware": "myriamed_48_well.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "E-G",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 (Rows E-G: Drug 15 (R5))"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A5",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "E-G",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R5 (Ch E-G: Drug 15 (R5))"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_5",
-    "well": "A3",
-    "volume": 500.0,
-    "labware": "myriamed_48_well.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "E-G",
-    "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 (Rows E-G: Drug 15 (R5))"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A5",
-    "volume": 500.0,
-    "labware": "reservoir_6_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "E-G",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R5 (Ch E-G: Drug 15 (R5))"
+    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch A-H: Fresh Media, Col 4)"
   },
   {
     "action": "Dispense Media",
@@ -1481,21 +610,21 @@
     "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "E-G",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 (Rows E-G: Drug 15 (R5))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 (Rows A-H: Fresh Media)"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A5",
+    "well": "A2",
     "volume": 500.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "E-G",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R5 (Ch E-G: Drug 15 (R5))"
+    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch A-H: Fresh Media, Col 5)"
   },
   {
     "action": "Dispense Media",
@@ -1505,21 +634,21 @@
     "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "E-G",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 (Rows E-G: Drug 15 (R5))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 (Rows A-H: Fresh Media)"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A5",
+    "well": "A2",
     "volume": 500.0,
-    "labware": "reservoir_6_column.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "E-G",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R5 (Ch E-G: Drug 15 (R5))"
+    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch A-H: Fresh Media, Col 6)"
   },
   {
     "action": "Dispense Media",
@@ -1529,21 +658,21 @@
     "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
-    "mounted_channels": "E-G",
+    "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 (Rows E-G: Drug 15 (R5))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 (Rows A-H: Fresh Media)"
   },
   {
     "action": "Discard Tip",
     "mode": "auto",
     "slot": "Slot_4",
-    "well": "A1",
+    "well": "A9",
     "volume": 0.0,
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
     "discard_z_override": 42.0,
-    "mounted_channels": "E-G",
-    "label": "[DROP 8-CH] Ch E-G -> Slot_4 Empty Col 1 (Z=42.0mm) | Plate 6 Drug 15"
+    "mounted_channels": "A-H",
+    "label": "[DROP 8-CH] Ch A-H -> Slot_4 Empty Col 9 (Z=42.0mm) | Plate 6 Fresh Media Tips"
   }
 ]

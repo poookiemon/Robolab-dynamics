@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 """
 Generator for 8-Channel (8x1000 uL) EHM Media Change Protocols (Plate 5 & Plate 6)
-Implements the offset tip-picking + symmetric column transfer strategy:
+Supports:
+1. All 8 Channels Full-Parallel Mode (Default):
+   - Fast, symmetrical, 100% hands-free media addition using all 8 channels across Rows A-H.
+   - Plate 5: 8 tips aspirate fresh media from Slot 6 R1 and fill Columns 1-6 in 6 single strokes.
+   - Plate 6: 8 tips aspirate fresh media from Slot 6 R2 and fill Columns 1-6 in 6 single strokes.
+   - Old media removal (optional): uses 8 tips to aspirate Columns 1-6 into Slot 6 Waste (R7 / R6).
+2. Offset Tip-Picking Multi-Drug Mode (Legacy fallback):
+   - Uses partial tip picking (1..3 tips) for individual drug conditions (D11..D15 + Control) + shovel move.
 
 Deck Layout (8x1000 uL Mode):
-- Slot_1: Empty half-slot
-- Slot_2: Empty half-slot (MUST remain clear for -Y bare-nozzle overhang during Slot_4 offset tip pickup)
-- Slot_3: Plate 5 (Myriamed 48-Well EHM Plate: Rows A-C = Drug 11, Rows D-F = Drug 12, Rows G-H = Drug 13)
-- Slot_4: 1000 uL 96-Tip Rack (Cols 1-4 used for Full Media Change; Cols 1-2 used for Fresh Media Only)
-- Slot_5: Plate 6 (Myriamed 48-Well EHM Plate: Row A = Drug 13, Rows B-D = Drug 14, Rows E-G = Drug 15, Row H = Control)
-- Slot_6: 6-Column Vertical Reagent Reservoir:
-    * R1 (A1): Fresh Media for Drug 11 (Plate 5 A-C)
-    * R2 (A2): Fresh Media for Drug 12 (Plate 5 D-F)
-    * R3 (A3): Fresh Media for Drug 13 (Plate 5 G-H + Plate 6 A)
-    * R4 (A4): Fresh Media for Control (Plate 6 H, pipetted FIRST while clean!) + Drug 14 (Plate 6 B-D)
-    * R5 (A5): Fresh Media for Drug 15 (Plate 6 E-G)
-    * R6 (A6): Old Media Liquid Waste (~48-53 mL) and/or Vertical 8-Ch Tip-Drop
+- Slot_1: Empty clearance zone
+- Slot_2: Empty clearance zone
+- Slot_3: Plate 5 (Myriamed 48-Well EHM Plate, Cols 1..6)
+- Slot_4: 1000 uL 96-Tip Rack (Cols 1-4 for Full Media Change; Cols 1-2 for Fresh-Only)
+- Slot_5: Plate 6 (Myriamed 48-Well EHM Plate, Cols 1..6)
+- Slot_6: 7-Column (or 6-Column) Reagent Reservoir:
+    * R1 (A1): Fresh Media for Plate 5
+    * R2 (A2): Fresh Media for Plate 6
+    * R7 (A7) or R6 (A6): Old Media Liquid Waste and/or Tip-Drop
 """
 
 import json
@@ -29,23 +33,40 @@ def build_8ch_ehm_media_change_steps(
     fresh_vol_ul: float = 500.0,
     tip_drop_mode: str = "rack_graveyard",
     use_shovel: bool = True,
+    media_addition_mode: str = "all_8ch",
+    p5_res_lane: int = 1,
+    p6_res_lane: int = 2,
+    waste_lane: int = None,
+    reservoir_labware: str = "reservoir_7_column.json",
 ) -> List[Dict[str, Any]]:
     """
     Builds the complete 100% hands-free 8x1000 uL step list for Plate 5 (Slot_3) & Plate 6 (Slot_5).
 
     :param include_old_media_removal: If True, removes old media column-by-column (8 tips at once per plate)
-                                      into Slot_6 R6 (A6) immediately before refilling each plate.
+                                      into Slot_6 Waste immediately before refilling each plate.
     :param remove_vol_ul: Volume (uL) aspirated per well during old media removal (single 1000 uL stroke).
     :param fresh_vol_ul: Volume (uL) dispensed per well during fresh media addition (single 1000 uL stroke).
     :param tip_drop_mode:
         - "rack_graveyard": Drops each used tip group into its own dedicated empty column in Slot_4
-                            (Cols 12..5 + emptied Col 1) at guided Z=42.0mm so Slot_6 R6 is dedicated to liquid waste.
-        - "slot6_r6": Drops used tips vertically into Slot_6 R6 (A6) at Z=48.0mm (vertical 100 mL tip-drop).
+                            (Cols 12..5 + emptied Col 1) at guided Z=42.0mm.
+        - "slot6_r6" / "slot6_waste": Drops used tips vertically into Slot_6 Waste lane at Z=48.0mm.
     :param use_shovel:
-        - True (Default): Uses the automated 1-shovel sequence on standard full tip columns.
-        - False: Zero-shovel fallback (uses extra column where Tip E is pre-removed by operator).
+        - True (Default for offset mode): Uses the automated 1-shovel sequence on standard full tip columns.
+        - False: Zero-shovel fallback.
+    :param media_addition_mode:
+        - "all_8ch" (Default): Media addition uses all 8 channels across rows A-H simultaneously.
+        - "offset_drugs": Legacy multi-drug condition offset tip-picking.
+    :param p5_res_lane: Reservoir lane number for Plate 5 fresh media (default 1 -> A1).
+    :param p6_res_lane: Reservoir lane number for Plate 6 fresh media (default 2 -> A2).
+    :param waste_lane: Reservoir lane number for liquid waste (default 7 for 7-col reservoir, 6 for 6-col).
+    :param reservoir_labware: Labware JSON filename for Slot 6 (default "reservoir_7_column.json").
     """
     steps: List[Dict[str, Any]] = []
+
+    if waste_lane is None:
+        waste_lane = 7 if "reservoir_7" in str(reservoir_labware) else 6
+
+    waste_well = f"A{waste_lane}"
 
     if include_old_media_removal:
         p5_rem_col = 1
@@ -54,7 +75,6 @@ def build_8ch_ehm_media_change_steps(
         p6_fresh_col = 4
         shovel_dest_col = 3  # Emptied by Plate 6 old media removal
         zero_shovel_extra_col = 5
-        # Graveyard empty columns: Cols 12..6 (if zero_shovel uses 5) or Cols 12..5 + emptied Col 1 & Col 2
         graveyard_cols = [12, 11, 10, 9, 8, 7, 6, 1, 2] if not use_shovel else [12, 11, 10, 9, 8, 7, 6, 5, 1]
     else:
         p5_rem_col = None
@@ -104,14 +124,14 @@ def build_8ch_ehm_media_change_steps(
                 "action": "Discard Tip",
                 "mode": "auto",
                 "slot": "Slot_6",
-                "well": "A6",
+                "well": waste_well,
                 "volume": 0.0,
-                "labware": "reservoir_6_column.json",
+                "labware": reservoir_labware,
                 "eight_ch_symmetric": True,
                 "tip_offset_rows": 0,
                 "discard_z_override": 48.0,
                 "mounted_channels": channels_str,
-                "label": f"[DROP 8-CH] Ch {channels_str} -> Slot_6 R6 Vertical Tip-Drop (Z=48.0mm) | {desc}",
+                "label": f"[DROP 8-CH] Ch {channels_str} -> Slot_6 {waste_well} Waste Tip-Drop (Z=48.0mm) | {desc}",
             })
 
     def add_plate_removal(plate_slot: str, plate_label: str, tip_col: int):
@@ -133,13 +153,13 @@ def build_8ch_ehm_media_change_steps(
                 "action": "Dispense Media",
                 "mode": "auto",
                 "slot": "Slot_6",
-                "well": "A6",
+                "well": waste_well,
                 "volume": float(remove_vol_ul),
-                "labware": "reservoir_6_column.json",
+                "labware": reservoir_labware,
                 "eight_ch_symmetric": True,
                 "mounted_channels": "A-H",
                 "track_liquid": False,
-                "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g}uL to Slot_6 R6 Waste ({plate_label} Col {c})",
+                "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g}uL to Slot_6 {waste_well} Waste ({plate_label} Col {c})",
             })
         add_discard_tip("A-H", f"{plate_label} Old Media Tips")
 
@@ -151,11 +171,11 @@ def build_8ch_ehm_media_change_steps(
                 "slot": "Slot_6",
                 "well": f"A{res_lane}",
                 "volume": float(fresh_vol_ul),
-                "labware": "reservoir_6_column.json",
+                "labware": reservoir_labware,
                 "eight_ch_symmetric": True,
                 "mounted_channels": channels_str,
                 "track_liquid": False,
-                "label": f"[ASPIRATE 8-CH] {fresh_vol_ul:g}uL from Slot_6 R{res_lane} (Ch {channels_str}: {cond_label})",
+                "label": f"[ASPIRATE 8-CH] {fresh_vol_ul:g}uL from Slot_6 R{res_lane} (Ch {channels_str}: {cond_label}, Col {c})",
             })
             steps.append({
                 "action": "Dispense Media",
@@ -171,8 +191,31 @@ def build_8ch_ehm_media_change_steps(
             })
 
     # =========================================================================
-    # PLATE 5 (Slot_3): 3 Conditions (Rows A-C Drug 11, Rows D-F Drug 12, Rows G-H Drug 13)
+    # OPTION A: ALL 8 CHANNELS FULL-PARALLEL MEDIA ADDITION (DEFAULT)
     # =========================================================================
+    if media_addition_mode == "all_8ch":
+        # 1. PLATE 5 (Slot_3)
+        if include_old_media_removal and p5_rem_col is not None:
+            add_plate_removal("Slot_3", "Plate 5", p5_rem_col)
+
+        add_pick_tip(p5_fresh_col, 0, "A-H", f"A{p5_fresh_col}-H{p5_fresh_col}", "Plate 5 Fresh Media (All 8 Channels)")
+        add_reservoir_to_plate(p5_res_lane, "Slot_3", "Plate 5", "A-H", "Fresh Media")
+        add_discard_tip("A-H", "Plate 5 Fresh Media Tips")
+
+        # 2. PLATE 6 (Slot_5)
+        if include_old_media_removal and p6_rem_col is not None:
+            add_plate_removal("Slot_5", "Plate 6", p6_rem_col)
+
+        add_pick_tip(p6_fresh_col, 0, "A-H", f"A{p6_fresh_col}-H{p6_fresh_col}", "Plate 6 Fresh Media (All 8 Channels)")
+        add_reservoir_to_plate(p6_res_lane, "Slot_5", "Plate 6", "A-H", "Fresh Media")
+        add_discard_tip("A-H", "Plate 6 Fresh Media Tips")
+
+        return steps
+
+    # =========================================================================
+    # OPTION B: LEGACY MULTI-DRUG OFFSET TIP-PICKING
+    # =========================================================================
+    # PLATE 5 (Slot_3): 3 Conditions (Rows A-C Drug 11, Rows D-F Drug 12, Rows G-H Drug 13)
     if include_old_media_removal and p5_rem_col is not None:
         add_plate_removal("Slot_3", "Plate 5", p5_rem_col)
 
@@ -191,13 +234,11 @@ def build_8ch_ehm_media_change_steps(
     add_reservoir_to_plate(2, "Slot_3", "Plate 5", "D-F", "Drug 12")
     add_discard_tip("D-F", "Plate 5 Drug 12")
 
-    # =========================================================================
     # PLATE 6 (Slot_5): 4 Conditions (Row H Control, Row A Drug 13, Rows B-D Drug 14, Rows E-G Drug 15)
-    # =========================================================================
     if include_old_media_removal and p6_rem_col is not None:
         add_plate_removal("Slot_5", "Plate 6", p6_rem_col)
 
-    # 4) Control / Drug 0 (Row H) <- Tip A on Ch H (-7 rows) <- CLEAN R4 (pipetted BEFORE Drug 14!)
+    # 4) Control / Drug 0 (Row H) <- Tip A on Ch H (-7 rows) <- CLEAN R4
     add_pick_tip(p6_fresh_col, -7, "H", f"A{p6_fresh_col}", "Plate 6 Control (Row H from clean R4)")
     add_reservoir_to_plate(4, "Slot_5", "Plate 6", "H", "Control (Clean R4)")
     add_discard_tip("H", "Plate 6 Control")
@@ -207,9 +248,8 @@ def build_8ch_ehm_media_change_steps(
     add_reservoir_to_plate(3, "Slot_5", "Plate 6", "A", "Drug 13")
     add_discard_tip("A", "Plate 6 Drug 13")
 
-    # 6) Drug 14 (Rows B, C, D) <- R4 (still clean!)
+    # 6) Drug 14 (Rows B, C, D) <- R4
     if use_shovel:
-        # 6a) Shovel E,F,G onto Ch A,B,C (+4 rows), place gently into empty B,C,D of shovel_dest_col (+1 row, Z=42.0mm)
         add_pick_tip(
             p6_fresh_col, +4, "A-C",
             f"E{p6_fresh_col}-G{p6_fresh_col}",
@@ -223,22 +263,18 @@ def build_8ch_ehm_media_change_steps(
             "volume": 0.0,
             "labware": "tip_rack_1000ul.json",
             "eight_ch_symmetric": True,
-            "tip_offset_rows": +1,  # Ch A(0)->Row B(1), Ch B(1)->Row C(2), Ch C(2)->Row D(3)
+            "tip_offset_rows": +1,
             "discard_z_override": 42.0,
             "mounted_channels": "A-C",
             "is_shovel_place": True,
             "label": f"[SHOVEL PLACE 8-CH] Ch A-C -> Slot_4 Empty B{shovel_dest_col}-D{shovel_dest_col} (shift +1 row, Z=42.0mm)",
         })
-        # 6b) Pick B,C,D from shovel_dest_col onto Ch B,C,D (0 row shift)
         add_pick_tip(
             shovel_dest_col, 0, "B-D",
             f"B{shovel_dest_col}-D{shovel_dest_col}",
             "Plate 6 Drug 14 (Rows B-D from still-clean R4)"
         )
     else:
-        # Zero-shovel fallback:
-        # - Pre-remove Tip E from zero_shovel_extra_col (so Ch A hits empty E while Ch B-D pick F-H at +4 rows)
-        # - Pre-remove Tip E from p6_fresh_col (so in Step 7 Ch H hits empty E while Ch E-G pick B-D at -3 rows)
         add_pick_tip(
             zero_shovel_extra_col, +4, "B-D",
             f"F{zero_shovel_extra_col}-H{zero_shovel_extra_col}",
@@ -269,27 +305,50 @@ def save_default_protocols():
         remove_vol_ul=550.0,
         fresh_vol_ul=500.0,
         tip_drop_mode="rack_graveyard",
-        use_shovel=True,
+        media_addition_mode="all_8ch",
+        p5_res_lane=1,
+        p6_res_lane=2,
+        waste_lane=7,
+        reservoir_labware="reservoir_7_column.json",
     )
     fresh_only_steps = build_8ch_ehm_media_change_steps(
         include_old_media_removal=False,
         remove_vol_ul=550.0,
         fresh_vol_ul=500.0,
-        tip_drop_mode="slot6_r6",
+        tip_drop_mode="slot6_waste",
+        media_addition_mode="all_8ch",
+        p5_res_lane=1,
+        p6_res_lane=2,
+        waste_lane=7,
+        reservoir_labware="reservoir_7_column.json",
+    )
+    legacy_offset_steps = build_8ch_ehm_media_change_steps(
+        include_old_media_removal=True,
+        remove_vol_ul=550.0,
+        fresh_vol_ul=500.0,
+        tip_drop_mode="rack_graveyard",
         use_shovel=True,
+        media_addition_mode="offset_drugs",
+        reservoir_labware="reservoir_6_column.json",
+        waste_lane=6,
     )
 
     for d in out_dirs:
         os.makedirs(d, exist_ok=True)
         p_full = os.path.join(d, "ehm_8ch_1000ul_media_change_plate5_plate6.json")
         p_fresh = os.path.join(d, "ehm_8ch_1000ul_fresh_media_only_plate5_plate6.json")
+        p_legacy = os.path.join(d, "ehm_8ch_1000ul_media_change_offset_drugs.json")
         with open(p_full, "w") as f:
             json.dump(full_steps, f, indent=2)
         with open(p_fresh, "w") as f:
             json.dump(fresh_only_steps, f, indent=2)
+        with open(p_legacy, "w") as f:
+            json.dump(legacy_offset_steps, f, indent=2)
         print(f"Saved {len(full_steps)} steps -> {p_full}")
         print(f"Saved {len(fresh_only_steps)} steps -> {p_fresh}")
+        print(f"Saved {len(legacy_offset_steps)} steps -> {p_legacy}")
 
 
 if __name__ == "__main__":
     save_default_protocols()
+
