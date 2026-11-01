@@ -604,7 +604,7 @@ class TipRack96(LabwareBase):
             "z_height_mm": 78.18,
             "well_depth_mm": 9.65,
             "well_radius_mm": 4.5,
-            "max_safe_bottom_z": 92.0,
+            "max_safe_bottom_z": 98.0,
             "pitch_x_mm": 9.0,
             "pitch_y_mm": 9.0
         }
@@ -615,7 +615,7 @@ class TipRack96(LabwareBase):
         self.calibrated_a1_x = kwargs.get("calibrated_a1_x", 105.12)
         self.calibrated_a1_y = kwargs.get("calibrated_a1_y", 53.62)
         self.pickup_approach_z = kwargs.get("pickup_approach_z", 75.0)
-        self.pickup_limit_z = kwargs.get("pickup_limit_z", 95.0)
+        self.pickup_limit_z = kwargs.get("pickup_limit_z", 98.0)
         self.pickup_force = kwargs.get("pickup_force", 26)
         self.learned_rack_offset_x = 0.0
         self.learned_rack_offset_y = 0.0

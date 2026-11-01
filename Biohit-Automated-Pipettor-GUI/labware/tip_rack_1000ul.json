@@ -21,6 +21,7 @@
     "z_limits": {
         "tip_collar_entry_z": 86.36,
         "recommended_pickup_z": 92.0,
-        "max_safe_bottom_z": 95.0
+        "pickup_limit_z": 98.0,
+        "max_safe_bottom_z": 98.0
     }
 }

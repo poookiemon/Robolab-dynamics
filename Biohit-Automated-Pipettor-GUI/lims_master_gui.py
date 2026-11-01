@@ -4518,7 +4518,7 @@ class LIMSMasterApp:
                     if action == "Pick Up Tip":
                         cal_dz = float(self.eight_ch_cal_offset.get("Z", 0.0)) if is_8ch else 0.0
                         pickup_limit = (
-                            min(98.0, max(88.0, 95.0 + extra_z + cal_dz))
+                            min(99.0, max(88.0, 98.0 + extra_z + cal_dz))
                             if is_8ch
                             else min(92.0, max(82.0, 87.0 + extra_z))
                         )
@@ -4558,15 +4558,19 @@ class LIMSMasterApp:
                             curr_z = getattr(hw, 'z_position', 0.0)
 
                             # 1. VALID SEATED TIP (Double-tip collision interlock disabled for hands-free operation):
-                            # Single-channel accepts seated tips (<= 59.5mm for 1000uL, <= 78.0mm for 300uL).
-                            # 8-channel tips on Slot 4 enter collars at Z=86.36mm and seat between 88.0mm and pickup_limit - 0.5mm
+                            # Single-channel accepts seated tips (<= 59.5mm for 1000uL, <= 78.0mm for 300uL) with pick_ok.
+                            # 8-channel tips on Slot 4 enter collars at Z=86.36mm and seat firmly between 87.0mm and 96.0mm.
+                            # If curr_z stopped inside this window, the tips are physically seated on the nozzles,
+                            # even if pick_tip threw an ActuatorStalled exception upon reaching force 26.
                             if is_8ch:
-                                valid_collar = (85.0 <= curr_z <= (pickup_limit - 0.5))
+                                valid_collar = (85.0 <= curr_z <= (pickup_limit - 0.8))
+                                is_seated = valid_collar
                             else:
                                 is_1000 = "1000" in (getattr(labware_obj, 'name', '') + getattr(labware_obj, 'source_file', '')).lower()
                                 valid_collar = (curr_z <= 59.5) if is_1000 else (curr_z <= 78.0)
+                                is_seated = valid_collar and pick_ok
 
-                            if valid_collar and pick_ok:
+                            if is_seated:
                                 time.sleep(0.2)
                                 try:
                                     hw.z_speed = hw_speed
@@ -4575,8 +4579,8 @@ class LIMSMasterApp:
                                     hw.move_z(0)
                                 return True, curr_z
 
-                            # 2. EMPTY SOCKET (Z >= 60.0mm or failed pick):
-                            self.logger.warning(f"Empty socket detected at Z={curr_z:.2f}mm (pick_ok={pick_ok}). Advancing...")
+                            # 2. EMPTY SOCKET (Z >= pickup_limit - 0.8 or failed pick):
+                            self.logger.warning(f"Empty socket detected at Z={curr_z:.2f}mm (pick_ok={pick_ok}, is_8ch={is_8ch}). Advancing...")
                             try:
                                 hw.z_speed = hw_speed
                                 hw.move_z(0)
