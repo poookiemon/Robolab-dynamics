@@ -38,7 +38,7 @@ def build_8ch_ehm_media_change_steps(
     p6_res_lane: int = 2,
     waste_lane: int = None,
     reservoir_labware: str = "reservoir_7_column.json",
-    multi_dispense: bool = True,
+    multi_dispense: bool = False,
 ) -> List[Dict[str, Any]]:
     """
     Builds the complete 100% hands-free 8x1000 uL step list for Plate 5 (Slot_3) & Plate 6 (Slot_5).
@@ -433,6 +433,19 @@ def save_default_protocols():
         p6_res_lane=2,
         waste_lane=7,
         reservoir_labware="reservoir_7_column.json",
+        multi_dispense=False,
+    )
+    full_multi_steps = build_8ch_ehm_media_change_steps(
+        include_old_media_removal=True,
+        remove_vol_ul=550.0,
+        fresh_vol_ul=500.0,
+        tip_drop_mode="rack_graveyard",
+        media_addition_mode="all_8ch",
+        p5_res_lane=1,
+        p6_res_lane=2,
+        waste_lane=7,
+        reservoir_labware="reservoir_7_column.json",
+        multi_dispense=True,
     )
     fresh_only_steps = build_8ch_ehm_media_change_steps(
         include_old_media_removal=False,
@@ -444,6 +457,19 @@ def save_default_protocols():
         p6_res_lane=2,
         waste_lane=7,
         reservoir_labware="reservoir_7_column.json",
+        multi_dispense=False,
+    )
+    fresh_multi_steps = build_8ch_ehm_media_change_steps(
+        include_old_media_removal=False,
+        remove_vol_ul=550.0,
+        fresh_vol_ul=500.0,
+        tip_drop_mode="slot6_waste",
+        media_addition_mode="all_8ch",
+        p5_res_lane=1,
+        p6_res_lane=2,
+        waste_lane=7,
+        reservoir_labware="reservoir_7_column.json",
+        multi_dispense=True,
     )
     legacy_offset_steps = build_8ch_ehm_media_change_steps(
         include_old_media_removal=True,
@@ -460,19 +486,27 @@ def save_default_protocols():
         os.makedirs(d, exist_ok=True)
         p_slot5 = os.path.join(d, "test_slot5_media_removal_col3_to_col1.json")
         p_full = os.path.join(d, "ehm_8ch_1000ul_media_change_plate5_plate6.json")
+        p_full_multi = os.path.join(d, "ehm_8ch_1000ul_media_change_multi_dispense.json")
         p_fresh = os.path.join(d, "ehm_8ch_1000ul_fresh_media_only_plate5_plate6.json")
+        p_fresh_multi = os.path.join(d, "ehm_8ch_1000ul_fresh_media_only_multi_dispense.json")
         p_legacy = os.path.join(d, "ehm_8ch_1000ul_media_change_offset_drugs.json")
         with open(p_slot5, "w") as f:
             json.dump(slot5_test_steps, f, indent=2)
         with open(p_full, "w") as f:
             json.dump(full_steps, f, indent=2)
+        with open(p_full_multi, "w") as f:
+            json.dump(full_multi_steps, f, indent=2)
         with open(p_fresh, "w") as f:
             json.dump(fresh_only_steps, f, indent=2)
+        with open(p_fresh_multi, "w") as f:
+            json.dump(fresh_multi_steps, f, indent=2)
         with open(p_legacy, "w") as f:
             json.dump(legacy_offset_steps, f, indent=2)
         print(f"Saved {len(slot5_test_steps)} steps -> {p_slot5}")
         print(f"Saved {len(full_steps)} steps -> {p_full}")
+        print(f"Saved {len(full_multi_steps)} steps -> {p_full_multi}")
         print(f"Saved {len(fresh_only_steps)} steps -> {p_fresh}")
+        print(f"Saved {len(fresh_multi_steps)} steps -> {p_fresh_multi}")
         print(f"Saved {len(legacy_offset_steps)} steps -> {p_legacy}")
 
 

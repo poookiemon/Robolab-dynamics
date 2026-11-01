@@ -5277,10 +5277,9 @@ class LIMSMasterApp:
                                     try:
                                         self.lims.pipettor.hardware.dispense(actual_dispense)
                                         time.sleep(0.4 if mix_cycles > 0 else 0.05)
-                                        if (had_air or mix_cycles == 0) and not step.get('no_blowout', False):
+                                        if had_air and not step.get('no_blowout', False):
                                             self.lims.pipettor.hardware.dispense(50)
-                                            if had_air:
-                                                self.logger.info(f"Air Push: Dispensed 50.0uL air push blowout to detach {actual_dispense}uL droplet cleanly.")
+                                            self.logger.info(f"Air Push: Dispensed 50.0uL air push blowout to detach {actual_dispense}uL droplet cleanly.")
                                             time.sleep(0.2)
                                     except Exception as d_err:
                                         self.logger.warning(f"Dispense blowout exception ignored: {d_err}")

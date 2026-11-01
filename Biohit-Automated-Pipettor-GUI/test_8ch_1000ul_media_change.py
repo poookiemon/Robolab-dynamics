@@ -373,8 +373,24 @@ def main():
     try:
         app = LIMSMasterApp(root)
 
-        # 1. All 8 Channels Full Media Change (50 steps with multi-dispense: 4 full tip cols, 96/96 wells)
-        steps_all8_full = build_8ch_ehm_media_change_steps(
+        # 1a. All 8 Channels Full Media Change (56 steps 1-to-1: 4 full tip cols, 96/96 wells, 50uL air cushion)
+        steps_all8_full_1to1 = build_8ch_ehm_media_change_steps(
+            include_old_media_removal=True,
+            remove_vol_ul=550.0,
+            fresh_vol_ul=500.0,
+            tip_drop_mode="rack_graveyard",
+            media_addition_mode="all_8ch",
+            p5_res_lane=1,
+            p6_res_lane=2,
+            waste_lane=7,
+            reservoir_labware="reservoir_7_column.json",
+            multi_dispense=False,
+        )
+        assert len(steps_all8_full_1to1) == 56, f"Expected 56 steps, got {len(steps_all8_full_1to1)}"
+        simulate_all_8ch_media_change(app, "All 8 Channels Full Media Change 1-to-1 (56 steps)", steps_all8_full_1to1, loaded_cols={1, 2, 3, 4})
+
+        # 1b. All 8 Channels Full Media Change (50 steps multi-dispense: 4 full tip cols, 96/96 wells)
+        steps_all8_full_multi = build_8ch_ehm_media_change_steps(
             include_old_media_removal=True,
             remove_vol_ul=550.0,
             fresh_vol_ul=500.0,
@@ -386,11 +402,26 @@ def main():
             reservoir_labware="reservoir_7_column.json",
             multi_dispense=True,
         )
-        assert len(steps_all8_full) == 50, f"Expected 50 steps, got {len(steps_all8_full)}"
-        simulate_all_8ch_media_change(app, "All 8 Channels Full Media Change (50 steps)", steps_all8_full, loaded_cols={1, 2, 3, 4})
+        assert len(steps_all8_full_multi) == 50, f"Expected 50 steps, got {len(steps_all8_full_multi)}"
+        simulate_all_8ch_media_change(app, "All 8 Channels Full Media Change Multi-Dispense (50 steps)", steps_all8_full_multi, loaded_cols={1, 2, 3, 4})
 
-        # 2. All 8 Channels Fresh Media Only (22 steps with multi-dispense: 2 full tip cols, 96/96 wells)
-        steps_all8_fresh = build_8ch_ehm_media_change_steps(
+        # 2a. All 8 Channels Fresh Media Only (28 steps 1-to-1: 2 full tip cols, 96/96 wells)
+        steps_all8_fresh_1to1 = build_8ch_ehm_media_change_steps(
+            include_old_media_removal=False,
+            fresh_vol_ul=500.0,
+            tip_drop_mode="rack_graveyard",
+            media_addition_mode="all_8ch",
+            p5_res_lane=1,
+            p6_res_lane=2,
+            waste_lane=7,
+            reservoir_labware="reservoir_7_column.json",
+            multi_dispense=False,
+        )
+        assert len(steps_all8_fresh_1to1) == 28, f"Expected 28 steps, got {len(steps_all8_fresh_1to1)}"
+        simulate_all_8ch_media_change(app, "All 8 Channels Fresh Media Only 1-to-1 (28 steps)", steps_all8_fresh_1to1, loaded_cols={1, 2})
+
+        # 2b. All 8 Channels Fresh Media Only (22 steps multi-dispense: 2 full tip cols, 96/96 wells)
+        steps_all8_fresh_multi = build_8ch_ehm_media_change_steps(
             include_old_media_removal=False,
             fresh_vol_ul=500.0,
             tip_drop_mode="rack_graveyard",
@@ -401,8 +432,8 @@ def main():
             reservoir_labware="reservoir_7_column.json",
             multi_dispense=True,
         )
-        assert len(steps_all8_fresh) == 22, f"Expected 22 steps, got {len(steps_all8_fresh)}"
-        simulate_all_8ch_media_change(app, "All 8 Channels Fresh Media Only (22 steps)", steps_all8_fresh, loaded_cols={1, 2})
+        assert len(steps_all8_fresh_multi) == 22, f"Expected 22 steps, got {len(steps_all8_fresh_multi)}"
+        simulate_all_8ch_media_change(app, "All 8 Channels Fresh Media Only Multi-Dispense (22 steps)", steps_all8_fresh_multi, loaded_cols={1, 2})
 
         # 3. Legacy Multi-Drug Offset with Shovel (128 steps)
         steps_legacy_shovel = build_8ch_ehm_media_change_steps(
