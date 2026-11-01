@@ -19,7 +19,8 @@
         "z_target": 0.0
     },
     "z_limits": {
-        "recommended_pickup_z": 87.0,
-        "max_safe_bottom_z": 92.0
+        "tip_collar_entry_z": 86.36,
+        "recommended_pickup_z": 92.0,
+        "max_safe_bottom_z": 95.0
     }
 }

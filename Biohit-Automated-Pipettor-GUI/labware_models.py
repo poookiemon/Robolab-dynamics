@@ -539,10 +539,10 @@ class TipRack96(LabwareBase):
             if k in defaults:
                 defaults[k] = kwargs.pop(k)
         super().__init__(**defaults)
-        self.calibrated_a1_x = kwargs.get("calibrated_a1_x", 105.0)
-        self.calibrated_a1_y = kwargs.get("calibrated_a1_y", 53.0)
-        self.pickup_approach_z = kwargs.get("pickup_approach_z", 55.0)
-        self.pickup_limit_z = kwargs.get("pickup_limit_z", 90.0)
+        self.calibrated_a1_x = kwargs.get("calibrated_a1_x", 105.12)
+        self.calibrated_a1_y = kwargs.get("calibrated_a1_y", 53.62)
+        self.pickup_approach_z = kwargs.get("pickup_approach_z", 75.0)
+        self.pickup_limit_z = kwargs.get("pickup_limit_z", 95.0)
         self.pickup_force = kwargs.get("pickup_force", 26)
         self.learned_rack_offset_x = 0.0
         self.learned_rack_offset_y = 0.0

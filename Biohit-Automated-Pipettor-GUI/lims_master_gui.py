@@ -3652,10 +3652,10 @@ class LIMSMasterApp:
         if kind in ("tip_rack", "plate96") or (kind is None and not front):
             if r_idx is not None and 0 <= r_idx < 8 and 0 <= c_idx < 12:
                 if kind == "tip_rack":
-                    # Tip rack A1 physically calibrated at X=105.0, Y=53.0 on Slot 4
+                    # Tip rack A1 physically calibrated at X=105.12, Y=53.62 on Slot 4 (8-ch center Y=85.12)
                     learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
                     if slot_name == "Slot_4":
-                        return (105.0 - (c_idx * 9.0)) + learned_dx, (53.0 + (r_idx * 9.0)) + learned_dy
+                        return (105.12 - (c_idx * 9.0)) + learned_dx, (53.62 + (r_idx * 9.0)) + learned_dy
                     return (ox - (c_idx * 9.0)) + learned_dx, (oy + (r_idx * 9.0)) + learned_dy
                 col_table = self.SLOT_96_COL_OVERRIDES.get(slot_name)
                 tx = col_table[c_idx] if col_table else ox - (c_idx * 9.0)
@@ -4482,14 +4482,14 @@ class LIMSMasterApp:
                     if action == "Pick Up Tip":
                         cal_dz = float(self.eight_ch_cal_offset.get("Z", 0.0)) if is_8ch else 0.0
                         pickup_limit = (
-                            min(94.0, max(80.0, 87.0 + extra_z + cal_dz))
+                            min(98.0, max(88.0, 95.0 + extra_z + cal_dz))
                             if is_8ch
                             else min(92.0, max(82.0, 87.0 + extra_z))
                         )
                         hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                         labware_obj = self.lims.deck_labware.get(slot_name)
                         z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
-                        approach_z = 38.0 if is_8ch else max(0.0, min(48.0, z_height - 25.0))
+                        approach_z = 75.0 if is_8ch else max(0.0, min(48.0, z_height - 25.0))
 
                         tip_rack_model = None
                         if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
@@ -4503,7 +4503,7 @@ class LIMSMasterApp:
                             self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
                             time.sleep(0.05)
                             if not self.lims.pipettor.hardware:
-                                return True, 55.09
+                                return True, 90.50 if is_8ch else 55.09
 
                             hw = self.lims.pipettor.hardware
                             hw.z_speed = hw_speed
@@ -4523,9 +4523,9 @@ class LIMSMasterApp:
 
                             # 1. VALID SEATED TIP (Double-tip collision interlock disabled for hands-free operation):
                             # Single-channel accepts seated tips (<= 59.5mm for 1000uL, <= 78.0mm for 300uL).
-                            # 8-channel partial/offset pickups (1, 2, 3, or 8 tips at force=26) seat anywhere well above pickup_limit.
+                            # 8-channel tips on Slot 4 enter collars at Z=86.36mm and seat between 88.0mm and pickup_limit - 0.5mm
                             if is_8ch:
-                                valid_collar = (curr_z <= min(83.5, pickup_limit - 2.0))
+                                valid_collar = (85.0 <= curr_z <= (pickup_limit - 0.5))
                             else:
                                 is_1000 = "1000" in (getattr(labware_obj, 'name', '') + getattr(labware_obj, 'source_file', '')).lower()
                                 valid_collar = (curr_z <= 59.5) if is_1000 else (curr_z <= 78.0)

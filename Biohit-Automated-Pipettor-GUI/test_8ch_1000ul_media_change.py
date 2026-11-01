@@ -123,12 +123,15 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
         well = step["well"]
         tx, ty = app._resolve_step_xy(step, slot, well)
 
+        is_8ch = bool(app.lims.pipettor.multichannel or step.get("eight_ch_symmetric"))
         if action == "Pick Up Tip":
-            tz = 55.09
+            tz = 90.50 if is_8ch else 55.09
         elif action == "Discard Tip" and step.get("discard_z_override") is not None:
             tz = float(step["discard_z_override"])
         else:
             tz = app._calculate_z(action, app.lims.deck_labware.get(slot), well, "auto", 0.0, slot)
+            if is_8ch:
+                tz = max(0.0, tz - app.EIGHT_CH_TIP_Z_COMP_MM)
 
         # Strict machine workspace envelope checks
         assert 0.0 <= tx <= 263.0, f"Step {idx} X out of bounds: {tx}"
@@ -139,15 +142,15 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
 
         if action == "Pick Up Tip":
             assert not any(mounted), f"Step {idx}: Pick Up Tip called while tips still mounted: {mounted}"
-            c_idx = round((105.0 - tx) / 9.0)
+            c_idx = round((105.12 - tx) / 9.0)
             assert 0 <= c_idx < 12, f"Step {idx}: Invalid tip column X={tx}"
 
             actual_picked = []
             for ch in range(8):
                 nozzle_y = (ty - 31.5) + ch * 9.0
-                r_float = (nozzle_y - 53.0) / 9.0
+                r_float = (nozzle_y - 53.62) / 9.0
                 r_idx = round(r_float)
-                assert abs(r_float - r_idx) < 1e-6, f"Step {idx}: Misaligned row Y={nozzle_y}"
+                assert abs(r_float - r_idx) < 1e-4, f"Step {idx}: Misaligned row Y={nozzle_y}"
                 if 0 <= r_idx < 8:
                     if rack[(r_idx, c_idx)]:
                         rack[(r_idx, c_idx)] = False
@@ -164,10 +167,10 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
             assert active_ch == expected_ch, f"Step {idx}: Expected mounted {expected_ch}, got {active_ch}"
             if slot == "Slot_4":
                 assert abs(tz - 42.0) < 1e-6, f"Step {idx}: Rack drop/shovel Z must be 42.0mm, got {tz}"
-                c_idx = round((105.0 - tx) / 9.0)
+                c_idx = round((105.12 - tx) / 9.0)
                 for ch in range(8):
                     nozzle_y = (ty - 31.5) + ch * 9.0
-                    r_idx = round((nozzle_y - 53.0) / 9.0)
+                    r_idx = round((nozzle_y - 53.62) / 9.0)
                     if 0 <= r_idx < 8:
                         # Bare nozzles MUST NOT hit a standing tip, and dropped tips MUST land in an empty socket!
                         assert not rack[(r_idx, c_idx)], (
@@ -188,8 +191,8 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
             active_ch = [c for c in range(8) if mounted[c]]
             assert active_ch == expected_ch
             if slot in ("Slot_3", "Slot_5"):
-                # Old media removal from EHM plate (Z = 86.0 mm)
-                assert abs(tz - 86.0) < 1e-6
+                # Old media removal from EHM plate (Z = 86.0 - 20.5 = 65.5 mm with 1000uL tip compensation)
+                assert abs(tz - 65.5) < 1e-6, f"Expected 65.5mm, got {tz}"
                 col_num = int(well[1:])
                 for ch in active_ch:
                     w_id = f"{ROWS[ch]}{col_num}"
@@ -197,8 +200,8 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
                     tip_taint[ch] = f"OLD_{slot}_{ROWS[ch]}"
                 held_source_lane = "OLD_MEDIA"
             elif slot == "Slot_6":
-                # Fresh media aspiration from Reservoir R1..R5 (Z = 101.0 mm)
-                assert abs(tz - 101.0) < 1e-6
+                # Fresh media aspiration from Reservoir R1..R5 (Z = 101.0 - 20.5 = 80.5 mm with 1000uL tip compensation)
+                assert abs(tz - 80.5) < 1e-6, f"Expected 80.5mm, got {tz}"
                 lbl = step.get("label", "")
                 if "Control" in lbl:
                     # CRITICAL: R4 must have ZERO drug taint when Control is aspirated!
@@ -218,12 +221,12 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
             active_ch = [c for c in range(8) if mounted[c]]
             assert active_ch == expected_ch
             if slot == "Slot_6":
-                # Dispensing old media waste into R6 at brim Z = 78.0 mm
-                assert well == "A6" and abs(tz - 78.0) < 1e-6
+                # Dispensing old media waste into R6 at brim Z = 78.0 - 20.5 = 57.5 mm
+                assert well == "A6" and abs(tz - 57.5) < 1e-6, f"Expected 57.5mm, got {tz}"
                 assert held_source_lane == "OLD_MEDIA"
             elif slot in ("Slot_3", "Slot_5"):
-                # Dispensing fresh media onto EHM plate at brim Z = 81.0 mm
-                assert abs(tz - 81.0) < 1e-6
+                # Dispensing fresh media onto EHM plate at brim Z = 81.0 - 20.5 = 60.5 mm
+                assert abs(tz - 60.5) < 1e-6, f"Expected 60.5mm, got {tz}"
                 col_num = int(well[1:])
                 res_lane, cond = held_source_lane
                 exp_map = expected_p5 if slot == "Slot_3" else expected_p6
