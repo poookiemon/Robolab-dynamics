@@ -75,6 +75,14 @@ class TextHandler(logging.Handler):
 
 
 class LIMSMasterApp:
+    # All labware Z heights (plates, reservoirs, troughs) were calibrated with the single-channel
+    # head carrying a 200 µL Optifit tip (51.0 mm long). A 1000 µL Optifit tip is 71.5 mm long, so on
+    # the 8×1000 µL head the tip end reaches ~20.5 mm deeper at the same Z. Every liquid-handling Z
+    # on the 8-channel head is raised by this amount (fine-tune with the 8-channel ΔZ nudge).
+    CAL_TIP_LENGTH_MM = 51.0
+    TIP_1000_LENGTH_MM = 71.5
+    EIGHT_CH_TIP_Z_COMP_MM = TIP_1000_LENGTH_MM - CAL_TIP_LENGTH_MM
+
     def __init__(self, root):
         self.root = root
         try:
@@ -185,7 +193,6 @@ class LIMSMasterApp:
         filemenu.add_command(label="Load Workspace...", command=self.action_load_deck)
         filemenu.add_command(label="Save Workspace As...", command=self.action_save_deck_as)
         filemenu.add_command(label="Load JSON Protocol...", command=self.action_load_workflow)
-        filemenu.add_command(label="Resume from G1 (Plt 1 G-H + Plt 2)...", command=self.action_load_media_and_drug_resume_g1_protocol)
         filemenu.add_command(label="Plate 2 Row H Media Change Only...", command=self.action_load_plate2_rowH_protocol)
         filemenu.add_command(label="8×1000 µL EHM Media Change (Plate 5 & Plate 6)...", command=self.action_load_8ch_1000ul_media_change_protocol)
         filemenu.add_command(label="Bakar Dilution Plate (Media Change)...", command=self.action_load_bakar_media_change_serial_dilution_protocol)
@@ -1048,12 +1055,16 @@ class LIMSMasterApp:
                 self.lld_tracking_var.set(False)
             if hasattr(self, 'dynamic_z_var'):
                 self.dynamic_z_var.set(False)
+            if hasattr(self, 'tip_length_var'):
+                self.tip_length_var.set(self.TIP_1000_LENGTH_MM)
         else:
             # Single-channel head supports tip oscillation/LLD and dynamic Z tracking; restore defaults
             if hasattr(self, 'lld_tracking_var'):
                 self.lld_tracking_var.set(True)
             if hasattr(self, 'dynamic_z_var'):
                 self.dynamic_z_var.set(True)
+            if hasattr(self, 'tip_length_var'):
+                self.tip_length_var.set(self.CAL_TIP_LENGTH_MM)
 
         if hasattr(self, 'lbl_head_badge'):
             badge_bg = "#6f42c1" if multichannel else "#0d6efd"
@@ -1061,7 +1072,11 @@ class LIMSMasterApp:
             self.lbl_head_badge.config(text=badge_txt, bg=badge_bg)
 
         if hasattr(self, 'logger'):
-            sensor_note = "LLD Tip Sensor DISABLED (calibrated Z mode)" if multichannel else "LLD Tip Sensor AVAILABLE"
+            sensor_note = (
+                f"8-channel head has no liquid-level sensor -> uses fixed calibrated heights "
+                f"(1000 µL tip compensation -{self.EIGHT_CH_TIP_Z_COMP_MM:.1f} mm)"
+                if multichannel else "Liquid-level sensor (LLD) available"
+            )
             self.logger.info(f"[HEAD MODE] Switched to {label} ({msg}) | {sensor_note}")
         if not quiet and not ok:
             messagebox.showwarning("Hardware Driver Notice", msg)
@@ -1683,10 +1698,10 @@ class LIMSMasterApp:
                       command=lambda c=code: self.run_direct_op(c)).pack(side=tk.RIGHT, padx=10)
 
     def build_workflow_tab(self):
-        pane_ctrl = ttk.Frame(self.tab_workflow, width=380)
-        pane_ctrl.pack(side=tk.LEFT, fill=tk.Y, padx=15)
+        pane_ctrl = ttk.Frame(self.tab_workflow, width=330)
+        pane_ctrl.pack(side=tk.LEFT, fill=tk.Y, padx=(10, 8), pady=4)
         pane_list = ttk.Frame(self.tab_workflow)
-        pane_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        pane_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(4, 10), pady=4)
 
         head_bar = ttk.Frame(pane_ctrl)
         head_bar.pack(fill=tk.X, pady=(6, 4))
@@ -1788,7 +1803,7 @@ class LIMSMasterApp:
         lbl_inst = ttk.Label(pane_ctrl, text="⚡ INSTANT PROTOCOL LOAD", font=("Arial", 10, "bold"), foreground="#007bff")
         lbl_inst.pack(fill=tk.X, pady=(2, 4))
 
-        # 8-Channel 1000 uL Media Change (Dr. Tim Meyers' Offset Tip-Picking + Symmetric Transfer)
+        # 8-Channel 1000 uL Media Change (Offset Tip-Picking + Symmetric Transfer)
         tk.Button(
             pane_ctrl,
             text="🚀 8×1000 µL EHM Media Change (Plate 5 & 6 — Offset Tips)",
@@ -1801,8 +1816,6 @@ class LIMSMasterApp:
         # Media Change + Drug Protocols (2 Plates)
         ttk.Button(pane_ctrl, text="🧫 Media Change + Drug (7.5 µL)", command=lambda: self.action_load_media_and_drug_protocol(7.5)).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="🧫 Media Change + Drug (5.0 µL)", command=lambda: self.action_load_media_and_drug_protocol(5.0)).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="⏯ Resume from G1 (Plt 1 G-H + Plt 2, 7.5 µL)", command=lambda: self.action_load_media_and_drug_resume_g1_protocol(7.5)).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="⏯ Resume from G1 (Plt 1 G-H + Plt 2, 5.0 µL)", command=lambda: self.action_load_media_and_drug_resume_g1_protocol(5.0)).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="🧪 Plate 2 Row H Only (Media Change, Tips C3/D3)", command=self.action_load_plate2_rowH_protocol).pack(fill=tk.X, pady=2)
 
         # DMSO & Drug Protocols
@@ -1815,8 +1828,34 @@ class LIMSMasterApp:
         ttk.Button(pane_ctrl, text="📂 Load JSON Protocol", command=self.action_load_workflow).pack(fill=tk.X, pady=2)
         ttk.Button(pane_ctrl, text="💾 Save Protocol As JSON...", command=self.action_save_workflow_as).pack(fill=tk.X, pady=2)
 
-        self.wf_box = tk.Listbox(pane_list, font=("Consolas", 11), bg="#f8f9fa", fg="black", selectbackground="#007bff")
-        self.wf_box.pack(fill=tk.BOTH, expand=True)
+        # Protocol Viewer Frame with Dual Scrollbars (Vertical & Horizontal)
+        box_frame = ttk.Frame(pane_list)
+        box_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 4))
+        box_frame.grid_rowconfigure(0, weight=1)
+        box_frame.grid_columnconfigure(0, weight=1)
+
+        sb_y = ttk.Scrollbar(box_frame, orient=tk.VERTICAL)
+        sb_x = ttk.Scrollbar(box_frame, orient=tk.HORIZONTAL)
+
+        self.wf_box = tk.Listbox(
+            box_frame,
+            font=("Consolas", 10),
+            bg="#f8f9fa",
+            fg="#212529",
+            selectbackground="#0d6efd",
+            selectforeground="white",
+            relief="solid",
+            bd=1,
+            highlightthickness=0,
+            activestyle="none",
+            yscrollcommand=sb_y.set,
+            xscrollcommand=sb_x.set,
+        )
+        self.wf_box.grid(row=0, column=0, sticky="nsew")
+        sb_y.config(command=self.wf_box.yview)
+        sb_y.grid(row=0, column=1, sticky="ns")
+        sb_x.config(command=self.wf_box.xview)
+        sb_x.grid(row=1, column=0, sticky="ew")
         self.wf_box.bind("<Double-Button-1>", self.edit_wf_step)
 
         # Mid-Run & Offline Protocol Modification Toolbar
@@ -2618,7 +2657,7 @@ class LIMSMasterApp:
 
     def action_load_8ch_1000ul_media_change_protocol(self):
         """
-        Configures and loads Dr. Tim Meyers' 8x1000 uL EHM Media Change protocol for
+        Configures and loads the 8x1000 uL EHM Media Change protocol for
         Plate 5 (Slot_3) & Plate 6 (Slot_5) using offset tip-picking on Slot_4 and
         symmetric transfers from the 6-column vertical reservoir on Slot_6.
         """
@@ -2714,7 +2753,7 @@ class LIMSMasterApp:
         ttk.Label(opt_lf, text="Plate 6 Drug 14 (Rows B-D) Tip Loading:", font=("Arial", 9, "bold")).pack(anchor="w")
         ttk.Radiobutton(
             opt_lf,
-            text="Dr. Tim's Automated 1-Shovel (E-G -> Ch A-C -> empty B-D at Z=42mm; works on full tip cols)",
+            text="Automated 1-Shovel (E-G -> Ch A-C -> empty B-D at Z=42mm; works on full tip cols)",
             value=True,
             variable=shovel_var,
         ).pack(anchor="w", pady=1)
@@ -4642,8 +4681,12 @@ class LIMSMasterApp:
                                 ) + cal_dz,
                                 103.5,
                             )
+                            if is_8ch:
+                                # 1000 µL tips are ~20.5 mm longer than the 200 µL calibration tip
+                                tz = max(0.0, tz - self.EIGHT_CH_TIP_Z_COMP_MM)
                         self.logger.info(
-                            f"Absolute Z-Depth Override Executed: Z={tz:.1f}mm for {well_id if mode != 'manual' else 'Manual Target'}")
+                            f"Absolute Z-Depth Override Executed: Z={tz:.1f}mm for {well_id if mode != 'manual' else 'Manual Target'}"
+                            + (f" (8-ch 1000 µL tip compensation -{self.EIGHT_CH_TIP_Z_COMP_MM:.1f} mm)" if is_8ch and mode != "manual" and not (action == "Discard Tip" and step.get('discard_z_override') is not None) else ""))
 
                         hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                         if self.lims.pipettor.hardware:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Generator for 8-Channel (8x1000 uL) EHM Media Change Protocols (Plate 5 & Plate 6)
-Implements Dr. Tim Meyers' offset tip-picking + symmetric column transfer strategy:
+Implements the offset tip-picking + symmetric column transfer strategy:
 
 Deck Layout (8x1000 uL Mode):
 - Slot_1: Empty half-slot
@@ -42,7 +42,7 @@ def build_8ch_ehm_media_change_steps(
                             (Cols 12..5 + emptied Col 1) at guided Z=42.0mm so Slot_6 R6 is dedicated to liquid waste.
         - "slot6_r6": Drops used tips vertically into Slot_6 R6 (A6) at Z=48.0mm (vertical 100 mL tip-drop).
     :param use_shovel:
-        - True (Default): Uses Dr. Tim's automated 1-shovel sequence on standard full tip columns.
+        - True (Default): Uses the automated 1-shovel sequence on standard full tip columns.
         - False: Zero-shovel fallback (uses extra column where Tip E is pre-removed by operator).
     """
     steps: List[Dict[str, Any]] = []
