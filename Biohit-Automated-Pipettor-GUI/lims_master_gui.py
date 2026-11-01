@@ -127,8 +127,8 @@ class LIMSMasterApp:
         self.calibrated_heights = {
             "ehm_aspirate_z": 22.33,
             "ehm_dispense_z": 12.33,
-            "waste_dispense_z": 10.0,
-            "reservoir_aspirate_z": 22.33,
+            "waste_dispense_z": 59.32,
+            "reservoir_aspirate_z": 89.32,
             "tip_rack_discard_z": 42.0,
             "tip_rack_pickup_approach_z": 75.0,
             "tip_rack_pickup_limit_z": 98.0,
@@ -2826,8 +2826,8 @@ class LIMSMasterApp:
         fields = [
             ("ehm_aspirate_z", "EHM Old Media Removal (Inside Well):", "22.33"),
             ("ehm_dispense_z", "EHM Fresh Media Addition (1cm Above Bottom):", "12.33"),
-            ("waste_dispense_z", "Slot 6 Waste Dispense (3cm Above Bottom):", "10.00"),
-            ("reservoir_aspirate_z", "Slot 6 Fresh Media Reservoir (Aspirate):", "22.33"),
+            ("reservoir_aspirate_z", "Slot 6 Fresh Media Reservoir (Deep to Take Media):", "89.32"),
+            ("waste_dispense_z", "Slot 6 Waste Dispense (Up / 3cm Above Bottom):", "59.32"),
             ("tip_rack_discard_z", "Slot 4 Tip Rack Return / Discard Height:", "42.00"),
             ("tip_rack_collar_z", "Slot 4 Tip Collar / Rim (Photo Alignment):", "86.36"),
             ("tip_rack_pickup_limit_z", "Slot 4 Tip Pickup Force Limit:", "98.00"),
@@ -4142,9 +4142,9 @@ class LIMSMasterApp:
                     return min(float(self.calibrated_heights.get("ehm_dispense_z", 12.33)) + slot_z_offset + extra_z, 103.5)
             elif (slot_name == "Slot_6" and kind != "reservoir_6") or kind in ("reservoir_7", "waste"):
                 if action == "Dispense Media":
-                    return min(float(self.calibrated_heights.get("waste_dispense_z", 10.0)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("waste_dispense_z", 59.32)) + slot_z_offset + extra_z, 103.5)
                 elif action in ("Aspirate Media", "Mix Well"):
-                    return min(float(self.calibrated_heights.get("reservoir_aspirate_z", 22.33)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("reservoir_aspirate_z", 89.32)) + slot_z_offset + extra_z, 103.5)
                 elif action == "Discard Tip":
                     return min(float(self.calibrated_heights.get("waste_tip_drop_z", 48.0)) + slot_z_offset + extra_z, 103.5)
             elif slot_name == "Slot_4" and action == "Discard Tip":
@@ -4185,7 +4185,7 @@ class LIMSMasterApp:
             elif kind == "reservoir_6":
                 base_z = 101.0 if deep else 78.0
             elif kind == "reservoir_7":
-                base_z = 22.33 if deep else 10.0  # Calibrated for 8-channel: 22.33 aspirate, 10.0 dispense (3cm above bottom)
+                base_z = 89.32 if deep else 59.32  # 89.32 deep to take media, 59.32 discard (3cm up)
             elif kind == "ehm48":
                 base_z = 22.33 if deep else 12.33  # User declared: 22.33 inside well, 12.33 dispense (1cm above bottom)
             elif kind == "tip_rack":

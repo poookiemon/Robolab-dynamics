@@ -155,13 +155,13 @@ def simulate_all_8ch_media_change(app: LIMSMasterApp, name: str, steps, loaded_c
                     removed_wells[slot].add(f"{r}{col_num}")
                 held_media = "OLD_MEDIA"
             elif slot == "Slot_6":
-                assert abs(tz - 22.33) < 1e-6, f"Expected 7-well reservoir aspirate 22.33mm, got {tz}"
+                assert abs(tz - 89.32) < 1e-6, f"Expected 7-well reservoir aspirate 89.32mm, got {tz}"
                 held_media = well
 
         elif action == "Dispense Media":
             assert all(mounted)
             if slot == "Slot_6":
-                assert abs(tz - 10.0) < 1e-6, f"Expected 7-well reservoir dispense 10.0mm, got {tz}"
+                assert abs(tz - 59.32) < 1e-6, f"Expected 7-well reservoir dispense 59.32mm, got {tz}"
                 assert held_media == "OLD_MEDIA"
             elif slot in ("Slot_3", "Slot_5"):
                 assert abs(tz - 12.33) < 1e-6, f"Expected EHM dispense 12.33mm (1cm above), got {tz}"

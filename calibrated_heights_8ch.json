@@ -1,8 +1,8 @@
 {
   "ehm_aspirate_z": 22.33,
   "ehm_dispense_z": 12.33,
-  "waste_dispense_z": 10.0,
-  "reservoir_aspirate_z": 22.33,
+  "waste_dispense_z": 59.32,
+  "reservoir_aspirate_z": 89.32,
   "tip_rack_discard_z": 42.0,
   "tip_rack_pickup_approach_z": 75.0,
   "tip_rack_pickup_limit_z": 98.0,
