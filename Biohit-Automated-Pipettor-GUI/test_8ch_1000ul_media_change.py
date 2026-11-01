@@ -130,7 +130,9 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
             tz = float(step["discard_z_override"])
         else:
             tz = app._calculate_z(action, app.lims.deck_labware.get(slot), well, "auto", 0.0, slot)
-            if is_8ch:
+            lw_kind = app._lw_kind(app.lims.deck_labware.get(slot))
+            is_already_cal = getattr(app.lims.deck_labware.get(slot), 'is_8ch_calibrated', False) or lw_kind in ("ehm48", "reservoir_7")
+            if is_8ch and not is_already_cal:
                 tz = max(0.0, tz - app.EIGHT_CH_TIP_Z_COMP_MM)
 
         # Strict machine workspace envelope checks
@@ -191,8 +193,8 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
             active_ch = [c for c in range(8) if mounted[c]]
             assert active_ch == expected_ch
             if slot in ("Slot_3", "Slot_5"):
-                # Old media removal from EHM plate (Z = 86.0 - 20.5 = 65.5 mm with 1000uL tip compensation)
-                assert abs(tz - 65.5) < 1e-6, f"Expected 65.5mm, got {tz}"
+                # Old media removal from EHM plate (User physically calibrated Z = 22.33 mm)
+                assert abs(tz - 22.33) < 1e-6, f"Expected 22.33mm, got {tz}"
                 col_num = int(well[1:])
                 for ch in active_ch:
                     w_id = f"{ROWS[ch]}{col_num}"
@@ -225,8 +227,8 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
                 assert well == "A6" and abs(tz - 57.5) < 1e-6, f"Expected 57.5mm, got {tz}"
                 assert held_source_lane == "OLD_MEDIA"
             elif slot in ("Slot_3", "Slot_5"):
-                # Dispensing fresh media onto EHM plate at brim Z = 81.0 - 20.5 = 60.5 mm
-                assert abs(tz - 60.5) < 1e-6, f"Expected 60.5mm, got {tz}"
+                # Dispensing fresh media onto EHM plate at brim Z = 17.33 mm
+                assert abs(tz - 17.33) < 1e-6, f"Expected 17.33mm, got {tz}"
                 col_num = int(well[1:])
                 res_lane, cond = held_source_lane
                 exp_map = expected_p5 if slot == "Slot_3" else expected_p6

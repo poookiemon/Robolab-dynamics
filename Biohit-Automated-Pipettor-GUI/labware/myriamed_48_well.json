@@ -29,14 +29,15 @@
     "depth_mm": 16.9,
     "radius_mm": 3.0
   },
+  "is_8ch_calibrated": true,
   "z": {
-    "aspirate": 86.0,
-    "dispense": 81.0,
-    "discard_tip": 86.0
+    "aspirate": 22.33,
+    "dispense": 17.33,
+    "discard_tip": 22.33
   },
   "z_limits": {
-    "recommended_aspirate_z": 86.0,
-    "recommended_dispense_z": 81.0,
-    "max_safe_bottom_z": 88.5
+    "recommended_aspirate_z": 22.33,
+    "recommended_dispense_z": 17.33,
+    "max_safe_bottom_z": 24.5
   }
 }

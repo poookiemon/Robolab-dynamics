@@ -1,0 +1,46 @@
+{
+  "labware_name": "7-Column Reagent Reservoir",
+  "category": "reservoir_7",
+  "z_height_mm": 105.81,
+  "is_8ch_calibrated": true,
+  "grid": {
+    "rows": 1,
+    "columns": 7
+  },
+  "col_x": [
+    108.36,
+    93.36,
+    78.36,
+    63.36,
+    48.36,
+    33.36,
+    18.36
+  ],
+  "row_y": [
+    179.9
+  ],
+  "well_a1_offset": {
+    "x": 19.44,
+    "y": 35.9
+  },
+  "spacing": {
+    "x": 15.0,
+    "y": 0.0
+  },
+  "well_properties": {
+    "depth_mm": 40.5,
+    "radius_mm": 6.5,
+    "max_volume_ul": 40000.0
+  },
+  "z": {
+    "aspirate": 89.32,
+    "dispense": 78.0,
+    "discard_tip": 48.0
+  },
+  "z_limits": {
+    "recommended_aspirate_z": 89.32,
+    "recommended_dispense_z": 78.0,
+    "recommended_discard_z": 48.0,
+    "max_safe_bottom_z": 92.0
+  }
+}

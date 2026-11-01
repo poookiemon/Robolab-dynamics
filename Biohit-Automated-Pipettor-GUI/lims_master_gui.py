@@ -12,7 +12,7 @@ except Exception:
 from labware_models import (
     DeckManager, DeckSlot as ModelDeckSlot, HeightAdapter,
     ADAPTER_NONE, ADAPTER_90MM_BLOCK, ADAPTER_45MM_BLOCK,
-    LabwareBase, Plate96, Plate48Myriamed, Reservoir3Well, Reservoir6Column,
+    LabwareBase, Plate96, Plate48Myriamed, Reservoir3Well, Reservoir6Column, Reservoir7Column,
     TubeRack2x6_2mL, FalconRack50mL, TipRack96, WasteTrough
 )
 from generate_8ch_1000ul_ehm_media_change import build_8ch_ehm_media_change_steps
@@ -1157,9 +1157,23 @@ class LIMSMasterApp:
         f_step = ttk.Frame(f_jog)
         f_step.pack(fill=tk.X, padx=100, pady=(15, 5))
         ttk.Label(f_step, text="Jog Step Size:", font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=(0, 10))
-        for step_val in [0.1, 1.0, 5.0, 10.0]:
+        for step_val in [0.1, 1.0, 5.0, 10.0, 30.0, 50.0, 100.0]:
             r_btn = ttk.Radiobutton(f_step, text=f"{step_val} mm", value=step_val, variable=self.jog_step_var)
-            r_btn.pack(side=tk.LEFT, padx=6)
+            r_btn.pack(side=tk.LEFT, padx=5)
+
+        f_quick_z = ttk.Frame(f_jog)
+        f_quick_z.pack(fill=tk.X, padx=100, pady=(4, 5))
+        ttk.Label(f_quick_z, text="Quick Z Homing Presets:", font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=(0, 10))
+        for z_preset in [0.0, 30.0, 50.0, 100.0]:
+            btn_txt = "Home Z (0 mm)" if z_preset == 0.0 else f"Z = {int(z_preset)} mm"
+            btn_qz = tk.Button(
+                f_quick_z,
+                text=btn_txt,
+                bg="#e9ecef",
+                font=("Consolas", 9, "bold"),
+                command=lambda zp=z_preset: self._quick_move_z(zp),
+            )
+            btn_qz.pack(side=tk.LEFT, padx=4)
 
         f_opt = ttk.Frame(f_jog)
         f_opt.pack(fill=tk.X, padx=100, pady=5)
@@ -1175,6 +1189,10 @@ class LIMSMasterApp:
             "• Direct Motion: Moves directly without pulling Z up to 0 (stays at current height)"
         )
         ttk.Label(f_guide, text=guide_text, font=("Consolas", 9), foreground="#0056b3").pack(anchor="w")
+
+    def _quick_move_z(self, z_target):
+        self.jog_vars["Z"].set(round(float(z_target), 2))
+        self._execute_jog_move("Z")
 
     def _safe_get_jog(self, axis):
         try:
@@ -1635,7 +1653,7 @@ class LIMSMasterApp:
         deck_ctrl_f = ttk.Frame(f_jog)
         deck_ctrl_f.pack(fill=tk.X, padx=10, pady=(4, 0))
         ttk.Label(deck_ctrl_f, text="Step:", font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=(0, 4))
-        for step_val in [0.1, 1.0, 5.0]:
+        for step_val in [0.1, 1.0, 5.0, 10.0, 30.0, 50.0, 100.0]:
             ttk.Radiobutton(deck_ctrl_f, text=f"{step_val}mm", value=step_val, variable=self.jog_step_var).pack(side=tk.LEFT, padx=2)
         ttk.Checkbutton(deck_ctrl_f, text="Clearance (Z=0)", variable=self.jog_z_clearance_var).pack(side=tk.LEFT, padx=6)
         ttk.Label(deck_ctrl_f, text="⌨️ Arrow keys / PgUp-PgDn active", font=("Arial", 8, "italic"), foreground="#0066cc").pack(side=tk.RIGHT)
@@ -3224,6 +3242,8 @@ class LIMSMasterApp:
                 typed_lw = TubeRack2x6_2mL(source_file=src)
             elif "reservoir_3" in src or "3_well" in src or "3-well" in name or "30ml" in both:
                 typed_lw = Reservoir3Well(source_file=src)
+            elif "reservoir_7" in src or "7_column" in src or "7-column" in name or "7_well" in src or "7-well" in name:
+                typed_lw = Reservoir7Column(source_file=src)
             elif "reservoir_6" in src or "6_column" in src or "6-column" in name:
                 typed_lw = Reservoir6Column(source_file=src)
             elif "tip" in both or "tip_rack" in src:
@@ -3565,6 +3585,8 @@ class LIMSMasterApp:
             return "waste"
         if "reservoir_3" in src or "3_well" in src or "3-well" in name:
             return "reservoir_3"
+        if "reservoir_7" in src or "7_column" in src or "7-column" in name or "7_well" in src or "7-well" in name:
+            return "reservoir_7"
         if "reservoir_6" in src or "6_column" in src or "6-column" in name:
             return "reservoir_6"
         if "myriamed" in both or "ehm" in both or "48" in both:
@@ -3692,6 +3714,16 @@ class LIMSMasterApp:
                 ci = int(str(well_id).upper().strip().lstrip("R")) - 1
             return ox + col_dx[ci], oy + (0.0 if front else 31.5)
 
+        # 5b. 7-COLUMN RESERVOIR (User calibrated on Slot 6: A1 = 108.36, Y = 179.9, pitch 15.0mm)
+        if kind == "reservoir_7":
+            col_x = [108.36, 93.36, 78.36, 63.36, 48.36, 33.36, 18.36]
+            ci = c_idx if (c_idx is not None and 0 <= c_idx < 7) else 0
+            if c_idx is None and str(well_id or "").upper().strip().lstrip("R") in ("1", "2", "3", "4", "5", "6", "7"):
+                ci = int(str(well_id).upper().strip().lstrip("R")) - 1
+            if slot_name == "Slot_6":
+                return col_x[ci], 179.9
+            return ox + 3.36 - (ci * 15.0), oy + (0.0 if front else 30.67)
+
         # 6. 4x6 TUBE RACK (Biohit 17A, pitch 19.3 mm)
         if kind == "tube_rack_4x6":
             if r_idx is not None and r_idx < 4 and c_idx < 6:
@@ -3803,7 +3835,9 @@ class LIMSMasterApp:
         if labware_obj and 'max_safe_bottom_z' in (getattr(labware_obj, 'z_limits', {}) or {}):
             return float(labware_obj.z_limits['max_safe_bottom_z'])
         if kind == "ehm48":
-            return 86.0
+            return 24.5
+        if kind == "reservoir_7":
+            return 92.0
         if kind == "plate96":
             return self.SLOT_96_PLATE_Z.get(slot_name, self.DEFAULT_96_PLATE_Z)[0]
         if kind == "reservoir_3" or (kind is None and self._is_front_slot(slot_name)):
@@ -3888,8 +3922,10 @@ class LIMSMasterApp:
                 base_z = deep_z if deep else brim_z
             elif kind == "reservoir_6":
                 base_z = 101.0 if deep else 78.0
+            elif kind == "reservoir_7":
+                base_z = 89.32 if deep else 78.0
             elif kind == "ehm48":
-                base_z = 86.0 if deep else 81.0  # Calibrated: 86.0 inside well (1mm higher to protect tissues), 81.0 brim
+                base_z = 22.33 if deep else 17.33  # User physically calibrated: 22.33 inside well, 17.33 brim
             elif kind == "tip_rack":
                 base_z = 98.0
             elif kind == "tube_rack_4x6":
@@ -4681,12 +4717,15 @@ class LIMSMasterApp:
                                 ) + cal_dz,
                                 103.5,
                             )
-                            if is_8ch:
+                            lw_kind = self._lw_kind(self.lims.deck_labware.get(slot_name))
+                            is_already_cal = getattr(self.lims.deck_labware.get(slot_name), 'is_8ch_calibrated', False) or lw_kind in ("ehm48", "reservoir_7")
+                            if is_8ch and not is_already_cal:
                                 # 1000 µL tips are ~20.5 mm longer than the 200 µL calibration tip
                                 tz = max(0.0, tz - self.EIGHT_CH_TIP_Z_COMP_MM)
                         self.logger.info(
-                            f"Absolute Z-Depth Override Executed: Z={tz:.1f}mm for {well_id if mode != 'manual' else 'Manual Target'}"
-                            + (f" (8-ch 1000 µL tip compensation -{self.EIGHT_CH_TIP_Z_COMP_MM:.1f} mm)" if is_8ch and mode != "manual" and not (action == "Discard Tip" and step.get('discard_z_override') is not None) else ""))
+                            f"Absolute Z-Depth Executed: Z={tz:.2f}mm for {well_id if mode != 'manual' else 'Manual Target'}"
+                            + (f" (8-ch 1000 µL tip compensation -{self.EIGHT_CH_TIP_Z_COMP_MM:.1f} mm)" if is_8ch and not is_already_cal and mode != "manual" and not (action == "Discard Tip" and step.get('discard_z_override') is not None) else "")
+                            + (f" (8-ch direct physical calibration: {tz:.2f}mm)" if is_8ch and is_already_cal else ""))
 
                         hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                         if self.lims.pipettor.hardware:
@@ -5561,6 +5600,8 @@ class LIMSMasterApp:
                     disp = "24-Tube Rack 4x6 (biohit_rack_4x6_17a.json)"
                 elif "3_well" in f_lower or "3-well" in f_lower:
                     disp = "3-Well Reservoir (reservoir_3_well.json)"
+                elif "7_column" in f_lower or "reservoir_7" in f_lower or "7_well" in f_lower:
+                    disp = "7-Column Reservoir (reservoir_7_column.json)"
                 elif "6_column" in f_lower or "reservoir_6" in f_lower:
                     disp = "6-Column Reservoir (reservoir_6_column.json)"
                 elif "generic_96" in f_lower or "96_well" in f_lower:

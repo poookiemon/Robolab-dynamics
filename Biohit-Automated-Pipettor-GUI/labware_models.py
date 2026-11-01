@@ -224,15 +224,15 @@ class Plate48Myriamed(LabwareBase):
         return cx, cy
 
     def get_aspirate_z(self, slot: 'DeckSlot', well_id: str, current_vol_ul: float = 0.0, submerge_mm: float = 2.0) -> float:
-        # Calibrated EHM safe liquid aspiration (1mm higher: 86.0mm to protect tissues)
-        return 86.0
+        # User physically calibrated: 22.33mm with 8-channel 1000uL head
+        return 22.33
 
     def get_dispense_z(self, slot: 'DeckSlot', well_id: str, in_liquid: bool = False) -> float:
-        # Calibrated EHM brim dispense
-        return 86.0 if in_liquid else 81.0
+        # Calibrated EHM: 22.33mm in-liquid, 17.33mm brim
+        return 22.33 if in_liquid else 17.33
 
     def get_mix_z(self, slot: 'DeckSlot', well_id: str) -> float:
-        return 86.0
+        return 22.33
 
 
 class Reservoir3Well(LabwareBase):
@@ -368,6 +368,79 @@ class Reservoir6Column(LabwareBase):
 
     def get_dispense_z(self, slot: 'DeckSlot', well_id: str, in_liquid: bool = False) -> float:
         return self.aspirate_z_mm if in_liquid else self.dispense_brim_z_mm
+
+    def get_discard_tip_z(self, slot: 'DeckSlot') -> float:
+        return self.discard_tip_z_mm
+
+
+class Reservoir7Column(LabwareBase):
+    """
+    7-Column Reagent Reservoir on Slot 6 (lanes R1..R7 / A1..A7).
+    User-calibrated on Slot 6: A1 is at X=108.36, Y=179.9, Z=89.32.
+    Pitch across columns is 15.0 mm.
+    """
+    def __init__(self, **kwargs):
+        defaults = {
+            "name": "7-Column Reagent Reservoir",
+            "category": "reservoir_7",
+            "rows": 1,
+            "columns": 7,
+            "z_height_mm": 35.0,
+            "well_depth_mm": 32.0,
+            "well_radius_mm": 6.5,
+            "max_safe_bottom_z": 92.0,
+            "dead_volume_ul": 2000.0,
+            "max_volume_ul": 40000.0,
+            "pitch_x_mm": 15.0,
+            "pitch_y_mm": 0.0,
+        }
+        for k in list(kwargs.keys()):
+            if k in defaults:
+                defaults[k] = kwargs.pop(k)
+        super().__init__(**defaults)
+        self.is_8ch_calibrated = True
+        self.col_x = kwargs.get("col_x", [108.36, 93.36, 78.36, 63.36, 48.36, 33.36, 18.36])
+        self.center_y = kwargs.get("center_y", 179.9)
+        self.aspirate_z_mm = kwargs.get("aspirate_z_mm", 89.32)
+        self.dispense_brim_z_mm = kwargs.get("dispense_brim_z_mm", 78.0)
+        self.discard_tip_z_mm = kwargs.get("discard_tip_z_mm", 48.0)
+
+    def parse_well(self, well_id: str) -> Tuple[Optional[int], Optional[int]]:
+        if not well_id:
+            return 0, 0
+        w_clean = str(well_id).upper().strip()
+        if w_clean.startswith("R"):
+            w_clean = w_clean[1:]
+        if w_clean in ("1", "2", "3", "4", "5", "6", "7"):
+            return 0, int(w_clean) - 1
+        if len(w_clean) >= 2 and w_clean[0] in "ABCDEFGH":
+            try:
+                c = int(w_clean[1:]) - 1
+                if 0 <= c < 7:
+                    return 0, c
+            except ValueError:
+                pass
+        return 0, 0
+
+    def get_well_xy(self, slot: 'DeckSlot', well_id: str) -> Tuple[float, float]:
+        _, c_idx = self.parse_well(well_id)
+        ci = c_idx if (c_idx is not None and 0 <= c_idx < len(self.col_x)) else 0
+        return self.col_x[ci], self.center_y
+
+    def get_rim_z(self, slot: 'DeckSlot') -> float:
+        return 75.0
+
+    def get_bottom_z(self, slot: 'DeckSlot') -> float:
+        return 92.0
+
+    def get_aspirate_z(self, slot: 'DeckSlot', well_id: str, current_vol_ul: float = 0.0, submerge_mm: float = 2.0) -> float:
+        return self.aspirate_z_mm
+
+    def get_dispense_z(self, slot: 'DeckSlot', well_id: str, in_liquid: bool = False) -> float:
+        return self.aspirate_z_mm if in_liquid else self.dispense_brim_z_mm
+
+    def get_mix_z(self, slot: 'DeckSlot', well_id: str) -> float:
+        return self.aspirate_z_mm
 
     def get_discard_tip_z(self, slot: 'DeckSlot') -> float:
         return self.discard_tip_z_mm
