@@ -38,7 +38,7 @@ def build_8ch_ehm_media_change_steps(
     p6_res_lane: int = 2,
     waste_lane: int = None,
     reservoir_labware: str = "reservoir_7_column.json",
-    multi_dispense: bool = False,
+    multi_dispense: bool = True,
 ) -> List[Dict[str, Any]]:
     """
     Builds the complete 100% hands-free 8x1000 uL step list for Plate 5 (Slot_3) & Plate 6 (Slot_5).
@@ -99,7 +99,7 @@ def build_8ch_ehm_media_change_steps(
             "eight_ch_symmetric": True,
             "tip_offset_rows": int(offset_rows),
             "mounted_channels": channels_str,
-            "label": f"[PICK 8-CH] Slot_4 Col {col} ({tips_str} -> Ch {channels_str}, shift {offset_rows:+d} rows) | {desc}",
+            "label": f"[PICK 8-CH] Slot_4 Col {col} ({tips_str} -> Ch {channels_str}) | {desc}",
         })
 
     def add_discard_tip(channels_str: str, desc: str):
@@ -118,7 +118,7 @@ def build_8ch_ehm_media_change_steps(
                 "tip_offset_rows": 0,
                 "discard_z_override": 42.0,
                 "mounted_channels": channels_str,
-                "label": f"[DROP 8-CH] Ch {channels_str} -> Slot_4 Empty Col {g_col} (Z=42.0mm) | {desc}",
+                "label": f"[DROP 8-CH] Ch {channels_str} -> Slot_4 Col {g_col} | {desc}",
             })
         else:
             steps.append({
@@ -132,7 +132,7 @@ def build_8ch_ehm_media_change_steps(
                 "tip_offset_rows": 0,
                 "discard_z_override": 48.0,
                 "mounted_channels": channels_str,
-                "label": f"[DROP 8-CH] Ch {channels_str} -> Slot_6 {waste_well} Waste Tip-Drop (Z=48.0mm) | {desc}",
+                "label": f"[DROP 8-CH] Ch {channels_str} -> Slot_6 {waste_well} Waste | {desc}",
             })
 
     def add_plate_removal(plate_slot: str, plate_label: str, tip_col: int):
@@ -148,7 +148,7 @@ def build_8ch_ehm_media_change_steps(
                 "eight_ch_symmetric": True,
                 "mounted_channels": "A-H",
                 "track_liquid": False,
-                "label": f"[REMOVE 8-CH] Aspirate {remove_vol_ul:g}uL from {plate_label} ({plate_slot}) Col {c} [Rows A-H]",
+                "label": f"[REMOVE 8-CH] Aspirate {remove_vol_ul:g} µL from {plate_label} Col {c} [Rows A-H]",
             })
             steps.append({
                 "action": "Dispense Media",
@@ -160,7 +160,7 @@ def build_8ch_ehm_media_change_steps(
                 "eight_ch_symmetric": True,
                 "mounted_channels": "A-H",
                 "track_liquid": False,
-                "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g}uL to Slot_6 {waste_well} Waste ({plate_label} Col {c})",
+                "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g} µL to Slot_6 {waste_well} Waste ({plate_label} Col {c})",
             })
         add_discard_tip("A-H", f"{plate_label} Old Media Tips")
 
@@ -178,7 +178,7 @@ def build_8ch_ehm_media_change_steps(
                     "eight_ch_symmetric": True,
                     "mounted_channels": channels_str,
                     "track_liquid": False,
-                    "label": f"[ASPIRATE 8-CH] 1000uL from Slot_6 R{res_lane} (Ch {channels_str}: {cond_label}, for Cols {pair_col1}&{pair_col2})",
+                    "label": f"[ASPIRATE 8-CH] 1000 µL from Slot_6 R{res_lane} (Ch {channels_str}: {cond_label}, for Cols {pair_col1}&{pair_col2})",
                 })
                 steps.append({
                     "action": "Dispense Media",
@@ -190,7 +190,7 @@ def build_8ch_ehm_media_change_steps(
                     "eight_ch_symmetric": True,
                     "mounted_channels": channels_str,
                     "track_liquid": False,
-                    "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g}uL -> {plate_label} ({plate_slot}) Col {pair_col1} [1cm above, Z=12.33mm]",
+                    "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g} µL -> {plate_label} Col {pair_col1}",
                 })
                 steps.append({
                     "action": "Dispense Media",
@@ -202,7 +202,7 @@ def build_8ch_ehm_media_change_steps(
                     "eight_ch_symmetric": True,
                     "mounted_channels": channels_str,
                     "track_liquid": False,
-                    "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g}uL -> {plate_label} ({plate_slot}) Col {pair_col2} [1cm above, Z=12.33mm]",
+                    "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g} µL -> {plate_label} Col {pair_col2}",
                 })
         else:
             for c in range(1, 7):
@@ -216,7 +216,7 @@ def build_8ch_ehm_media_change_steps(
                     "eight_ch_symmetric": True,
                     "mounted_channels": channels_str,
                     "track_liquid": False,
-                    "label": f"[ASPIRATE 8-CH] {fresh_vol_ul:g}uL from Slot_6 R{res_lane} (Ch {channels_str}: {cond_label}, Col {c})",
+                    "label": f"[ASPIRATE 8-CH] {fresh_vol_ul:g} µL from Slot_6 R{res_lane} (Ch {channels_str}: {cond_label}, Col {c})",
                 })
                 steps.append({
                     "action": "Dispense Media",
@@ -228,7 +228,7 @@ def build_8ch_ehm_media_change_steps(
                     "eight_ch_symmetric": True,
                     "mounted_channels": channels_str,
                     "track_liquid": False,
-                    "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g}uL -> {plate_label} ({plate_slot}) Col {c} [1cm above, Z=12.33mm]",
+                    "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g} µL -> {plate_label} Col {c}",
                 })
 
     # =========================================================================
@@ -342,10 +342,10 @@ def build_slot5_media_removal_test(
 ) -> List[Dict[str, Any]]:
     """
     Test protocol for Slot 5 (Plate 6) Media Removal:
-    - Picks clean 8 tips from Slot 4 Column 3 (A3).
-    - Aspirates 550 uL from Columns 1 to 6 of Plate 6 (Slot 5) at declared Z=22.33 mm.
-    - Dispenses old media into Slot 6 Waste (A7) 3 cm above the bottom (Z=59.32 mm).
-    - Returns/discards used tips into Slot 4 Column 1 (A1) at Z=42.0 mm.
+    - Picks clean 8 tips from Slot 4 Column 3.
+    - Aspirates 550 uL from Columns 1 to 6 of Plate 6 (Slot 5).
+    - Dispenses old media into Slot 6 Waste.
+    - Returns/discards used tips into Slot 4 Column 1.
     """
     steps: List[Dict[str, Any]] = []
 
@@ -363,7 +363,7 @@ def build_slot5_media_removal_test(
         "label": f"[PICK 8-CH] Slot_4 Col {pick_col} (A{pick_col}-H{pick_col} -> Ch A-H) | Slot 5 Media Removal Test",
     })
 
-    # 2. Aspirate from Slot 5 (Cols 1..6) and dispense to Slot 6 Waste (3cm above bottom, Z=59.32mm)
+    # 2. Aspirate from Slot 5 (Cols 1..6) and dispense to Slot 6 Waste
     for c in range(1, 7):
         steps.append({
             "action": "Aspirate Media",
@@ -375,7 +375,7 @@ def build_slot5_media_removal_test(
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[REMOVE 8-CH] Aspirate {remove_vol_ul:g}uL from Slot_5 Col {c} [Rows A-H] (Z=22.33mm)",
+            "label": f"[REMOVE 8-CH] Aspirate {remove_vol_ul:g} µL from Slot_5 Col {c} [Rows A-H]",
         })
         steps.append({
             "action": "Dispense Media",
@@ -387,7 +387,7 @@ def build_slot5_media_removal_test(
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g}uL to Slot_6 A{waste_lane} Waste (3cm above, Z=59.32mm)",
+            "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g} µL to Slot_6 A{waste_lane} Waste (Slot 5 Col {c})",
         })
 
     # 3. Put tips back into Column 1
@@ -402,7 +402,7 @@ def build_slot5_media_removal_test(
         "tip_offset_rows": 0,
         "discard_z_override": 42.0,
         "mounted_channels": "A-H",
-        "label": f"[DROP 8-CH] Put back tips onto Slot_4 Col {return_col} (A{return_col}-H{return_col}, Z=42.0mm)",
+        "label": f"[DROP 8-CH] Put back tips onto Slot_4 Col {return_col}",
     })
 
     return steps

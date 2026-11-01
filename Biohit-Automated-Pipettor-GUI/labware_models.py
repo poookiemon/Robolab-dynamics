@@ -401,8 +401,8 @@ class Reservoir7Column(LabwareBase):
         self.is_8ch_calibrated = True
         self.col_x = kwargs.get("col_x", [108.36, 93.36, 78.36, 63.36, 48.36, 33.36, 18.36])
         self.center_y = kwargs.get("center_y", 179.9)
-        self.aspirate_z_mm = kwargs.get("aspirate_z_mm", 89.32)
-        self.dispense_brim_z_mm = kwargs.get("dispense_brim_z_mm", 59.32)  # 3cm above bottom 89.32mm
+        self.aspirate_z_mm = kwargs.get("aspirate_z_mm", 22.33)
+        self.dispense_brim_z_mm = kwargs.get("dispense_brim_z_mm", 10.0)  # Safe discard height (3cm above bottom with 1000uL tips)
         self.discard_tip_z_mm = kwargs.get("discard_tip_z_mm", 48.0)
 
     def parse_well(self, well_id: str) -> Tuple[Optional[int], Optional[int]]:

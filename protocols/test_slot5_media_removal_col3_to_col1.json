@@ -21,7 +21,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Slot_5 Col 1 [Rows A-H] (Z=22.33mm)"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Slot_5 Col 1 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -33,7 +33,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (3cm above, Z=59.32mm)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A7 Waste (Slot 5 Col 1)"
   },
   {
     "action": "Aspirate Media",
@@ -45,7 +45,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Slot_5 Col 2 [Rows A-H] (Z=22.33mm)"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Slot_5 Col 2 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -57,7 +57,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (3cm above, Z=59.32mm)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A7 Waste (Slot 5 Col 2)"
   },
   {
     "action": "Aspirate Media",
@@ -69,7 +69,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Slot_5 Col 3 [Rows A-H] (Z=22.33mm)"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Slot_5 Col 3 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -81,7 +81,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (3cm above, Z=59.32mm)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A7 Waste (Slot 5 Col 3)"
   },
   {
     "action": "Aspirate Media",
@@ -93,7 +93,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Slot_5 Col 4 [Rows A-H] (Z=22.33mm)"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Slot_5 Col 4 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -105,7 +105,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (3cm above, Z=59.32mm)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A7 Waste (Slot 5 Col 4)"
   },
   {
     "action": "Aspirate Media",
@@ -117,7 +117,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Slot_5 Col 5 [Rows A-H] (Z=22.33mm)"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Slot_5 Col 5 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -129,7 +129,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (3cm above, Z=59.32mm)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A7 Waste (Slot 5 Col 5)"
   },
   {
     "action": "Aspirate Media",
@@ -141,7 +141,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Slot_5 Col 6 [Rows A-H] (Z=22.33mm)"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Slot_5 Col 6 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -153,7 +153,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A7 Waste (3cm above, Z=59.32mm)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A7 Waste (Slot 5 Col 6)"
   },
   {
     "action": "Discard Tip",
@@ -166,6 +166,6 @@
     "tip_offset_rows": 0,
     "discard_z_override": 42.0,
     "mounted_channels": "A-H",
-    "label": "[DROP 8-CH] Put back tips onto Slot_4 Col 1 (A1-H1, Z=42.0mm)"
+    "label": "[DROP 8-CH] Put back tips onto Slot_4 Col 1"
   }
 ]

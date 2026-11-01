@@ -119,6 +119,30 @@ class LIMSMasterApp:
         self.protocol_edit_buttons = []
         self.tip_rack_learned_offset = (0.0, 0.0)
         self.eight_ch_cal_offset = {"X": 0.0, "Y": 0.0, "Z": 0.0}
+
+        # Persistent 8-Channel Heights & Depths Memory (GUI remembers all heights)
+        self.calibrated_heights_file = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "calibrated_heights_8ch.json"
+        )
+        self.calibrated_heights = {
+            "ehm_aspirate_z": 22.33,
+            "ehm_dispense_z": 12.33,
+            "waste_dispense_z": 10.0,
+            "reservoir_aspirate_z": 22.33,
+            "tip_rack_discard_z": 42.0,
+            "tip_rack_pickup_approach_z": 75.0,
+            "tip_rack_pickup_limit_z": 98.0,
+            "tip_rack_collar_z": 86.36,
+            "eight_ch_x_offset": 0.0,
+            "eight_ch_y_offset": 0.0,
+            "eight_ch_z_offset": 0.0,
+        }
+        if os.path.exists(self.calibrated_heights_file):
+            try:
+                with open(self.calibrated_heights_file, "r") as f:
+                    self.calibrated_heights.update(json.load(f))
+            except Exception as e:
+                self.logger.warning(f"Could not load calibrated_heights_8ch.json: {e}")
         self.head_mode_var = tk.StringVar(
             value="8×1000 µL (8-Channel Manifold)" if is_multi else "1×200 µL (Single-Channel)"
         )
@@ -195,6 +219,7 @@ class LIMSMasterApp:
         filemenu.add_command(label="Load JSON Protocol...", command=self.action_load_workflow)
         filemenu.add_command(label="Plate 2 Row H Media Change Only...", command=self.action_load_plate2_rowH_protocol)
         filemenu.add_command(label="8×1000 µL EHM Media Change (Plate 5 & Plate 6)...", command=self.action_load_8ch_1000ul_media_change_protocol)
+        filemenu.add_command(label="8-Channel Calibrated Heights & Depths...", command=self.action_open_8ch_height_settings)
         filemenu.add_command(label="Bakar Dilution Plate (Media Change)...", command=self.action_load_bakar_media_change_serial_dilution_protocol)
         filemenu.add_command(label="DMSO-Drug Plate Prep (Initial Loading)...", command=self.action_load_dmso_dilution_protocol)
         filemenu.add_command(label="Save JSON Protocol As...", command=self.action_save_workflow_as)
@@ -1839,6 +1864,16 @@ class LIMSMasterApp:
             fg="white",
             font=("Arial", 9, "bold"),
             command=self.action_load_slot5_media_removal_test,
+        ).pack(fill=tk.X, pady=(2, 2))
+
+        # 8-Channel Height Memory (Calibrate Depths)
+        tk.Button(
+            pane_ctrl,
+            text="⚙️ 8-Channel Height Memory (Calibrate Depths)",
+            bg="#17a2b8",
+            fg="white",
+            font=("Arial", 9, "bold"),
+            command=self.action_open_8ch_height_settings,
         ).pack(fill=tk.X, pady=(2, 4))
 
         # Media Change + Drug Protocols (2 Plates)
@@ -2729,18 +2764,111 @@ class LIMSMasterApp:
             self.wf_box.insert(tk.END, self._format_step_msg(st))
 
         self._update_estimated_timer_preview()
-        self.logger.info("Loaded Slot 5 Media Removal Test (Tips from Col 3, Waste 3cm above at Z=59.32mm, Return tips to Col 1).")
+        self.logger.info("Loaded Slot 5 Media Removal Test (Tips from Col 3, Waste to Slot 6, Return tips to Col 1).")
         if not quiet:
             messagebox.showinfo(
                 "Slot 5 Test Protocol Loaded",
                 "Slot 5 Media Removal Test loaded successfully!\n\n"
-                "• Tips Picked: Slot 4 Col 3 (A3)\n"
-                "• Old Media Removed: Slot 5 Cols 1..6 (Z=22.33 mm)\n"
-                "• Waste Dispensed: Slot 6 A7 (3 cm above bottom, Z=59.32 mm)\n"
-                "• Tips Returned: Slot 4 Col 1 (A1)\n\n"
+                "• Tips Picked: Slot 4 Col 3\n"
+                "• Old Media Removed: Slot 5 Cols 1..6 (inside well)\n"
+                "• Waste Dispensed: Slot 6 Waste (3 cm above bottom)\n"
+                "• Tips Returned: Slot 4 Col 1\n\n"
                 "Click 'Run Protocol' when ready.",
                 parent=self.root,
             )
+
+    def save_calibrated_heights(self):
+        """Persists the 8-channel calibrated heights dictionary to disk."""
+        try:
+            with open(self.calibrated_heights_file, "w") as f:
+                json.dump(self.calibrated_heights, f, indent=2)
+            self.logger.info("Saved 8-channel calibrated heights to persistent storage.")
+        except Exception as e:
+            self.logger.error(f"Error saving calibrated heights: {e}")
+
+    def action_open_8ch_height_settings(self):
+        """
+        Opens a dedicated settings dialog for 8-channel calibrated heights and depths.
+        Values are saved permanently to calibrated_heights_8ch.json and remembered by the GUI.
+        """
+        top = tk.Toplevel(self.root)
+        top.title("8-Channel Calibrated Heights & Depths Memory")
+        top.geometry("540x480")
+        top.transient(self.root)
+        top.grab_set()
+
+        try:
+            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 270
+            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 240
+            top.geometry(f"+{max(0, rx)}+{max(0, ry)}")
+        except Exception:
+            pass
+
+        ttk.Label(
+            top,
+            text="📐 8-Channel Persistent Height Memory",
+            font=("Arial", 12, "bold"),
+            foreground="#6f42c1",
+        ).pack(pady=(12, 4))
+
+        ttk.Label(
+            top,
+            text="The GUI remembers these calibrated heights across all protocols and runs.\nNo Z heights need to be mentioned or hardcoded in protocol files.",
+            font=("Arial", 9),
+            justify=tk.CENTER,
+            foreground="#555",
+        ).pack(pady=(0, 10))
+
+        body = ttk.LabelFrame(top, text="Calibrated Heights (mm from Z=0 Top)", padding=10)
+        body.pack(fill=tk.BOTH, expand=True, padx=16, pady=(0, 10))
+
+        entries = {}
+        fields = [
+            ("ehm_aspirate_z", "EHM Old Media Removal (Inside Well):", "22.33"),
+            ("ehm_dispense_z", "EHM Fresh Media Addition (1cm Above Bottom):", "12.33"),
+            ("waste_dispense_z", "Slot 6 Waste Dispense (3cm Above Bottom):", "10.00"),
+            ("reservoir_aspirate_z", "Slot 6 Fresh Media Reservoir (Aspirate):", "22.33"),
+            ("tip_rack_discard_z", "Slot 4 Tip Rack Return / Discard Height:", "42.00"),
+            ("tip_rack_collar_z", "Slot 4 Tip Collar / Rim (Photo Alignment):", "86.36"),
+            ("tip_rack_pickup_limit_z", "Slot 4 Tip Pickup Force Limit:", "98.00"),
+        ]
+
+        for key, label_text, default_val in fields:
+            row = ttk.Frame(body)
+            row.pack(fill=tk.X, pady=3)
+            ttk.Label(row, text=label_text, font=("Arial", 9)).pack(side=tk.LEFT)
+            cur_val = str(self.calibrated_heights.get(key, default_val))
+            v_var = tk.StringVar(value=cur_val)
+            entries[key] = v_var
+            ent = ttk.Entry(row, textvariable=v_var, width=8, justify="center")
+            ent.pack(side=tk.RIGHT)
+
+        def _save():
+            try:
+                for k, v in entries.items():
+                    self.calibrated_heights[k] = float(v.get())
+                self.save_calibrated_heights()
+                messagebox.showinfo(
+                    "Heights Saved",
+                    "8-Channel heights successfully saved to persistent memory!\n"
+                    "The GUI will remember these heights across all protocols and sessions.",
+                    parent=top,
+                )
+                top.destroy()
+            except ValueError as ve:
+                messagebox.showerror("Invalid Input", f"All heights must be valid numbers: {ve}", parent=top)
+
+        btn_row = ttk.Frame(top, padding=10)
+        btn_row.pack(fill=tk.X)
+        tk.Button(
+            btn_row,
+            text="💾 Save Heights to Memory",
+            bg="#28a745",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            command=_save,
+        ).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_row, text="Cancel", command=top.destroy).pack(side=tk.RIGHT)
 
     def action_load_8ch_1000ul_media_change_protocol(self):
         """
@@ -4002,6 +4130,26 @@ class LIMSMasterApp:
         slot_obj = self.lims.deck_slots.get(slot_name)
         slot_z_offset = getattr(slot_obj, 'z_offset', 0.0)
 
+        is_8ch = bool(getattr(self.lims.pipettor, 'multichannel', False))
+        kind = self._lw_kind(labware_obj)
+
+        # Persistent 8-channel calibrated heights memory lookup (GUI remembers operator depths)
+        if is_8ch and hasattr(self, 'calibrated_heights'):
+            if kind == "ehm48" or slot_name in ("Slot_3", "Slot_5"):
+                if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
+                    return min(float(self.calibrated_heights.get("ehm_aspirate_z", 22.33)) + slot_z_offset + extra_z, 103.5)
+                elif action == "Dispense Media":
+                    return min(float(self.calibrated_heights.get("ehm_dispense_z", 12.33)) + slot_z_offset + extra_z, 103.5)
+            elif (slot_name == "Slot_6" and kind != "reservoir_6") or kind in ("reservoir_7", "waste"):
+                if action == "Dispense Media":
+                    return min(float(self.calibrated_heights.get("waste_dispense_z", 10.0)) + slot_z_offset + extra_z, 103.5)
+                elif action in ("Aspirate Media", "Mix Well"):
+                    return min(float(self.calibrated_heights.get("reservoir_aspirate_z", 22.33)) + slot_z_offset + extra_z, 103.5)
+                elif action == "Discard Tip":
+                    return min(float(self.calibrated_heights.get("waste_tip_drop_z", 48.0)) + slot_z_offset + extra_z, 103.5)
+            elif slot_name == "Slot_4" and action == "Discard Tip":
+                return min(float(self.calibrated_heights.get("tip_rack_discard_z", 42.0)) + slot_z_offset + extra_z, 103.5)
+
         # 0. Object-Oriented DeckManager Kinematics
         if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
             slot_model = self.deck_manager.slots[slot_name]
@@ -4010,7 +4158,6 @@ class LIMSMasterApp:
                 computed_z = self.deck_manager.calculate_z(action, slot_name, well_id, in_liquid=in_liquid)
                 return min(computed_z + slot_z_offset + extra_z, 103.5)
 
-        kind = self._lw_kind(labware_obj)
         # "deep" = going into the liquid (aspirate / mix); otherwise stop at the brim
         deep = action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0
 
@@ -4038,7 +4185,7 @@ class LIMSMasterApp:
             elif kind == "reservoir_6":
                 base_z = 101.0 if deep else 78.0
             elif kind == "reservoir_7":
-                base_z = 89.32 if deep else 59.32  # Discard media 3cm above bottom (89.32 - 30 = 59.32mm)
+                base_z = 22.33 if deep else 10.0  # Calibrated for 8-channel: 22.33 aspirate, 10.0 dispense (3cm above bottom)
             elif kind == "ehm48":
                 base_z = 22.33 if deep else 12.33  # User declared: 22.33 inside well, 12.33 dispense (1cm above bottom)
             elif kind == "tip_rack":
@@ -4837,7 +4984,12 @@ class LIMSMasterApp:
                                 103.5,
                             )
                             lw_kind = self._lw_kind(self.lims.deck_labware.get(slot_name))
-                            is_already_cal = getattr(self.lims.deck_labware.get(slot_name), 'is_8ch_calibrated', False) or lw_kind in ("ehm48", "reservoir_7")
+                            is_already_cal = (
+                                getattr(self.lims.deck_labware.get(slot_name), 'is_8ch_calibrated', False)
+                                or lw_kind in ("ehm48", "reservoir_7", "waste")
+                                or (slot_name in ("Slot_3", "Slot_5"))
+                                or (slot_name == "Slot_6" and lw_kind != "reservoir_6")
+                            )
                             if is_8ch and not is_already_cal:
                                 # 1000 µL tips are ~20.5 mm longer than the 200 µL calibration tip
                                 tz = max(0.0, tz - self.EIGHT_CH_TIP_Z_COMP_MM)

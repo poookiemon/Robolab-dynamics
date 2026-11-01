@@ -9,19 +9,19 @@
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
     "mounted_channels": "A-H",
-    "label": "[PICK 8-CH] Slot_4 Col 1 (A1-H1 -> Ch A-H, shift +0 rows) | Plate 5 Fresh Media (All 8 Channels)"
+    "label": "[PICK 8-CH] Slot_4 Col 1 (A1-H1 -> Ch A-H) | Plate 5 Fresh Media (All 8 Channels)"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
     "well": "A1",
-    "volume": 500.0,
+    "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-H: Fresh Media, Col 1)"
+    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R1 (Ch A-H: Fresh Media, for Cols 1&2)"
   },
   {
     "action": "Dispense Media",
@@ -33,19 +33,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 [1cm above, Z=12.33mm]"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A1",
-    "volume": 500.0,
-    "labware": "reservoir_7_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A-H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-H: Fresh Media, Col 2)"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 1"
   },
   {
     "action": "Dispense Media",
@@ -57,19 +45,19 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 2"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
     "well": "A1",
-    "volume": 500.0,
+    "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-H: Fresh Media, Col 3)"
+    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R1 (Ch A-H: Fresh Media, for Cols 3&4)"
   },
   {
     "action": "Dispense Media",
@@ -81,19 +69,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 [1cm above, Z=12.33mm]"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A1",
-    "volume": 500.0,
-    "labware": "reservoir_7_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A-H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-H: Fresh Media, Col 4)"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 3"
   },
   {
     "action": "Dispense Media",
@@ -105,19 +81,19 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 4"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
     "well": "A1",
-    "volume": 500.0,
+    "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-H: Fresh Media, Col 5)"
+    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R1 (Ch A-H: Fresh Media, for Cols 5&6)"
   },
   {
     "action": "Dispense Media",
@@ -129,19 +105,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 [1cm above, Z=12.33mm]"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A1",
-    "volume": 500.0,
-    "labware": "reservoir_7_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A-H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-H: Fresh Media, Col 6)"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 5"
   },
   {
     "action": "Dispense Media",
@@ -153,7 +117,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 6"
   },
   {
     "action": "Discard Tip",
@@ -166,7 +130,7 @@
     "tip_offset_rows": 0,
     "discard_z_override": 48.0,
     "mounted_channels": "A-H",
-    "label": "[DROP 8-CH] Ch A-H -> Slot_6 A7 Waste Tip-Drop (Z=48.0mm) | Plate 5 Fresh Media Tips"
+    "label": "[DROP 8-CH] Ch A-H -> Slot_6 A7 Waste | Plate 5 Fresh Media Tips"
   },
   {
     "action": "Pick Up Tip",
@@ -178,19 +142,19 @@
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
     "mounted_channels": "A-H",
-    "label": "[PICK 8-CH] Slot_4 Col 2 (A2-H2 -> Ch A-H, shift +0 rows) | Plate 6 Fresh Media (All 8 Channels)"
+    "label": "[PICK 8-CH] Slot_4 Col 2 (A2-H2 -> Ch A-H) | Plate 6 Fresh Media (All 8 Channels)"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
     "well": "A2",
-    "volume": 500.0,
+    "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch A-H: Fresh Media, Col 1)"
+    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R2 (Ch A-H: Fresh Media, for Cols 1&2)"
   },
   {
     "action": "Dispense Media",
@@ -202,19 +166,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 [1cm above, Z=12.33mm]"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A2",
-    "volume": 500.0,
-    "labware": "reservoir_7_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A-H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch A-H: Fresh Media, Col 2)"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 1"
   },
   {
     "action": "Dispense Media",
@@ -226,19 +178,19 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 2"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
     "well": "A2",
-    "volume": 500.0,
+    "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch A-H: Fresh Media, Col 3)"
+    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R2 (Ch A-H: Fresh Media, for Cols 3&4)"
   },
   {
     "action": "Dispense Media",
@@ -250,19 +202,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 [1cm above, Z=12.33mm]"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A2",
-    "volume": 500.0,
-    "labware": "reservoir_7_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A-H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch A-H: Fresh Media, Col 4)"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 3"
   },
   {
     "action": "Dispense Media",
@@ -274,19 +214,19 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 4"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
     "well": "A2",
-    "volume": 500.0,
+    "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch A-H: Fresh Media, Col 5)"
+    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R2 (Ch A-H: Fresh Media, for Cols 5&6)"
   },
   {
     "action": "Dispense Media",
@@ -298,19 +238,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 [1cm above, Z=12.33mm]"
-  },
-  {
-    "action": "Aspirate Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A2",
-    "volume": 500.0,
-    "labware": "reservoir_7_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A-H",
-    "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch A-H: Fresh Media, Col 6)"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 5"
   },
   {
     "action": "Dispense Media",
@@ -322,7 +250,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 6"
   },
   {
     "action": "Discard Tip",
@@ -335,6 +263,6 @@
     "tip_offset_rows": 0,
     "discard_z_override": 48.0,
     "mounted_channels": "A-H",
-    "label": "[DROP 8-CH] Ch A-H -> Slot_6 A7 Waste Tip-Drop (Z=48.0mm) | Plate 6 Fresh Media Tips"
+    "label": "[DROP 8-CH] Ch A-H -> Slot_6 A7 Waste | Plate 6 Fresh Media Tips"
   }
 ]

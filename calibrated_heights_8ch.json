@@ -1,0 +1,13 @@
+{
+  "ehm_aspirate_z": 22.33,
+  "ehm_dispense_z": 12.33,
+  "waste_dispense_z": 10.0,
+  "reservoir_aspirate_z": 22.33,
+  "tip_rack_discard_z": 42.0,
+  "tip_rack_pickup_approach_z": 75.0,
+  "tip_rack_pickup_limit_z": 98.0,
+  "tip_rack_collar_z": 86.36,
+  "eight_ch_x_offset": 0.0,
+  "eight_ch_y_offset": 0.0,
+  "eight_ch_z_offset": 0.0
+}

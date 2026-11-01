@@ -9,7 +9,7 @@
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
     "mounted_channels": "A-H",
-    "label": "[PICK 8-CH] Slot_4 Col 1 (A1-H1 -> Ch A-H, shift +0 rows) | Plate 5 Old Media Removal"
+    "label": "[PICK 8-CH] Slot_4 Col 1 (A1-H1 -> Ch A-H) | Plate 5 Old Media Removal"
   },
   {
     "action": "Aspirate Media",
@@ -21,7 +21,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Plate 5 (Slot_3) Col 1 [Rows A-H]"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 5 Col 1 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -33,7 +33,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A6 Waste (Plate 5 Col 1)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 5 Col 1)"
   },
   {
     "action": "Aspirate Media",
@@ -45,7 +45,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Plate 5 (Slot_3) Col 2 [Rows A-H]"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 5 Col 2 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -57,7 +57,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A6 Waste (Plate 5 Col 2)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 5 Col 2)"
   },
   {
     "action": "Aspirate Media",
@@ -69,7 +69,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Plate 5 (Slot_3) Col 3 [Rows A-H]"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 5 Col 3 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -81,7 +81,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A6 Waste (Plate 5 Col 3)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 5 Col 3)"
   },
   {
     "action": "Aspirate Media",
@@ -93,7 +93,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Plate 5 (Slot_3) Col 4 [Rows A-H]"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 5 Col 4 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -105,7 +105,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A6 Waste (Plate 5 Col 4)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 5 Col 4)"
   },
   {
     "action": "Aspirate Media",
@@ -117,7 +117,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Plate 5 (Slot_3) Col 5 [Rows A-H]"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 5 Col 5 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -129,7 +129,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A6 Waste (Plate 5 Col 5)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 5 Col 5)"
   },
   {
     "action": "Aspirate Media",
@@ -141,7 +141,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Plate 5 (Slot_3) Col 6 [Rows A-H]"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 5 Col 6 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -153,7 +153,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A6 Waste (Plate 5 Col 6)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 5 Col 6)"
   },
   {
     "action": "Discard Tip",
@@ -166,7 +166,7 @@
     "tip_offset_rows": 0,
     "discard_z_override": 42.0,
     "mounted_channels": "A-H",
-    "label": "[DROP 8-CH] Ch A-H -> Slot_4 Empty Col 12 (Z=42.0mm) | Plate 5 Old Media Tips"
+    "label": "[DROP 8-CH] Ch A-H -> Slot_4 Col 12 | Plate 5 Old Media Tips"
   },
   {
     "action": "Pick Up Tip",
@@ -178,7 +178,7 @@
     "eight_ch_symmetric": true,
     "tip_offset_rows": 5,
     "mounted_channels": "A-C",
-    "label": "[PICK 8-CH] Slot_4 Col 2 (F2-H2 -> Ch A-C, shift +5 rows) | Plate 5 Drug 11 (Rows A-C)"
+    "label": "[PICK 8-CH] Slot_4 Col 2 (F2-H2 -> Ch A-C) | Plate 5 Drug 11 (Rows A-C)"
   },
   {
     "action": "Aspirate Media",
@@ -190,7 +190,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-C: Drug 11, Col 1)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R1 (Ch A-C: Drug 11, Col 1)"
   },
   {
     "action": "Dispense Media",
@@ -202,7 +202,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 1"
   },
   {
     "action": "Aspirate Media",
@@ -214,7 +214,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-C: Drug 11, Col 2)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R1 (Ch A-C: Drug 11, Col 2)"
   },
   {
     "action": "Dispense Media",
@@ -226,7 +226,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 2"
   },
   {
     "action": "Aspirate Media",
@@ -238,7 +238,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-C: Drug 11, Col 3)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R1 (Ch A-C: Drug 11, Col 3)"
   },
   {
     "action": "Dispense Media",
@@ -250,7 +250,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 3"
   },
   {
     "action": "Aspirate Media",
@@ -262,7 +262,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-C: Drug 11, Col 4)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R1 (Ch A-C: Drug 11, Col 4)"
   },
   {
     "action": "Dispense Media",
@@ -274,7 +274,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 4"
   },
   {
     "action": "Aspirate Media",
@@ -286,7 +286,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-C: Drug 11, Col 5)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R1 (Ch A-C: Drug 11, Col 5)"
   },
   {
     "action": "Dispense Media",
@@ -298,7 +298,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 5"
   },
   {
     "action": "Aspirate Media",
@@ -310,7 +310,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R1 (Ch A-C: Drug 11, Col 6)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R1 (Ch A-C: Drug 11, Col 6)"
   },
   {
     "action": "Dispense Media",
@@ -322,7 +322,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 6"
   },
   {
     "action": "Discard Tip",
@@ -335,7 +335,7 @@
     "tip_offset_rows": 0,
     "discard_z_override": 42.0,
     "mounted_channels": "A-C",
-    "label": "[DROP 8-CH] Ch A-C -> Slot_4 Empty Col 11 (Z=42.0mm) | Plate 5 Drug 11"
+    "label": "[DROP 8-CH] Ch A-C -> Slot_4 Col 11 | Plate 5 Drug 11"
   },
   {
     "action": "Pick Up Tip",
@@ -347,7 +347,7 @@
     "eight_ch_symmetric": true,
     "tip_offset_rows": -6,
     "mounted_channels": "G-H",
-    "label": "[PICK 8-CH] Slot_4 Col 2 (A2-B2 -> Ch G-H, shift -6 rows) | Plate 5 Drug 13 (Rows G-H)"
+    "label": "[PICK 8-CH] Slot_4 Col 2 (A2-B2 -> Ch G-H) | Plate 5 Drug 13 (Rows G-H)"
   },
   {
     "action": "Aspirate Media",
@@ -359,7 +359,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch G-H: Drug 13, Col 1)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R3 (Ch G-H: Drug 13, Col 1)"
   },
   {
     "action": "Dispense Media",
@@ -371,7 +371,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 1"
   },
   {
     "action": "Aspirate Media",
@@ -383,7 +383,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch G-H: Drug 13, Col 2)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R3 (Ch G-H: Drug 13, Col 2)"
   },
   {
     "action": "Dispense Media",
@@ -395,7 +395,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 2"
   },
   {
     "action": "Aspirate Media",
@@ -407,7 +407,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch G-H: Drug 13, Col 3)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R3 (Ch G-H: Drug 13, Col 3)"
   },
   {
     "action": "Dispense Media",
@@ -419,7 +419,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 3"
   },
   {
     "action": "Aspirate Media",
@@ -431,7 +431,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch G-H: Drug 13, Col 4)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R3 (Ch G-H: Drug 13, Col 4)"
   },
   {
     "action": "Dispense Media",
@@ -443,7 +443,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 4"
   },
   {
     "action": "Aspirate Media",
@@ -455,7 +455,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch G-H: Drug 13, Col 5)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R3 (Ch G-H: Drug 13, Col 5)"
   },
   {
     "action": "Dispense Media",
@@ -467,7 +467,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 5"
   },
   {
     "action": "Aspirate Media",
@@ -479,7 +479,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch G-H: Drug 13, Col 6)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R3 (Ch G-H: Drug 13, Col 6)"
   },
   {
     "action": "Dispense Media",
@@ -491,7 +491,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 6"
   },
   {
     "action": "Discard Tip",
@@ -504,7 +504,7 @@
     "tip_offset_rows": 0,
     "discard_z_override": 42.0,
     "mounted_channels": "G-H",
-    "label": "[DROP 8-CH] Ch G-H -> Slot_4 Empty Col 10 (Z=42.0mm) | Plate 5 Drug 13"
+    "label": "[DROP 8-CH] Ch G-H -> Slot_4 Col 10 | Plate 5 Drug 13"
   },
   {
     "action": "Pick Up Tip",
@@ -516,7 +516,7 @@
     "eight_ch_symmetric": true,
     "tip_offset_rows": -1,
     "mounted_channels": "D-F",
-    "label": "[PICK 8-CH] Slot_4 Col 2 (C2-E2 -> Ch D-F, shift -1 rows) | Plate 5 Drug 12 (Rows D-F)"
+    "label": "[PICK 8-CH] Slot_4 Col 2 (C2-E2 -> Ch D-F) | Plate 5 Drug 12 (Rows D-F)"
   },
   {
     "action": "Aspirate Media",
@@ -528,7 +528,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch D-F: Drug 12, Col 1)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R2 (Ch D-F: Drug 12, Col 1)"
   },
   {
     "action": "Dispense Media",
@@ -540,7 +540,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 1"
   },
   {
     "action": "Aspirate Media",
@@ -552,7 +552,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch D-F: Drug 12, Col 2)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R2 (Ch D-F: Drug 12, Col 2)"
   },
   {
     "action": "Dispense Media",
@@ -564,7 +564,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 2"
   },
   {
     "action": "Aspirate Media",
@@ -576,7 +576,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch D-F: Drug 12, Col 3)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R2 (Ch D-F: Drug 12, Col 3)"
   },
   {
     "action": "Dispense Media",
@@ -588,7 +588,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 3"
   },
   {
     "action": "Aspirate Media",
@@ -600,7 +600,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch D-F: Drug 12, Col 4)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R2 (Ch D-F: Drug 12, Col 4)"
   },
   {
     "action": "Dispense Media",
@@ -612,7 +612,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 4"
   },
   {
     "action": "Aspirate Media",
@@ -624,7 +624,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch D-F: Drug 12, Col 5)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R2 (Ch D-F: Drug 12, Col 5)"
   },
   {
     "action": "Dispense Media",
@@ -636,7 +636,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 5"
   },
   {
     "action": "Aspirate Media",
@@ -648,7 +648,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R2 (Ch D-F: Drug 12, Col 6)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R2 (Ch D-F: Drug 12, Col 6)"
   },
   {
     "action": "Dispense Media",
@@ -660,7 +660,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 6"
   },
   {
     "action": "Discard Tip",
@@ -673,7 +673,7 @@
     "tip_offset_rows": 0,
     "discard_z_override": 42.0,
     "mounted_channels": "D-F",
-    "label": "[DROP 8-CH] Ch D-F -> Slot_4 Empty Col 9 (Z=42.0mm) | Plate 5 Drug 12"
+    "label": "[DROP 8-CH] Ch D-F -> Slot_4 Col 9 | Plate 5 Drug 12"
   },
   {
     "action": "Pick Up Tip",
@@ -685,7 +685,7 @@
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
     "mounted_channels": "A-H",
-    "label": "[PICK 8-CH] Slot_4 Col 3 (A3-H3 -> Ch A-H, shift +0 rows) | Plate 6 Old Media Removal"
+    "label": "[PICK 8-CH] Slot_4 Col 3 (A3-H3 -> Ch A-H) | Plate 6 Old Media Removal"
   },
   {
     "action": "Aspirate Media",
@@ -697,7 +697,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Plate 6 (Slot_5) Col 1 [Rows A-H]"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 6 Col 1 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -709,7 +709,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A6 Waste (Plate 6 Col 1)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 6 Col 1)"
   },
   {
     "action": "Aspirate Media",
@@ -721,7 +721,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Plate 6 (Slot_5) Col 2 [Rows A-H]"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 6 Col 2 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -733,7 +733,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A6 Waste (Plate 6 Col 2)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 6 Col 2)"
   },
   {
     "action": "Aspirate Media",
@@ -745,7 +745,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Plate 6 (Slot_5) Col 3 [Rows A-H]"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 6 Col 3 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -757,7 +757,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A6 Waste (Plate 6 Col 3)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 6 Col 3)"
   },
   {
     "action": "Aspirate Media",
@@ -769,7 +769,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Plate 6 (Slot_5) Col 4 [Rows A-H]"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 6 Col 4 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -781,7 +781,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A6 Waste (Plate 6 Col 4)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 6 Col 4)"
   },
   {
     "action": "Aspirate Media",
@@ -793,7 +793,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Plate 6 (Slot_5) Col 5 [Rows A-H]"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 6 Col 5 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -805,7 +805,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A6 Waste (Plate 6 Col 5)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 6 Col 5)"
   },
   {
     "action": "Aspirate Media",
@@ -817,7 +817,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550uL from Plate 6 (Slot_5) Col 6 [Rows A-H]"
+    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 6 Col 6 [Rows A-H]"
   },
   {
     "action": "Dispense Media",
@@ -829,7 +829,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550uL to Slot_6 A6 Waste (Plate 6 Col 6)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 6 Col 6)"
   },
   {
     "action": "Discard Tip",
@@ -842,7 +842,7 @@
     "tip_offset_rows": 0,
     "discard_z_override": 42.0,
     "mounted_channels": "A-H",
-    "label": "[DROP 8-CH] Ch A-H -> Slot_4 Empty Col 8 (Z=42.0mm) | Plate 6 Old Media Tips"
+    "label": "[DROP 8-CH] Ch A-H -> Slot_4 Col 8 | Plate 6 Old Media Tips"
   },
   {
     "action": "Pick Up Tip",
@@ -854,7 +854,7 @@
     "eight_ch_symmetric": true,
     "tip_offset_rows": -7,
     "mounted_channels": "H",
-    "label": "[PICK 8-CH] Slot_4 Col 4 (A4 -> Ch H, shift -7 rows) | Plate 6 Control (Row H from clean R4)"
+    "label": "[PICK 8-CH] Slot_4 Col 4 (A4 -> Ch H) | Plate 6 Control (Row H from clean R4)"
   },
   {
     "action": "Aspirate Media",
@@ -866,7 +866,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch H: Control (Clean R4), Col 1)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R4 (Ch H: Control (Clean R4), Col 1)"
   },
   {
     "action": "Dispense Media",
@@ -878,7 +878,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 1"
   },
   {
     "action": "Aspirate Media",
@@ -890,7 +890,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch H: Control (Clean R4), Col 2)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R4 (Ch H: Control (Clean R4), Col 2)"
   },
   {
     "action": "Dispense Media",
@@ -902,7 +902,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 2"
   },
   {
     "action": "Aspirate Media",
@@ -914,7 +914,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch H: Control (Clean R4), Col 3)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R4 (Ch H: Control (Clean R4), Col 3)"
   },
   {
     "action": "Dispense Media",
@@ -926,7 +926,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 3"
   },
   {
     "action": "Aspirate Media",
@@ -938,7 +938,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch H: Control (Clean R4), Col 4)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R4 (Ch H: Control (Clean R4), Col 4)"
   },
   {
     "action": "Dispense Media",
@@ -950,7 +950,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 4"
   },
   {
     "action": "Aspirate Media",
@@ -962,7 +962,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch H: Control (Clean R4), Col 5)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R4 (Ch H: Control (Clean R4), Col 5)"
   },
   {
     "action": "Dispense Media",
@@ -974,7 +974,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 5"
   },
   {
     "action": "Aspirate Media",
@@ -986,7 +986,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch H: Control (Clean R4), Col 6)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R4 (Ch H: Control (Clean R4), Col 6)"
   },
   {
     "action": "Dispense Media",
@@ -998,7 +998,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 6"
   },
   {
     "action": "Discard Tip",
@@ -1011,7 +1011,7 @@
     "tip_offset_rows": 0,
     "discard_z_override": 42.0,
     "mounted_channels": "H",
-    "label": "[DROP 8-CH] Ch H -> Slot_4 Empty Col 7 (Z=42.0mm) | Plate 6 Control"
+    "label": "[DROP 8-CH] Ch H -> Slot_4 Col 7 | Plate 6 Control"
   },
   {
     "action": "Pick Up Tip",
@@ -1023,7 +1023,7 @@
     "eight_ch_symmetric": true,
     "tip_offset_rows": 7,
     "mounted_channels": "A",
-    "label": "[PICK 8-CH] Slot_4 Col 4 (H4 -> Ch A, shift +7 rows) | Plate 6 Drug 13 (Row A)"
+    "label": "[PICK 8-CH] Slot_4 Col 4 (H4 -> Ch A) | Plate 6 Drug 13 (Row A)"
   },
   {
     "action": "Aspirate Media",
@@ -1035,7 +1035,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch A: Drug 13, Col 1)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R3 (Ch A: Drug 13, Col 1)"
   },
   {
     "action": "Dispense Media",
@@ -1047,7 +1047,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 1"
   },
   {
     "action": "Aspirate Media",
@@ -1059,7 +1059,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch A: Drug 13, Col 2)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R3 (Ch A: Drug 13, Col 2)"
   },
   {
     "action": "Dispense Media",
@@ -1071,7 +1071,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 2"
   },
   {
     "action": "Aspirate Media",
@@ -1083,7 +1083,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch A: Drug 13, Col 3)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R3 (Ch A: Drug 13, Col 3)"
   },
   {
     "action": "Dispense Media",
@@ -1095,7 +1095,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 3"
   },
   {
     "action": "Aspirate Media",
@@ -1107,7 +1107,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch A: Drug 13, Col 4)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R3 (Ch A: Drug 13, Col 4)"
   },
   {
     "action": "Dispense Media",
@@ -1119,7 +1119,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 4"
   },
   {
     "action": "Aspirate Media",
@@ -1131,7 +1131,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch A: Drug 13, Col 5)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R3 (Ch A: Drug 13, Col 5)"
   },
   {
     "action": "Dispense Media",
@@ -1143,7 +1143,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 5"
   },
   {
     "action": "Aspirate Media",
@@ -1155,7 +1155,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R3 (Ch A: Drug 13, Col 6)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R3 (Ch A: Drug 13, Col 6)"
   },
   {
     "action": "Dispense Media",
@@ -1167,7 +1167,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 6"
   },
   {
     "action": "Discard Tip",
@@ -1180,7 +1180,7 @@
     "tip_offset_rows": 0,
     "discard_z_override": 42.0,
     "mounted_channels": "A",
-    "label": "[DROP 8-CH] Ch A -> Slot_4 Empty Col 6 (Z=42.0mm) | Plate 6 Drug 13"
+    "label": "[DROP 8-CH] Ch A -> Slot_4 Col 6 | Plate 6 Drug 13"
   },
   {
     "action": "Pick Up Tip",
@@ -1192,7 +1192,7 @@
     "eight_ch_symmetric": true,
     "tip_offset_rows": 4,
     "mounted_channels": "A-C",
-    "label": "[PICK 8-CH] Slot_4 Col 4 (E4-G4 -> Ch A-C, shift +4 rows) | Shovel Pick -> move to B3-D3"
+    "label": "[PICK 8-CH] Slot_4 Col 4 (E4-G4 -> Ch A-C) | Shovel Pick -> move to B3-D3"
   },
   {
     "action": "Discard Tip",
@@ -1218,7 +1218,7 @@
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
     "mounted_channels": "B-D",
-    "label": "[PICK 8-CH] Slot_4 Col 3 (B3-D3 -> Ch B-D, shift +0 rows) | Plate 6 Drug 14 (Rows B-D from still-clean R4)"
+    "label": "[PICK 8-CH] Slot_4 Col 3 (B3-D3 -> Ch B-D) | Plate 6 Drug 14 (Rows B-D from still-clean R4)"
   },
   {
     "action": "Aspirate Media",
@@ -1230,7 +1230,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch B-D: Drug 14 (R4), Col 1)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R4 (Ch B-D: Drug 14 (R4), Col 1)"
   },
   {
     "action": "Dispense Media",
@@ -1242,7 +1242,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 1"
   },
   {
     "action": "Aspirate Media",
@@ -1254,7 +1254,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch B-D: Drug 14 (R4), Col 2)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R4 (Ch B-D: Drug 14 (R4), Col 2)"
   },
   {
     "action": "Dispense Media",
@@ -1266,7 +1266,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 2"
   },
   {
     "action": "Aspirate Media",
@@ -1278,7 +1278,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch B-D: Drug 14 (R4), Col 3)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R4 (Ch B-D: Drug 14 (R4), Col 3)"
   },
   {
     "action": "Dispense Media",
@@ -1290,7 +1290,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 3"
   },
   {
     "action": "Aspirate Media",
@@ -1302,7 +1302,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch B-D: Drug 14 (R4), Col 4)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R4 (Ch B-D: Drug 14 (R4), Col 4)"
   },
   {
     "action": "Dispense Media",
@@ -1314,7 +1314,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 4"
   },
   {
     "action": "Aspirate Media",
@@ -1326,7 +1326,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch B-D: Drug 14 (R4), Col 5)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R4 (Ch B-D: Drug 14 (R4), Col 5)"
   },
   {
     "action": "Dispense Media",
@@ -1338,7 +1338,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 5"
   },
   {
     "action": "Aspirate Media",
@@ -1350,7 +1350,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R4 (Ch B-D: Drug 14 (R4), Col 6)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R4 (Ch B-D: Drug 14 (R4), Col 6)"
   },
   {
     "action": "Dispense Media",
@@ -1362,7 +1362,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 6"
   },
   {
     "action": "Discard Tip",
@@ -1375,7 +1375,7 @@
     "tip_offset_rows": 0,
     "discard_z_override": 42.0,
     "mounted_channels": "B-D",
-    "label": "[DROP 8-CH] Ch B-D -> Slot_4 Empty Col 5 (Z=42.0mm) | Plate 6 Drug 14"
+    "label": "[DROP 8-CH] Ch B-D -> Slot_4 Col 5 | Plate 6 Drug 14"
   },
   {
     "action": "Pick Up Tip",
@@ -1387,7 +1387,7 @@
     "eight_ch_symmetric": true,
     "tip_offset_rows": -3,
     "mounted_channels": "E-G",
-    "label": "[PICK 8-CH] Slot_4 Col 4 (B4-D4 -> Ch E-G, shift -3 rows) | Plate 6 Drug 15 (Rows E-G)"
+    "label": "[PICK 8-CH] Slot_4 Col 4 (B4-D4 -> Ch E-G) | Plate 6 Drug 15 (Rows E-G)"
   },
   {
     "action": "Aspirate Media",
@@ -1399,7 +1399,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R5 (Ch E-G: Drug 15 (R5), Col 1)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R5 (Ch E-G: Drug 15 (R5), Col 1)"
   },
   {
     "action": "Dispense Media",
@@ -1411,7 +1411,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 1"
   },
   {
     "action": "Aspirate Media",
@@ -1423,7 +1423,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R5 (Ch E-G: Drug 15 (R5), Col 2)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R5 (Ch E-G: Drug 15 (R5), Col 2)"
   },
   {
     "action": "Dispense Media",
@@ -1435,7 +1435,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 2"
   },
   {
     "action": "Aspirate Media",
@@ -1447,7 +1447,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R5 (Ch E-G: Drug 15 (R5), Col 3)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R5 (Ch E-G: Drug 15 (R5), Col 3)"
   },
   {
     "action": "Dispense Media",
@@ -1459,7 +1459,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 3"
   },
   {
     "action": "Aspirate Media",
@@ -1471,7 +1471,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R5 (Ch E-G: Drug 15 (R5), Col 4)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R5 (Ch E-G: Drug 15 (R5), Col 4)"
   },
   {
     "action": "Dispense Media",
@@ -1483,7 +1483,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 4"
   },
   {
     "action": "Aspirate Media",
@@ -1495,7 +1495,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R5 (Ch E-G: Drug 15 (R5), Col 5)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R5 (Ch E-G: Drug 15 (R5), Col 5)"
   },
   {
     "action": "Dispense Media",
@@ -1507,7 +1507,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 5"
   },
   {
     "action": "Aspirate Media",
@@ -1519,7 +1519,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 500uL from Slot_6 R5 (Ch E-G: Drug 15 (R5), Col 6)"
+    "label": "[ASPIRATE 8-CH] 500 \u00b5L from Slot_6 R5 (Ch E-G: Drug 15 (R5), Col 6)"
   },
   {
     "action": "Dispense Media",
@@ -1531,7 +1531,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 [1cm above, Z=12.33mm]"
+    "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 6"
   },
   {
     "action": "Discard Tip",
@@ -1544,6 +1544,6 @@
     "tip_offset_rows": 0,
     "discard_z_override": 42.0,
     "mounted_channels": "E-G",
-    "label": "[DROP 8-CH] Ch E-G -> Slot_4 Empty Col 1 (Z=42.0mm) | Plate 6 Drug 15"
+    "label": "[DROP 8-CH] Ch E-G -> Slot_4 Col 1 | Plate 6 Drug 15"
   }
 ]
