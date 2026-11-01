@@ -161,10 +161,10 @@ def simulate_all_8ch_media_change(app: LIMSMasterApp, name: str, steps, loaded_c
         elif action == "Dispense Media":
             assert all(mounted)
             if slot == "Slot_6":
-                assert abs(tz - 78.0) < 1e-6, f"Expected 7-well reservoir dispense 78.0mm, got {tz}"
+                assert abs(tz - 59.32) < 1e-6, f"Expected 7-well reservoir dispense 59.32mm, got {tz}"
                 assert held_media == "OLD_MEDIA"
             elif slot in ("Slot_3", "Slot_5"):
-                assert abs(tz - 17.33) < 1e-6, f"Expected EHM dispense 17.33mm, got {tz}"
+                assert abs(tz - 12.33) < 1e-6, f"Expected EHM dispense 12.33mm (1cm above), got {tz}"
                 col_num = int(well[1:])
                 for r in ROWS:
                     w_id = f"{r}{col_num}"
@@ -340,8 +340,8 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
                 assert well == "A6" and abs(tz - 57.5) < 1e-6, f"Expected 57.5mm, got {tz}"
                 assert held_source_lane == "OLD_MEDIA"
             elif slot in ("Slot_3", "Slot_5"):
-                # Dispensing fresh media onto EHM plate at brim Z = 17.33 mm
-                assert abs(tz - 17.33) < 1e-6, f"Expected 17.33mm, got {tz}"
+                # Dispensing fresh media onto EHM plate at brim Z = 12.33 mm (1cm above bottom)
+                assert abs(tz - 12.33) < 1e-6, f"Expected 12.33mm, got {tz}"
                 col_num = int(well[1:])
                 res_lane, cond = held_source_lane
                 exp_map = expected_p5 if slot == "Slot_3" else expected_p6

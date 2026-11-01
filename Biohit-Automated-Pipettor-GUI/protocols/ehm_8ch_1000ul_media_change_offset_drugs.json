@@ -202,7 +202,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 (Rows A-C: Drug 11)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -226,7 +226,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 (Rows A-C: Drug 11)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -250,7 +250,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 (Rows A-C: Drug 11)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -274,7 +274,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 (Rows A-C: Drug 11)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -298,7 +298,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 (Rows A-C: Drug 11)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -322,7 +322,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-C",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 (Rows A-C: Drug 11)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Discard Tip",
@@ -371,7 +371,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 (Rows G-H: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -395,7 +395,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 (Rows G-H: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -419,7 +419,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 (Rows G-H: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -443,7 +443,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 (Rows G-H: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -467,7 +467,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 (Rows G-H: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -491,7 +491,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "G-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 (Rows G-H: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Discard Tip",
@@ -540,7 +540,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 (Rows D-F: Drug 12)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -564,7 +564,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 (Rows D-F: Drug 12)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -588,7 +588,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 (Rows D-F: Drug 12)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -612,7 +612,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 (Rows D-F: Drug 12)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -636,7 +636,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 (Rows D-F: Drug 12)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -660,7 +660,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "D-F",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 (Rows D-F: Drug 12)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Discard Tip",
@@ -878,7 +878,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 (Rows H: Control (Clean R4))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -902,7 +902,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 (Rows H: Control (Clean R4))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -926,7 +926,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 (Rows H: Control (Clean R4))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -950,7 +950,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 (Rows H: Control (Clean R4))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -974,7 +974,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 (Rows H: Control (Clean R4))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -998,7 +998,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 (Rows H: Control (Clean R4))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Discard Tip",
@@ -1047,7 +1047,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 (Rows A: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1071,7 +1071,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 (Rows A: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1095,7 +1095,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 (Rows A: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1119,7 +1119,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 (Rows A: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1143,7 +1143,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 (Rows A: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1167,7 +1167,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 (Rows A: Drug 13)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Discard Tip",
@@ -1242,7 +1242,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 (Rows B-D: Drug 14 (R4))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1266,7 +1266,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 (Rows B-D: Drug 14 (R4))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1290,7 +1290,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 (Rows B-D: Drug 14 (R4))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1314,7 +1314,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 (Rows B-D: Drug 14 (R4))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1338,7 +1338,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 (Rows B-D: Drug 14 (R4))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1362,7 +1362,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "B-D",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 (Rows B-D: Drug 14 (R4))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Discard Tip",
@@ -1411,7 +1411,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 (Rows E-G: Drug 15 (R5))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1435,7 +1435,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 (Rows E-G: Drug 15 (R5))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1459,7 +1459,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 (Rows E-G: Drug 15 (R5))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1483,7 +1483,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 (Rows E-G: Drug 15 (R5))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1507,7 +1507,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 (Rows E-G: Drug 15 (R5))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -1531,7 +1531,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "E-G",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 (Rows E-G: Drug 15 (R5))"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Discard Tip",

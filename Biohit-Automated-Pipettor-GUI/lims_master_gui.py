@@ -1829,6 +1829,16 @@ class LIMSMasterApp:
             fg="white",
             font=("Arial", 9, "bold"),
             command=self.action_load_8ch_1000ul_media_change_protocol,
+        ).pack(fill=tk.X, pady=(2, 2))
+
+        # Test Slot 5 Media Removal (Tips Col 3 -> Put back on Col 1)
+        tk.Button(
+            pane_ctrl,
+            text="🧪 Test Slot 5 Media Removal (Col 3 Tips ➔ Return to Col 1)",
+            bg="#28a745",
+            fg="white",
+            font=("Arial", 9, "bold"),
+            command=self.action_load_slot5_media_removal_test,
         ).pack(fill=tk.X, pady=(2, 4))
 
         # Media Change + Drug Protocols (2 Plates)
@@ -2672,6 +2682,65 @@ class LIMSMasterApp:
             )
         else:
             messagebox.showerror("File Not Found", "Could not locate bakar_v2_drug_dmso_media_change_step.json")
+
+    def action_load_slot5_media_removal_test(self, quiet=False):
+        """
+        Instant load for the Slot 5 Media Removal Test protocol:
+        - Takes 8 tips from Slot 4 Column 3 (A3).
+        - Aspirates 550 uL from Columns 1 to 6 of Plate 6 (Slot 5) at Z=22.33 mm.
+        - Dispenses into Slot 6 Waste (A7) 3 cm above bottom (Z=59.32 mm).
+        - Discards/returns tips to Slot 4 Column 1 (A1).
+        """
+        self.switch_pipettor_head(True, quiet=True)
+        lw_dir = self.get_labware_dir()
+
+        deck_setup = {
+            "Slot_3": "myriamed_48_well.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "myriamed_48_well.json",
+            "Slot_6": "reservoir_7_column.json",
+        }
+        for s_name, lw_file in deck_setup.items():
+            lp = os.path.join(lw_dir, lw_file)
+            if os.path.exists(lp):
+                self.lims.deck_labware[s_name] = Labware(lp)
+                self.lims.deck_labware[s_name].source_file = lw_file
+            if s_name not in self.placed_slots:
+                self.placed_slots.append(s_name)
+
+        self.sync_deck_manager()
+        if hasattr(self, 'draw_deck'):
+            self.draw_deck()
+
+        p_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "protocols", "test_slot5_media_removal_col3_to_col1.json")
+        if not os.path.exists(p_path):
+            from generate_8ch_1000ul_ehm_media_change import build_slot5_media_removal_test
+            steps = build_slot5_media_removal_test()
+        else:
+            with open(p_path, "r") as f:
+                steps = json.load(f)
+
+        self.workflow_sequence.clear()
+        self.wf_box.delete(0, tk.END)
+        self.has_tip_var.set(False)
+
+        for st in steps:
+            self.workflow_sequence.append(st)
+            self.wf_box.insert(tk.END, self._format_step_msg(st))
+
+        self._update_estimated_timer_preview()
+        self.logger.info("Loaded Slot 5 Media Removal Test (Tips from Col 3, Waste 3cm above at Z=59.32mm, Return tips to Col 1).")
+        if not quiet:
+            messagebox.showinfo(
+                "Slot 5 Test Protocol Loaded",
+                "Slot 5 Media Removal Test loaded successfully!\n\n"
+                "• Tips Picked: Slot 4 Col 3 (A3)\n"
+                "• Old Media Removed: Slot 5 Cols 1..6 (Z=22.33 mm)\n"
+                "• Waste Dispensed: Slot 6 A7 (3 cm above bottom, Z=59.32 mm)\n"
+                "• Tips Returned: Slot 4 Col 1 (A1)\n\n"
+                "Click 'Run Protocol' when ready.",
+                parent=self.root,
+            )
 
     def action_load_8ch_1000ul_media_change_protocol(self):
         """
@@ -3969,9 +4038,9 @@ class LIMSMasterApp:
             elif kind == "reservoir_6":
                 base_z = 101.0 if deep else 78.0
             elif kind == "reservoir_7":
-                base_z = 89.32 if deep else 78.0
+                base_z = 89.32 if deep else 59.32  # Discard media 3cm above bottom (89.32 - 30 = 59.32mm)
             elif kind == "ehm48":
-                base_z = 22.33 if deep else 17.33  # User physically calibrated: 22.33 inside well, 17.33 brim
+                base_z = 22.33 if deep else 12.33  # User declared: 22.33 inside well, 12.33 dispense (1cm above bottom)
             elif kind == "tip_rack":
                 base_z = 98.0
             elif kind == "tube_rack_4x6":

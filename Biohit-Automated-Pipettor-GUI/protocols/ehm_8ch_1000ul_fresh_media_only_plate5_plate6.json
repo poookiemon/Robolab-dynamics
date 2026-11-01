@@ -33,7 +33,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 (Rows A-H: Fresh Media)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 1 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -57,7 +57,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 (Rows A-H: Fresh Media)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 2 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -81,7 +81,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 (Rows A-H: Fresh Media)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 3 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -105,7 +105,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 (Rows A-H: Fresh Media)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 4 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -129,7 +129,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 (Rows A-H: Fresh Media)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 5 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -153,7 +153,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 (Rows A-H: Fresh Media)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 5 (Slot_3) Col 6 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Discard Tip",
@@ -202,7 +202,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 (Rows A-H: Fresh Media)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 1 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -226,7 +226,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 (Rows A-H: Fresh Media)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 2 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -250,7 +250,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 (Rows A-H: Fresh Media)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 3 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -274,7 +274,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 (Rows A-H: Fresh Media)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 4 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -298,7 +298,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 (Rows A-H: Fresh Media)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 5 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Aspirate Media",
@@ -322,7 +322,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 (Rows A-H: Fresh Media)"
+    "label": "[DISPENSE 8-CH] 500uL -> Plate 6 (Slot_5) Col 6 [1cm above, Z=12.33mm]"
   },
   {
     "action": "Discard Tip",

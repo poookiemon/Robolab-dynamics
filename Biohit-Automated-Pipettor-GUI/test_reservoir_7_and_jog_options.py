@@ -45,8 +45,8 @@ def main():
     asp_z = app._calculate_z("Aspirate Media", res7, "A1", "auto", 0.0, "Slot_6")
     disp_z = app._calculate_z("Dispense Media", res7, "A1", "auto", 0.0, "Slot_6")
     assert abs(asp_z - 89.32) < 1e-4, f"Aspirate Z expected 89.32, got {asp_z}"
-    assert abs(disp_z - 78.0) < 1e-4, f"Dispense Z expected 78.0, got {disp_z}"
-    print("PASS: 7-Well Reservoir A1..A7 (X=108.36..18.36, Y=179.9, Z=89.32) verified!")
+    assert abs(disp_z - 59.32) < 1e-4, f"Dispense Z expected 59.32 (3cm above), got {disp_z}"
+    print("PASS: 7-Well Reservoir A1..A7 (X=108.36..18.36, Y=179.9, Z=89.32 aspirate, Z=59.32 dispense) verified!")
 
     print("\n--- 2. Testing EHM Declared Physical Z (22.33 mm) ---")
     ehm_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "labware", "myriamed_48_well.json")
@@ -57,8 +57,8 @@ def main():
     ehm_asp = app._calculate_z("Aspirate Media", ehm_lw, "A1", "auto", 0.0, "Slot_3")
     ehm_disp = app._calculate_z("Dispense Media", ehm_lw, "A1", "auto", 0.0, "Slot_3")
     assert abs(ehm_asp - 22.33) < 1e-4, f"EHM aspirate Z expected 22.33, got {ehm_asp}"
-    assert abs(ehm_disp - 17.33) < 1e-4, f"EHM dispense Z expected 17.33, got {ehm_disp}"
-    print("PASS: EHM Declared Z (22.33mm inside well, 17.33mm brim) verified!")
+    assert abs(ehm_disp - 12.33) < 1e-4, f"EHM dispense Z expected 12.33 (1cm above), got {ehm_disp}"
+    print("PASS: EHM Declared Z (22.33mm inside well, 12.33mm dispense 1cm above) verified!")
 
     print("\n--- 3. Testing Jog Step Size & Quick Homing Presets ---")
     for step in [0.1, 1.0, 5.0, 10.0, 30.0, 50.0, 100.0]:
@@ -70,6 +70,23 @@ def main():
         app._quick_move_z(target)
         assert abs(app.jog_vars["Z"].get() - target) < 1e-4
     print("PASS: Jog step sizes (30, 50, 100 mm) & Quick Z Homing presets verified!")
+
+    print("\n--- 4. Testing Slot 5 Media Removal Protocol (Col 3 Tips -> Col 1 Return) ---")
+    app.action_load_slot5_media_removal_test(quiet=True)
+    assert len(app.workflow_sequence) == 14
+    # Step 0: pick tip from Col 3
+    assert app.workflow_sequence[0]["action"] == "Pick Up Tip"
+    assert app.workflow_sequence[0]["slot"] == "Slot_4" and app.workflow_sequence[0]["well"] == "A3"
+    # Step 1: aspirate Col 1 from Slot 5
+    assert app.workflow_sequence[1]["action"] == "Aspirate Media"
+    assert app.workflow_sequence[1]["slot"] == "Slot_5" and app.workflow_sequence[1]["well"] == "A1"
+    # Step 2: dispense to Slot 6 Waste
+    assert app.workflow_sequence[2]["action"] == "Dispense Media"
+    assert app.workflow_sequence[2]["slot"] == "Slot_6" and app.workflow_sequence[2]["well"] == "A7"
+    # Step 13: discard tips into Col 1
+    assert app.workflow_sequence[13]["action"] == "Discard Tip"
+    assert app.workflow_sequence[13]["slot"] == "Slot_4" and app.workflow_sequence[13]["well"] == "A1"
+    print("PASS: Slot 5 Media Removal Test Protocol verified (Col 3 tips -> Slot 5 Cols 1..6 -> Col 1 return)!")
 
     print("\n=======================================================")
     print("ALL 7-WELL RESERVOIR & HOMING PRESET TESTS PASSED!")

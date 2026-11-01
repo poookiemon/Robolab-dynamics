@@ -228,8 +228,8 @@ class Plate48Myriamed(LabwareBase):
         return 22.33
 
     def get_dispense_z(self, slot: 'DeckSlot', well_id: str, in_liquid: bool = False) -> float:
-        # Calibrated EHM: 22.33mm in-liquid, 17.33mm brim
-        return 22.33 if in_liquid else 17.33
+        # Calibrated EHM: 22.33mm in-liquid, 12.33mm brim (1cm above 22.33mm bottom)
+        return 22.33 if in_liquid else 12.33
 
     def get_mix_z(self, slot: 'DeckSlot', well_id: str) -> float:
         return 22.33
@@ -402,7 +402,7 @@ class Reservoir7Column(LabwareBase):
         self.col_x = kwargs.get("col_x", [108.36, 93.36, 78.36, 63.36, 48.36, 33.36, 18.36])
         self.center_y = kwargs.get("center_y", 179.9)
         self.aspirate_z_mm = kwargs.get("aspirate_z_mm", 89.32)
-        self.dispense_brim_z_mm = kwargs.get("dispense_brim_z_mm", 78.0)
+        self.dispense_brim_z_mm = kwargs.get("dispense_brim_z_mm", 59.32)  # 3cm above bottom 89.32mm
         self.discard_tip_z_mm = kwargs.get("discard_tip_z_mm", 48.0)
 
     def parse_well(self, well_id: str) -> Tuple[Optional[int], Optional[int]]:

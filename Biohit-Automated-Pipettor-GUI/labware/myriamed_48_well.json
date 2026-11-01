@@ -32,12 +32,12 @@
   "is_8ch_calibrated": true,
   "z": {
     "aspirate": 22.33,
-    "dispense": 17.33,
+    "dispense": 12.33,
     "discard_tip": 22.33
   },
   "z_limits": {
     "recommended_aspirate_z": 22.33,
-    "recommended_dispense_z": 17.33,
+    "recommended_dispense_z": 12.33,
     "max_safe_bottom_z": 24.5
   }
 }

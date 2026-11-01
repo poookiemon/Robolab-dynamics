@@ -38,6 +38,7 @@ def build_8ch_ehm_media_change_steps(
     p6_res_lane: int = 2,
     waste_lane: int = None,
     reservoir_labware: str = "reservoir_7_column.json",
+    multi_dispense: bool = False,
 ) -> List[Dict[str, Any]]:
     """
     Builds the complete 100% hands-free 8x1000 uL step list for Plate 5 (Slot_3) & Plate 6 (Slot_5).
@@ -164,31 +165,71 @@ def build_8ch_ehm_media_change_steps(
         add_discard_tip("A-H", f"{plate_label} Old Media Tips")
 
     def add_reservoir_to_plate(res_lane: int, plate_slot: str, plate_label: str, channels_str: str, cond_label: str):
-        for c in range(1, 7):
-            steps.append({
-                "action": "Aspirate Media",
-                "mode": "auto",
-                "slot": "Slot_6",
-                "well": f"A{res_lane}",
-                "volume": float(fresh_vol_ul),
-                "labware": reservoir_labware,
-                "eight_ch_symmetric": True,
-                "mounted_channels": channels_str,
-                "track_liquid": False,
-                "label": f"[ASPIRATE 8-CH] {fresh_vol_ul:g}uL from Slot_6 R{res_lane} (Ch {channels_str}: {cond_label}, Col {c})",
-            })
-            steps.append({
-                "action": "Dispense Media",
-                "mode": "auto",
-                "slot": plate_slot,
-                "well": f"A{c}",
-                "volume": float(fresh_vol_ul),
-                "labware": "myriamed_48_well.json",
-                "eight_ch_symmetric": True,
-                "mounted_channels": channels_str,
-                "track_liquid": False,
-                "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g}uL -> {plate_label} ({plate_slot}) Col {c} (Rows {channels_str}: {cond_label})",
-            })
+        if multi_dispense and fresh_vol_ul == 500.0 and channels_str == "A-H":
+            # Multi-dispense: Aspirate 1000 uL once, dispense 500 uL into Col 1, then 500 uL into Col 2 (saves 50% travel time)
+            for pair_col1, pair_col2 in [(1, 2), (3, 4), (5, 6)]:
+                steps.append({
+                    "action": "Aspirate Media",
+                    "mode": "auto",
+                    "slot": "Slot_6",
+                    "well": f"A{res_lane}",
+                    "volume": 1000.0,
+                    "labware": reservoir_labware,
+                    "eight_ch_symmetric": True,
+                    "mounted_channels": channels_str,
+                    "track_liquid": False,
+                    "label": f"[ASPIRATE 8-CH] 1000uL from Slot_6 R{res_lane} (Ch {channels_str}: {cond_label}, for Cols {pair_col1}&{pair_col2})",
+                })
+                steps.append({
+                    "action": "Dispense Media",
+                    "mode": "auto",
+                    "slot": plate_slot,
+                    "well": f"A{pair_col1}",
+                    "volume": float(fresh_vol_ul),
+                    "labware": "myriamed_48_well.json",
+                    "eight_ch_symmetric": True,
+                    "mounted_channels": channels_str,
+                    "track_liquid": False,
+                    "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g}uL -> {plate_label} ({plate_slot}) Col {pair_col1} [1cm above, Z=12.33mm]",
+                })
+                steps.append({
+                    "action": "Dispense Media",
+                    "mode": "auto",
+                    "slot": plate_slot,
+                    "well": f"A{pair_col2}",
+                    "volume": float(fresh_vol_ul),
+                    "labware": "myriamed_48_well.json",
+                    "eight_ch_symmetric": True,
+                    "mounted_channels": channels_str,
+                    "track_liquid": False,
+                    "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g}uL -> {plate_label} ({plate_slot}) Col {pair_col2} [1cm above, Z=12.33mm]",
+                })
+        else:
+            for c in range(1, 7):
+                steps.append({
+                    "action": "Aspirate Media",
+                    "mode": "auto",
+                    "slot": "Slot_6",
+                    "well": f"A{res_lane}",
+                    "volume": float(fresh_vol_ul),
+                    "labware": reservoir_labware,
+                    "eight_ch_symmetric": True,
+                    "mounted_channels": channels_str,
+                    "track_liquid": False,
+                    "label": f"[ASPIRATE 8-CH] {fresh_vol_ul:g}uL from Slot_6 R{res_lane} (Ch {channels_str}: {cond_label}, Col {c})",
+                })
+                steps.append({
+                    "action": "Dispense Media",
+                    "mode": "auto",
+                    "slot": plate_slot,
+                    "well": f"A{c}",
+                    "volume": float(fresh_vol_ul),
+                    "labware": "myriamed_48_well.json",
+                    "eight_ch_symmetric": True,
+                    "mounted_channels": channels_str,
+                    "track_liquid": False,
+                    "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g}uL -> {plate_label} ({plate_slot}) Col {c} [1cm above, Z=12.33mm]",
+                })
 
     # =========================================================================
     # OPTION A: ALL 8 CHANNELS FULL-PARALLEL MEDIA ADDITION (DEFAULT)
@@ -292,6 +333,81 @@ def build_8ch_ehm_media_change_steps(
     return steps
 
 
+def build_slot5_media_removal_test(
+    remove_vol_ul: float = 550.0,
+    pick_col: int = 3,
+    return_col: int = 1,
+    waste_lane: int = 7,
+    reservoir_labware: str = "reservoir_7_column.json",
+) -> List[Dict[str, Any]]:
+    """
+    Test protocol for Slot 5 (Plate 6) Media Removal:
+    - Picks clean 8 tips from Slot 4 Column 3 (A3).
+    - Aspirates 550 uL from Columns 1 to 6 of Plate 6 (Slot 5) at declared Z=22.33 mm.
+    - Dispenses old media into Slot 6 Waste (A7) 3 cm above the bottom (Z=59.32 mm).
+    - Returns/discards used tips into Slot 4 Column 1 (A1) at Z=42.0 mm.
+    """
+    steps: List[Dict[str, Any]] = []
+
+    # 1. Pick tips from Column 3
+    steps.append({
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": f"A{pick_col}",
+        "volume": 0.0,
+        "labware": "tip_rack_1000ul.json",
+        "eight_ch_symmetric": True,
+        "tip_offset_rows": 0,
+        "mounted_channels": "A-H",
+        "label": f"[PICK 8-CH] Slot_4 Col {pick_col} (A{pick_col}-H{pick_col} -> Ch A-H) | Slot 5 Media Removal Test",
+    })
+
+    # 2. Aspirate from Slot 5 (Cols 1..6) and dispense to Slot 6 Waste (3cm above bottom, Z=59.32mm)
+    for c in range(1, 7):
+        steps.append({
+            "action": "Aspirate Media",
+            "mode": "auto",
+            "slot": "Slot_5",
+            "well": f"A{c}",
+            "volume": float(remove_vol_ul),
+            "labware": "myriamed_48_well.json",
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-H",
+            "track_liquid": False,
+            "label": f"[REMOVE 8-CH] Aspirate {remove_vol_ul:g}uL from Slot_5 Col {c} [Rows A-H] (Z=22.33mm)",
+        })
+        steps.append({
+            "action": "Dispense Media",
+            "mode": "auto",
+            "slot": "Slot_6",
+            "well": f"A{waste_lane}",
+            "volume": float(remove_vol_ul),
+            "labware": reservoir_labware,
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-H",
+            "track_liquid": False,
+            "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g}uL to Slot_6 A{waste_lane} Waste (3cm above, Z=59.32mm)",
+        })
+
+    # 3. Put tips back into Column 1
+    steps.append({
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": f"A{return_col}",
+        "volume": 0.0,
+        "labware": "tip_rack_1000ul.json",
+        "eight_ch_symmetric": True,
+        "tip_offset_rows": 0,
+        "discard_z_override": 42.0,
+        "mounted_channels": "A-H",
+        "label": f"[DROP 8-CH] Put back tips onto Slot_4 Col {return_col} (A{return_col}-H{return_col}, Z=42.0mm)",
+    })
+
+    return steps
+
+
 def save_default_protocols():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.dirname(script_dir)
@@ -300,6 +416,13 @@ def save_default_protocols():
         os.path.join(repo_root, "protocols"),
     ]
 
+    slot5_test_steps = build_slot5_media_removal_test(
+        remove_vol_ul=550.0,
+        pick_col=3,
+        return_col=1,
+        waste_lane=7,
+        reservoir_labware="reservoir_7_column.json",
+    )
     full_steps = build_8ch_ehm_media_change_steps(
         include_old_media_removal=True,
         remove_vol_ul=550.0,
@@ -335,15 +458,19 @@ def save_default_protocols():
 
     for d in out_dirs:
         os.makedirs(d, exist_ok=True)
+        p_slot5 = os.path.join(d, "test_slot5_media_removal_col3_to_col1.json")
         p_full = os.path.join(d, "ehm_8ch_1000ul_media_change_plate5_plate6.json")
         p_fresh = os.path.join(d, "ehm_8ch_1000ul_fresh_media_only_plate5_plate6.json")
         p_legacy = os.path.join(d, "ehm_8ch_1000ul_media_change_offset_drugs.json")
+        with open(p_slot5, "w") as f:
+            json.dump(slot5_test_steps, f, indent=2)
         with open(p_full, "w") as f:
             json.dump(full_steps, f, indent=2)
         with open(p_fresh, "w") as f:
             json.dump(fresh_only_steps, f, indent=2)
         with open(p_legacy, "w") as f:
             json.dump(legacy_offset_steps, f, indent=2)
+        print(f"Saved {len(slot5_test_steps)} steps -> {p_slot5}")
         print(f"Saved {len(full_steps)} steps -> {p_full}")
         print(f"Saved {len(fresh_only_steps)} steps -> {p_fresh}")
         print(f"Saved {len(legacy_offset_steps)} steps -> {p_legacy}")
