@@ -1,0 +1,1160 @@
+[
+  {
+    "action": "Pick Up Tip",
+    "mode": "auto",
+    "slot": "Slot_4",
+    "well": "A1",
+    "volume": 0.0,
+    "labware": "tip_rack_1000ul.json",
+    "label": "[PICK 20\u00b5L TIP] Slot_4 A1 | DMSO Dilution Buffer"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A2",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 A2"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A3",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 A3"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A4",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 A4"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A5",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 A5"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A6",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 A6"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B2",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 B2"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B3",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 B3"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B4",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 B4"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B5",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 B5"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B6",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 B6"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C2",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 C2"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C3",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 C3"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C4",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 C4"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C5",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 C5"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C6",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 C6"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D2",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 D2"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D3",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 D3"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D4",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 D4"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D5",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 D5"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D6",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 D6"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E2",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 E2"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E3",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 E3"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E4",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 E4"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E5",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 E5"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_1",
+    "well": "A1",
+    "volume": 15.0,
+    "labware": "tube_rack_2x6_2ml.json",
+    "label": "[ASPIRATE DMSO] 15.0 \u00b5L from Slot_1 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E6",
+    "volume": 15.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[DISPENSE DMSO] 15.0 \u00b5L -> Slot_5 E6"
+  },
+  {
+    "action": "Discard Tip",
+    "mode": "auto",
+    "slot": "Slot_2",
+    "well": "A1",
+    "volume": 0.0,
+    "labware": "waste_trough.json",
+    "label": "[DROP 20\u00b5L TIP] Discard DMSO Tip -> Slot_2"
+  },
+  {
+    "action": "Pick Up Tip",
+    "mode": "auto",
+    "slot": "Slot_4",
+    "well": "B1",
+    "volume": 0.0,
+    "labware": "tip_rack_1000ul.json",
+    "label": "[PICK 20\u00b5L TIP] Slot_4 B1 | Drug Series A"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_3",
+    "well": "A1",
+    "volume": 18.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[ASPIRATE STOCK] 18.0 \u00b5L from Slot_3 A1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A1",
+    "volume": 18.0,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 3,
+    "mix_volume": 12.0,
+    "label": "[DISPENSE STOCK] 18.0 \u00b5L -> Slot_5 A1 (Mix 3x 12 \u00b5L)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A1",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from A1 -> A2"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A2",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in A2 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A2",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from A2 -> A3"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A3",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in A3 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A3",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from A3 -> A4"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A4",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in A4 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A4",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from A4 -> A5"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A5",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in A5 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A5",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from A5 -> A6"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "A6",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in A6 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Discard Tip",
+    "mode": "auto",
+    "slot": "Slot_2",
+    "well": "A1",
+    "volume": 0.0,
+    "labware": "waste_trough.json",
+    "label": "[DROP 20\u00b5L TIP] Eject Series A Tip -> Slot_2 Waste"
+  },
+  {
+    "action": "Pick Up Tip",
+    "mode": "auto",
+    "slot": "Slot_4",
+    "well": "C1",
+    "volume": 0.0,
+    "labware": "tip_rack_1000ul.json",
+    "label": "[PICK 20\u00b5L TIP] Slot_4 C1 | Drug Series B"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_3",
+    "well": "A2",
+    "volume": 18.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[ASPIRATE STOCK] 18.0 \u00b5L from Slot_3 A2"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B1",
+    "volume": 18.0,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 3,
+    "mix_volume": 12.0,
+    "label": "[DISPENSE STOCK] 18.0 \u00b5L -> Slot_5 B1 (Mix 3x 12 \u00b5L)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B1",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from B1 -> B2"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B2",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in B2 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B2",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from B2 -> B3"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B3",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in B3 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B3",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from B3 -> B4"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B4",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in B4 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B4",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from B4 -> B5"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B5",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in B5 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B5",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from B5 -> B6"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "B6",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in B6 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Discard Tip",
+    "mode": "auto",
+    "slot": "Slot_2",
+    "well": "A1",
+    "volume": 0.0,
+    "labware": "waste_trough.json",
+    "label": "[DROP 20\u00b5L TIP] Eject Series B Tip -> Slot_2 Waste"
+  },
+  {
+    "action": "Pick Up Tip",
+    "mode": "auto",
+    "slot": "Slot_4",
+    "well": "D1",
+    "volume": 0.0,
+    "labware": "tip_rack_1000ul.json",
+    "label": "[PICK 20\u00b5L TIP] Slot_4 D1 | Drug Series C"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_3",
+    "well": "A3",
+    "volume": 18.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[ASPIRATE STOCK] 18.0 \u00b5L from Slot_3 A3"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C1",
+    "volume": 18.0,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 3,
+    "mix_volume": 12.0,
+    "label": "[DISPENSE STOCK] 18.0 \u00b5L -> Slot_5 C1 (Mix 3x 12 \u00b5L)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C1",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from C1 -> C2"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C2",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in C2 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C2",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from C2 -> C3"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C3",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in C3 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C3",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from C3 -> C4"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C4",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in C4 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C4",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from C4 -> C5"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C5",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in C5 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C5",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from C5 -> C6"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "C6",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in C6 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Discard Tip",
+    "mode": "auto",
+    "slot": "Slot_2",
+    "well": "A1",
+    "volume": 0.0,
+    "labware": "waste_trough.json",
+    "label": "[DROP 20\u00b5L TIP] Eject Series C Tip -> Slot_2 Waste"
+  },
+  {
+    "action": "Pick Up Tip",
+    "mode": "auto",
+    "slot": "Slot_4",
+    "well": "E1",
+    "volume": 0.0,
+    "labware": "tip_rack_1000ul.json",
+    "label": "[PICK 20\u00b5L TIP] Slot_4 E1 | Drug Series D"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_3",
+    "well": "A4",
+    "volume": 18.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[ASPIRATE STOCK] 18.0 \u00b5L from Slot_3 A4"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D1",
+    "volume": 18.0,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 3,
+    "mix_volume": 12.0,
+    "label": "[DISPENSE STOCK] 18.0 \u00b5L -> Slot_5 D1 (Mix 3x 12 \u00b5L)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D1",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from D1 -> D2"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D2",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in D2 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D2",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from D2 -> D3"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D3",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in D3 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D3",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from D3 -> D4"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D4",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in D4 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D4",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from D4 -> D5"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D5",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in D5 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D5",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from D5 -> D6"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "D6",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in D6 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Discard Tip",
+    "mode": "auto",
+    "slot": "Slot_2",
+    "well": "A1",
+    "volume": 0.0,
+    "labware": "waste_trough.json",
+    "label": "[DROP 20\u00b5L TIP] Eject Series D Tip -> Slot_2 Waste"
+  },
+  {
+    "action": "Pick Up Tip",
+    "mode": "auto",
+    "slot": "Slot_4",
+    "well": "F1",
+    "volume": 0.0,
+    "labware": "tip_rack_1000ul.json",
+    "label": "[PICK 20\u00b5L TIP] Slot_4 F1 | Drug Series E"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_3",
+    "well": "B1",
+    "volume": 18.0,
+    "labware": "generic_96_well_plate.json",
+    "label": "[ASPIRATE STOCK] 18.0 \u00b5L from Slot_3 B1"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E1",
+    "volume": 18.0,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 3,
+    "mix_volume": 12.0,
+    "label": "[DISPENSE STOCK] 18.0 \u00b5L -> Slot_5 E1 (Mix 3x 12 \u00b5L)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E1",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from E1 -> E2"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E2",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in E2 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E2",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from E2 -> E3"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E3",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in E3 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E3",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from E3 -> E4"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E4",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in E4 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E4",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from E4 -> E5"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E5",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in E5 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Aspirate Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E5",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "label": "[SERIAL TRANSFER] 7.5 \u00b5L from E5 -> E6"
+  },
+  {
+    "action": "Dispense Media",
+    "mode": "auto",
+    "slot": "Slot_5",
+    "well": "E6",
+    "volume": 7.5,
+    "labware": "generic_96_well_plate.json",
+    "mix_cycles": 4,
+    "mix_volume": 12.0,
+    "label": "[SERIAL MIX] 7.5 \u00b5L in E6 (4x 12 \u00b5L Mix)"
+  },
+  {
+    "action": "Discard Tip",
+    "mode": "auto",
+    "slot": "Slot_2",
+    "well": "A1",
+    "volume": 0.0,
+    "labware": "waste_trough.json",
+    "label": "[DROP 20\u00b5L TIP] Eject Series E Tip -> Slot_2 Waste"
+  }
+]

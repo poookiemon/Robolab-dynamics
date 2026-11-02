@@ -1842,29 +1842,109 @@ class LIMSMasterApp:
                    command=lambda: [self.wf_box.delete(0, tk.END), self.workflow_sequence.clear(), self._update_estimated_timer_preview()]).pack(fill=tk.X)
         ttk.Separator(pane_ctrl, orient="horizontal").pack(fill=tk.X, pady=8)
 
-        # Instant Load Protocols (DMSO-Drug and Media+Drug Only)
-        lbl_inst = ttk.Label(pane_ctrl, text="⚡ INSTANT PROTOCOL LOAD", font=("Arial", 10, "bold"), foreground="#007bff")
+        # Instant Load Protocols (Green Updated Protocols)
+        lbl_inst = ttk.Label(pane_ctrl, text="⚡ INSTANT PROTOCOL LOAD (🟢 UPDATED PROTOCOLS)", font=("Arial", 10, "bold"), foreground="#28a745")
         lbl_inst.pack(fill=tk.X, pady=(2, 4))
 
-        # 8-Channel 1000 uL Media Change (All 8 Channels Full-Parallel)
-        tk.Button(
-            pane_ctrl,
-            text="🚀 8×1000 µL EHM Media Change (Plate 5 & 6 — All 8 Channels)",
-            bg="#6f42c1",
-            fg="white",
-            font=("Arial", 9, "bold"),
-            command=self.action_load_8ch_1000ul_media_change_protocol,
-        ).pack(fill=tk.X, pady=(2, 2))
+        # --- GROUP 1: 8-CHANNEL MULTI (8x1000 uL) ---
+        lbl_g1 = ttk.Label(pane_ctrl, text="🟢 8-Channel Multi Pipettor (8×1000 µL):", font=("Arial", 8, "bold"), foreground="#155724")
+        lbl_g1.pack(fill=tk.X, pady=(3, 1))
 
-        # Test Slot 5 Media Removal (Tips Col 3 -> Put back on Col 1)
         tk.Button(
             pane_ctrl,
-            text="🧪 Test Slot 5 Media Removal (Col 3 Tips ➔ Return to Col 1)",
-            bg="#28a745",
-            fg="white",
+            text="🟢 [8-CH] Media Change + 7.5 µL Drug Addition",
+            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
+            font=("Arial", 9, "bold"),
+            command=lambda: self.action_load_8ch_media_change_and_drug(7.5)
+        ).pack(fill=tk.X, pady=1)
+
+        tk.Button(
+            pane_ctrl,
+            text="🟢 [8-CH] Media Change + 5.0 µL Drug Addition",
+            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
+            font=("Arial", 9, "bold"),
+            command=lambda: self.action_load_8ch_media_change_and_drug(5.0)
+        ).pack(fill=tk.X, pady=1)
+
+        tk.Button(
+            pane_ctrl,
+            text="🟢 [8-CH] DMSO-Drug Dilution (Select Drug Wells)",
+            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
+            font=("Arial", 9, "bold"),
+            command=self.action_load_8ch_dmso_dilution
+        ).pack(fill=tk.X, pady=1)
+
+        tk.Button(
+            pane_ctrl,
+            text="🟢 [8-CH] Media Change Only (Plates 5 & 6 — 500 µL)",
+            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
+            font=("Arial", 9, "bold"),
+            command=self.action_load_8ch_1000ul_media_change_protocol
+        ).pack(fill=tk.X, pady=1)
+
+        tk.Button(
+            pane_ctrl,
+            text="🧪 Test Slot 5 Media Removal (Col 3 Tips ➔ Return Col 1)",
+            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
             font=("Arial", 9, "bold"),
             command=self.action_load_slot5_media_removal_test,
-        ).pack(fill=tk.X, pady=(2, 2))
+        ).pack(fill=tk.X, pady=(1, 4))
+
+        # --- GROUP 2: 300 uL SINGLE-CHANNEL ---
+        lbl_g2 = ttk.Label(pane_ctrl, text="🟢 300 µL Single-Channel Pipette:", font=("Arial", 8, "bold"), foreground="#155724")
+        lbl_g2.pack(fill=tk.X, pady=(3, 1))
+
+        tk.Button(
+            pane_ctrl,
+            text="🟢 [300 µL] Media Change + 7.5 µL Drug Addition",
+            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
+            font=("Arial", 9, "bold"),
+            command=lambda: self.action_load_300ul_media_change_and_drug(7.5)
+        ).pack(fill=tk.X, pady=1)
+
+        tk.Button(
+            pane_ctrl,
+            text="🟢 [300 µL] Media Change + 5.0 µL Drug Addition",
+            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
+            font=("Arial", 9, "bold"),
+            command=lambda: self.action_load_300ul_media_change_and_drug(5.0)
+        ).pack(fill=tk.X, pady=1)
+
+        tk.Button(
+            pane_ctrl,
+            text="🟢 [300 µL] DMSO-Drug Dilution (Select Drug Wells)",
+            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
+            font=("Arial", 9, "bold"),
+            command=self.action_load_300ul_dmso_dilution
+        ).pack(fill=tk.X, pady=(1, 4))
+
+        # --- GROUP 3: 20 uL SINGLE-CHANNEL ---
+        lbl_g3 = ttk.Label(pane_ctrl, text="🟢 20 µL Single-Channel Pipette:", font=("Arial", 8, "bold"), foreground="#155724")
+        lbl_g3.pack(fill=tk.X, pady=(3, 1))
+
+        tk.Button(
+            pane_ctrl,
+            text="🟢 [20 µL] Precision Drug Addition (7.5 µL) + Mix",
+            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
+            font=("Arial", 9, "bold"),
+            command=lambda: self.action_load_20ul_drug_addition(7.5)
+        ).pack(fill=tk.X, pady=1)
+
+        tk.Button(
+            pane_ctrl,
+            text="🟢 [20 µL] Precision Drug Addition (5.0 µL) + Mix",
+            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
+            font=("Arial", 9, "bold"),
+            command=lambda: self.action_load_20ul_drug_addition(5.0)
+        ).pack(fill=tk.X, pady=1)
+
+        tk.Button(
+            pane_ctrl,
+            text="🟢 [20 µL] DMSO-Drug Dilution (Select Drug Wells)",
+            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
+            font=("Arial", 9, "bold"),
+            command=self.action_load_20ul_dmso_dilution
+        ).pack(fill=tk.X, pady=(1, 4))
 
         # 8-Channel Height Memory (Calibrate Depths)
         tk.Button(
@@ -1875,16 +1955,6 @@ class LIMSMasterApp:
             font=("Arial", 9, "bold"),
             command=self.action_open_8ch_height_settings,
         ).pack(fill=tk.X, pady=(2, 4))
-
-        # Media Change + Drug Protocols (2 Plates)
-        ttk.Button(pane_ctrl, text="🧫 Media Change + Drug (7.5 µL)", command=lambda: self.action_load_media_and_drug_protocol(7.5)).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="🧫 Media Change + Drug (5.0 µL)", command=lambda: self.action_load_media_and_drug_protocol(5.0)).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="🧪 Plate 2 Row H Only (Media Change, Tips C3/D3)", command=self.action_load_plate2_rowH_protocol).pack(fill=tk.X, pady=2)
-
-        # DMSO & Drug Protocols
-        ttk.Button(pane_ctrl, text="🧪 Bakar Dilution Plate (Media Change: 31.4 µL DMSO + 14.6 µL Drug)", command=self.action_load_bakar_media_change_serial_dilution_protocol).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="🧪 DMSO-Drug Plate Prep (Initial: 24 µL DMSO + 22 µL Drug)", command=self.action_load_dmso_dilution_protocol).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="💊 Drug Addition Only (2 Plates, 5 µL)", command=self.action_load_drug_addition_only_protocol).pack(fill=tk.X, pady=2)
 
         ttk.Separator(pane_ctrl, orient="horizontal").pack(fill=tk.X, pady=6)
         ttk.Button(pane_ctrl, text="📥 Convert & Import Python (.py)", command=self.action_import_python_protocol).pack(fill=tk.X, pady=2)
@@ -2238,73 +2308,425 @@ class LIMSMasterApp:
         else:
             messagebox.showerror("File Not Found", "Could not locate Test_Liquid_Level_Detection.json")
 
-    def action_load_media_and_drug_protocol(self, volume: float = 7.5):
+    def _populate_workflow_from_sequence(self, loaded_sequence, protocol_name=""):
+        self.workflow_sequence.clear()
+        self.wf_box.delete(0, tk.END)
+        for step in loaded_sequence:
+            self.workflow_sequence.append(step)
+            self.wf_box.insert(tk.END, self._format_step_msg(step))
+        self._update_estimated_timer_preview()
+        if hasattr(self, '_refresh_tip_memory_badge'):
+            self._refresh_tip_memory_badge("Slot_4")
+        self.logger.info(f"Loaded {protocol_name} ({len(loaded_sequence)} steps into Protocol Runner).")
+
+    def show_protocol_deck_setup_modal(
+        self,
+        protocol_name: str,
+        pipettor_mode: str,
+        is_multichannel: bool,
+        deck_setup: dict,
+        slot_descriptions: dict,
+        on_confirm_callback=None
+    ):
+        top = tk.Toplevel(self.root)
+        top.title(f"Deck Setup & Confirmation — {protocol_name}")
+        top.geometry("640x580")
+        top.transient(self.root)
+        top.grab_set()
+
+        try:
+            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 320
+            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 290
+            top.geometry(f"+{max(0, rx)}+{max(0, ry)}")
+        except Exception:
+            pass
+
+        # Header Frame
+        hdr = tk.Frame(top, bg="#28a745", padx=16, pady=12)
+        hdr.pack(fill=tk.X)
+        tk.Label(
+            hdr,
+            text=f"🟢 {protocol_name}",
+            font=("Arial", 11, "bold"),
+            bg="#28a745",
+            fg="white"
+        ).pack(anchor="w")
+        tk.Label(
+            hdr,
+            text=f"Required Pipettor Head: {pipettor_mode}",
+            font=("Arial", 9, "bold"),
+            bg="#28a745",
+            fg="#e8f5e9"
+        ).pack(anchor="w", pady=(2, 0))
+
+        body = ttk.Frame(top, padding=15)
+        body.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(
+            body,
+            text="Verify your physical deck layout matches the assignments below before proceeding:",
+            font=("Arial", 9, "bold")
+        ).pack(anchor="w", pady=(0, 10))
+
+        # Deck Slot Table
+        table_f = ttk.Frame(body)
+        table_f.pack(fill=tk.BOTH, expand=True)
+
+        # Header row
+        ttk.Label(table_f, text="Slot", font=("Arial", 9, "bold"), width=8).grid(row=0, column=0, sticky="w", pady=4)
+        ttk.Label(table_f, text="Labware Model", font=("Arial", 9, "bold"), width=25).grid(row=0, column=1, sticky="w", pady=4)
+        ttk.Label(table_f, text="Deck Contents / Reagent Purpose", font=("Arial", 9, "bold")).grid(row=0, column=2, sticky="w", pady=4)
+        ttk.Separator(table_f, orient="horizontal").grid(row=1, column=0, columnspan=3, sticky="ew", pady=(2, 6))
+
+        for idx, s_num in enumerate(range(1, 7), start=2):
+            s_name = f"Slot_{s_num}"
+            lw_file = deck_setup.get(s_name, "(Empty / Clearance)")
+            desc = slot_descriptions.get(s_name, "Empty clearance slot")
+
+            # Slot badge
+            bg_col = "#e9ecef" if "Empty" in lw_file else "#d4edda"
+            fg_col = "#6c757d" if "Empty" in lw_file else "#155724"
+            badge = tk.Label(table_f, text=f"Slot {s_num}", font=("Consolas", 9, "bold"), bg=bg_col, fg=fg_col, padx=4, pady=2)
+            badge.grid(row=idx, column=0, sticky="w", pady=4)
+
+            ttk.Label(table_f, text=lw_file, font=("Consolas", 9)).grid(row=idx, column=1, sticky="w", pady=4, padx=(0, 10))
+            ttk.Label(table_f, text=desc, font=("Arial", 9)).grid(row=idx, column=2, sticky="w", pady=4)
+
+        # Bottom buttons
+        btn_f = ttk.Frame(top, padding=12)
+        btn_f.pack(fill=tk.X, side=tk.BOTTOM)
+
+        def on_confirm():
+            # 1. Switch pipettor head mode live if needed
+            self.switch_pipettor_head(is_multichannel, quiet=True)
+            # 2. Update deck labware
+            lw_dir = self.get_labware_dir()
+            for s_num in range(1, 7):
+                s_name = f"Slot_{s_num}"
+                lw_file = deck_setup.get(s_name)
+                if lw_file and lw_file != "(Empty / Clearance)":
+                    lp = os.path.join(lw_dir, lw_file)
+                    if os.path.exists(lp):
+                        self.lims.deck_labware[s_name] = Labware(lp)
+                        self.lims.deck_labware[s_name].source_file = lw_file
+                    if s_name not in self.placed_slots:
+                        self.placed_slots.append(s_name)
+                else:
+                    self.lims.deck_labware.pop(s_name, None)
+                    if s_name in self.placed_slots:
+                        self.placed_slots.remove(s_name)
+            self.sync_deck_manager()
+            if hasattr(self, 'draw_deck'):
+                self.draw_deck()
+
+            top.destroy()
+            if on_confirm_callback:
+                on_confirm_callback()
+
+        tk.Button(
+            btn_f,
+            text="🟢 Confirm Deck & Load Protocol",
+            bg="#28a745",
+            fg="white",
+            activebackground="#218838",
+            activeforeground="white",
+            font=("Arial", 10, "bold"),
+            command=on_confirm
+        ).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_f, text="Cancel", command=top.destroy).pack(side=tk.RIGHT)
+
+    # -------------------------------------------------------------------------
+    # 1. 8-CHANNEL MULTI PIPETTOR (8x1000 uL)
+    # -------------------------------------------------------------------------
+    def action_load_8ch_media_change_and_drug(self, volume: float = 7.5):
+        vol_str = f"{volume:.1f}uL" if volume in (5.0, 7.5) else f"{volume:g}uL"
+        filename = f"ehm_8ch_1000ul_media_change_and_drug_{vol_str}.json"
         script_dir = os.path.dirname(os.path.abspath(__file__))
         repo_root = os.path.dirname(script_dir)
-        vol_suffix = f"_{volume:.1f}uL" if volume == 5.0 else "_7.5uL"
         cand_paths = [
-            os.path.join(script_dir, "protocols", f"media_change_and_drug_addition_2_plates{vol_suffix}.json"),
-            os.path.join(repo_root, "protocols", f"media_change_and_drug_addition_2_plates{vol_suffix}.json"),
-            os.path.join(script_dir, "protocols", f"2_EHM_Media_Change_and_Drug_Addition{vol_suffix}.json"),
-            os.path.join(repo_root, "protocols", f"2_EHM_Media_Change_and_Drug_Addition{vol_suffix}.json"),
-            os.path.join(script_dir, "protocols", "media_change_and_drug_addition_2_plates.json"),
-            os.path.join(repo_root, "protocols", "media_change_and_drug_addition_2_plates.json"),
+            os.path.join(script_dir, "protocols", filename),
+            os.path.join(repo_root, "protocols", filename),
         ]
         target_path = next((p for p in cand_paths if os.path.exists(p)), None)
-        if target_path:
-            with open(target_path, 'r') as f:
-                loaded_sequence = json.load(f)
-            self.workflow_sequence.clear()
-            self.wf_box.delete(0, tk.END)
-            lw_dir = self.get_labware_dir()
+        if not target_path:
+            messagebox.showerror("File Not Found", f"Could not locate {filename}")
+            return
 
-            # 6-slot deck configuration:
-            # Slot 1: Media Reservoir (A1 Plt 1, A2 Plt 2)
-            # Slot 2: Discard Falcon Rack / Reservoir (A1 Media Waste, A2 Plt 1 Tips, A3 Plt 2 Tips)
-            # Slot 3: Drug Plate (generic 96 well)
-            # Slot 4: Tip Rack (1000uL)
-            # Slot 5: Plate 1 (Myriamed 48 well)
-            # Slot 6: Plate 2 (Myriamed 48 well)
-            deck_setup = {
-                "Slot_1": "reservoir_3_well.json",
-                "Slot_2": "reservoir_3_well.json",
-                "Slot_3": "generic_96_well_plate.json",
-                "Slot_4": "tip_rack_1000ul.json",
-                "Slot_5": "myriamed_48_well.json",
-                "Slot_6": "myriamed_48_well.json"
-            }
-            for s_name, lw_file in deck_setup.items():
-                lp = os.path.join(lw_dir, lw_file)
-                if os.path.exists(lp):
-                    self.lims.deck_labware[s_name] = Labware(lp)
-                    self.lims.deck_labware[s_name].source_file = lw_file
-                if s_name not in self.placed_slots:
-                    self.placed_slots.append(s_name)
-            self.sync_deck_manager()
-            if hasattr(self, 'draw_deck'): self.draw_deck()
+        deck_setup = {
+            "Slot_1": "generic_96_well_plate.json",
+            "Slot_2": "(Empty / Clearance)",
+            "Slot_3": "myriamed_48_well.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "myriamed_48_well.json",
+            "Slot_6": "reservoir_7_column.json",
+        }
+        slot_descs = {
+            "Slot_1": f"96-Well Drug Plate (Rows A-H, Cols 1..6, {volume:g} µL)",
+            "Slot_2": "Clearance zone (Empty)",
+            "Slot_3": "Plate 5 (Myriamed 48-well EHM, Cols 1..6)",
+            "Slot_4": "1000 µL Tip Rack (Cols 1-6 fresh tips, Cols 12-7 graveyard)",
+            "Slot_5": "Plate 6 (Myriamed 48-well EHM, Cols 1..6)",
+            "Slot_6": "7-Col Reservoir (R1: Fresh P5 [>27 mL], R2: Fresh P6 [>27 mL], R7: Waste)",
+        }
+        with open(target_path, "r") as f:
+            seq = json.load(f)
 
-            for step in loaded_sequence:
-                self.workflow_sequence.append(step)
-                act = step['action']
-                slot = step.get('slot', '')
-                well = step.get('well', '')
-                vol = float(step.get('volume', 0.0))
-                mix_cycles = int(step.get('mix_cycles', 0))
-                mix_vol = float(step.get('mix_volume', 100.0))
-                mix_str = f" [Mix {mix_cycles}x {mix_vol:g}\u03bcL]" if mix_cycles > 0 else ""
-                vol_str = f" {vol:.1f}\u03bcL" if vol % 1 != 0 else (f" {vol:.0f}\u03bcL" if vol > 0 else "")
-                if act == "Pick Up Tip":
-                    msg = f"[{act.upper()}] from {slot}, Well {well}"
-                elif act == "Discard Tip":
-                    msg = f"[{act.upper()}] into {slot}, Well {well}"
-                else:
-                    msg = f"[{act.upper()}]{vol_str} at {slot}, Well {well}{mix_str}"
-                self.wf_box.insert(tk.END, msg)
+        def do_load():
+            self._populate_workflow_from_sequence(seq, f"[8-CH] Media Change + {volume:g} µL Drug Addition")
 
-            self._update_estimated_timer_preview()
-            self.logger.info(f"Loaded Media Change + Drug Addition ({volume:.1f}µL) Protocol ({len(loaded_sequence)} steps). Deck configured: Slot 1 Media (A1/A2), Slot 2 Falcon A Waste, B/C Tips, Slot 3 Drug Plate, Slot 4 Tips, Slot 5 Plt 1, Slot 6 Plt 2.")
-        else:
-            messagebox.showerror("File Not Found", f"Could not locate media_change_and_drug_addition_2_plates{vol_suffix}.json")
+        self.show_protocol_deck_setup_modal(
+            protocol_name=f"[8-CH] Media Change + {volume:g} µL Drug Addition (Plate 5 & 6)",
+            pipettor_mode="8×1000 µL (8-Channel Manifold)",
+            is_multichannel=True,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descs,
+            on_confirm_callback=do_load
+        )
+
+    def action_load_8ch_dmso_dilution(self):
+        filename = "ehm_8ch_1000ul_dmso_drug_dilution.json"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        cand_paths = [
+            os.path.join(script_dir, "protocols", filename),
+            os.path.join(repo_root, "protocols", filename),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if not target_path:
+            messagebox.showerror("File Not Found", f"Could not locate {filename}")
+            return
+
+        deck_setup = {
+            "Slot_1": "reservoir_3_well.json",
+            "Slot_2": "waste_trough.json",
+            "Slot_3": "generic_96_well_plate.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "generic_96_well_plate.json",
+            "Slot_6": "(Empty / Clearance)",
+        }
+        slot_descs = {
+            "Slot_1": "3-Well Reservoir (A1: Pure DMSO Buffer)",
+            "Slot_2": "Waste Trough (Liquid Waste & Tip Discard)",
+            "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells)",
+            "Slot_4": "1000 µL Tip Rack (Cols 1-3 fresh tips)",
+            "Slot_5": "96-Well Target Dilution Plate (Serial Mix Cols 1..6)",
+            "Slot_6": "Clearance zone (Empty)",
+        }
+        with open(target_path, "r") as f:
+            seq = json.load(f)
+
+        def on_deck_confirmed():
+            self.prompt_drug_wells_and_load(
+                seq,
+                protocol_name="[8-CH] DMSO-Drug Serial Dilution",
+                deck_setup=deck_setup,
+            )
+
+        self.show_protocol_deck_setup_modal(
+            protocol_name="[8-CH] DMSO-Drug Serial Dilution (96-Well Plate)",
+            pipettor_mode="8×1000 µL (8-Channel Manifold)",
+            is_multichannel=True,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descs,
+            on_confirm_callback=on_deck_confirmed
+        )
+
+    # -------------------------------------------------------------------------
+    # 2. 300 uL SINGLE-CHANNEL PIPETTE
+    # -------------------------------------------------------------------------
+    def action_load_300ul_media_change_and_drug(self, volume: float = 7.5):
+        vol_str = f"{volume:.1f}uL" if volume in (5.0, 7.5) else f"{volume:g}uL"
+        filename = f"ehm_1ch_300ul_media_change_and_drug_{vol_str}.json"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        cand_paths = [
+            os.path.join(script_dir, "protocols", filename),
+            os.path.join(repo_root, "protocols", filename),
+            os.path.join(script_dir, "protocols", f"media_change_and_drug_addition_2_plates_{vol_str}.json"),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if not target_path:
+            messagebox.showerror("File Not Found", f"Could not locate {filename}")
+            return
+
+        deck_setup = {
+            "Slot_1": "reservoir_3_well.json",
+            "Slot_2": "reservoir_3_well.json",
+            "Slot_3": "generic_96_well_plate.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "myriamed_48_well.json",
+            "Slot_6": "myriamed_48_well.json",
+        }
+        slot_descs = {
+            "Slot_1": "3-Well Reservoir (A1: Plate 1 Fresh [>27 mL], A2: Plate 2 Fresh [>27 mL])",
+            "Slot_2": "3-Well Reservoir (A1: Old Media Waste, A2: Plt 1 Tips, A3: Plt 2 Tips)",
+            "Slot_3": "96-Well Drug Plate (Stock Drug Conditions D11..D15 + Control)",
+            "Slot_4": "300 µL Tip Rack (Full 96 Tips)",
+            "Slot_5": "Plate 1 (Myriamed 48-well EHM Plate)",
+            "Slot_6": "Plate 2 (Myriamed 48-well EHM Plate)",
+        }
+        with open(target_path, "r") as f:
+            seq = json.load(f)
+
+        def do_load():
+            self._populate_workflow_from_sequence(seq, f"[300 µL Single] Media Change + {volume:g} µL Drug Addition")
+
+        self.show_protocol_deck_setup_modal(
+            protocol_name=f"[300 µL Single] Media Change + {volume:g} µL Drug Addition (2 Plates)",
+            pipettor_mode="1×300 µL (Single-Channel)",
+            is_multichannel=False,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descs,
+            on_confirm_callback=do_load
+        )
+
+    def action_load_300ul_dmso_dilution(self):
+        filename = "ehm_1ch_300ul_dmso_drug_dilution.json"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        cand_paths = [
+            os.path.join(script_dir, "protocols", filename),
+            os.path.join(repo_root, "protocols", filename),
+            os.path.join(script_dir, "protocols", "1_Serial_Dilution_Plate.json"),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if not target_path:
+            messagebox.showerror("File Not Found", f"Could not locate {filename}")
+            return
+
+        deck_setup = {
+            "Slot_1": "tube_rack_2x6_2ml.json",
+            "Slot_2": "waste_trough.json",
+            "Slot_3": "generic_96_well_plate.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "generic_96_well_plate.json",
+            "Slot_6": "(Empty / Clearance)",
+        }
+        slot_descs = {
+            "Slot_1": "12-Tube 2 mL Rack (A1: Pure DMSO Buffer)",
+            "Slot_2": "Waste Trough (Liquid Waste & Tip Graveyard)",
+            "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells)",
+            "Slot_4": "300 µL Tip Rack",
+            "Slot_5": "96-Well Target Dilution Plate (Serial Mix)",
+            "Slot_6": "Clearance zone (Empty)",
+        }
+        with open(target_path, "r") as f:
+            seq = json.load(f)
+
+        def on_deck_confirmed():
+            self.prompt_drug_wells_and_load(
+                seq,
+                protocol_name="[300 µL Single] DMSO-Drug Serial Dilution",
+                deck_setup=deck_setup,
+            )
+
+        self.show_protocol_deck_setup_modal(
+            protocol_name="[300 µL Single] DMSO-Drug Serial Dilution",
+            pipettor_mode="1×300 µL (Single-Channel)",
+            is_multichannel=False,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descs,
+            on_confirm_callback=on_deck_confirmed
+        )
+
+    # -------------------------------------------------------------------------
+    # 3. 20 uL SINGLE-CHANNEL PIPETTE
+    # -------------------------------------------------------------------------
+    def action_load_20ul_drug_addition(self, volume: float = 7.5):
+        vol_str = f"{volume:.1f}uL" if volume in (5.0, 7.5) else f"{volume:g}uL"
+        filename = f"ehm_1ch_20ul_drug_addition_{vol_str}.json"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        cand_paths = [
+            os.path.join(script_dir, "protocols", filename),
+            os.path.join(repo_root, "protocols", filename),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if not target_path:
+            messagebox.showerror("File Not Found", f"Could not locate {filename}")
+            return
+
+        deck_setup = {
+            "Slot_1": "tube_rack_2x6_2ml.json",
+            "Slot_2": "reservoir_3_well.json",
+            "Slot_3": "generic_96_well_plate.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "myriamed_48_well.json",
+            "Slot_6": "myriamed_48_well.json",
+        }
+        slot_descs = {
+            "Slot_1": "12-Tube Rack (Buffer / Control Media)",
+            "Slot_2": "Waste Reservoir (A2: Plate 1 Tips, A3: Plate 2 Tips)",
+            "Slot_3": "96-Well Stock Drug Plate (Conditions D11..D15 + Control)",
+            "Slot_4": "20 µL Micro Tip Rack",
+            "Slot_5": "Plate 1 (Myriamed 48-well EHM Plate)",
+            "Slot_6": "Plate 2 (Myriamed 48-well EHM Plate)",
+        }
+        with open(target_path, "r") as f:
+            seq = json.load(f)
+
+        def do_load():
+            self._populate_workflow_from_sequence(seq, f"[20 µL Single] High-Precision Drug Addition ({volume:g} µL)")
+
+        self.show_protocol_deck_setup_modal(
+            protocol_name=f"[20 µL Single] High-Precision Drug Addition ({volume:g} µL) + Mix",
+            pipettor_mode="1×20 µL (Single-Channel)",
+            is_multichannel=False,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descs,
+            on_confirm_callback=do_load
+        )
+
+    def action_load_20ul_dmso_dilution(self):
+        filename = "ehm_1ch_20ul_dmso_drug_dilution.json"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        cand_paths = [
+            os.path.join(script_dir, "protocols", filename),
+            os.path.join(repo_root, "protocols", filename),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if not target_path:
+            messagebox.showerror("File Not Found", f"Could not locate {filename}")
+            return
+
+        deck_setup = {
+            "Slot_1": "tube_rack_2x6_2ml.json",
+            "Slot_2": "waste_trough.json",
+            "Slot_3": "generic_96_well_plate.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "generic_96_well_plate.json",
+            "Slot_6": "(Empty / Clearance)",
+        }
+        slot_descs = {
+            "Slot_1": "12-Tube Rack (A1: Pure DMSO Buffer)",
+            "Slot_2": "Waste Trough (Liquid Waste & Tip Discard)",
+            "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells)",
+            "Slot_4": "20 µL Micro Tip Rack",
+            "Slot_5": "96-Well Target Dilution Plate (20 µL Precision Mix)",
+            "Slot_6": "Clearance zone (Empty)",
+        }
+        with open(target_path, "r") as f:
+            seq = json.load(f)
+
+        def on_deck_confirmed():
+            self.prompt_drug_wells_and_load(
+                seq,
+                protocol_name="[20 µL Single] Precision DMSO-Drug Dilution",
+                deck_setup=deck_setup,
+            )
+
+        self.show_protocol_deck_setup_modal(
+            protocol_name="[20 µL Single] Precision DMSO-Drug Dilution",
+            pipettor_mode="1×20 µL (Single-Channel)",
+            is_multichannel=False,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descs,
+            on_confirm_callback=on_deck_confirmed
+        )
+
+    def action_load_media_and_drug_protocol(self, volume: float = 7.5):
+        return self.action_load_300ul_media_change_and_drug(volume)
 
     def action_load_unified_media_and_drug_protocol(self):
         return self.action_load_media_and_drug_protocol(7.5)
@@ -5726,60 +6148,84 @@ class LIMSMasterApp:
                                          "JSON structure mismatch. The selected file is a dictionary, not a workflow array. Did you select a Deck Workspace instead of a Protocol?")
                     return
 
-                self.workflow_sequence.clear()
-                self.wf_box.delete(0, tk.END)
+                p_name = os.path.basename(filepath)
+                is_8ch = any(s.get('eight_ch_symmetric') for s in loaded_sequence)
 
-                for step in loaded_sequence:
-                    if 'action' not in step:
-                        continue
+                # Extract declared slots & labwares to preview deck setup
+                declared_deck = {}
+                slot_descs = {}
+                for st in loaded_sequence:
+                    s_name, lw_file = st.get('slot', ''), st.get('labware', '')
+                    if s_name and lw_file and s_name.startswith("Slot_") and s_name not in declared_deck:
+                        declared_deck[s_name] = lw_file
+                        slot_descs[s_name] = f"Protocol declared labware ({lw_file})"
 
-                    self.workflow_sequence.append(step)
-                    if step.get('label'):
-                        self.wf_box.insert(tk.END, self._format_step_msg(step))
-                        continue
-                    m = step.get('mode', 'auto')
+                def do_load():
+                    self.workflow_sequence.clear()
+                    self.wf_box.delete(0, tk.END)
 
-                    if "System" in step['action']:
-                        if "Incubate" in step['action']:
-                            msg = f"[SYSTEM] Incubate for {step.get('volume', 0.0)} seconds."
-                        elif "FOC48" in step['action']:
-                            msg = f"[MEASURE] Execute FOC48_Stim_0.xml for Plate: '{step.get('well', '')}'"
+                    for step in loaded_sequence:
+                        if 'action' not in step:
+                            continue
+
+                        self.workflow_sequence.append(step)
+                        if step.get('label'):
+                            self.wf_box.insert(tk.END, self._format_step_msg(step))
+                            continue
+                        m = step.get('mode', 'auto')
+
+                        if "System" in step['action']:
+                            if "Incubate" in step['action']:
+                                msg = f"[SYSTEM] Incubate for {step.get('volume', 0.0)} seconds."
+                            elif "FOC48" in step['action']:
+                                msg = f"[MEASURE] Execute FOC48_Stim_0.xml for Plate: '{step.get('well', '')}'"
+                            else:
+                                msg = f"[{step['action'].upper()}]"
+                        elif m == "manual":
+                            if step['action'] in ["Pick Up Tip", "Discard Tip"]:
+                                msg = f"[{step['action'].upper()} MANUAL] X:{step.get('x', 0)} Y:{step.get('y', 0)} Z:{step.get('z', 0)}"
+                            elif step['action'] == "Detect Liquid Level":
+                                msg = f"[{step['action'].upper()} MANUAL] X:{step.get('x', 0)} Y:{step.get('y', 0)} Z:{step.get('z', 0)}"
+                            else:
+                                msg = f"[{step['action'].upper()} MANUAL] X:{step.get('x', 0)} Y:{step.get('y', 0)} Z:{step.get('z', 0)} Vol:{step.get('volume', 0.0)}\u03bcL"
                         else:
-                            msg = f"[{step['action'].upper()}]"
-                    elif m == "manual":
-                        if step['action'] in ["Pick Up Tip", "Discard Tip"]:
-                            msg = f"[{step['action'].upper()} MANUAL] X:{step.get('x', 0)} Y:{step.get('y', 0)} Z:{step.get('z', 0)}"
-                        elif step['action'] == "Detect Liquid Level":
-                            msg = f"[{step['action'].upper()} MANUAL] X:{step.get('x', 0)} Y:{step.get('y', 0)} Z:{step.get('z', 0)}"
-                        else:
-                            msg = f"[{step['action'].upper()} MANUAL] X:{step.get('x', 0)} Y:{step.get('y', 0)} Z:{step.get('z', 0)} Vol:{step.get('volume', 0.0)}\u03bcL"
-                    else:
-                        if step['action'] == "Pick Up Tip":
-                            msg = f"[{step['action'].upper()}] from {step.get('slot', '')}, Well {step.get('well', '')}"
-                        elif step['action'] == "Discard Tip":
-                            msg = f"[{step['action'].upper()}] into {step.get('slot', '')} (Waste Trough)"
-                        elif step['action'] == "Detect Liquid Level":
-                            msg = f"[{step['action'].upper()}] at {step.get('slot', '')}, Well {step.get('well', '')}"
-                        else:
-                            z_msg = f" (Z+{step.get('extra_z', 0.0)}mm)" if step.get('extra_z', 0.0) > 0 else ""
-                            mix_c = int(step.get('mix_cycles', 0))
-                            mix_msg = f" [+ Mix {mix_c}x {step.get('mix_volume', 100.0)}\u03bcL]" if mix_c > 0 else ""
-                            msg = f"[{step['action'].upper()}] {step.get('volume', 0.0)}\u03bcL at {step.get('slot', '')}, Well {step.get('well', '')}{z_msg}{mix_msg}"
+                            if step['action'] == "Pick Up Tip":
+                                msg = f"[{step['action'].upper()}] from {step.get('slot', '')}, Well {step.get('well', '')}"
+                            elif step['action'] == "Discard Tip":
+                                msg = f"[{step['action'].upper()}] into {step.get('slot', '')} (Waste Trough)"
+                            elif step['action'] == "Detect Liquid Level":
+                                msg = f"[{step['action'].upper()}] at {step.get('slot', '')}, Well {step.get('well', '')}"
+                            else:
+                                z_msg = f" (Z+{step.get('extra_z', 0.0)}mm)" if step.get('extra_z', 0.0) > 0 else ""
+                                mix_c = int(step.get('mix_cycles', 0))
+                                mix_msg = f" [+ Mix {mix_c}x {step.get('mix_volume', 100.0)}\u03bcL]" if mix_c > 0 else ""
+                                msg = f"[{step['action'].upper()}] {step.get('volume', 0.0)}\u03bcL at {step.get('slot', '')}, Well {step.get('well', '')}{z_msg}{mix_msg}"
 
-                    self.wf_box.insert(tk.END, msg)
+                        self.wf_box.insert(tk.END, msg)
 
-                # Auto-switch head mode if protocol declares 8-channel symmetric steps
-                if any(s.get('eight_ch_symmetric') for s in self.workflow_sequence):
-                    self._set_has_tip(False)
-                    if not self.lims.pipettor.multichannel:
-                        self.switch_pipettor_head(True, quiet=True)
+                    if is_8ch:
+                        self._set_has_tip(False)
+                        if not self.lims.pipettor.multichannel:
+                            self.switch_pipettor_head(True, quiet=True)
 
-                # Labware sync: the protocol may DECLARE labware per step ('labware' field).
-                # Empty slots get the declared labware; occupied slots are only changed if the user agrees.
-                self._sync_protocol_labware(loaded_sequence)
-                self.sync_deck_manager()
-                if hasattr(self, 'draw_deck'): self.draw_deck()
-                self._update_estimated_timer_preview()
+                    self._sync_protocol_labware(loaded_sequence)
+                    self.sync_deck_manager()
+                    if hasattr(self, 'draw_deck'): self.draw_deck()
+                    self._update_estimated_timer_preview()
+                    self.logger.info(f"Loaded protocol '{p_name}' ({len(self.workflow_sequence)} steps).")
+
+                if declared_deck:
+                    head_mode_str = "8×1000 µL (8-Channel Manifold)" if is_8ch else "Single-Channel"
+                    self.show_protocol_deck_setup_modal(
+                        protocol_name=f"Imported Protocol: {p_name}",
+                        pipettor_mode=head_mode_str,
+                        is_multichannel=is_8ch,
+                        deck_setup=declared_deck,
+                        slot_descriptions=slot_descs,
+                        on_confirm_callback=do_load
+                    )
+                else:
+                    do_load()
 
             except Exception as e:
                 self.logger.error(f"Import Exception: {str(e)}")
