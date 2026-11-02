@@ -100,6 +100,48 @@ def test_gui_loading():
         assert len(app.workflow_sequence) == 122
         print("PASS: 20 uL Single-Channel DMSO Dilution loaded (122 steps).")
 
+        # 6. Test Tip Requirements and Clearance Slots Analysis
+        print("\n--- 3. Testing Tip Requirements & Empty Clearance Slots ---")
+        # 8-CH protocol check
+        ti8, es8, as8 = app._analyze_protocol_tips_and_slots(
+            sequence=seq8,
+            is_multichannel=True,
+            deck_setup={"Slot_1": "plate.json", "Slot_2": "(Empty / Clearance)", "Slot_3": "p5.json", "Slot_4": "tips.json", "Slot_5": "p6.json", "Slot_6": "res.json"},
+            slot_descriptions={"Slot_2": "Clearance zone (Empty)"}
+        )
+        assert any("48 fresh tips" in t for t in ti8), f"Expected 48 tips for 8-ch, got: {ti8}"
+        assert "Slot 2" in es8, f"Expected Slot 2 in empty slots, got: {es8}"
+        print(f"PASS: 8-CH Tip & Clearance Analysis: {ti8} | Empty: {es8}")
+
+        # 20 uL protocol check
+        ti20, es20, as20 = app._analyze_protocol_tips_and_slots(
+            sequence=seq20,
+            is_multichannel=False,
+            deck_setup={"Slot_1": "(Empty / Clearance)", "Slot_2": "res.json", "Slot_3": "plate.json", "Slot_4": "tips.json", "Slot_5": "p1.json", "Slot_6": "p2.json"},
+            slot_descriptions={"Slot_1": "Clearance zone (Empty)"}
+        )
+        assert any("7 fresh tips" in t for t in ti20), f"Expected 7 tips for 20uL, got: {ti20}"
+        assert "Slot 1" in es20, f"Expected Slot 1 in empty slots, got: {es20}"
+        print(f"PASS: 20 uL Tip & Clearance Analysis: {ti20} | Empty: {es20}")
+
+        # 300 uL protocol check (All slots occupied)
+        ti300, es300, as300 = app._analyze_protocol_tips_and_slots(
+            sequence=seq300,
+            is_multichannel=False,
+            deck_setup={"Slot_1": "res.json", "Slot_2": "res.json", "Slot_3": "plate.json", "Slot_4": "tips.json", "Slot_5": "p1.json", "Slot_6": "p2.json"},
+            slot_descriptions={"Slot_1": "Fresh", "Slot_2": "Waste", "Slot_3": "Drug", "Slot_4": "Tips", "Slot_5": "P1", "Slot_6": "P2"}
+        )
+        assert any("20 fresh tips" in t for t in ti300), f"Expected 20 tips for 300uL, got: {ti300}"
+        assert len(es300) == 0, f"Expected 0 empty slots for 300uL full deck, got: {es300}"
+        print(f"PASS: 300 uL Tip & Clearance Analysis: {ti300} | Empty: {es300}")
+
+        # Check Tab 4 dynamic deck summary widget
+        assert hasattr(app, "lbl_deck_summary"), "lbl_deck_summary missing on Tab 4 run_frame"
+        app._update_deck_and_tip_preview()
+        summary_text = app.lbl_deck_summary.cget("text")
+        assert "Tips Needed" in summary_text and "KEEP EMPTY" in summary_text, f"Summary widget text malformed: {summary_text}"
+        print(f"PASS: Tab 4 Live Deck & Tip Summary: {summary_text.replace(chr(10), ' | ')}")
+
     finally:
         try:
             app.on_closing()

@@ -212,16 +212,16 @@ class LIMSMasterApp:
 
     def setup_menu(self):
         menubar = tk.Menu(self.root)
+
+        # -------------------------------------------------------------
+        # 1. FILE MENU (Generic Workspace & Protocol Files)
+        # -------------------------------------------------------------
         filemenu = tk.Menu(menubar, tearoff=0)
         filemenu.add_command(label="New Deck Layout", command=self.action_new_deck)
         filemenu.add_command(label="Load Workspace...", command=self.action_load_deck)
         filemenu.add_command(label="Save Workspace As...", command=self.action_save_deck_as)
+        filemenu.add_separator()
         filemenu.add_command(label="Load JSON Protocol...", command=self.action_load_workflow)
-        filemenu.add_command(label="Plate 2 Row H Media Change Only...", command=self.action_load_plate2_rowH_protocol)
-        filemenu.add_command(label="8×1000 µL EHM Media Change (Plate 5 & Plate 6)...", command=self.action_load_8ch_1000ul_media_change_protocol)
-        filemenu.add_command(label="8-Channel Calibrated Heights & Depths...", command=self.action_open_8ch_height_settings)
-        filemenu.add_command(label="Bakar Dilution Plate (Media Change)...", command=self.action_load_bakar_media_change_serial_dilution_protocol)
-        filemenu.add_command(label="DMSO-Drug Plate Prep (Initial Loading)...", command=self.action_load_dmso_dilution_protocol)
         filemenu.add_command(label="Save JSON Protocol As...", command=self.action_save_workflow_as)
         filemenu.add_separator()
         filemenu.add_command(label="Import Python Protocol (.py)...", command=self.action_import_python_protocol)
@@ -232,9 +232,55 @@ class LIMSMasterApp:
         filemenu.add_command(label="Exit", command=self.on_closing)
         menubar.add_cascade(label="File", menu=filemenu)
 
+        # -------------------------------------------------------------
+        # 2. PROTOCOLS MENU (Top Bar Dedicated Workflows)
+        # -------------------------------------------------------------
+        protocolmenu = tk.Menu(menubar, tearoff=0)
+
+        # Submenu: 8-Channel (8×1000 µL)
+        m8ch = tk.Menu(protocolmenu, tearoff=0)
+        m8ch.add_command(label="🟢 Media Change + 7.5 µL Drug (Plate 5 & 6)", command=lambda: self.action_load_8ch_media_change_and_drug(7.5))
+        m8ch.add_command(label="🟢 Media Change + 5.0 µL Drug (Plate 5 & 6)", command=lambda: self.action_load_8ch_media_change_and_drug(5.0))
+        m8ch.add_command(label="🟢 DMSO-Drug Serial Dilution (Select Wells)...", command=self.action_load_8ch_dmso_dilution)
+        m8ch.add_separator()
+        m8ch.add_command(label="8×1000 µL EHM Media Change (Plate 5 & Plate 6)...", command=self.action_load_8ch_1000ul_media_change_protocol)
+        m8ch.add_command(label="8-Channel Calibrated Heights & Depths...", command=self.action_open_8ch_height_settings)
+        protocolmenu.add_cascade(label="8-Channel Multi (8×1000 µL)", menu=m8ch)
+
+        # Submenu: 300 µL Single-Channel
+        m300 = tk.Menu(protocolmenu, tearoff=0)
+        m300.add_command(label="🟢 Media Change + 7.5 µL Drug (2 Plates)", command=lambda: self.action_load_300ul_media_change_and_drug(7.5))
+        m300.add_command(label="🟢 Media Change + 5.0 µL Drug (2 Plates)", command=lambda: self.action_load_300ul_media_change_and_drug(5.0))
+        m300.add_command(label="🟢 DMSO-Drug Serial Dilution (Select Wells)...", command=self.action_load_300ul_dmso_dilution)
+        protocolmenu.add_cascade(label="300 µL Single-Channel", menu=m300)
+
+        # Submenu: 20 µL Single-Channel
+        m20 = tk.Menu(protocolmenu, tearoff=0)
+        m20.add_command(label="🟢 High-Precision Drug Addition (7.5 µL) + Mix", command=lambda: self.action_load_20ul_drug_addition(7.5))
+        m20.add_command(label="🟢 High-Precision Drug Addition (5.0 µL) + Mix", command=lambda: self.action_load_20ul_drug_addition(5.0))
+        m20.add_command(label="🟢 Precision DMSO-Drug Dilution (Select Wells)...", command=self.action_load_20ul_dmso_dilution)
+        protocolmenu.add_cascade(label="20 µL Single-Channel", menu=m20)
+
+        protocolmenu.add_separator()
+
+        # Submenu: Legacy Workflows
+        mlegacy = tk.Menu(protocolmenu, tearoff=0)
+        mlegacy.add_command(label="Plate 2 Row H Media Change Only...", command=self.action_load_plate2_rowH_protocol)
+        mlegacy.add_command(label="Bakar Dilution Plate (Media Change)...", command=self.action_load_bakar_media_change_serial_dilution_protocol)
+        mlegacy.add_command(label="DMSO-Drug Plate Prep (Initial Loading)...", command=self.action_load_dmso_dilution_protocol)
+        mlegacy.add_command(label="Drug Addition Only (2 Plates, 5 µL)...", command=self.action_load_drug_addition_only_protocol)
+        protocolmenu.add_cascade(label="Legacy Workflows", menu=mlegacy)
+
+        menubar.add_cascade(label="Protocols", menu=protocolmenu)
+
+        # -------------------------------------------------------------
+        # 3. HARDWARE MENU
+        # -------------------------------------------------------------
         hwmenu = tk.Menu(menubar, tearoff=0)
         hwmenu.add_command(label="Switch to 1×200 µL (Single-Channel)", command=lambda: self.switch_pipettor_head(False))
         hwmenu.add_command(label="Switch to 8×1000 µL (8-Channel Manifold)", command=lambda: self.switch_pipettor_head(True))
+        hwmenu.add_separator()
+        hwmenu.add_command(label="8-Channel Calibrated Heights & Depths...", command=self.action_open_8ch_height_settings)
         menubar.add_cascade(label="Hardware", menu=hwmenu)
         try:
             self.root.config(menu=menubar)
@@ -664,9 +710,112 @@ class LIMSMasterApp:
         deduction = min(in_step_elapsed, curr_step_cap)
         return max(0.0, scaled_remaining - deduction)
 
+    def _analyze_protocol_tips_and_slots(self, sequence=None, is_multichannel=None, deck_setup=None, slot_descriptions=None):
+        """
+        Analyzes protocol sequence and deck setup to calculate:
+          1. tips_info: list of strings describing tip requirements (count, wells/cols, slot).
+          2. empty_slots: list of slot labels (e.g. ['Slot 2', 'Slot 6']) that MUST remain completely empty.
+          3. active_slots: list of slot labels (e.g. ['Slot 1', 'Slot 3', 'Slot 4', 'Slot 5']) holding labware.
+        """
+        seq = sequence if sequence is not None else getattr(self, "workflow_sequence", [])
+        deck = deck_setup if deck_setup is not None else getattr(getattr(self, "lims", None), "deck_labware", {})
+        descs = slot_descriptions or {}
+
+        if is_multichannel is None:
+            is_8ch = bool(
+                getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "multichannel", False)
+                or any(s.get("eight_ch_symmetric") for s in seq)
+                or any("8-ch" in str(s.get("label", "")).lower() for s in seq)
+            )
+        else:
+            is_8ch = bool(is_multichannel)
+
+        # 1. Analyze tips
+        pickup_steps = [s for s in seq if s.get("action") == "Pick Up Tip"]
+        slots_with_tips = sorted(list(set(s.get("slot", "Slot_4") for s in pickup_steps)))
+        tips_info = []
+
+        if not pickup_steps:
+            for s_num in range(1, 7):
+                sn = f"Slot_{s_num}"
+                lw_name = ""
+                if isinstance(deck, dict):
+                    lw_val = deck.get(sn)
+                    lw_name = getattr(lw_val, "source_file", "") if hasattr(lw_val, "source_file") else str(lw_val or "")
+                if "tip" in lw_name.lower():
+                    tips_info.append(f"Slot {s_num}: Tip Rack loaded (Pre-attached tip expected)")
+            if not tips_info:
+                tips_info.append("0 tips required (No tip pickup steps in protocol)")
+        else:
+            for ts in slots_with_tips:
+                ts_label = ts.replace("_", " ")
+                wells = [s.get("well", "") for s in pickup_steps if s.get("slot") == ts]
+                if is_8ch:
+                    cols = []
+                    for w in wells:
+                        if len(w) > 1 and w[1:].isdigit():
+                            cols.append(int(w[1:]))
+                    cols = sorted(list(set(cols)))
+                    total_tips = len(wells) * 8
+                    col_str = f"Cols {cols[0]}..{cols[-1]}" if len(cols) > 4 else f"Cols {', '.join(str(c) for c in cols)}"
+                    tips_info.append(f"{ts_label}: {total_tips} fresh tips ({len(cols)} full columns: {col_str})")
+                else:
+                    total_tips = len(wells)
+                    w_str = f"Wells {wells[0]}..{wells[-1]}" if len(wells) > 4 else f"Wells {', '.join(wells)}"
+                    tips_info.append(f"{ts_label}: {total_tips} fresh tips ({w_str})")
+
+        # 2. Analyze active vs empty slots
+        seq_slots = set(s.get("slot") for s in seq if s.get("slot"))
+        empty_slots = []
+        active_slots = []
+
+        for s_num in range(1, 7):
+            sn = f"Slot_{s_num}"
+            s_label = f"Slot {s_num}"
+            lw_name = ""
+            if isinstance(deck, dict):
+                lw_val = deck.get(sn)
+                lw_name = getattr(lw_val, "source_file", "") if hasattr(lw_val, "source_file") else str(lw_val or "")
+            desc = descs.get(sn, "")
+
+            is_empty = False
+            if lw_name in ["(Empty / Clearance)", "", "None", None]:
+                is_empty = True
+            elif "empty" in desc.lower() or "clearance" in desc.lower():
+                is_empty = True
+            elif seq and sn not in seq_slots and not ("tip" in lw_name.lower() or "waste" in lw_name.lower()):
+                is_empty = True
+
+            if is_empty:
+                empty_slots.append(s_label)
+            else:
+                active_slots.append(s_label)
+
+        return tips_info, empty_slots, active_slots
+
+    def _update_deck_and_tip_preview(self):
+        if not hasattr(self, "lbl_deck_summary"):
+            return
+        if not self.workflow_sequence:
+            self.lbl_deck_summary.config(
+                text="📋 Deck: No protocol loaded | Tips: None",
+                fg="#6c757d",
+                bg="#f8f9fa"
+            )
+            return
+        tips_info, empty_slots, active_slots = self._analyze_protocol_tips_and_slots(self.workflow_sequence)
+        tip_text = " | ".join(tips_info) if tips_info else "0 tips required"
+        empty_text = ", ".join(empty_slots) if empty_slots else "None (All 6 slots occupied)"
+        self.lbl_deck_summary.config(
+            text=f"🎯 Tips Needed: {tip_text}\n⛔ KEEP EMPTY: {empty_text}",
+            fg="#0c5460",
+            bg="#d1ecf1"
+        )
+
     def _update_estimated_timer_preview(self):
         if getattr(self, "is_running", False) or not hasattr(self, "lbl_timer"):
             return
+        self._update_deck_and_tip_preview()
         if not self.workflow_sequence:
             self.lbl_timer.config(text="Time Remaining: --h --m --s", foreground="blue")
             return
@@ -2016,6 +2165,20 @@ class LIMSMasterApp:
                                    foreground="blue")
         self.lbl_timer.pack(pady=(0, 6))
 
+        self.lbl_deck_summary = tk.Label(
+            run_frame,
+            text="📋 Deck: No protocol loaded | Tips: None",
+            font=("Arial", 9, "bold"),
+            bg="#f8f9fa",
+            fg="#495057",
+            relief="groove",
+            padx=8,
+            pady=4,
+            anchor="w",
+            justify=tk.LEFT
+        )
+        self.lbl_deck_summary.pack(fill=tk.X, pady=(0, 6))
+
         util_bar = ttk.Frame(run_frame)
         util_bar.pack(fill=tk.X, pady=(0, 8))
         self.lbl_tip_memory = ttk.Label(
@@ -2326,22 +2489,23 @@ class LIMSMasterApp:
         is_multichannel: bool,
         deck_setup: dict,
         slot_descriptions: dict,
+        sequence: list = None,
         on_confirm_callback=None
     ):
         top = tk.Toplevel(self.root)
         top.title(f"Deck Setup & Confirmation — {protocol_name}")
-        top.geometry("640x580")
+        top.geometry("680x720")
         top.transient(self.root)
         top.grab_set()
 
         try:
-            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 320
-            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 290
+            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 340
+            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 360
             top.geometry(f"+{max(0, rx)}+{max(0, ry)}")
         except Exception:
             pass
 
-        # Header Frame
+        # 1. Header Frame
         hdr = tk.Frame(top, bg="#28a745", padx=16, pady=12)
         hdr.pack(fill=tk.X)
         tk.Label(
@@ -2359,38 +2523,124 @@ class LIMSMasterApp:
             fg="#e8f5e9"
         ).pack(anchor="w", pady=(2, 0))
 
-        body = ttk.Frame(top, padding=15)
+        body = ttk.Frame(top, padding=14)
         body.pack(fill=tk.BOTH, expand=True)
+
+        # 2. Analyze tips and clearance/empty slots
+        tips_info, empty_slots, active_slots = self._analyze_protocol_tips_and_slots(
+            sequence=sequence,
+            is_multichannel=is_multichannel,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descriptions
+        )
+
+        # 3. Empty Slots Alert Banner
+        if empty_slots:
+            alert_box = tk.Frame(body, bg="#fff3cd", relief="solid", bd=1, padx=12, pady=8)
+            alert_box.pack(fill=tk.X, pady=(0, 8))
+            tk.Label(
+                alert_box,
+                text="⛔ SLOTS TO KEEP COMPLETELY EMPTY (CLEARANCE ZONE):",
+                font=("Arial", 9, "bold"),
+                bg="#fff3cd",
+                fg="#721c24"
+            ).pack(anchor="w")
+            tk.Label(
+                alert_box,
+                text=f"• Keep {', '.join(empty_slots)} completely clear. Do NOT place any labware, plates, or reservoirs here.",
+                font=("Arial", 9),
+                bg="#fff3cd",
+                fg="#856404"
+            ).pack(anchor="w", pady=(2, 0))
+        else:
+            info_box = tk.Frame(body, bg="#e2e3e5", relief="solid", bd=1, padx=12, pady=6)
+            info_box.pack(fill=tk.X, pady=(0, 8))
+            tk.Label(
+                info_box,
+                text="ℹ️ ALL 6 SLOTS OCCUPIED: Verify labware is properly placed on all slots 1 through 6.",
+                font=("Arial", 9, "bold"),
+                bg="#e2e3e5",
+                fg="#383d41"
+            ).pack(anchor="w")
+
+        # 4. Tip Requirements Card
+        tip_box = tk.Frame(body, bg="#d1ecf1", relief="solid", bd=1, padx=12, pady=8)
+        tip_box.pack(fill=tk.X, pady=(0, 10))
+        tk.Label(
+            tip_box,
+            text="🎯 TIP REQUIREMENTS BEFORE STARTING:",
+            font=("Arial", 9, "bold"),
+            bg="#d1ecf1",
+            fg="#0c5460"
+        ).pack(anchor="w")
+        for ti in tips_info:
+            tk.Label(
+                tip_box,
+                text=f"• {ti}",
+                font=("Arial", 9),
+                bg="#d1ecf1",
+                fg="#0c5460"
+            ).pack(anchor="w")
+        tk.Label(
+            tip_box,
+            text="• Ensure sufficient fresh clean tips are loaded in these positions before running.",
+            font=("Arial", 8, "italic"),
+            bg="#d1ecf1",
+            fg="#0c5460"
+        ).pack(anchor="w", pady=(2, 0))
 
         ttk.Label(
             body,
             text="Verify your physical deck layout matches the assignments below before proceeding:",
             font=("Arial", 9, "bold")
-        ).pack(anchor="w", pady=(0, 10))
+        ).pack(anchor="w", pady=(0, 8))
 
-        # Deck Slot Table
+        # 5. Deck Slot Table
         table_f = ttk.Frame(body)
         table_f.pack(fill=tk.BOTH, expand=True)
 
         # Header row
-        ttk.Label(table_f, text="Slot", font=("Arial", 9, "bold"), width=8).grid(row=0, column=0, sticky="w", pady=4)
-        ttk.Label(table_f, text="Labware Model", font=("Arial", 9, "bold"), width=25).grid(row=0, column=1, sticky="w", pady=4)
-        ttk.Label(table_f, text="Deck Contents / Reagent Purpose", font=("Arial", 9, "bold")).grid(row=0, column=2, sticky="w", pady=4)
-        ttk.Separator(table_f, orient="horizontal").grid(row=1, column=0, columnspan=3, sticky="ew", pady=(2, 6))
+        ttk.Label(table_f, text="Slot", font=("Arial", 9, "bold"), width=8).grid(row=0, column=0, sticky="w", pady=3)
+        ttk.Label(table_f, text="Labware Model", font=("Arial", 9, "bold"), width=25).grid(row=0, column=1, sticky="w", pady=3)
+        ttk.Label(table_f, text="Deck Contents / Reagent Purpose", font=("Arial", 9, "bold")).grid(row=0, column=2, sticky="w", pady=3)
+        ttk.Separator(table_f, orient="horizontal").grid(row=1, column=0, columnspan=3, sticky="ew", pady=(2, 4))
 
         for idx, s_num in enumerate(range(1, 7), start=2):
             s_name = f"Slot_{s_num}"
+            s_label = f"Slot {s_num}"
             lw_file = deck_setup.get(s_name, "(Empty / Clearance)")
             desc = slot_descriptions.get(s_name, "Empty clearance slot")
+            is_empty = (s_label in empty_slots) or ("Empty" in lw_file) or ("Clearance" in desc)
+            is_tip = "tip" in lw_file.lower()
 
-            # Slot badge
-            bg_col = "#e9ecef" if "Empty" in lw_file else "#d4edda"
-            fg_col = "#6c757d" if "Empty" in lw_file else "#155724"
+            if is_empty:
+                bg_col = "#f8d7da"
+                fg_col = "#721c24"
+                lw_display = "[KEEP COMPLETELY EMPTY]"
+                desc_display = "⛔ DO NOT PLACE LABWARE — Must remain completely clear"
+            elif is_tip:
+                bg_col = "#cce5ff"
+                fg_col = "#004085"
+                lw_display = lw_file
+                desc_display = desc
+            else:
+                bg_col = "#d4edda"
+                fg_col = "#155724"
+                lw_display = lw_file
+                desc_display = desc
+
             badge = tk.Label(table_f, text=f"Slot {s_num}", font=("Consolas", 9, "bold"), bg=bg_col, fg=fg_col, padx=4, pady=2)
-            badge.grid(row=idx, column=0, sticky="w", pady=4)
+            badge.grid(row=idx, column=0, sticky="w", pady=3)
 
-            ttk.Label(table_f, text=lw_file, font=("Consolas", 9)).grid(row=idx, column=1, sticky="w", pady=4, padx=(0, 10))
-            ttk.Label(table_f, text=desc, font=("Arial", 9)).grid(row=idx, column=2, sticky="w", pady=4)
+            lw_lbl = ttk.Label(table_f, text=lw_display, font=("Consolas", 9, "bold" if is_empty else "normal"))
+            lw_lbl.grid(row=idx, column=1, sticky="w", pady=3, padx=(0, 10))
+            if is_empty:
+                lw_lbl.configure(foreground="#721c24")
+
+            desc_lbl = ttk.Label(table_f, text=desc_display, font=("Arial", 9, "bold" if is_empty else "normal"))
+            desc_lbl.grid(row=idx, column=2, sticky="w", pady=3)
+            if is_empty:
+                desc_lbl.configure(foreground="#721c24")
 
         # Bottom buttons
         btn_f = ttk.Frame(top, padding=12)
@@ -2480,6 +2730,7 @@ class LIMSMasterApp:
             is_multichannel=True,
             deck_setup=deck_setup,
             slot_descriptions=slot_descs,
+            sequence=seq,
             on_confirm_callback=do_load
         )
 
@@ -2528,6 +2779,7 @@ class LIMSMasterApp:
             is_multichannel=True,
             deck_setup=deck_setup,
             slot_descriptions=slot_descs,
+            sequence=seq,
             on_confirm_callback=on_deck_confirmed
         )
 
@@ -2577,6 +2829,7 @@ class LIMSMasterApp:
             is_multichannel=False,
             deck_setup=deck_setup,
             slot_descriptions=slot_descs,
+            sequence=seq,
             on_confirm_callback=do_load
         )
 
@@ -2626,6 +2879,7 @@ class LIMSMasterApp:
             is_multichannel=False,
             deck_setup=deck_setup,
             slot_descriptions=slot_descs,
+            sequence=seq,
             on_confirm_callback=on_deck_confirmed
         )
 
@@ -2674,6 +2928,7 @@ class LIMSMasterApp:
             is_multichannel=False,
             deck_setup=deck_setup,
             slot_descriptions=slot_descs,
+            sequence=seq,
             on_confirm_callback=do_load
         )
 
@@ -2722,6 +2977,7 @@ class LIMSMasterApp:
             is_multichannel=False,
             deck_setup=deck_setup,
             slot_descriptions=slot_descs,
+            sequence=seq,
             on_confirm_callback=on_deck_confirmed
         )
 
@@ -5022,7 +5278,32 @@ class LIMSMasterApp:
             messagebox.showerror("Safety Interlock",
                                  "Hardware must be homed via 'Connect & Initialize' before executing automated workflows.")
             return
-        if not self.workflow_sequence: return
+        if not self.workflow_sequence:
+            messagebox.showinfo("No Protocol", "No protocol steps loaded in the Protocol Runner.")
+            return
+
+        # Pre-Run Safety Check: Verify Tip Usage & Clearance Slots
+        tips_info, empty_slots, active_slots = self._analyze_protocol_tips_and_slots(self.workflow_sequence)
+        check_msg = ["PROTOCOL PRE-RUN SAFETY CHECK\n"]
+        if tips_info:
+            check_msg.append("🎯 TIP REQUIREMENTS:")
+            for ti in tips_info:
+                check_msg.append(f"  • {ti}")
+            check_msg.append("")
+        if empty_slots:
+            check_msg.append("⛔ SLOTS TO KEEP COMPLETELY EMPTY (CLEARANCE):")
+            for es in empty_slots:
+                check_msg.append(f"  • {es} (Must be completely clear of any labware or obstacles)")
+            check_msg.append("")
+        else:
+            check_msg.append("ℹ️ All 6 deck slots are occupied.\n")
+
+        check_msg.append("Have you verified fresh tips are loaded and confirmed all empty slot(s) are clear?")
+        confirm = messagebox.askyesno("Protocol Pre-Run Safety Check", "\n".join(check_msg))
+        if not confirm:
+            self.logger.info("Protocol run cancelled by operator during Pre-Run Safety Check.")
+            return
+
         needs_8ch = any(s.get('eight_ch_symmetric') for s in self.workflow_sequence)
         if needs_8ch and not self.lims.pipettor.multichannel:
             self.switch_pipettor_head(True, quiet=True)
@@ -6222,6 +6503,7 @@ class LIMSMasterApp:
                         is_multichannel=is_8ch,
                         deck_setup=declared_deck,
                         slot_descriptions=slot_descs,
+                        sequence=loaded_sequence,
                         on_confirm_callback=do_load
                     )
                 else:
