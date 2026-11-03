@@ -97,7 +97,7 @@ def build_8ch_media_change_and_drug_steps(
         "label": "[DROP 8-CH] Eject Plate 5 Old Media Tips -> Slot_4 Col 12 Graveyard",
     })
 
-    # Step B: Fresh Media Addition (Col 2 Tips)
+    # Step B: Fresh Media Addition (Col 2 Tips) - Multi-Dispense: Aspirate 1000 µL, Dispense 500 µL + 500 µL Contact-Free
     steps.append({
         "action": "Pick Up Tip",
         "mode": "auto",
@@ -110,30 +110,43 @@ def build_8ch_media_change_and_drug_steps(
         "mounted_channels": "A-H",
         "label": "[PICK 8-CH] Slot_4 Col 2 (A2-H2) | Plate 5 Fresh Media Addition",
     })
-    for c in range(1, 7):
+    for c1, c2 in [(1, 2), (3, 4), (5, 6)]:
         steps.append({
             "action": "Aspirate Media",
             "mode": "auto",
             "slot": "Slot_6",
             "well": "A1",
-            "volume": float(fresh_vol_ul),
+            "volume": 1000.0,
             "labware": reservoir_labware,
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[ASPIRATE 8-CH] {fresh_vol_ul:g} µL from Slot_6 R1 (Plate 5 Col {c})",
+            "label": f"[ASPIRATE 8-CH] 1000 µL from Slot_6 R1 (Plate 5 Cols {c1}&{c2})",
         })
         steps.append({
             "action": "Dispense Media",
             "mode": "auto",
             "slot": "Slot_3",
-            "well": f"A{c}",
+            "well": f"A{c1}",
             "volume": float(fresh_vol_ul),
             "labware": "myriamed_48_well.json",
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g} µL -> Plate 5 Col {c} (Contact-Free 1cm above)",
+            "no_blowout": True,
+            "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g} µL -> Plate 5 Col {c1} (Contact-Free 1cm above)",
+        })
+        steps.append({
+            "action": "Dispense Media",
+            "mode": "auto",
+            "slot": "Slot_3",
+            "well": f"A{c2}",
+            "volume": float(fresh_vol_ul),
+            "labware": "myriamed_48_well.json",
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-H",
+            "track_liquid": False,
+            "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g} µL -> Plate 5 Col {c2} (Contact-Free 1cm above)",
         })
     steps.append({
         "action": "Discard Tip",
@@ -258,7 +271,7 @@ def build_8ch_media_change_and_drug_steps(
         "label": "[DROP 8-CH] Eject Plate 6 Old Media Tips -> Slot_4 Col 9 Graveyard",
     })
 
-    # Step B: Fresh Media Addition (Col 4 Tips)
+    # Step B: Fresh Media Addition (Col 4 Tips) - Multi-Dispense: Aspirate 1000 µL, Dispense 500 µL + 500 µL Contact-Free
     steps.append({
         "action": "Pick Up Tip",
         "mode": "auto",
@@ -271,30 +284,43 @@ def build_8ch_media_change_and_drug_steps(
         "mounted_channels": "A-H",
         "label": "[PICK 8-CH] Slot_4 Col 4 (A4-H4) | Plate 6 Fresh Media Addition",
     })
-    for c in range(1, 7):
+    for c1, c2 in [(1, 2), (3, 4), (5, 6)]:
         steps.append({
             "action": "Aspirate Media",
             "mode": "auto",
             "slot": "Slot_6",
             "well": "A2",
-            "volume": float(fresh_vol_ul),
+            "volume": 1000.0,
             "labware": reservoir_labware,
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[ASPIRATE 8-CH] {fresh_vol_ul:g} µL from Slot_6 R2 (Plate 6 Col {c})",
+            "label": f"[ASPIRATE 8-CH] 1000 µL from Slot_6 R2 (Plate 6 Cols {c1}&{c2})",
         })
         steps.append({
             "action": "Dispense Media",
             "mode": "auto",
             "slot": "Slot_5",
-            "well": f"A{c}",
+            "well": f"A{c1}",
             "volume": float(fresh_vol_ul),
             "labware": "myriamed_48_well.json",
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g} µL -> Plate 6 Col {c} (Contact-Free 1cm above)",
+            "no_blowout": True,
+            "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g} µL -> Plate 6 Col {c1} (Contact-Free 1cm above)",
+        })
+        steps.append({
+            "action": "Dispense Media",
+            "mode": "auto",
+            "slot": "Slot_5",
+            "well": f"A{c2}",
+            "volume": float(fresh_vol_ul),
+            "labware": "myriamed_48_well.json",
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-H",
+            "track_liquid": False,
+            "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g} µL -> Plate 6 Col {c2} (Contact-Free 1cm above)",
         })
     steps.append({
         "action": "Discard Tip",

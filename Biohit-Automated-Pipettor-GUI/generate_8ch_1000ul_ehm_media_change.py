@@ -38,7 +38,7 @@ def build_8ch_ehm_media_change_steps(
     p6_res_lane: int = 2,
     waste_lane: int = None,
     reservoir_labware: str = "reservoir_7_column.json",
-    multi_dispense: bool = False,
+    multi_dispense: bool = True,
 ) -> List[Dict[str, Any]]:
     """
     Builds the complete 100% hands-free 8x1000 uL step list for Plate 5 (Slot_3) & Plate 6 (Slot_5).
@@ -190,6 +190,7 @@ def build_8ch_ehm_media_change_steps(
                     "eight_ch_symmetric": True,
                     "mounted_channels": channels_str,
                     "track_liquid": False,
+                    "no_blowout": True,
                     "label": f"[DISPENSE 8-CH] {fresh_vol_ul:g} µL -> {plate_label} Col {pair_col1}",
                 })
                 steps.append({
@@ -433,7 +434,7 @@ def save_default_protocols():
         p6_res_lane=2,
         waste_lane=7,
         reservoir_labware="reservoir_7_column.json",
-        multi_dispense=False,
+        multi_dispense=True,
     )
     full_multi_steps = build_8ch_ehm_media_change_steps(
         include_old_media_removal=True,
@@ -457,7 +458,7 @@ def save_default_protocols():
         p6_res_lane=2,
         waste_lane=7,
         reservoir_labware="reservoir_7_column.json",
-        multi_dispense=False,
+        multi_dispense=True,
     )
     fresh_multi_steps = build_8ch_ehm_media_change_steps(
         include_old_media_removal=False,

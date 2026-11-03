@@ -62,9 +62,9 @@ def test_gui_loading():
         with open(p8_path, "r") as f:
             seq8 = json.load(f)
         app._populate_workflow_from_sequence(seq8, "8-CH Media Change + 7.5uL Drug")
-        assert len(app.workflow_sequence) == 84
-        assert app.wf_box.size() == 84
-        print("PASS: 8-Channel Media Change + 7.5 uL Drug loaded (84 steps).")
+        assert len(app.workflow_sequence) == 78
+        assert app.wf_box.size() == 78
+        print("PASS: 8-Channel Media Change + 7.5 uL Drug loaded (78 steps).")
 
         # 2. 8-Channel DMSO Dilution
         p8_dmso = os.path.join(SCRIPT_DIR, "protocols", "ehm_8ch_1000ul_dmso_drug_dilution.json")

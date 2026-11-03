@@ -7,6 +7,7 @@
   "tip_rack_pickup_approach_z": 75.0,
   "tip_rack_pickup_limit_z": 98.0,
   "tip_rack_collar_z": 86.36,
+  "tip_pickup_extra_press_mm": 2.5,
   "eight_ch_x_offset": 0.0,
   "eight_ch_y_offset": 0.0,
   "eight_ch_z_offset": 0.0

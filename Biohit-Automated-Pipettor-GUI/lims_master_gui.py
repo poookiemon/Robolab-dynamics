@@ -133,6 +133,7 @@ class LIMSMasterApp:
             "tip_rack_pickup_approach_z": 75.0,
             "tip_rack_pickup_limit_z": 98.0,
             "tip_rack_collar_z": 86.36,
+            "tip_pickup_extra_press_mm": 2.50,
             "eight_ch_x_offset": 0.0,
             "eight_ch_y_offset": 0.0,
             "eight_ch_z_offset": 0.0,
@@ -3509,6 +3510,7 @@ class LIMSMasterApp:
             ("tip_rack_discard_z", "Slot 4 Tip Rack Return / Discard Height:", "42.00"),
             ("tip_rack_collar_z", "Slot 4 Tip Collar / Rim (Photo Alignment):", "86.36"),
             ("tip_rack_pickup_limit_z", "Slot 4 Tip Pickup Force Limit:", "98.00"),
+            ("tip_pickup_extra_press_mm", "Tip Pickup Extra Press / Seating Depth (mm):", "2.50"),
         ]
 
         for key, label_text, default_val in fields:
@@ -5029,6 +5031,17 @@ class LIMSMasterApp:
 
                     if not (valid_collar and pick_ok):
                         raise Exception(f"No tip present in {current_well} (Z={curr_z:.2f}mm, pick_ok={pick_ok})")
+
+                    # High-torque mechanical seating press to prevent tips falling off
+                    extra_press = float(self.calibrated_heights.get("tip_pickup_extra_press_mm", 2.50))
+                    if extra_press > 0:
+                        try:
+                            press_target = min(87.0, curr_z + extra_press)
+                            self.lims.pipettor.hardware.z_speed = 2
+                            self.lims.pipettor.hardware.move_z(press_target)
+                            time.sleep(0.25)
+                        except Exception as se:
+                            self.logger.warning(f"Single-channel seating press notice: {se}")
                     time.sleep(0.2)
                 else:
                     curr_z = 55.09
@@ -5482,10 +5495,11 @@ class LIMSMasterApp:
 
                     if action == "Pick Up Tip":
                         cal_dz = float(self.eight_ch_cal_offset.get("Z", 0.0)) if is_8ch else 0.0
+                        configured_limit = float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 98.0)) if is_8ch else 87.0
                         pickup_limit = (
-                            min(99.0, max(88.0, 98.0 + extra_z + cal_dz))
+                            min(99.0, max(88.0, configured_limit + extra_z + cal_dz))
                             if is_8ch
-                            else min(92.0, max(82.0, 87.0 + extra_z))
+                            else min(92.0, max(82.0, configured_limit + extra_z))
                         )
                         hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                         labware_obj = self.lims.deck_labware.get(slot_name)
@@ -5536,6 +5550,24 @@ class LIMSMasterApp:
                                 is_seated = valid_collar and pick_ok
 
                             if is_seated:
+                                # High-torque mechanical seating press & double-tap to wedge nozzles firmly into tip collars
+                                extra_press = float(self.calibrated_heights.get("tip_pickup_extra_press_mm", 2.50)) if is_8ch else 1.50
+                                if extra_press > 0:
+                                    try:
+                                        press_target = min(pickup_limit, curr_z + extra_press)
+                                        self.logger.info(f"🔧 Seating tip(s) firmly: high-torque press to Z={press_target:.2f}mm (+{extra_press:.2f}mm)...")
+                                        hw.z_speed = 2 # slow, maximum motor torque
+                                        hw.move_z(press_target)
+                                        time.sleep(0.25)
+                                        # Double-tap: slight retract and re-press for airtight friction lock
+                                        if press_target - curr_z >= 1.2:
+                                            hw.move_z(max(curr_z, press_target - 1.0))
+                                            time.sleep(0.1)
+                                            hw.move_z(press_target)
+                                            time.sleep(0.25)
+                                    except Exception as se:
+                                        self.logger.warning(f"Tip seating press notice: {se}")
+
                                 time.sleep(0.2)
                                 try:
                                     hw.z_speed = hw_speed

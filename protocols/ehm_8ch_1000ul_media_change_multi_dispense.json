@@ -202,6 +202,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
+    "no_blowout": true,
     "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 1"
   },
   {
@@ -238,6 +239,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
+    "no_blowout": true,
     "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 3"
   },
   {
@@ -274,6 +276,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
+    "no_blowout": true,
     "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 5 Col 5"
   },
   {
@@ -504,6 +507,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
+    "no_blowout": true,
     "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 1"
   },
   {
@@ -540,6 +544,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
+    "no_blowout": true,
     "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 3"
   },
   {
@@ -576,6 +581,7 @@
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
+    "no_blowout": true,
     "label": "[DISPENSE 8-CH] 500 \u00b5L -> Plate 6 Col 5"
   },
   {
