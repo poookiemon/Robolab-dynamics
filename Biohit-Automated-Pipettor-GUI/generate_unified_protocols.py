@@ -398,7 +398,7 @@ def build_8ch_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.json")
     Builds 8-channel parallel serial dilution across 96-well plate (Slot 5).
     Pre-fills DMSO into Cols 2..6, transfers stock drug from Slot 3 (Cols user-selected) into Col 1,
     and performs 8-channel serial dilutions across Columns 1..6.
-    Supports either 7-column or 6-column reservoir on Slot 1.
+    Supports either 7-column or 6-column reservoir on Slot 6.
     """
     steps: List[Dict[str, Any]] = []
 
@@ -418,13 +418,13 @@ def build_8ch_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.json")
         steps.append({
             "action": "Aspirate Media",
             "mode": "auto",
-            "slot": "Slot_1",
+            "slot": "Slot_6",
             "well": "A1",
             "volume": 100.0,
             "labware": dmso_labware,
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
-            "label": f"[ASPIRATE 8-CH] 100 µL DMSO from Slot_1 A1",
+            "label": f"[ASPIRATE 8-CH] 100 µL DMSO from Slot_6 A1",
         })
         steps.append({
             "action": "Dispense Media",
@@ -551,7 +551,7 @@ def build_1ch_300ul_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.
     """
     Builds Single-Channel 300 uL DMSO-Drug Serial Dilution protocol for Slot 5 dilution plate.
     Transfers 100 uL DMSO, 22 uL drug from Slot 3 (user-selected wells), and serial mixes.
-    Supports either 7-column or 6-column reservoir on Slot 1.
+    Supports either 7-column or 6-column reservoir on Slot 6.
     """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     source_p = os.path.join(script_dir, "protocols", "1_Serial_Dilution_Plate.json")
@@ -563,9 +563,12 @@ def build_1ch_300ul_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.
         with open(source_b, "r") as f:
             steps = json.load(f)
     for s in steps:
-        if s.get("slot") == "Slot_1":
+        if s.get("slot") == "Slot_1" or "dmso" in s.get("label", "").lower():
+            s["slot"] = "Slot_6"
             s["labware"] = dmso_labware
             s["well"] = "A1"
+            if "label" in s:
+                s["label"] = s["label"].replace("Slot_1", "Slot_6")
     return steps
 
 
@@ -704,7 +707,7 @@ def build_1ch_20ul_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.j
     """
     Builds Single-Channel 20 uL High-Precision DMSO-Drug Serial Dilution protocol on Slot 5.
     Transfers 15.0 uL DMSO into dilution columns, transfers 15.0 uL drug from Slot 3, and performs 20 uL serial mixing.
-    Supports either 7-column or 6-column reservoir on Slot 1.
+    Supports either 7-column or 6-column reservoir on Slot 6.
     """
     steps: List[Dict[str, Any]] = []
     tip_counter = 1
@@ -732,11 +735,11 @@ def build_1ch_20ul_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.j
             steps.append({
                 "action": "Aspirate Media",
                 "mode": "auto",
-                "slot": "Slot_1",
+                "slot": "Slot_6",
                 "well": "A1",
                 "volume": 15.0,
                 "labware": dmso_labware,
-                "label": f"[ASPIRATE DMSO] 15.0 µL from Slot_1 A1",
+                "label": f"[ASPIRATE DMSO] 15.0 µL from Slot_6 A1",
             })
             steps.append({
                 "action": "Dispense Media",

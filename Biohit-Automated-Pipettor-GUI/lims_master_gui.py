@@ -2813,20 +2813,20 @@ class LIMSMasterApp:
             return
 
         deck_setup = {
-            "Slot_1": "reservoir_7_column.json",
+            "Slot_1": "(Empty / Clearance)",
             "Slot_2": "waste_trough.json",
             "Slot_3": "generic_96_well_plate.json",
             "Slot_4": "tip_rack_1000ul.json",
             "Slot_5": "generic_96_well_plate.json",
-            "Slot_6": "(Empty / Clearance)",
+            "Slot_6": "reservoir_7_column.json",
         }
         slot_descs = {
-            "Slot_1": "7-Col or 6-Col Reservoir (A1: Pure DMSO Buffer)",
+            "Slot_1": "Empty clearance zone (Parked / Safe Y axis clearance)",
             "Slot_2": "Waste Trough (Liquid Waste & Tip Discard)",
             "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells)",
             "Slot_4": "1000 µL Tip Rack (Cols 1-3 fresh tips)",
             "Slot_5": "96-Well Target Dilution Plate (Serial Mix Cols 1..6)",
-            "Slot_6": "Clearance zone (Empty)",
+            "Slot_6": "7-Col or 6-Col Reservoir (A1: Pure DMSO Buffer)",
         }
         with open(target_path, "r") as f:
             seq = json.load(f)
@@ -2913,20 +2913,20 @@ class LIMSMasterApp:
             return
 
         deck_setup = {
-            "Slot_1": "reservoir_7_column.json",
+            "Slot_1": "(Empty / Clearance)",
             "Slot_2": "waste_trough.json",
             "Slot_3": "generic_96_well_plate.json",
             "Slot_4": "tip_rack_1000ul.json",
             "Slot_5": "generic_96_well_plate.json",
-            "Slot_6": "(Empty / Clearance)",
+            "Slot_6": "reservoir_7_column.json",
         }
         slot_descs = {
-            "Slot_1": "7-Col / 6-Col Reservoir or Rack (A1: Pure DMSO Buffer)",
+            "Slot_1": "Empty clearance zone (Parked / Safe Y axis clearance)",
             "Slot_2": "Waste Trough (Liquid Waste & Tip Graveyard)",
             "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells)",
             "Slot_4": "300 µL Tip Rack",
             "Slot_5": "96-Well Target Dilution Plate (Serial Mix)",
-            "Slot_6": "Clearance zone (Empty)",
+            "Slot_6": "7-Col / 6-Col Reservoir or Rack (A1: Pure DMSO Buffer)",
         }
         with open(target_path, "r") as f:
             seq = json.load(f)
@@ -3011,20 +3011,20 @@ class LIMSMasterApp:
             return
 
         deck_setup = {
-            "Slot_1": "reservoir_7_column.json",
+            "Slot_1": "(Empty / Clearance)",
             "Slot_2": "waste_trough.json",
             "Slot_3": "generic_96_well_plate.json",
             "Slot_4": "tip_rack_1000ul.json",
             "Slot_5": "generic_96_well_plate.json",
-            "Slot_6": "(Empty / Clearance)",
+            "Slot_6": "reservoir_7_column.json",
         }
         slot_descs = {
-            "Slot_1": "7-Col / 6-Col Reservoir or Rack (A1: Pure DMSO Buffer)",
+            "Slot_1": "Empty clearance zone (Parked / Safe Y axis clearance)",
             "Slot_2": "Waste Trough (Liquid Waste & Tip Discard)",
             "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells)",
             "Slot_4": "20 µL Micro Tip Rack",
             "Slot_5": "96-Well Target Dilution Plate (20 µL Precision Mix)",
-            "Slot_6": "Clearance zone (Empty)",
+            "Slot_6": "7-Col / 6-Col Reservoir or Rack (A1: Pure DMSO Buffer)",
         }
         with open(target_path, "r") as f:
             seq = json.load(f)
@@ -3275,7 +3275,7 @@ class LIMSMasterApp:
 
         eff_deck = dict(deck_setup or {})
         if dmso_labware:
-            eff_deck["Slot_1"] = dmso_labware
+            eff_deck["Slot_6"] = dmso_labware
 
         drug_steps_indices = [
             i for i, s in enumerate(loaded_sequence)
@@ -3285,14 +3285,21 @@ class LIMSMasterApp:
             if k < len(cleaned_wells):
                 loaded_sequence[step_idx]["well"] = cleaned_wells[k]
 
-        slot1_lw = eff_deck.get("Slot_1")
+        slot6_lw = eff_deck.get("Slot_6")
         route_waste_slot2 = (eff_deck.get("Slot_2") == "waste_trough.json")
         for s in loaded_sequence:
-            if slot1_lw and s.get("slot") == "Slot_1":
-                s["labware"] = slot1_lw
-                if "reservoir" in str(slot1_lw).lower():
+            # Map DMSO aspiration steps to Slot 6
+            if (s.get("slot") in ("Slot_1", "Slot_6")) and ("dmso" in s.get("label", "").lower() or (s.get("slot") == "Slot_1" and "Aspirate" in s.get("action", ""))):
+                s["slot"] = "Slot_6"
+                if slot6_lw:
+                    s["labware"] = slot6_lw
+                if "reservoir" in str(slot6_lw).lower():
                     s["well"] = "A1"
-            if route_waste_slot2 and (s.get("action") == "Discard Tip" or s.get("slot") in ("Slot_2", "Slot_6")):
+            elif slot6_lw and s.get("slot") == "Slot_6":
+                s["labware"] = slot6_lw
+                if "reservoir" in str(slot6_lw).lower() and s.get("well") not in ("A6", "A7", "R6", "R7"):
+                    s["well"] = "A1"
+            if route_waste_slot2 and (s.get("action") == "Discard Tip" or s.get("slot") == "Slot_2"):
                 s["slot"] = "Slot_2"
                 s["well"] = "A1"
                 s["labware"] = "waste_trough.json"
@@ -3302,17 +3309,18 @@ class LIMSMasterApp:
         lw_dir = self.get_labware_dir()
 
         for s_name, lw_file in eff_deck.items():
-            lp = os.path.join(lw_dir, lw_file)
-            if os.path.exists(lp):
-                self.lims.deck_labware[s_name] = Labware(lp)
-                self.lims.deck_labware[s_name].source_file = lw_file
-            if s_name not in self.placed_slots:
-                self.placed_slots.append(s_name)
-        if "Slot_6" not in eff_deck:
-            if "Slot_6" in self.lims.deck_labware:
-                del self.lims.deck_labware["Slot_6"]
-            if "Slot_6" in self.placed_slots:
-                self.placed_slots.remove("Slot_6")
+            if lw_file and lw_file != "(Empty / Clearance)":
+                lp = os.path.join(lw_dir, lw_file)
+                if os.path.exists(lp):
+                    self.lims.deck_labware[s_name] = Labware(lp)
+                    self.lims.deck_labware[s_name].source_file = lw_file
+                if s_name not in self.placed_slots:
+                    self.placed_slots.append(s_name)
+            else:
+                if s_name in self.lims.deck_labware:
+                    del self.lims.deck_labware[s_name]
+                if s_name in self.placed_slots:
+                    self.placed_slots.remove(s_name)
 
         self.sync_deck_manager()
         if hasattr(self, "draw_deck"):
@@ -3341,7 +3349,7 @@ class LIMSMasterApp:
         wells_summary = ", ".join([f"D{i+1}:{w}" for i, w in enumerate(cleaned_wells)])
         self.logger.info(
             f"Loaded {protocol_name} ({len(loaded_sequence)} steps) with Drug Wells [{wells_summary}]. "
-            f"Deck: Slot 1 DMSO ({eff_deck.get('Slot_1', 'A1')}), Slot 2 Waste (A1), Slot 3 Drug Stock, Slot 4 Tips, Slot 5 Dilution Plate."
+            f"Deck: Slot 1 (Clearance), Slot 2 Waste (A1), Slot 3 Drug Stock, Slot 4 Tips, Slot 5 Dilution Plate, Slot 6 DMSO ({eff_deck.get('Slot_6', 'A1')})."
         )
 
     def prompt_drug_wells_and_load(self, loaded_sequence, protocol_name, deck_setup):
@@ -3376,7 +3384,7 @@ class LIMSMasterApp:
             justify=tk.CENTER,
         ).pack(pady=(0, 8))
 
-        dmso_frame = ttk.LabelFrame(top, text="Slot 1 DMSO Source Labware", padding=8)
+        dmso_frame = ttk.LabelFrame(top, text="Slot 6 DMSO Source Labware", padding=8)
         dmso_frame.pack(fill=tk.X, padx=22, pady=(0, 8))
         dmso_options = {
             "7-Column Reservoir (reservoir_7_column.json)": "reservoir_7_column.json",
@@ -3384,8 +3392,8 @@ class LIMSMasterApp:
             "3-Well Reservoir (reservoir_3_well.json)": "reservoir_3_well.json",
             "12-Tube 2 mL Falcon Rack (tube_rack_2x6_2ml.json)": "tube_rack_2x6_2ml.json",
         }
-        init_s1 = (deck_setup or {}).get("Slot_1", "reservoir_7_column.json")
-        init_disp = next((k for k, v in dmso_options.items() if v == init_s1), list(dmso_options.keys())[0])
+        init_s6 = (deck_setup or {}).get("Slot_6", "reservoir_7_column.json")
+        init_disp = next((k for k, v in dmso_options.items() if v == init_s6), list(dmso_options.keys())[0])
         dmso_var = tk.StringVar(value=init_disp)
         cb_dmso = ttk.Combobox(dmso_frame, textvariable=dmso_var, values=list(dmso_options.keys()), state="readonly")
         cb_dmso.pack(fill=tk.X)
@@ -3416,7 +3424,7 @@ class LIMSMasterApp:
 
         def on_apply():
             chosen_wells = [v.get().strip().upper() for v in well_vars]
-            chosen_dmso_lw = dmso_options.get(dmso_var.get(), init_s1)
+            chosen_dmso_lw = dmso_options.get(dmso_var.get(), init_s6)
             try:
                 self.apply_drug_well_mapping_and_load(
                     loaded_sequence,
