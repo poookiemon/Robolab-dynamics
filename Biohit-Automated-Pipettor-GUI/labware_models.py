@@ -328,9 +328,10 @@ class Reservoir6Column(LabwareBase):
             if k in defaults:
                 defaults[k] = kwargs.pop(k)
         super().__init__(**defaults)
+        self.is_8ch_calibrated = True
         self.col_dx = kwargs.get("col_dx", [3.0, -12.0, -30.0, -46.5, -63.0, -79.5])
-        self.aspirate_z_mm = kwargs.get("aspirate_z_mm", 101.0)
-        self.dispense_brim_z_mm = kwargs.get("dispense_brim_z_mm", 78.0)
+        self.aspirate_z_mm = kwargs.get("aspirate_z_mm", 89.32)
+        self.dispense_brim_z_mm = kwargs.get("dispense_brim_z_mm", 59.32)
         self.discard_tip_z_mm = kwargs.get("discard_tip_z_mm", 48.0)
 
     def parse_well(self, well_id: str) -> Tuple[Optional[int], Optional[int]]:
@@ -425,7 +426,11 @@ class Reservoir7Column(LabwareBase):
     def get_well_xy(self, slot: 'DeckSlot', well_id: str) -> Tuple[float, float]:
         _, c_idx = self.parse_well(well_id)
         ci = c_idx if (c_idx is not None and 0 <= c_idx < len(self.col_x)) else 0
-        return self.col_x[ci], self.center_y
+        if getattr(slot, 'name', '') == "Slot_6":
+            return self.col_x[ci], self.center_y
+        ox, oy = slot.origin_a1_xy
+        front = slot.is_front_slot
+        return ox + 3.36 - (ci * 15.0), oy + (0.0 if front else 30.67)
 
     def get_rim_z(self, slot: 'DeckSlot') -> float:
         return 75.0

@@ -2602,10 +2602,11 @@ class LIMSMasterApp:
 
         # Header row
         ttk.Label(table_f, text="Slot", font=("Arial", 9, "bold"), width=8).grid(row=0, column=0, sticky="w", pady=3)
-        ttk.Label(table_f, text="Labware Model", font=("Arial", 9, "bold"), width=25).grid(row=0, column=1, sticky="w", pady=3)
+        ttk.Label(table_f, text="Labware Model (Reservoir Options)", font=("Arial", 9, "bold"), width=34).grid(row=0, column=1, sticky="w", pady=3)
         ttk.Label(table_f, text="Deck Contents / Reagent Purpose", font=("Arial", 9, "bold")).grid(row=0, column=2, sticky="w", pady=3)
         ttk.Separator(table_f, orient="horizontal").grid(row=1, column=0, columnspan=3, sticky="ew", pady=(2, 4))
 
+        slot_combos = {}
         for idx, s_num in enumerate(range(1, 7), start=2):
             s_name = f"Slot_{s_num}"
             s_label = f"Slot {s_num}"
@@ -2613,6 +2614,18 @@ class LIMSMasterApp:
             desc = slot_descriptions.get(s_name, "Empty clearance slot")
             is_empty = (s_label in empty_slots) or ("Empty" in lw_file) or ("Clearance" in desc)
             is_tip = "tip" in lw_file.lower()
+            is_res = (
+                not is_empty
+                and not is_tip
+                and (
+                    "reservoir" in lw_file.lower()
+                    or "reservoir" in desc.lower()
+                    or ("media" in desc.lower() and "plate" not in desc.lower() and "myriamed" not in lw_file.lower())
+                    or ("waste" in desc.lower() and "plate" not in desc.lower() and "trough" not in lw_file.lower())
+                    or ("dmso" in desc.lower())
+                    or ("buffer" in desc.lower())
+                )
+            )
 
             if is_empty:
                 bg_col = "#f8d7da"
@@ -2633,10 +2646,38 @@ class LIMSMasterApp:
             badge = tk.Label(table_f, text=f"Slot {s_num}", font=("Consolas", 9, "bold"), bg=bg_col, fg=fg_col, padx=4, pady=2)
             badge.grid(row=idx, column=0, sticky="w", pady=3)
 
-            lw_lbl = ttk.Label(table_f, text=lw_display, font=("Consolas", 9, "bold" if is_empty else "normal"))
-            lw_lbl.grid(row=idx, column=1, sticky="w", pady=3, padx=(0, 10))
-            if is_empty:
-                lw_lbl.configure(foreground="#721c24")
+            if is_res:
+                if is_multichannel:
+                    res_choices = {
+                        "7-Column Reservoir (reservoir_7_column.json)": "reservoir_7_column.json",
+                        "6-Column Reservoir (reservoir_6_column.json)": "reservoir_6_column.json",
+                    }
+                else:
+                    res_choices = {
+                        "7-Column Reservoir (reservoir_7_column.json)": "reservoir_7_column.json",
+                        "6-Column Reservoir (reservoir_6_column.json)": "reservoir_6_column.json",
+                        "3-Well Reservoir (reservoir_3_well.json)": "reservoir_3_well.json",
+                        "12-Tube 2 mL Rack (tube_rack_2x6_2ml.json)": "tube_rack_2x6_2ml.json",
+                    }
+                matched_k = next((k for k, v in res_choices.items() if v == lw_file), None)
+                if not matched_k:
+                    if "6" in lw_file:
+                        matched_k = "6-Column Reservoir (reservoir_6_column.json)"
+                    elif "3" in lw_file:
+                        matched_k = "3-Well Reservoir (reservoir_3_well.json)"
+                    elif "2x6" in lw_file:
+                        matched_k = "12-Tube 2 mL Rack (tube_rack_2x6_2ml.json)"
+                    else:
+                        matched_k = "7-Column Reservoir (reservoir_7_column.json)"
+                combo_var = tk.StringVar(value=matched_k)
+                combo = ttk.Combobox(table_f, textvariable=combo_var, values=list(res_choices.keys()), state="readonly", width=34)
+                combo.grid(row=idx, column=1, sticky="w", pady=3, padx=(0, 10))
+                slot_combos[s_name] = (combo_var, res_choices)
+            else:
+                lw_lbl = ttk.Label(table_f, text=lw_display, font=("Consolas", 9, "bold" if is_empty else "normal"))
+                lw_lbl.grid(row=idx, column=1, sticky="w", pady=3, padx=(0, 10))
+                if is_empty:
+                    lw_lbl.configure(foreground="#721c24")
 
             desc_lbl = ttk.Label(table_f, text=desc_display, font=("Arial", 9, "bold" if is_empty else "normal"))
             desc_lbl.grid(row=idx, column=2, sticky="w", pady=3)
@@ -2650,6 +2691,29 @@ class LIMSMasterApp:
         def on_confirm():
             # 1. Switch pipettor head mode live if needed
             self.switch_pipettor_head(is_multichannel, quiet=True)
+
+            # Apply any reservoir labware selections made via comboboxes
+            for s_name, (c_var, c_map) in slot_combos.items():
+                chosen_disp = c_var.get()
+                chosen_file = c_map.get(chosen_disp, deck_setup.get(s_name))
+                old_file = deck_setup.get(s_name)
+                deck_setup[s_name] = chosen_file
+
+                if sequence:
+                    for step in sequence:
+                        if step.get("slot") == s_name:
+                            step["labware"] = chosen_file
+                            if chosen_file == "reservoir_6_column.json":
+                                if step.get("well") in ("A7", "R7"):
+                                    step["well"] = "A6"
+                                    if "R7" in step.get("label", "") or "A7" in step.get("label", ""):
+                                        step["label"] = step["label"].replace("R7", "R6").replace("A7", "A6")
+                            elif chosen_file == "reservoir_7_column.json":
+                                if step.get("well") in ("A6", "R6") and "waste" in step.get("label", "").lower():
+                                    step["well"] = "A7"
+                                    if "R6" in step.get("label", ""):
+                                        step["label"] = step["label"].replace("R6", "R7").replace("A6", "A7")
+
             # 2. Update deck labware
             lw_dir = self.get_labware_dir()
             for s_num in range(1, 7):
@@ -2749,7 +2813,7 @@ class LIMSMasterApp:
             return
 
         deck_setup = {
-            "Slot_1": "reservoir_3_well.json",
+            "Slot_1": "reservoir_7_column.json",
             "Slot_2": "waste_trough.json",
             "Slot_3": "generic_96_well_plate.json",
             "Slot_4": "tip_rack_1000ul.json",
@@ -2757,7 +2821,7 @@ class LIMSMasterApp:
             "Slot_6": "(Empty / Clearance)",
         }
         slot_descs = {
-            "Slot_1": "3-Well Reservoir (A1: Pure DMSO Buffer)",
+            "Slot_1": "7-Col or 6-Col Reservoir (A1: Pure DMSO Buffer)",
             "Slot_2": "Waste Trough (Liquid Waste & Tip Discard)",
             "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells)",
             "Slot_4": "1000 µL Tip Rack (Cols 1-3 fresh tips)",
@@ -2849,7 +2913,7 @@ class LIMSMasterApp:
             return
 
         deck_setup = {
-            "Slot_1": "tube_rack_2x6_2ml.json",
+            "Slot_1": "reservoir_7_column.json",
             "Slot_2": "waste_trough.json",
             "Slot_3": "generic_96_well_plate.json",
             "Slot_4": "tip_rack_1000ul.json",
@@ -2857,7 +2921,7 @@ class LIMSMasterApp:
             "Slot_6": "(Empty / Clearance)",
         }
         slot_descs = {
-            "Slot_1": "12-Tube 2 mL Rack (A1: Pure DMSO Buffer)",
+            "Slot_1": "7-Col / 6-Col Reservoir or Rack (A1: Pure DMSO Buffer)",
             "Slot_2": "Waste Trough (Liquid Waste & Tip Graveyard)",
             "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells)",
             "Slot_4": "300 µL Tip Rack",
@@ -2947,7 +3011,7 @@ class LIMSMasterApp:
             return
 
         deck_setup = {
-            "Slot_1": "tube_rack_2x6_2ml.json",
+            "Slot_1": "reservoir_7_column.json",
             "Slot_2": "waste_trough.json",
             "Slot_3": "generic_96_well_plate.json",
             "Slot_4": "tip_rack_1000ul.json",
@@ -2955,7 +3019,7 @@ class LIMSMasterApp:
             "Slot_6": "(Empty / Clearance)",
         }
         slot_descs = {
-            "Slot_1": "12-Tube Rack (A1: Pure DMSO Buffer)",
+            "Slot_1": "7-Col / 6-Col Reservoir or Rack (A1: Pure DMSO Buffer)",
             "Slot_2": "Waste Trough (Liquid Waste & Tip Discard)",
             "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells)",
             "Slot_4": "20 µL Micro Tip Rack",
@@ -3206,8 +3270,8 @@ class LIMSMasterApp:
                 raise ValueError(f"'{val}' is not a valid 96-well format (must be A1 through H12).")
             cleaned_wells.append(w)
 
-        if self.lims.pipettor.multichannel:
-            self.switch_pipettor_head(False, quiet=True)
+        is_8ch = any(s.get("eight_ch_symmetric", False) for s in loaded_sequence) or "8-CH" in protocol_name or "8x1000" in protocol_name
+        self.switch_pipettor_head(is_8ch, quiet=True)
 
         eff_deck = dict(deck_setup or {})
         if dmso_labware:
@@ -3226,6 +3290,8 @@ class LIMSMasterApp:
         for s in loaded_sequence:
             if slot1_lw and s.get("slot") == "Slot_1":
                 s["labware"] = slot1_lw
+                if "reservoir" in str(slot1_lw).lower():
+                    s["well"] = "A1"
             if route_waste_slot2 and (s.get("action") == "Discard Tip" or s.get("slot") in ("Slot_2", "Slot_6")):
                 s["slot"] = "Slot_2"
                 s["well"] = "A1"
@@ -3313,10 +3379,12 @@ class LIMSMasterApp:
         dmso_frame = ttk.LabelFrame(top, text="Slot 1 DMSO Source Labware", padding=8)
         dmso_frame.pack(fill=tk.X, padx=22, pady=(0, 8))
         dmso_options = {
-            "12-Tube 2 mL Falcon Rack (tube_rack_2x6_2ml.json)": "tube_rack_2x6_2ml.json",
+            "7-Column Reservoir (reservoir_7_column.json)": "reservoir_7_column.json",
+            "6-Column Reservoir (reservoir_6_column.json)": "reservoir_6_column.json",
             "3-Well Reservoir (reservoir_3_well.json)": "reservoir_3_well.json",
+            "12-Tube 2 mL Falcon Rack (tube_rack_2x6_2ml.json)": "tube_rack_2x6_2ml.json",
         }
-        init_s1 = (deck_setup or {}).get("Slot_1", "tube_rack_2x6_2ml.json")
+        init_s1 = (deck_setup or {}).get("Slot_1", "reservoir_7_column.json")
         init_disp = next((k for k, v in dmso_options.items() if v == init_s1), list(dmso_options.keys())[0])
         dmso_var = tk.StringVar(value=init_disp)
         cb_dmso = ttk.Combobox(dmso_frame, textvariable=dmso_var, values=list(dmso_options.keys()), state="readonly")
@@ -4820,7 +4888,7 @@ class LIMSMasterApp:
                     return min(float(self.calibrated_heights.get("ehm_aspirate_z", 22.33)) + slot_z_offset + extra_z, 103.5)
                 elif action == "Dispense Media":
                     return min(float(self.calibrated_heights.get("ehm_dispense_z", 12.33)) + slot_z_offset + extra_z, 103.5)
-            elif (slot_name == "Slot_6" and kind != "reservoir_6") or kind in ("reservoir_7", "waste"):
+            elif (slot_name in ("Slot_6", "Slot_1", "Slot_2") and ("reservoir" in str(kind) or "waste" in str(kind))) or kind in ("reservoir_7", "reservoir_6", "reservoir_3", "waste"):
                 if action == "Dispense Media":
                     return min(float(self.calibrated_heights.get("waste_dispense_z", 59.32)) + slot_z_offset + extra_z, 103.5)
                 elif action in ("Aspirate Media", "Mix Well"):
@@ -5721,9 +5789,9 @@ class LIMSMasterApp:
                             lw_kind = self._lw_kind(self.lims.deck_labware.get(slot_name))
                             is_already_cal = (
                                 getattr(self.lims.deck_labware.get(slot_name), 'is_8ch_calibrated', False)
-                                or lw_kind in ("ehm48", "reservoir_7", "waste")
+                                or lw_kind in ("ehm48", "reservoir_7", "reservoir_6", "reservoir_3", "waste")
                                 or (slot_name in ("Slot_3", "Slot_5"))
-                                or (slot_name == "Slot_6" and lw_kind != "reservoir_6")
+                                or (slot_name in ("Slot_6", "Slot_1", "Slot_2") and "reservoir" in str(lw_kind))
                             )
                             if is_8ch and not is_already_cal:
                                 # 1000 µL tips are ~20.5 mm longer than the 200 µL calibration tip

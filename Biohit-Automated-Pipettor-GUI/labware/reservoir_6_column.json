@@ -18,9 +18,16 @@
         "radius_mm": 3.0,
         "max_volume_ul": 50000.0
     },
+    "is_8ch_calibrated": true,
+    "z": {
+        "aspirate": 89.32,
+        "dispense": 59.32,
+        "discard_tip": 48.0
+    },
     "z_limits": {
-        "recommended_aspirate_z": 103.0,
-        "recommended_dispense_z": 100.0,
-        "max_safe_bottom_z": 103.5
+        "recommended_aspirate_z": 89.32,
+        "recommended_dispense_z": 59.32,
+        "recommended_discard_z": 48.0,
+        "max_safe_bottom_z": 92.0
     }
 }

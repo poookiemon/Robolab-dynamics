@@ -393,11 +393,12 @@ def build_8ch_media_change_and_drug_steps(
     return steps
 
 
-def build_8ch_dmso_dilution_steps() -> List[Dict[str, Any]]:
+def build_8ch_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.json") -> List[Dict[str, Any]]:
     """
     Builds 8-channel parallel serial dilution across 96-well plate (Slot 5).
     Pre-fills DMSO into Cols 2..6, transfers stock drug from Slot 3 (Cols user-selected) into Col 1,
     and performs 8-channel serial dilutions across Columns 1..6.
+    Supports either 7-column or 6-column reservoir on Slot 1.
     """
     steps: List[Dict[str, Any]] = []
 
@@ -420,7 +421,7 @@ def build_8ch_dmso_dilution_steps() -> List[Dict[str, Any]]:
             "slot": "Slot_1",
             "well": "A1",
             "volume": 100.0,
-            "labware": "reservoir_3_well.json",
+            "labware": dmso_labware,
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "label": f"[ASPIRATE 8-CH] 100 µL DMSO from Slot_1 A1",
@@ -546,19 +547,26 @@ def build_1ch_300ul_media_change_and_drug_steps(drug_vol_ul: float = 7.5) -> Lis
     return steps
 
 
-def build_1ch_300ul_dmso_dilution_steps() -> List[Dict[str, Any]]:
+def build_1ch_300ul_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.json") -> List[Dict[str, Any]]:
     """
     Builds Single-Channel 300 uL DMSO-Drug Serial Dilution protocol for Slot 5 dilution plate.
     Transfers 100 uL DMSO, 22 uL drug from Slot 3 (user-selected wells), and serial mixes.
+    Supports either 7-column or 6-column reservoir on Slot 1.
     """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     source_p = os.path.join(script_dir, "protocols", "1_Serial_Dilution_Plate.json")
     if os.path.exists(source_p):
         with open(source_p, "r") as f:
-            return json.load(f)
-    source_b = os.path.join(script_dir, "protocols", "bakar_v2_drug_dmso_initial_loading.json")
-    with open(source_b, "r") as f:
-        return json.load(f)
+            steps = json.load(f)
+    else:
+        source_b = os.path.join(script_dir, "protocols", "bakar_v2_drug_dmso_initial_loading.json")
+        with open(source_b, "r") as f:
+            steps = json.load(f)
+    for s in steps:
+        if s.get("slot") == "Slot_1":
+            s["labware"] = dmso_labware
+            s["well"] = "A1"
+    return steps
 
 
 # =============================================================================
@@ -692,10 +700,11 @@ def build_1ch_20ul_drug_addition_steps(drug_vol_ul: float = 7.5) -> List[Dict[st
     return steps
 
 
-def build_1ch_20ul_dmso_dilution_steps() -> List[Dict[str, Any]]:
+def build_1ch_20ul_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.json") -> List[Dict[str, Any]]:
     """
     Builds Single-Channel 20 uL High-Precision DMSO-Drug Serial Dilution protocol on Slot 5.
     Transfers 15.0 uL DMSO into dilution columns, transfers 15.0 uL drug from Slot 3, and performs 20 uL serial mixing.
+    Supports either 7-column or 6-column reservoir on Slot 1.
     """
     steps: List[Dict[str, Any]] = []
     tip_counter = 1
@@ -726,7 +735,7 @@ def build_1ch_20ul_dmso_dilution_steps() -> List[Dict[str, Any]]:
                 "slot": "Slot_1",
                 "well": "A1",
                 "volume": 15.0,
-                "labware": "tube_rack_2x6_2ml.json",
+                "labware": dmso_labware,
                 "label": f"[ASPIRATE DMSO] 15.0 µL from Slot_1 A1",
             })
             steps.append({

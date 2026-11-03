@@ -100,6 +100,17 @@ def test_gui_loading():
         assert len(app.workflow_sequence) == 122
         print("PASS: 20 uL Single-Channel DMSO Dilution loaded (122 steps).")
 
+        # 5b. Verify 7-column and 6-column reservoir options & calibrated depths
+        from labware_models import Reservoir6Column, Reservoir7Column
+        app.switch_pipettor_head(True, quiet=True)
+        res6 = Reservoir6Column(source_file="reservoir_6_column.json")
+        res7 = Reservoir7Column(source_file="reservoir_7_column.json")
+        assert app._calculate_z("Aspirate Media", res6, "A1", "auto", 0.0, "Slot_6") == 89.32
+        assert app._calculate_z("Dispense Media", res6, "A6", "auto", 0.0, "Slot_6") == 59.32
+        assert app._calculate_z("Aspirate Media", res7, "A1", "auto", 0.0, "Slot_6") == 89.32
+        assert app._calculate_z("Dispense Media", res7, "A7", "auto", 0.0, "Slot_6") == 59.32
+        print("PASS: Calibrated heights verified identical (Z=89.32 take, Z=59.32 discard) for both 6-col and 7-col reservoirs.")
+
         # 6. Test Tip Requirements and Clearance Slots Analysis
         print("\n--- 3. Testing Tip Requirements & Empty Clearance Slots ---")
         # 8-CH protocol check

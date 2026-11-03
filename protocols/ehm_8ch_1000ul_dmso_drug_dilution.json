@@ -16,7 +16,7 @@
     "slot": "Slot_1",
     "well": "A1",
     "volume": 100.0,
-    "labware": "reservoir_3_well.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "label": "[ASPIRATE 8-CH] 100 \u00b5L DMSO from Slot_1 A1"
@@ -38,7 +38,7 @@
     "slot": "Slot_1",
     "well": "A1",
     "volume": 100.0,
-    "labware": "reservoir_3_well.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "label": "[ASPIRATE 8-CH] 100 \u00b5L DMSO from Slot_1 A1"
@@ -60,7 +60,7 @@
     "slot": "Slot_1",
     "well": "A1",
     "volume": 100.0,
-    "labware": "reservoir_3_well.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "label": "[ASPIRATE 8-CH] 100 \u00b5L DMSO from Slot_1 A1"
@@ -82,7 +82,7 @@
     "slot": "Slot_1",
     "well": "A1",
     "volume": 100.0,
-    "labware": "reservoir_3_well.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "label": "[ASPIRATE 8-CH] 100 \u00b5L DMSO from Slot_1 A1"
@@ -104,7 +104,7 @@
     "slot": "Slot_1",
     "well": "A1",
     "volume": 100.0,
-    "labware": "reservoir_3_well.json",
+    "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "label": "[ASPIRATE 8-CH] 100 \u00b5L DMSO from Slot_1 A1"
