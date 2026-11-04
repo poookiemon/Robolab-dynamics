@@ -131,7 +131,7 @@
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 48.0,
+    "discard_z_override": 8.37,
     "mounted_channels": "A-H",
     "label": "[DROP 8-CH] Ch A-H -> Slot_6 A2 Waste | Plate 5 Fresh Media Tips"
   },
@@ -267,7 +267,7 @@
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 48.0,
+    "discard_z_override": 8.37,
     "mounted_channels": "A-H",
     "label": "[DROP 8-CH] Ch A-H -> Slot_6 A2 Waste | Plate 6 Fresh Media Tips"
   }

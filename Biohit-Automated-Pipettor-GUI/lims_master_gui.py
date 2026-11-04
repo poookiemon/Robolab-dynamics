@@ -238,40 +238,25 @@ class LIMSMasterApp:
         # -------------------------------------------------------------
         protocolmenu = tk.Menu(menubar, tearoff=0)
 
-        # Submenu: 8-Channel Multi (8×1000 µL)
+        # Submenu 1: 8-Channel Multi (8×1000 µL) [Media Change]
         m8ch = tk.Menu(protocolmenu, tearoff=0)
-        m8ch.add_command(label="🟢 Media Change + 7.5 µL Drug (Plate 5 & 6)", command=lambda: self.action_load_8ch_media_change_and_drug(7.5))
-        m8ch.add_command(label="🟢 Media Change + 5.0 µL Drug (Plate 5 & 6)", command=lambda: self.action_load_8ch_media_change_and_drug(5.0))
-        m8ch.add_command(label="🟢 DMSO-Drug Serial Dilution (Select Wells)...", command=self.action_load_8ch_dmso_dilution)
+        m8ch.add_command(label="🟢 Media Change (Plates 5 & 6 — 500 µL Dispense)", command=self.action_load_8ch_1000ul_media_change_protocol)
         m8ch.add_command(label="🟢 Fresh Media Only Multi-Dispense (22 steps)", command=self.action_load_8ch_fresh_media_only)
         m8ch.add_command(label="🧪 Test Slot 5 Media Removal (Col 3 Tips ➔ Return Col 1)", command=self.action_load_slot5_media_removal_test)
         m8ch.add_separator()
-        m8ch.add_command(label="8×1000 µL EHM Media Change Wizard...", command=self.action_load_8ch_1000ul_media_change_protocol)
         m8ch.add_command(label="8-Channel Calibrated Heights & Depths...", command=self.action_open_8ch_height_settings)
-        protocolmenu.add_cascade(label="8-Channel Multi (8×1000 µL)", menu=m8ch)
+        protocolmenu.add_cascade(label="8-Channel Multi (8×1000 µL) [Media Change]", menu=m8ch)
 
-        # Submenu: 8-Channel Multi (1-10 µL)
-        m10ch = tk.Menu(protocolmenu, tearoff=0)
-        m10ch.add_command(label="🟢 Media Change + 7.5 µL Drug (Plate 5 & 6)", command=lambda: self.action_load_10ul_multi_media_change_and_drug(7.5))
-        m10ch.add_command(label="🟢 Media Change + 5.0 µL Drug (Plate 5 & 6)", command=lambda: self.action_load_10ul_multi_media_change_and_drug(5.0))
-        m10ch.add_command(label="🟢 DMSO-Drug Serial Dilution (Select Wells)...", command=self.action_load_10ul_multi_dmso_dilution)
-        m10ch.add_command(label="🟢 Fresh Media Only Multi-Dispense (22 steps)", command=self.action_load_10ul_multi_fresh_media_only)
-        m10ch.add_command(label="🧪 Test Slot 5 Media Removal (Col 3 Tips ➔ Return Col 1)", command=self.action_load_slot5_media_removal_test)
-        protocolmenu.add_cascade(label="8-Channel Multi (1-10 µL)", menu=m10ch)
-
-        # Submenu: 300 µL Single-Channel
+        # Submenu 2: 300 µL Single-Channel [Prepping DMSO-Drug]
         m300 = tk.Menu(protocolmenu, tearoff=0)
-        m300.add_command(label="🟢 Media Change + 7.5 µL Drug (2 Plates)", command=lambda: self.action_load_300ul_media_change_and_drug(7.5))
-        m300.add_command(label="🟢 Media Change + 5.0 µL Drug (2 Plates)", command=lambda: self.action_load_300ul_media_change_and_drug(5.0))
-        m300.add_command(label="🟢 DMSO-Drug Serial Dilution (Select Wells)...", command=self.action_load_300ul_dmso_dilution)
-        protocolmenu.add_cascade(label="300 µL Single-Channel", menu=m300)
+        m300.add_command(label="🟢 Prepping DMSO-Drug Serial Dilution (96-Well Plate)...", command=self.action_load_300ul_dmso_dilution)
+        protocolmenu.add_cascade(label="300 µL Single-Channel [Prepping DMSO-Drug]", menu=m300)
 
-        # Submenu: 20 µL Single-Channel
-        m20 = tk.Menu(protocolmenu, tearoff=0)
-        m20.add_command(label="🟢 High-Precision Drug Addition (7.5 µL) + Mix", command=lambda: self.action_load_20ul_drug_addition(7.5))
-        m20.add_command(label="🟢 High-Precision Drug Addition (5.0 µL) + Mix", command=lambda: self.action_load_20ul_drug_addition(5.0))
-        m20.add_command(label="🟢 Precision DMSO-Drug Dilution (Select Wells)...", command=self.action_load_20ul_dmso_dilution)
-        protocolmenu.add_cascade(label="20 µL Single-Channel", menu=m20)
+        # Submenu 3: 8-Channel Multi (1-10 µL) [Drug Addition to EHM]
+        m10ch = tk.Menu(protocolmenu, tearoff=0)
+        m10ch.add_command(label="🟢 Drug Addition to EHM (7.5 µL) + Mix", command=lambda: self.action_load_10ul_multi_drug_addition_to_ehm(7.5))
+        m10ch.add_command(label="🟢 Drug Addition to EHM (5.0 µL) + Mix", command=lambda: self.action_load_10ul_multi_drug_addition_to_ehm(5.0))
+        protocolmenu.add_cascade(label="8-Channel Multi (1-10 µL) [Drug Addition to EHM]", menu=m10ch)
 
         protocolmenu.add_separator()
 
@@ -1373,10 +1358,9 @@ class LIMSMasterApp:
             f_conn,
             textvariable=self.head_mode_var,
             values=[
-                "8-Channel Multi (8×1000 µL)",
-                "8-Channel Multi (1-10 µL)",
-                "300 µL Single-Channel",
-                "20 µL Single-Channel",
+                "8-Channel Multi (8×1000 µL) [Media Change]",
+                "300 µL Single-Channel [Prepping DMSO-Drug]",
+                "8-Channel Multi (1-10 µL) [Drug Addition to EHM]",
             ],
             state="readonly",
             width=26,
@@ -2011,10 +1995,9 @@ class LIMSMasterApp:
             head_bar,
             textvariable=self.head_mode_var,
             values=[
-                "8-Channel Multi (8×1000 µL)",
-                "8-Channel Multi (1-10 µL)",
-                "300 µL Single-Channel",
-                "20 µL Single-Channel",
+                "8-Channel Multi (8×1000 µL) [Media Change]",
+                "300 µL Single-Channel [Prepping DMSO-Drug]",
+                "8-Channel Multi (1-10 µL) [Drug Addition to EHM]",
             ],
             state="readonly",
             width=26,
@@ -2106,10 +2089,9 @@ class LIMSMasterApp:
             proto_frame,
             textvariable=self.proto_pipettor_var,
             values=[
-                "8-Channel Multi (8×1000 µL)",
-                "8-Channel Multi (1-10 µL)",
-                "300 µL Single-Channel",
-                "20 µL Single-Channel",
+                "8-Channel Multi (8×1000 µL) [Media Change]",
+                "300 µL Single-Channel [Prepping DMSO-Drug]",
+                "8-Channel Multi (1-10 µL) [Drug Addition to EHM]",
             ],
             state="readonly",
         )
@@ -2830,37 +2812,28 @@ class LIMSMasterApp:
     # DYNAMIC PROTOCOL DROPDOWN & QUICK HOMING HELPERS
     # -------------------------------------------------------------------------
     def _get_protocols_for_pipettor(self, pipettor_name: str) -> dict:
-        """Returns ordered dict mapping protocol display labels to loading functions for the given pipettor."""
+        """Returns ordered dict mapping protocol display labels to loading functions for the active user workflows."""
         p_name = str(pipettor_name).lower()
-        if ("1-10" in p_name or "8×10" in p_name or ("10" in p_name and "1000" not in p_name)) and ("multi" in p_name or "8" in p_name):
+        if "1000" in p_name or "8×1000" in p_name:
             return {
-                "Media Change + 7.5 µL Drug Addition (Plates 5 & 6)": lambda: self.action_load_10ul_multi_media_change_and_drug(7.5),
-                "Media Change + 5.0 µL Drug Addition (Plates 5 & 6)": lambda: self.action_load_10ul_multi_media_change_and_drug(5.0),
-                "DMSO-Drug Dilution (Select Drug Wells)": self.action_load_10ul_multi_dmso_dilution,
-                "Fresh Media Only Multi-Dispense (22 steps)": self.action_load_10ul_multi_fresh_media_only,
+                "Media Change (Plates 5 & 6 — 500 µL Dispense)": self.action_load_8ch_1000ul_media_change_protocol,
+                "Fresh Media Only Multi-Dispense (22 steps)": self.action_load_8ch_fresh_media_only,
                 "Test Slot 5 Media Removal (Col 3 Tips ➔ Return Col 1)": self.action_load_slot5_media_removal_test,
+            }
+        elif ("1-10" in p_name or "8×10" in p_name or "10" in p_name) and ("multi" in p_name or "8" in p_name):
+            return {
+                "Drug Addition to EHM (7.5 µL) + Mix": lambda: self.action_load_10ul_multi_drug_addition_to_ehm(7.5),
+                "Drug Addition to EHM (5.0 µL) + Mix": lambda: self.action_load_10ul_multi_drug_addition_to_ehm(5.0),
             }
         elif "300" in p_name:
             return {
-                "Media Change + 7.5 µL Drug Addition (2 Plates)": lambda: self.action_load_300ul_media_change_and_drug(7.5),
-                "Media Change + 5.0 µL Drug Addition (2 Plates)": lambda: self.action_load_300ul_media_change_and_drug(5.0),
-                "DMSO-Drug Dilution (Select Drug Wells)": self.action_load_300ul_dmso_dilution,
+                "Prepping DMSO-Drug Dilution (96-Well Plate)": self.action_load_300ul_dmso_dilution,
             }
-        elif "20" in p_name:
+        else:  # Fallback: 8-Channel Multi (8×1000 µL) [Media Change]
             return {
-                "Precision Drug Addition (7.5 µL) + Mix": lambda: self.action_load_20ul_drug_addition(7.5),
-                "Precision Drug Addition (5.0 µL) + Mix": lambda: self.action_load_20ul_drug_addition(5.0),
-                "Precision DMSO-Drug Dilution (Select Wells)": self.action_load_20ul_dmso_dilution,
-            }
-        else:  # Default: 8-Channel Multi (8×1000 µL)
-            return {
-                "Media Change + 7.5 µL Drug Addition (Plates 5 & 6)": lambda: self.action_load_8ch_media_change_and_drug(7.5),
-                "Media Change + 5.0 µL Drug Addition (Plates 5 & 6)": lambda: self.action_load_8ch_media_change_and_drug(5.0),
-                "Media Change Only (Plates 5 & 6 — 500 µL Dispense)": self.action_load_8ch_1000ul_media_change_protocol,
-                "DMSO-Drug Dilution (Select Drug Wells)": self.action_load_8ch_dmso_dilution,
+                "Media Change (Plates 5 & 6 — 500 µL Dispense)": self.action_load_8ch_1000ul_media_change_protocol,
                 "Fresh Media Only Multi-Dispense (22 steps)": self.action_load_8ch_fresh_media_only,
                 "Test Slot 5 Media Removal (Col 3 Tips ➔ Return Col 1)": self.action_load_slot5_media_removal_test,
-                "EHM Media Change Wizard / Dialog...": self.action_load_8ch_1000ul_media_change_protocol,
             }
 
     def _update_protocol_dropdown(self, event=None):
@@ -2932,6 +2905,52 @@ class LIMSMasterApp:
     # -------------------------------------------------------------------------
     # 0. 8-CHANNEL MULTI (1-10 µL) PROTOCOL LOADERS
     # -------------------------------------------------------------------------
+    def action_load_10ul_multi_drug_addition_to_ehm(self, volume: float = 7.5):
+        self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
+        filename = f"ehm_8ch_10ul_drug_addition_to_ehm_{volume:g}uL.json"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        cand_paths = [
+            os.path.join(script_dir, "protocols", filename),
+            os.path.join(repo_root, "protocols", filename),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if not target_path:
+            messagebox.showerror("File Not Found", f"Could not locate {filename}")
+            return
+
+        deck_setup = {
+            "Slot_1": "(Empty / Clearance)",
+            "Slot_2": "(Empty / Clearance)",
+            "Slot_3": "myriamed_48_well.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "generic_96_well_plate.json",
+            "Slot_6": "reservoir_7_column.json",
+        }
+        slot_descs = {
+            "Slot_1": "Empty clearance zone",
+            "Slot_2": "Empty clearance zone",
+            "Slot_3": "Target EHM Plate (Cols 1..6)",
+            "Slot_4": "1-10 µL Tip Rack (Cols 1-6 fresh, Cols 7-12 graveyard)",
+            "Slot_5": "Prepped DMSO-Drug Dilution Plate (96-Well, Cols 1..6)",
+            "Slot_6": "Reagent Reservoir (Clearance)",
+        }
+        with open(target_path, "r") as f:
+            seq = json.load(f)
+
+        def do_load():
+            self._populate_workflow_from_sequence(seq, f"[8-CH 1-10 µL] Drug Addition ({volume:g} µL) to EHM")
+
+        self.show_protocol_deck_setup_modal(
+            protocol_name=f"[8-CH 1-10 µL] Drug Addition to EHM ({volume:g} µL) + Mix",
+            pipettor_mode="8-Channel Multi (1-10 µL)",
+            is_multichannel=True,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descs,
+            sequence=seq,
+            on_confirm_callback=do_load
+        )
+
     def action_load_10ul_multi_media_change_and_drug(self, volume: float = 7.5):
         self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
         self.action_load_8ch_media_change_and_drug(volume=volume)
@@ -4799,23 +4818,25 @@ class LIMSMasterApp:
         "Slot_1": (238.2, 13.0),   # calibrated (front right, height-block slot)
         "Slot_2": (95.5, 13.0),    # calibrated (front left, 3-well reservoir/waste trough A1)
         "Slot_3": (243.81, 53.0),  # calibrated (exact center: X=243.81, Y=53.0)
-        "Slot_4": (105.0, 53.0),   # calibrated (96-well A1 X=105, Y=53)
-        "Slot_5": (243.81, 149.23), # calibrated (exact center: X=243.81, Y=149.23)
-        "Slot_6": (105.0, 149.23), # derived (Slot_4 X column + Slot_5 Y row)
+        "Slot_4": (105.60, 53.02), # calibrated (96-well A1 X=105.60, 8-ch center Y=84.52 -> A1 Y=53.02)
+        "Slot_5": (243.24, 178.69), # calibrated (exact center: X=243.24, Y=178.69)
+        "Slot_6": (108.81, 183.64), # calibrated (Slot 6 7-column reservoir A1 / R1)
     }
 
     # Calibrated per-slot column tables for 96-format labware (override pitch math)
     SLOT_96_COL_OVERRIDES = {
-        "Slot_5": [243.81, 234.81, 225.81, 216.81, 207.81, 198.81, 189.81, 180.81, 171.81, 162.81, 153.81, 144.81],
+        "Slot_4": [round(105.60 - (c * 9.0), 2) for c in range(12)],
+        "Slot_5": [round(243.24 - (c * 9.0), 2) for c in range(12)],
     }
 
     # Calibrated per-slot Z for 96-well microplates: (deep / aspirate / mix, brim / dispense)
     SLOT_96_PLATE_Z = {
-        "Slot_3": (91.0, 85.0),
-        "Slot_4": (90.0, 85.0),
-        "Slot_5": (92.0, 85.0),
+        "Slot_3": (78.40, 68.43),
+        "Slot_4": (78.40, 68.43),
+        "Slot_5": (78.40, 68.43),
+        "Slot_6": (78.40, 68.43),
     }
-    DEFAULT_96_PLATE_Z = (92.0, 85.0)
+    DEFAULT_96_PLATE_Z = (78.40, 68.43)
 
     def _lw_kind(self, labware_obj):
         """Classify a labware object by its definition (file first, then name)."""
@@ -4925,10 +4946,10 @@ class LIMSMasterApp:
         if kind in ("tip_rack", "plate96") or (kind is None and not front):
             if r_idx is not None and 0 <= r_idx < 8 and 0 <= c_idx < 12:
                 if kind == "tip_rack":
-                    # Tip rack A1 physically calibrated at X=105.12, Y=53.62 on Slot 4 (8-ch center Y=85.12)
+                    # Tip rack A1 physically calibrated at X=105.60, Y=53.02 on Slot 4 (8-ch center Y=84.52)
                     learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
                     if slot_name == "Slot_4":
-                        return (105.12 - (c_idx * 9.0)) + learned_dx, (53.62 + (r_idx * 9.0)) + learned_dy
+                        return (105.60 - (c_idx * 9.0)) + learned_dx, (53.02 + (r_idx * 9.0)) + learned_dy
                     return (ox - (c_idx * 9.0)) + learned_dx, (oy + (r_idx * 9.0)) + learned_dy
                 col_table = self.SLOT_96_COL_OVERRIDES.get(slot_name)
                 tx = col_table[c_idx] if col_table else ox - (c_idx * 9.0)
@@ -4965,15 +4986,15 @@ class LIMSMasterApp:
                 ci = int(str(well_id).upper().strip().lstrip("R")) - 1
             return ox + col_dx[ci], oy + (0.0 if front else 31.5)
 
-        # 5b. 7-COLUMN RESERVOIR (User calibrated on Slot 6: R1=108.36, R2=93.36, R3=74.61, R4=55.86, R5=37.11, R6=18.36, R7=5.46)
+        # 5b. 7-COLUMN RESERVOIR (User calibrated on Slot 6: R1=108.81, R2=93.81, R3=75.06, R4=56.31, R5=37.56, R6=18.81, R7=5.91)
         if kind == "reservoir_7":
-            col_x = [108.36, 93.36, 74.61, 55.86, 37.11, 18.36, 5.46]
+            col_x = [108.81, 93.81, 75.06, 56.31, 37.56, 18.81, 5.91]
             ci = c_idx if (c_idx is not None and 0 <= c_idx < 7) else 0
             if c_idx is None and str(well_id or "").upper().strip().lstrip("R") in ("1", "2", "3", "4", "5", "6", "7"):
                 ci = int(str(well_id).upper().strip().lstrip("R")) - 1
             if slot_name == "Slot_6":
-                return col_x[ci], 179.9
-            return ox + 3.36 - (ci * 15.0), oy + (0.0 if front else 30.67)
+                return col_x[ci], 183.64
+            return ox + 3.81 - (ci * 15.0), oy + (0.0 if front else 30.67)
 
         # 6. 4x6 TUBE RACK (Biohit 17A, pitch 19.3 mm)
         if kind == "tube_rack_4x6":
@@ -5143,20 +5164,20 @@ class LIMSMasterApp:
 
         # Persistent 8-channel calibrated heights memory lookup (GUI remembers operator depths)
         if is_8ch and hasattr(self, 'calibrated_heights'):
-            if kind == "ehm48" or slot_name in ("Slot_3", "Slot_5"):
+            if kind in ("ehm48", "plate96") or slot_name in ("Slot_3", "Slot_5"):
                 if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
-                    return min(float(self.calibrated_heights.get("ehm_aspirate_z", 22.33)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("ehm_aspirate_z", 78.40)) + slot_z_offset + extra_z, 103.5)
                 elif action == "Dispense Media":
-                    return min(float(self.calibrated_heights.get("ehm_dispense_z", 12.33)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("ehm_dispense_z", 68.43)) + slot_z_offset + extra_z, 103.5)
             elif (slot_name in ("Slot_6", "Slot_1", "Slot_2") and ("reservoir" in str(kind) or "waste" in str(kind))) or kind in ("reservoir_7", "reservoir_6", "reservoir_3", "waste"):
                 if action == "Dispense Media":
-                    return min(float(self.calibrated_heights.get("waste_dispense_z", 59.32)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("waste_dispense_z", 8.37)) + slot_z_offset + extra_z, 103.5)
                 elif action in ("Aspirate Media", "Mix Well"):
-                    return min(float(self.calibrated_heights.get("reservoir_aspirate_z", 89.32)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("reservoir_aspirate_z", 58.34)) + slot_z_offset + extra_z, 103.5)
                 elif action == "Discard Tip":
-                    return min(float(self.calibrated_heights.get("waste_tip_drop_z", 48.0)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("waste_tip_drop_z", 8.37)) + slot_z_offset + extra_z, 103.5)
             elif slot_name == "Slot_4" and action == "Discard Tip":
-                return min(float(self.calibrated_heights.get("tip_rack_discard_z", 42.0)) + slot_z_offset + extra_z, 103.5)
+                return min(float(self.calibrated_heights.get("tip_rack_discard_z", 40.50)) + slot_z_offset + extra_z, 103.5)
 
         # 0. Object-Oriented DeckManager Kinematics
         if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
@@ -5193,9 +5214,9 @@ class LIMSMasterApp:
             elif kind == "reservoir_6":
                 base_z = 101.0 if deep else 78.0
             elif kind == "reservoir_7":
-                base_z = 89.32 if deep else 59.32  # 89.32 deep to take media, 59.32 discard (3cm up)
+                base_z = 58.34 if deep else 8.37  # 58.34 deep to take media, 8.37 discard/dispense
             elif kind == "ehm48":
-                base_z = 22.33 if deep else 12.33  # User declared: 22.33 inside well, 12.33 dispense (1cm above bottom)
+                base_z = 78.40 if deep else 68.43  # 78.40 inside well, 68.43 dispense (10mm above bottom)
             elif kind == "tip_rack":
                 base_z = 98.0
             elif kind == "tube_rack_4x6":
@@ -5823,16 +5844,16 @@ class LIMSMasterApp:
 
                     if action == "Pick Up Tip":
                         cal_dz = float(self.eight_ch_cal_offset.get("Z", 0.0)) if is_8ch else 0.0
-                        configured_limit = float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 98.0)) if is_8ch else 87.0
+                        configured_limit = float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 67.29 if is_8ch else 87.0))
                         pickup_limit = (
-                            min(99.0, max(88.0, configured_limit + extra_z + cal_dz))
+                            min(99.0, max(50.0, configured_limit + extra_z + cal_dz))
                             if is_8ch
-                            else min(92.0, max(82.0, configured_limit + extra_z))
+                            else min(92.0, max(50.0, configured_limit + extra_z))
                         )
                         hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                         labware_obj = self.lims.deck_labware.get(slot_name)
                         z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
-                        approach_z = 75.0 if is_8ch else max(0.0, min(48.0, z_height - 25.0))
+                        approach_z = float(self.calibrated_heights.get("tip_rack_pickup_approach_z", 50.0)) if is_8ch else max(0.0, min(48.0, z_height - 25.0))
 
                         tip_rack_model = None
                         if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
@@ -5846,7 +5867,7 @@ class LIMSMasterApp:
                             self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
                             time.sleep(0.05)
                             if not self.lims.pipettor.hardware:
-                                return True, 90.50 if is_8ch else 55.09
+                                return True, configured_limit if is_8ch else 55.09
 
                             hw = self.lims.pipettor.hardware
                             hw.z_speed = hw_speed
@@ -5864,13 +5885,12 @@ class LIMSMasterApp:
 
                             curr_z = getattr(hw, 'z_position', 0.0)
 
-                            # 1. VALID SEATED TIP (Double-tip collision interlock disabled for hands-free operation):
+                            # 1. VALID SEATED TIP:
                             # Single-channel accepts seated tips (<= 59.5mm for 1000uL, <= 78.0mm for 300uL) with pick_ok.
-                            # 8-channel tips on Slot 4 enter collars at Z=86.36mm and seat firmly between 87.0mm and 96.0mm.
-                            # If curr_z stopped inside this window, the tips are physically seated on the nozzles,
-                            # even if pick_tip threw an ActuatorStalled exception upon reaching force 26.
+                            # 8-channel tips on Slot 4 enter collars at calibrated collar_z and seat firmly at pickup_limit.
                             if is_8ch:
-                                valid_collar = (85.0 <= curr_z <= (pickup_limit - 0.8))
+                                collar_z = float(self.calibrated_heights.get("tip_rack_collar_z", 64.49))
+                                valid_collar = (collar_z - 4.0 <= curr_z <= (pickup_limit + 0.5))
                                 is_seated = valid_collar
                             else:
                                 is_1000 = "1000" in (getattr(labware_obj, 'name', '') + getattr(labware_obj, 'source_file', '')).lower()
@@ -5879,7 +5899,7 @@ class LIMSMasterApp:
 
                             if is_seated:
                                 # High-torque mechanical seating press & double-tap to wedge nozzles firmly into tip collars
-                                extra_press = float(self.calibrated_heights.get("tip_pickup_extra_press_mm", 2.50)) if is_8ch else 1.50
+                                extra_press = float(self.calibrated_heights.get("tip_pickup_extra_press_mm", 2.80)) if is_8ch else 1.50
                                 if extra_press > 0:
                                     try:
                                         press_target = min(pickup_limit, curr_z + extra_press)

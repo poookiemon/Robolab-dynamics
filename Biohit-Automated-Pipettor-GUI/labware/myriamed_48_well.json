@@ -31,13 +31,13 @@
   },
   "is_8ch_calibrated": true,
   "z": {
-    "aspirate": 22.33,
-    "dispense": 12.33,
-    "discard_tip": 22.33
+    "aspirate": 78.4,
+    "dispense": 68.43,
+    "discard_tip": 68.43
   },
   "z_limits": {
-    "recommended_aspirate_z": 22.33,
-    "recommended_dispense_z": 12.33,
-    "max_safe_bottom_z": 24.5
+    "recommended_aspirate_z": 78.4,
+    "recommended_dispense_z": 68.43,
+    "max_safe_bottom_z": 80.0
   }
 }

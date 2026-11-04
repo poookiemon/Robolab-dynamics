@@ -8,16 +8,16 @@
     "columns": 7
   },
   "col_x": [
-    108.36,
-    93.36,
-    74.61,
-    55.86,
-    37.11,
-    18.36,
-    5.46
+    108.81,
+    93.81,
+    75.06,
+    56.31,
+    37.56,
+    18.81,
+    5.91
   ],
   "row_y": [
-    179.9
+    183.64
   ],
   "well_a1_offset": {
     "x": 19.44,
@@ -33,14 +33,14 @@
     "max_volume_ul": 40000.0
   },
   "z": {
-    "aspirate": 89.32,
-    "dispense": 59.32,
-    "discard_tip": 48.0
+    "aspirate": 58.34,
+    "dispense": 8.37,
+    "discard_tip": 8.37
   },
   "z_limits": {
-    "recommended_aspirate_z": 89.32,
-    "recommended_dispense_z": 59.32,
-    "recommended_discard_z": 48.0,
-    "max_safe_bottom_z": 92.0
+    "recommended_aspirate_z": 58.34,
+    "recommended_dispense_z": 8.37,
+    "recommended_discard_z": 8.37,
+    "max_safe_bottom_z": 62.0
   }
 }

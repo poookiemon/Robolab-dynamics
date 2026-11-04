@@ -164,7 +164,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "A-H",
     "label": "[DROP 8-CH] Put back tips onto Slot_4 Col 1"
   }

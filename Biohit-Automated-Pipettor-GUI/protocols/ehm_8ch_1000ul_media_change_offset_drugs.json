@@ -164,7 +164,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "A-H",
     "label": "[DROP 8-CH] Ch A-H -> Slot_4 Col 12 | Plate 5 Old Media Tips"
   },
@@ -333,7 +333,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "A-C",
     "label": "[DROP 8-CH] Ch A-C -> Slot_4 Col 11 | Plate 5 Drug 11"
   },
@@ -502,7 +502,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "G-H",
     "label": "[DROP 8-CH] Ch G-H -> Slot_4 Col 10 | Plate 5 Drug 13"
   },
@@ -671,7 +671,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "D-F",
     "label": "[DROP 8-CH] Ch D-F -> Slot_4 Col 9 | Plate 5 Drug 12"
   },
@@ -840,7 +840,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "A-H",
     "label": "[DROP 8-CH] Ch A-H -> Slot_4 Col 8 | Plate 6 Old Media Tips"
   },
@@ -1009,7 +1009,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "H",
     "label": "[DROP 8-CH] Ch H -> Slot_4 Col 7 | Plate 6 Control"
   },
@@ -1178,7 +1178,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "A",
     "label": "[DROP 8-CH] Ch A -> Slot_4 Col 6 | Plate 6 Drug 13"
   },
@@ -1203,10 +1203,10 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 1,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "A-C",
     "is_shovel_place": true,
-    "label": "[SHOVEL PLACE 8-CH] Ch A-C -> Slot_4 Empty B3-D3 (shift +1 row, Z=42.0mm)"
+    "label": "[SHOVEL PLACE 8-CH] Ch A-C -> Slot_4 Empty B3-D3 (shift +1 row, Z=40.5mm)"
   },
   {
     "action": "Pick Up Tip",
@@ -1373,7 +1373,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "B-D",
     "label": "[DROP 8-CH] Ch B-D -> Slot_4 Col 5 | Plate 6 Drug 14"
   },
@@ -1542,7 +1542,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "E-G",
     "label": "[DROP 8-CH] Ch E-G -> Slot_4 Col 1 | Plate 6 Drug 15"
   }

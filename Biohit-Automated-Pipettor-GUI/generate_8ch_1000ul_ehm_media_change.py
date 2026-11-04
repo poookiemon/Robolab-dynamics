@@ -126,7 +126,7 @@ def build_8ch_ehm_media_change_steps(
                 "labware": "tip_rack_1000ul.json",
                 "eight_ch_symmetric": True,
                 "tip_offset_rows": 0,
-                "discard_z_override": 42.0,
+                "discard_z_override": 40.5,
                 "mounted_channels": channels_str,
                 "label": f"[DROP 8-CH] Ch {channels_str} -> Slot_4 Col {g_col} | {desc}",
             })
@@ -140,7 +140,7 @@ def build_8ch_ehm_media_change_steps(
                 "labware": reservoir_labware,
                 "eight_ch_symmetric": True,
                 "tip_offset_rows": 0,
-                "discard_z_override": 48.0,
+                "discard_z_override": 8.37,
                 "mounted_channels": channels_str,
                 "label": f"[DROP 8-CH] Ch {channels_str} -> Slot_6 {waste_well} Waste | {desc}",
             })
@@ -318,10 +318,10 @@ def build_8ch_ehm_media_change_steps(
             "labware": "tip_rack_1000ul.json",
             "eight_ch_symmetric": True,
             "tip_offset_rows": +1,
-            "discard_z_override": 42.0,
+            "discard_z_override": 40.5,
             "mounted_channels": "A-C",
             "is_shovel_place": True,
-            "label": f"[SHOVEL PLACE 8-CH] Ch A-C -> Slot_4 Empty B{shovel_dest_col}-D{shovel_dest_col} (shift +1 row, Z=42.0mm)",
+            "label": f"[SHOVEL PLACE 8-CH] Ch A-C -> Slot_4 Empty B{shovel_dest_col}-D{shovel_dest_col} (shift +1 row, Z=40.5mm)",
         })
         add_pick_tip(
             shovel_dest_col, 0, "B-D",
@@ -413,7 +413,7 @@ def build_slot5_media_removal_test(
         "labware": "tip_rack_1000ul.json",
         "eight_ch_symmetric": True,
         "tip_offset_rows": 0,
-        "discard_z_override": 42.0,
+        "discard_z_override": 40.5,
         "mounted_channels": "A-H",
         "label": f"[DROP 8-CH] Put back tips onto Slot_4 Col {return_col}",
     })

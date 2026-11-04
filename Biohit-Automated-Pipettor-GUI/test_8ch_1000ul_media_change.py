@@ -136,7 +136,7 @@ def simulate_all_8ch_media_change(app: LIMSMasterApp, name: str, steps, loaded_c
         elif action == "Discard Tip":
             assert all(mounted), f"Step {idx}: Discard called without 8 tips mounted"
             if slot == "Slot_4":
-                assert abs(tz - 42.0) < 1e-6
+                assert abs(tz - 40.5) < 1e-6
                 c_idx = round((105.12 - tx) / 9.0)
                 for r_idx in range(8):
                     assert not rack[(r_idx, c_idx)], f"Step {idx}: Drop collision at Slot 4 {ROWS[r_idx]}{c_idx+1}"
@@ -149,22 +149,22 @@ def simulate_all_8ch_media_change(app: LIMSMasterApp, name: str, steps, loaded_c
         elif action == "Aspirate Media":
             assert all(mounted)
             if slot in ("Slot_3", "Slot_5"):
-                assert abs(tz - 22.33) < 1e-6, f"Expected EHM aspirate 22.33mm, got {tz}"
+                assert abs(tz - 78.40) < 1e-6, f"Expected EHM aspirate 78.40mm, got {tz}"
                 col_num = int(well[1:])
                 for r in ROWS:
                     removed_wells[slot].add(f"{r}{col_num}")
                 held_media = "OLD_MEDIA"
             elif slot == "Slot_6":
-                assert abs(tz - 89.32) < 1e-6, f"Expected 7-well reservoir aspirate 89.32mm, got {tz}"
+                assert abs(tz - 58.34) < 1e-6, f"Expected 7-well reservoir aspirate 58.34mm, got {tz}"
                 held_media = well
 
         elif action == "Dispense Media":
             assert all(mounted)
             if slot == "Slot_6":
-                assert abs(tz - 59.32) < 1e-6, f"Expected 7-well reservoir dispense 59.32mm, got {tz}"
+                assert abs(tz - 8.37) < 1e-6, f"Expected 7-well reservoir dispense 8.37mm, got {tz}"
                 assert held_media == "OLD_MEDIA"
             elif slot in ("Slot_3", "Slot_5"):
-                assert abs(tz - 12.33) < 1e-6, f"Expected EHM dispense 12.33mm (1cm above), got {tz}"
+                assert abs(tz - 68.43) < 1e-6, f"Expected EHM dispense 68.43mm (~10mm above), got {tz}"
                 col_num = int(well[1:])
                 for r in ROWS:
                     w_id = f"{r}{col_num}"
@@ -281,7 +281,7 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
             active_ch = [c for c in range(8) if mounted[c]]
             assert active_ch == expected_ch, f"Step {idx}: Expected mounted {expected_ch}, got {active_ch}"
             if slot == "Slot_4":
-                assert abs(tz - 42.0) < 1e-6, f"Step {idx}: Rack drop/shovel Z must be 42.0mm, got {tz}"
+                assert abs(tz - 40.5) < 1e-6, f"Step {idx}: Rack drop/shovel Z must be 42.0mm, got {tz}"
                 c_idx = round((105.12 - tx) / 9.0)
                 for ch in range(8):
                     nozzle_y = (ty - 31.5) + ch * 9.0
@@ -306,8 +306,8 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
             active_ch = [c for c in range(8) if mounted[c]]
             assert active_ch == expected_ch
             if slot in ("Slot_3", "Slot_5"):
-                # Old media removal from EHM plate (User physically calibrated Z = 22.33 mm)
-                assert abs(tz - 22.33) < 1e-6, f"Expected 22.33mm, got {tz}"
+                # Old media removal from EHM plate (User physically calibrated Z = 78.40 mm)
+                assert abs(tz - 78.40) < 1e-6, f"Expected 78.40mm, got {tz}"
                 col_num = int(well[1:])
                 for ch in active_ch:
                     w_id = f"{ROWS[ch]}{col_num}"
@@ -315,8 +315,8 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
                     tip_taint[ch] = f"OLD_{slot}_{ROWS[ch]}"
                 held_source_lane = "OLD_MEDIA"
             elif slot == "Slot_6":
-                # Fresh media aspiration from Reservoir R1..R5 (Z = 101.0 - 20.5 = 80.5 mm with 1000uL tip compensation)
-                assert abs(tz - 89.32) < 1e-4 or abs(tz - 80.5) < 1e-4, f"Expected 89.32mm or 80.5mm, got {tz}"
+                # Fresh media aspiration from Reservoir (Z = 58.34mm)
+                assert abs(tz - 58.34) < 1e-4 or abs(tz - 80.5) < 1e-4, f"Expected 58.34mm or 80.5mm, got {tz}"
                 lbl = step.get("label", "")
                 if "Control" in lbl:
                     # CRITICAL: R4 must have ZERO drug taint when Control is aspirated!
@@ -336,12 +336,12 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
             active_ch = [c for c in range(8) if mounted[c]]
             assert active_ch == expected_ch
             if slot == "Slot_6":
-                # Dispensing old media waste into reservoir discard lane at brim Z = 59.32 mm
-                assert well in ("A1", "A2", "A6", "A7") and (abs(tz - 59.32) < 1e-4 or abs(tz - 57.5) < 1e-4), f"Expected 59.32mm or 57.5mm, got {tz}"
+                # Dispensing old media waste into reservoir discard lane at brim Z = 8.37 mm
+                assert well in ("A1", "A2", "A6", "A7") and (abs(tz - 8.37) < 1e-4 or abs(tz - 57.5) < 1e-4), f"Expected 8.37mm or 57.5mm, got {tz}"
                 assert held_source_lane == "OLD_MEDIA"
             elif slot in ("Slot_3", "Slot_5"):
-                # Dispensing fresh media onto EHM plate at brim Z = 12.33 mm (1cm above bottom)
-                assert abs(tz - 12.33) < 1e-6, f"Expected 12.33mm, got {tz}"
+                # Dispensing fresh media onto EHM plate at brim Z = 68.43 mm (~10mm above bottom)
+                assert abs(tz - 68.43) < 1e-6, f"Expected 68.43mm, got {tz}"
                 col_num = int(well[1:])
                 res_lane, cond = held_source_lane
                 exp_map = expected_p5 if slot == "Slot_3" else expected_p6

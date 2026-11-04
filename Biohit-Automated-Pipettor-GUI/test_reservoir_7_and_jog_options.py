@@ -29,26 +29,26 @@ def main():
     slot6 = app.deck_manager.slots["Slot_6"]
 
     # Verify A1..A7 machine coordinates
-    expected_x = [108.36, 93.36, 74.61, 55.86, 37.11, 18.36, 5.46]
+    expected_x = [108.81, 93.81, 75.06, 56.31, 37.56, 18.81, 5.91]
     for i, exp_x in enumerate(expected_x, 1):
         for well_name in (f"A{i}", f"{i}", f"R{i}"):
             x, y = slot6.labware.get_well_xy(slot6, well_name)
             assert abs(x - exp_x) < 1e-4, f"Well {well_name} X expected {exp_x}, got {x}"
-            assert abs(y - 179.9) < 1e-4, f"Well {well_name} Y expected 179.9, got {y}"
+            assert abs(y - 183.64) < 1e-4, f"Well {well_name} Y expected 183.64, got {y}"
 
             # Also check app._calculate_xy
             app_x, app_y = app._calculate_xy("Slot_6", well_name)
             assert abs(app_x - exp_x) < 1e-4, f"app._calculate_xy {well_name} X expected {exp_x}, got {app_x}"
-            assert abs(app_y - 179.9) < 1e-4, f"app._calculate_xy {well_name} Y expected 179.9, got {app_y}"
+            assert abs(app_y - 183.64) < 1e-4, f"app._calculate_xy {well_name} Y expected 183.64, got {app_y}"
 
     # Verify Z heights
     asp_z = app._calculate_z("Aspirate Media", res7, "A1", "auto", 0.0, "Slot_6")
     disp_z = app._calculate_z("Dispense Media", res7, "A1", "auto", 0.0, "Slot_6")
-    assert abs(asp_z - 89.32) < 1e-4, f"Aspirate Z expected 89.32, got {asp_z}"
-    assert abs(disp_z - 59.32) < 1e-4, f"Dispense Z expected 59.32 (3cm above bottom), got {disp_z}"
-    print("PASS: 7-Well Reservoir A1..A7 (X=108.36..18.36, Y=179.9, Z=89.32 aspirate, Z=59.32 dispense) verified!")
+    assert abs(asp_z - 58.34) < 1e-4, f"Aspirate Z expected 58.34, got {asp_z}"
+    assert abs(disp_z - 8.37) < 1e-4, f"Dispense Z expected 8.37, got {disp_z}"
+    print("PASS: 7-Well Reservoir A1..A7 (X=108.81..18.81, Y=183.64, Z=58.34 aspirate, Z=8.37 dispense) verified!")
 
-    print("\n--- 2. Testing EHM Declared Physical Z (22.33 mm) ---")
+    print("\n--- 2. Testing EHM Declared Physical Z (78.40 mm) ---")
     ehm_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "labware", "myriamed_48_well.json")
     ehm_lw = Labware(ehm_path)
     ehm_lw.source_file = "myriamed_48_well.json"
@@ -56,8 +56,8 @@ def main():
     app.sync_deck_manager()
     ehm_asp = app._calculate_z("Aspirate Media", ehm_lw, "A1", "auto", 0.0, "Slot_3")
     ehm_disp = app._calculate_z("Dispense Media", ehm_lw, "A1", "auto", 0.0, "Slot_3")
-    assert abs(ehm_asp - 22.33) < 1e-4, f"EHM aspirate Z expected 22.33, got {ehm_asp}"
-    assert abs(ehm_disp - 12.33) < 1e-4, f"EHM dispense Z expected 12.33 (1cm above), got {ehm_disp}"
+    assert abs(ehm_asp - 78.40) < 1e-4, f"EHM aspirate Z expected 78.40, got {ehm_asp}"
+    assert abs(ehm_disp - 68.43) < 1e-4, f"EHM dispense Z expected 68.43 (~10mm above), got {ehm_disp}"
     print("PASS: EHM Declared Z (22.33mm inside well, 12.33mm dispense 1cm above) verified!")
 
     print("\n--- 3. Testing Jog Step Size & Quick Homing Presets ---")

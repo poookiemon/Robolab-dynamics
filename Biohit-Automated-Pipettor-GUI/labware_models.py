@@ -169,26 +169,21 @@ class Plate96(LabwareBase):
     def get_aspirate_z(self, slot: 'DeckSlot', well_id: str, current_vol_ul: float = 0.0, submerge_mm: float = 2.0) -> float:
         if self.aspirate_depth_override is not None:
             return self.aspirate_depth_override
-        # Slot 3 calibrated deep aspirate / mix is 91.0mm (1mm above 92.0mm to prevent bottom contact)
-        if slot.name == "Slot_3":
-            return 91.0
-        # Slot 5 calibrated deep aspirate / mix is 92.0mm
-        if slot.name == "Slot_5":
-            return 92.0
+        # Calibrated 96-well plate deep aspirate / mix is 78.40mm
+        if slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
+            return 78.40
         return super().get_aspirate_z(slot, well_id, current_vol_ul, submerge_mm)
 
     def get_dispense_z(self, slot: 'DeckSlot', well_id: str, in_liquid: bool = False) -> float:
         if self.dispense_depth_override is not None and not in_liquid:
             return self.dispense_depth_override
-        if slot.name in ("Slot_3", "Slot_5") and not in_liquid:
-            return 85.0
+        if slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6") and not in_liquid:
+            return 68.43
         return super().get_dispense_z(slot, well_id, in_liquid)
 
     def get_mix_z(self, slot: 'DeckSlot', well_id: str) -> float:
-        if slot.name == "Slot_3":
-            return 91.0
-        if slot.name == "Slot_5":
-            return 92.0
+        if slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
+            return 78.40
         return super().get_mix_z(slot, well_id)
 
 
@@ -203,7 +198,7 @@ class Plate48Myriamed(LabwareBase):
             "z_height_mm": 17.5,
             "well_depth_mm": 14.5,
             "well_radius_mm": 4.5,
-            "max_safe_bottom_z": 88.0,
+            "max_safe_bottom_z": 80.0,
             "dead_volume_ul": 50.0,
             "max_volume_ul": 800.0,
         }
@@ -224,15 +219,15 @@ class Plate48Myriamed(LabwareBase):
         return cx, cy
 
     def get_aspirate_z(self, slot: 'DeckSlot', well_id: str, current_vol_ul: float = 0.0, submerge_mm: float = 2.0) -> float:
-        # User physically calibrated: 22.33mm with 8-channel 1000uL head
-        return 22.33
+        # User physically calibrated: 78.40mm deep near well bottom
+        return 78.40
 
     def get_dispense_z(self, slot: 'DeckSlot', well_id: str, in_liquid: bool = False) -> float:
-        # Calibrated EHM: 22.33mm in-liquid, 12.33mm brim (1cm above 22.33mm bottom)
-        return 22.33 if in_liquid else 12.33
+        # Calibrated EHM: 78.40mm in-liquid, 68.43mm contact-free (10mm above 78.40mm bottom)
+        return 78.40 if in_liquid else 68.43
 
     def get_mix_z(self, slot: 'DeckSlot', well_id: str) -> float:
-        return 22.33
+        return 78.40
 
 
 class Reservoir3Well(LabwareBase):
@@ -378,8 +373,8 @@ class Reservoir7Column(LabwareBase):
     """
     7-Column Reagent Reservoir on Slot 6 (lanes R1..R7 / A1..A7).
     User-calibrated on Slot 6:
-      R1=108.36, R2=93.36, R3=74.61, R4=55.86, R5=37.11, R6=18.36, R7=5.46.
-      Y=179.9, Z=89.32.
+      R1=108.81, R2=93.81, R3=75.06, R4=56.31, R5=37.56, R6=18.81, R7=5.91.
+      Y=183.64, Z=58.34 (aspirate), Z=8.37 (discard/dispense).
     """
     def __init__(self, **kwargs):
         defaults = {
@@ -390,7 +385,7 @@ class Reservoir7Column(LabwareBase):
             "z_height_mm": 35.0,
             "well_depth_mm": 32.0,
             "well_radius_mm": 6.5,
-            "max_safe_bottom_z": 92.0,
+            "max_safe_bottom_z": 62.0,
             "dead_volume_ul": 2000.0,
             "max_volume_ul": 40000.0,
             "pitch_x_mm": 15.0,
@@ -401,11 +396,11 @@ class Reservoir7Column(LabwareBase):
                 defaults[k] = kwargs.pop(k)
         super().__init__(**defaults)
         self.is_8ch_calibrated = True
-        self.col_x = kwargs.get("col_x", [108.36, 93.36, 74.61, 55.86, 37.11, 18.36, 5.46])
-        self.center_y = kwargs.get("center_y", 179.9)
-        self.aspirate_z_mm = kwargs.get("aspirate_z_mm", 89.32)  # Operator calibrated depth to take fresh media
-        self.dispense_brim_z_mm = kwargs.get("dispense_brim_z_mm", 59.32)  # Discard height up (3cm above bottom 89.32mm)
-        self.discard_tip_z_mm = kwargs.get("discard_tip_z_mm", 48.0)
+        self.col_x = kwargs.get("col_x", [108.81, 93.81, 75.06, 56.31, 37.56, 18.81, 5.91])
+        self.center_y = kwargs.get("center_y", 183.64)
+        self.aspirate_z_mm = kwargs.get("aspirate_z_mm", 58.34)  # Operator calibrated depth to take fresh media
+        self.dispense_brim_z_mm = kwargs.get("dispense_brim_z_mm", 8.37)  # Discard height up
+        self.discard_tip_z_mm = kwargs.get("discard_tip_z_mm", 8.37)
 
     def parse_well(self, well_id: str) -> Tuple[Optional[int], Optional[int]]:
         if not well_id:

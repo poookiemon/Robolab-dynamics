@@ -101,7 +101,7 @@ def build_8ch_media_change_and_drug_steps(
         "labware": "tip_rack_1000ul.json",
         "eight_ch_symmetric": True,
         "tip_offset_rows": 0,
-        "discard_z_override": 42.0,
+        "discard_z_override": 40.5,
         "mounted_channels": "A-H",
         "label": "[DROP 8-CH] Eject Plate 5 Old Media Tips -> Slot_4 Col 12 Graveyard",
     })
@@ -166,7 +166,7 @@ def build_8ch_media_change_and_drug_steps(
         "labware": "tip_rack_1000ul.json",
         "eight_ch_symmetric": True,
         "tip_offset_rows": 0,
-        "discard_z_override": 42.0,
+        "discard_z_override": 40.5,
         "mounted_channels": "A-H",
         "label": "[DROP 8-CH] Eject Plate 5 Fresh Media Tips -> Slot_4 Col 11 Graveyard",
     })
@@ -220,7 +220,7 @@ def build_8ch_media_change_and_drug_steps(
         "labware": "tip_rack_1000ul.json",
         "eight_ch_symmetric": True,
         "tip_offset_rows": 0,
-        "discard_z_override": 42.0,
+        "discard_z_override": 40.5,
         "mounted_channels": "A-H",
         "label": "[DROP 8-CH] Eject Plate 5 Drug Tips -> Slot_4 Col 10 Graveyard",
     })
@@ -275,7 +275,7 @@ def build_8ch_media_change_and_drug_steps(
         "labware": "tip_rack_1000ul.json",
         "eight_ch_symmetric": True,
         "tip_offset_rows": 0,
-        "discard_z_override": 42.0,
+        "discard_z_override": 40.5,
         "mounted_channels": "A-H",
         "label": "[DROP 8-CH] Eject Plate 6 Old Media Tips -> Slot_4 Col 9 Graveyard",
     })
@@ -340,7 +340,7 @@ def build_8ch_media_change_and_drug_steps(
         "labware": "tip_rack_1000ul.json",
         "eight_ch_symmetric": True,
         "tip_offset_rows": 0,
-        "discard_z_override": 42.0,
+        "discard_z_override": 40.5,
         "mounted_channels": "A-H",
         "label": "[DROP 8-CH] Eject Plate 6 Fresh Media Tips -> Slot_4 Col 8 Graveyard",
     })
@@ -394,7 +394,7 @@ def build_8ch_media_change_and_drug_steps(
         "labware": "tip_rack_1000ul.json",
         "eight_ch_symmetric": True,
         "tip_offset_rows": 0,
-        "discard_z_override": 42.0,
+        "discard_z_override": 40.5,
         "mounted_channels": "A-H",
         "label": "[DROP 8-CH] Eject Plate 6 Drug Tips -> Slot_4 Col 7 Graveyard",
     })
@@ -532,6 +532,90 @@ def build_8ch_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.json")
         "label": "[DROP 8-CH] Discard Serial Dilution Tips -> Slot_4 Col 11",
     })
 
+    return steps
+
+
+# =============================================================================
+# 1b. 8-CHANNEL MULTI PIPETTOR (1-10 µL) - DEDICATED DRUG ADDITION TO EHM
+# =============================================================================
+
+def build_8ch_10ul_drug_addition_steps(
+    drug_vol_ul: float = 7.5,
+    drug_source_slot: str = "Slot_5",
+    drug_source_labware: str = "generic_96_well_plate.json",
+    target_ehm_slot: str = "Slot_3",
+    target_ehm_labware: str = "myriamed_48_well.json",
+    mix_cycles: int = 5,
+    mix_vol_ul: float = 8.0,
+    discard_z: float = 40.5,
+) -> List[Dict[str, Any]]:
+    """
+    Builds dedicated 8-Channel Multi (1-10 µL) Drug Addition protocol.
+    Transfers prepped drug from 96-well dilution plate (Slot 5) into 48-well EHM plate (Slot 3)
+    across Columns 1..6 with 100% 0-contamination:
+    - Dedicated fresh tips per column (Slot 4 Columns 1..6)
+    - High precision drug aspiration (7.5 µL or 5.0 µL) across Rows A-H simultaneously
+    - In-place dispense & mix (5x 8.0 µL, safe within 10 µL tips) in EHM wells
+    - Ejects used tips into Slot 4 empty rack graveyard (Cols 12..7) at Z=40.5 mm
+    """
+    steps: List[Dict[str, Any]] = []
+    for c in range(1, 7):
+        # 1. Pick Up Tips (Cols 1..6)
+        steps.append({
+            "action": "Pick Up Tip",
+            "mode": "auto",
+            "slot": "Slot_4",
+            "well": f"A{c}",
+            "volume": 0.0,
+            "labware": "tip_rack_1000ul.json",
+            "eight_ch_symmetric": True,
+            "tip_offset_rows": 0,
+            "mounted_channels": "A-H",
+            "label": f"[PICK 1-10µL TIPS] Slot_4 Col {c} (A{c}-H{c}) | Col {c} Drug Addition",
+        })
+        # 2. Aspirate Prepped Drug from 96-Well Plate (Slot 5)
+        steps.append({
+            "action": "Aspirate Media",
+            "mode": "auto",
+            "slot": drug_source_slot,
+            "well": f"A{c}",
+            "volume": float(drug_vol_ul),
+            "labware": drug_source_labware,
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-H",
+            "track_liquid": False,
+            "label": f"[ASPIRATE DRUG] {drug_vol_ul:g} µL from {drug_source_slot} (96-Well Drug Plate) Col {c} [Rows A-H]",
+        })
+        # 3. Dispense & In-Place Mix in EHM Plate (Slot 3)
+        steps.append({
+            "action": "Dispense Media",
+            "mode": "auto",
+            "slot": target_ehm_slot,
+            "well": f"A{c}",
+            "volume": float(drug_vol_ul),
+            "labware": target_ehm_labware,
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-H",
+            "mix_cycles": mix_cycles,
+            "mix_volume": float(mix_vol_ul),
+            "track_liquid": False,
+            "label": f"[DRUG+MIX 1-10µL] {drug_vol_ul:g} µL -> {target_ehm_slot} EHM Col {c} [{mix_cycles}x {mix_vol_ul:g} µL In-Place Mix]",
+        })
+        # 4. Discard Used Tips into Slot 4 Graveyard
+        graveyard_col = 13 - c  # Cols 12, 11, 10, 9, 8, 7
+        steps.append({
+            "action": "Discard Tip",
+            "mode": "auto",
+            "slot": "Slot_4",
+            "well": f"A{graveyard_col}",
+            "volume": 0.0,
+            "labware": "tip_rack_1000ul.json",
+            "eight_ch_symmetric": True,
+            "tip_offset_rows": 0,
+            "discard_z_override": float(discard_z),
+            "mounted_channels": "A-H",
+            "label": f"[DROP TIPS] Eject Col {c} Drug Tips -> Slot_4 Col {graveyard_col} Graveyard (Z={discard_z}mm)",
+        })
     return steps
 
 
@@ -857,6 +941,10 @@ def save_all_unified_protocols():
         "ehm_8ch_1000ul_media_change_and_drug_7.5uL.json": build_8ch_media_change_and_drug_steps(7.5),
         "ehm_8ch_1000ul_media_change_and_drug_5.0uL.json": build_8ch_media_change_and_drug_steps(5.0),
         "ehm_8ch_1000ul_dmso_drug_dilution.json": build_8ch_dmso_dilution_steps(),
+
+        # 1b. 8-Channel Multi (1-10 µL) Dedicated Drug Addition to EHM
+        "ehm_8ch_10ul_drug_addition_to_ehm_7.5uL.json": build_8ch_10ul_drug_addition_steps(7.5),
+        "ehm_8ch_10ul_drug_addition_to_ehm_5.0uL.json": build_8ch_10ul_drug_addition_steps(5.0),
 
         # 2. 300 uL Single-Channel
         "ehm_1ch_300ul_media_change_and_drug_7.5uL.json": build_1ch_300ul_media_change_and_drug_steps(7.5),

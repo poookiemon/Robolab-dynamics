@@ -164,7 +164,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "A-H",
     "label": "[DROP 8-CH] Ch A-H -> Slot_4 Col 12 | Plate 5 Old Media Tips"
   },
@@ -300,7 +300,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "A-H",
     "label": "[DROP 8-CH] Ch A-H -> Slot_4 Col 11 | Plate 5 Fresh Media Tips"
   },
@@ -469,7 +469,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "A-H",
     "label": "[DROP 8-CH] Ch A-H -> Slot_4 Col 10 | Plate 6 Old Media Tips"
   },
@@ -605,7 +605,7 @@
     "labware": "tip_rack_1000ul.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
-    "discard_z_override": 42.0,
+    "discard_z_override": 40.5,
     "mounted_channels": "A-H",
     "label": "[DROP 8-CH] Ch A-H -> Slot_4 Col 9 | Plate 6 Fresh Media Tips"
   }

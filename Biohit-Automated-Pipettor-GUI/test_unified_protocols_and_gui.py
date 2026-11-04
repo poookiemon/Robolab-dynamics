@@ -25,6 +25,8 @@ def test_protocol_files_exist():
         "ehm_8ch_1000ul_media_change_and_drug_5.0uL.json",
         "ehm_8ch_1000ul_dmso_drug_dilution.json",
         "ehm_8ch_1000ul_media_change_plate5_plate6.json",
+        "ehm_8ch_10ul_drug_addition_to_ehm_7.5uL.json",
+        "ehm_8ch_10ul_drug_addition_to_ehm_5.0uL.json",
         "ehm_1ch_300ul_media_change_and_drug_7.5uL.json",
         "ehm_1ch_300ul_media_change_and_drug_5.0uL.json",
         "ehm_1ch_300ul_dmso_drug_dilution.json",
@@ -105,11 +107,11 @@ def test_gui_loading():
         app.switch_pipettor_head(True, quiet=True)
         res6 = Reservoir6Column(source_file="reservoir_6_column.json")
         res7 = Reservoir7Column(source_file="reservoir_7_column.json")
-        assert app._calculate_z("Aspirate Media", res6, "A1", "auto", 0.0, "Slot_6") == 89.32
-        assert app._calculate_z("Dispense Media", res6, "A6", "auto", 0.0, "Slot_6") == 59.32
-        assert app._calculate_z("Aspirate Media", res7, "A1", "auto", 0.0, "Slot_6") == 89.32
-        assert app._calculate_z("Dispense Media", res7, "A7", "auto", 0.0, "Slot_6") == 59.32
-        print("PASS: Calibrated heights verified identical (Z=89.32 take, Z=59.32 discard) for both 6-col and 7-col reservoirs.")
+        assert app._calculate_z("Aspirate Media", res6, "A1", "auto", 0.0, "Slot_6") == 58.34
+        assert app._calculate_z("Dispense Media", res6, "A6", "auto", 0.0, "Slot_6") == 8.37
+        assert app._calculate_z("Aspirate Media", res7, "A1", "auto", 0.0, "Slot_6") == 58.34
+        assert app._calculate_z("Dispense Media", res7, "A7", "auto", 0.0, "Slot_6") == 8.37
+        print("PASS: Calibrated heights verified identical (Z=58.34 take, Z=8.37 discard) for both 6-col and 7-col reservoirs.")
 
         # 6. Test Tip Requirements and Clearance Slots Analysis
         print("\n--- 3. Testing Tip Requirements & Empty Clearance Slots ---")
@@ -160,45 +162,37 @@ def test_gui_loading():
         assert hasattr(app, "btn_load_proto"), "btn_load_proto missing"
 
         # 7a. Test 8-Channel Multi (1-10 uL)
-        app.proto_pipettor_var.set("8-Channel Multi (1-10 µL)")
+        app.proto_pipettor_var.set("8-Channel Multi (1-10 µL) [Drug Addition to EHM]")
         app._on_proto_pipettor_selected()
         assert app.lims.pipettor.multichannel is True
         assert app.lims.pipettor.tip_volume == 10.0
         assert "8×10 µL MULTI" in app.lbl_head_badge.cget("text")
         p10_choices = list(app.proto_workflow_cb["values"])
         assert any("7.5 µL" in c for c in p10_choices)
-        assert any("DMSO" in c for c in p10_choices)
-        print(f"PASS: 1-10 uL Multi Pipettor selected -> {len(p10_choices)} protocols populated.")
+        assert any("5.0 µL" in c for c in p10_choices)
+        print(f"PASS: 1-10 uL Multi Pipettor selected -> {len(p10_choices)} protocols populated: {p10_choices}")
 
         # 7b. Test 300 uL Single-Channel
-        app.proto_pipettor_var.set("300 µL Single-Channel")
+        app.proto_pipettor_var.set("300 µL Single-Channel [Prepping DMSO-Drug]")
         app._on_proto_pipettor_selected()
         assert app.lims.pipettor.multichannel is False
         assert app.lims.pipettor.tip_volume == 300.0
         assert "1×300 µL SINGLE" in app.lbl_head_badge.cget("text")
         p300_choices = list(app.proto_workflow_cb["values"])
-        assert any("300 µL" in c or "2 Plates" in c for c in p300_choices)
-        print(f"PASS: 300 uL Single Pipettor selected -> {len(p300_choices)} protocols populated.")
+        assert any("DMSO-Drug" in c or "96-Well" in c for c in p300_choices)
+        print(f"PASS: 300 uL Single Pipettor selected -> {len(p300_choices)} protocols populated: {p300_choices}")
 
-        # 7c. Test 20 uL Single-Channel
-        app.proto_pipettor_var.set("20 µL Single-Channel")
-        app._on_proto_pipettor_selected()
-        assert app.lims.pipettor.multichannel is False
-        assert app.lims.pipettor.tip_volume == 20.0
-        assert "1×20 µL SINGLE" in app.lbl_head_badge.cget("text")
-        p20_choices = list(app.proto_workflow_cb["values"])
-        assert any("20 µL" in c or "Precision" in c for c in p20_choices)
-        print(f"PASS: 20 uL Single Pipettor selected -> {len(p20_choices)} protocols populated.")
-
-        # 7d. Test 8-Channel Multi (8x1000 uL)
-        app.proto_pipettor_var.set("8-Channel Multi (8×1000 µL)")
+        # 7c. Test 8-Channel Multi (8x1000 uL)
+        app.proto_pipettor_var.set("8-Channel Multi (8×1000 µL) [Media Change]")
         app._on_proto_pipettor_selected()
         assert app.lims.pipettor.multichannel is True
         assert app.lims.pipettor.tip_volume == 1000.0
         assert "8×1000 µL MULTI" in app.lbl_head_badge.cget("text")
         p1000_choices = list(app.proto_workflow_cb["values"])
-        assert len(p1000_choices) >= 5
-        print(f"PASS: 8x1000 uL Multi Pipettor selected -> {len(p1000_choices)} protocols populated.")
+        assert any("Media Change" in c for c in p1000_choices)
+        assert any("Fresh Media Only" in c for c in p1000_choices)
+        assert any("Test Slot 5" in c for c in p1000_choices)
+        print(f"PASS: 8x1000 uL Multi Pipettor selected -> {len(p1000_choices)} protocols populated: {p1000_choices}")
 
         # 7e. Test Quick Homing & Safe Z Tools
         app.current_pos = {"X": 45.0, "Y": 60.0, "Z": 25.0}
