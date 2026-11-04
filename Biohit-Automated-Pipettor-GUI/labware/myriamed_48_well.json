@@ -1,8 +1,8 @@
 {
   "labware_name": "Myriamed 48-Well Plate (3D cell/tissue culture, EHM)",
   "placement": "slot_origin",
-  "_comment": "Calibrated coordinates: A=57.0, B=65.0, C=74.0, D=82.0, E=91.0, F=100.0, G=110.0, H=119.0. Col_x: 105, 87, 69, 51, 33, 15. Strict Z = 86.0mm (inside well), 81.0mm (brim).",
-  "z_height_mm": 78.42,
+  "_comment": "Calibrated coordinates: A=57.0, B=65.0, C=74.0, D=82.0, E=91.0, F=100.0, G=110.0, H=119.0. Col_x: 105, 87, 69, 51, 33, 15. Strict Z = 69.90mm (inside well, 8.5mm up from 78.40), 59.93mm (contact-free dispense).",
+  "z_height_mm": 69.92,
   "grid": {
     "rows": 8,
     "columns": 6
@@ -31,13 +31,13 @@
   },
   "is_8ch_calibrated": true,
   "z": {
-    "aspirate": 78.4,
-    "dispense": 68.43,
-    "discard_tip": 68.43
+    "aspirate": 69.90,
+    "dispense": 59.93,
+    "discard_tip": 59.93
   },
   "z_limits": {
-    "recommended_aspirate_z": 78.4,
-    "recommended_dispense_z": 68.43,
-    "max_safe_bottom_z": 80.0
+    "recommended_aspirate_z": 69.90,
+    "recommended_dispense_z": 59.93,
+    "max_safe_bottom_z": 71.50
   }
 }

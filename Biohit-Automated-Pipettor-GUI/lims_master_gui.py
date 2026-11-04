@@ -752,8 +752,10 @@ class LIMSMasterApp:
                     tips_info.append(f"{ts_label}: {total_tips} fresh tips ({len(cols)} full columns: {col_str})")
                 else:
                     total_tips = len(wells)
-                    w_str = f"Wells {wells[0]}..{wells[-1]}" if len(wells) > 4 else f"Wells {', '.join(wells)}"
-                    tips_info.append(f"{ts_label}: {total_tips} fresh tips ({w_str})")
+                    cols = sorted(list(set(int(w[1:]) for w in wells if len(w) > 1 and w[1:].isdigit())))
+                    col_str = f"Columns {cols[0]}..{cols[-1]}" if len(cols) > 1 else f"Column {cols[0]}"
+                    w_str = f"{wells[0]}..{wells[-1]}" if len(wells) > 4 else f"{', '.join(wells)}"
+                    tips_info.append(f"{ts_label}: {total_tips} fresh tips in {col_str} ({w_str})")
 
         # 2. Analyze active vs empty slots
         seq_slots = set(s.get("slot") for s in seq if s.get("slot"))
@@ -2631,7 +2633,7 @@ class LIMSMasterApp:
             ).pack(anchor="w")
         tk.Label(
             tip_box,
-            text="• Ensure sufficient fresh clean tips are loaded in these positions before running.",
+            text="• Load fresh clean tips ONLY in the required columns/wells above. Empty columns (e.g. Cols 7..12) serve as the Tip Graveyard.",
             font=("Arial", 8, "italic"),
             bg="#d1ecf1",
             fg="#0c5460"
@@ -5151,13 +5153,18 @@ class LIMSMasterApp:
         is_8ch = bool(getattr(self.lims.pipettor, 'multichannel', False))
         kind = self._lw_kind(labware_obj)
 
-        # Persistent 8-channel calibrated heights memory lookup (GUI remembers operator depths)
-        if is_8ch and hasattr(self, 'calibrated_heights'):
-            if kind in ("ehm48", "plate96") or slot_name in ("Slot_3", "Slot_5"):
+        # Persistent 8-channel / calibrated heights memory lookup (GUI remembers operator depths)
+        if hasattr(self, 'calibrated_heights'):
+            if kind == "ehm48":
                 if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
-                    return min(float(self.calibrated_heights.get("ehm_aspirate_z", 78.40)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("ehm_aspirate_z", 69.90)) + slot_z_offset + extra_z, 103.5)
                 elif action == "Dispense Media":
-                    return min(float(self.calibrated_heights.get("ehm_dispense_z", 68.43)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("ehm_dispense_z", 59.93)) + slot_z_offset + extra_z, 103.5)
+            elif kind == "plate96" or (is_8ch and slot_name in ("Slot_3", "Slot_5")):
+                if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
+                    return min(float(self.calibrated_heights.get("plate96_aspirate_z", 78.40)) + slot_z_offset + extra_z, 103.5)
+                elif action == "Dispense Media":
+                    return min(float(self.calibrated_heights.get("plate96_dispense_z", 68.43)) + slot_z_offset + extra_z, 103.5)
             elif (slot_name in ("Slot_6", "Slot_1", "Slot_2") and ("reservoir" in str(kind) or "waste" in str(kind))) or kind in ("reservoir_7", "reservoir_6", "reservoir_3", "waste"):
                 if action == "Dispense Media":
                     return min(float(self.calibrated_heights.get("waste_dispense_z", 8.37)) + slot_z_offset + extra_z, 103.5)
@@ -5205,7 +5212,7 @@ class LIMSMasterApp:
             elif kind == "reservoir_7":
                 base_z = 58.34 if deep else 8.37  # 58.34 deep to take media, 8.37 discard/dispense
             elif kind == "ehm48":
-                base_z = 78.40 if deep else 68.43  # 78.40 inside well, 68.43 dispense (10mm above bottom)
+                base_z = 69.90 if deep else 59.93  # 69.90 inside well (8.5mm up from 78.40), 59.93 dispense (8.5mm up from 68.43)
             elif kind == "tip_rack":
                 base_z = 98.0
             elif kind == "tube_rack_4x6":
@@ -5833,16 +5840,16 @@ class LIMSMasterApp:
 
                     if action == "Pick Up Tip":
                         cal_dz = float(self.eight_ch_cal_offset.get("Z", 0.0)) if is_8ch else 0.0
-                        configured_limit = float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 67.29 if is_8ch else 87.0))
+                        collar_z = float(self.calibrated_heights.get("tip_rack_collar_z", 64.49))
+                        configured_limit = float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 75.0))
                         pickup_limit = (
-                            min(99.0, max(50.0, configured_limit + extra_z + cal_dz))
+                            min(99.0, max(70.0, configured_limit + extra_z + cal_dz))
                             if is_8ch
-                            else min(92.0, max(50.0, configured_limit + extra_z))
+                            else min(92.0, max(70.0, configured_limit + extra_z))
                         )
                         hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                         labware_obj = self.lims.deck_labware.get(slot_name)
-                        z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
-                        approach_z = float(self.calibrated_heights.get("tip_rack_pickup_approach_z", 50.0)) if is_8ch else max(0.0, min(48.0, z_height - 25.0))
+                        approach_z = float(self.calibrated_heights.get("tip_rack_pickup_approach_z", 50.0))
 
                         tip_rack_model = None
                         if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
@@ -5856,7 +5863,7 @@ class LIMSMasterApp:
                             self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
                             time.sleep(0.05)
                             if not self.lims.pipettor.hardware:
-                                return True, configured_limit if is_8ch else 55.09
+                                return True, collar_z + 2.80
 
                             hw = self.lims.pipettor.hardware
                             hw.z_speed = hw_speed
@@ -5875,16 +5882,11 @@ class LIMSMasterApp:
                             curr_z = getattr(hw, 'z_position', 0.0)
 
                             # 1. VALID SEATED TIP:
-                            # Single-channel accepts seated tips (<= 59.5mm for 1000uL, <= 78.0mm for 300uL) with pick_ok.
-                            # 8-channel tips on Slot 4 enter collars at calibrated collar_z and seat firmly at pickup_limit.
-                            if is_8ch:
-                                collar_z = float(self.calibrated_heights.get("tip_rack_collar_z", 64.49))
-                                valid_collar = (collar_z - 4.0 <= curr_z <= (pickup_limit + 0.5))
-                                is_seated = valid_collar
-                            else:
-                                is_1000 = "1000" in (getattr(labware_obj, 'name', '') + getattr(labware_obj, 'source_file', '')).lower()
-                                valid_collar = (curr_z <= 59.5) if is_1000 else (curr_z <= 78.0)
-                                is_seated = valid_collar and pick_ok
+                            # On the adapterless deck, tip rims sit at Z=64.49mm and seat down to Z=67.29mm.
+                            # Any height between 48.0mm and 74.0mm represents a successfully acquired tip.
+                            # An empty socket plunges past Z >= 75.0mm down to bottom (Z >= 84mm).
+                            valid_collar = (48.0 <= curr_z <= max(74.0, collar_z + 8.0))
+                            is_seated = valid_collar and (pick_ok or (curr_z < pickup_limit - 1.0))
 
                             if is_seated:
                                 # High-torque mechanical seating press & double-tap to wedge nozzles firmly into tip collars

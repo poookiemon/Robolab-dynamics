@@ -149,7 +149,7 @@ def simulate_all_8ch_media_change(app: LIMSMasterApp, name: str, steps, loaded_c
         elif action == "Aspirate Media":
             assert all(mounted)
             if slot in ("Slot_3", "Slot_5"):
-                assert abs(tz - 78.40) < 1e-6, f"Expected EHM aspirate 78.40mm, got {tz}"
+                assert abs(tz - 69.90) < 1e-6, f"Expected EHM aspirate 69.90mm (8.5mm up), got {tz}"
                 col_num = int(well[1:])
                 for r in ROWS:
                     removed_wells[slot].add(f"{r}{col_num}")
@@ -164,7 +164,7 @@ def simulate_all_8ch_media_change(app: LIMSMasterApp, name: str, steps, loaded_c
                 assert abs(tz - 8.37) < 1e-6, f"Expected 7-well reservoir dispense 8.37mm, got {tz}"
                 assert held_media == "OLD_MEDIA"
             elif slot in ("Slot_3", "Slot_5"):
-                assert abs(tz - 68.43) < 1e-6, f"Expected EHM dispense 68.43mm (~10mm above), got {tz}"
+                assert abs(tz - 59.93) < 1e-6, f"Expected EHM dispense 59.93mm (~10mm above, 8.5mm up), got {tz}"
                 col_num = int(well[1:])
                 for r in ROWS:
                     w_id = f"{r}{col_num}"
@@ -306,8 +306,8 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
             active_ch = [c for c in range(8) if mounted[c]]
             assert active_ch == expected_ch
             if slot in ("Slot_3", "Slot_5"):
-                # Old media removal from EHM plate (User physically calibrated Z = 78.40 mm)
-                assert abs(tz - 78.40) < 1e-6, f"Expected 78.40mm, got {tz}"
+                # Old media removal from EHM plate (User calibrated Z = 69.90 mm, 8.5mm up from 78.40)
+                assert abs(tz - 69.90) < 1e-6, f"Expected 69.90mm, got {tz}"
                 col_num = int(well[1:])
                 for ch in active_ch:
                     w_id = f"{ROWS[ch]}{col_num}"
@@ -340,8 +340,8 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
                 assert well in ("A1", "A2", "A6", "A7") and (abs(tz - 8.37) < 1e-4 or abs(tz - 57.5) < 1e-4), f"Expected 8.37mm or 57.5mm, got {tz}"
                 assert held_source_lane == "OLD_MEDIA"
             elif slot in ("Slot_3", "Slot_5"):
-                # Dispensing fresh media onto EHM plate at brim Z = 68.43 mm (~10mm above bottom)
-                assert abs(tz - 68.43) < 1e-6, f"Expected 68.43mm, got {tz}"
+                # Dispensing fresh media onto EHM plate at brim Z = 59.93 mm (8.5mm up from 68.43)
+                assert abs(tz - 59.93) < 1e-6, f"Expected 59.93mm, got {tz}"
                 col_num = int(well[1:])
                 res_lane, cond = held_source_lane
                 exp_map = expected_p5 if slot == "Slot_3" else expected_p6
