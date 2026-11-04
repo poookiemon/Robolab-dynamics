@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "robolab-dynamics"
+version = "1.0.0"
+description = "Biohit Automated Pipettor GUI & LIMS Controller"
+readme = "README.md"
+authors = [{ name = "Robolab Dynamics Team" }]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "matplotlib",
+    "seaborn",
+    "plotly",
+    "ttkbootstrap",
+    "watchdog",
+    "Pillow",
+]
+
+[project.optional-dependencies]
+full = [
+    "PyQt6",
+    "PyQt6-WebEngine",
+    "pyvista",
+    "pyvistaqt",
+    "pythonnet",
+]
+
+[project.scripts]
+robolab-gui = "robolab_gui.lims_master_gui:launch"
+biohit-gui = "robolab_gui.lims_master_gui:launch"
+
+[project.urls]
+Homepage = "https://github.com/poookiemon/Robolab-dynamics"
+Repository = "https://github.com/poookiemon/Robolab-dynamics.git"
+
+[tool.setuptools]
+package-dir = {"robolab_gui" = "Biohit-Automated-Pipettor-GUI"}
+packages = ["robolab_gui"]
+
+[tool.setuptools.package-data]
+"robolab_gui" = [
+    "*.json",
+    "labware/*.json",
+    "protocols/*.json",
+    "assets/*",
+]

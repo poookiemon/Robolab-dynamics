@@ -7159,7 +7159,15 @@ class LIMSMasterApp:
             messagebox.showerror("Import Error", f"Could not inspect Python protocol:\n{e}")
 
 
-if __name__ == "__main__":
+def launch():
+    """Entry point for robolab-gui / biohit-gui CLI commands."""
+    pkg_dir = os.path.dirname(os.path.abspath(__file__))
+    if pkg_dir not in sys.path:
+        sys.path.insert(0, pkg_dir)
     root = tk.Tk()
     app = LIMSMasterApp(root)
     root.mainloop()
+
+
+if __name__ == "__main__":
+    launch()
