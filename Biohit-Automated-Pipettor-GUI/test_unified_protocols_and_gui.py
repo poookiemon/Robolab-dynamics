@@ -153,6 +153,67 @@ def test_gui_loading():
         assert "Tips Needed" in summary_text and "KEEP EMPTY" in summary_text, f"Summary widget text malformed: {summary_text}"
         print(f"PASS: Tab 4 Live Deck & Tip Summary: {summary_text.replace(chr(10), ' | ')}")
 
+        # 7. Test 2-Step Dynamic Protocol Dropdown & Homing Tools
+        print("\n--- 4. Testing 2-Step Dynamic Protocol Dropdown & Homing Tools ---")
+        assert hasattr(app, "proto_pipettor_cb"), "proto_pipettor_cb missing"
+        assert hasattr(app, "proto_workflow_cb"), "proto_workflow_cb missing"
+        assert hasattr(app, "btn_load_proto"), "btn_load_proto missing"
+
+        # 7a. Test 8-Channel Multi (1-10 uL)
+        app.proto_pipettor_var.set("8-Channel Multi (1-10 µL)")
+        app._on_proto_pipettor_selected()
+        assert app.lims.pipettor.multichannel is True
+        assert app.lims.pipettor.tip_volume == 10.0
+        assert "8×10 µL MULTI" in app.lbl_head_badge.cget("text")
+        p10_choices = list(app.proto_workflow_cb["values"])
+        assert any("7.5 µL" in c for c in p10_choices)
+        assert any("DMSO" in c for c in p10_choices)
+        print(f"PASS: 1-10 uL Multi Pipettor selected -> {len(p10_choices)} protocols populated.")
+
+        # 7b. Test 300 uL Single-Channel
+        app.proto_pipettor_var.set("300 µL Single-Channel")
+        app._on_proto_pipettor_selected()
+        assert app.lims.pipettor.multichannel is False
+        assert app.lims.pipettor.tip_volume == 300.0
+        assert "1×300 µL SINGLE" in app.lbl_head_badge.cget("text")
+        p300_choices = list(app.proto_workflow_cb["values"])
+        assert any("300 µL" in c or "2 Plates" in c for c in p300_choices)
+        print(f"PASS: 300 uL Single Pipettor selected -> {len(p300_choices)} protocols populated.")
+
+        # 7c. Test 20 uL Single-Channel
+        app.proto_pipettor_var.set("20 µL Single-Channel")
+        app._on_proto_pipettor_selected()
+        assert app.lims.pipettor.multichannel is False
+        assert app.lims.pipettor.tip_volume == 20.0
+        assert "1×20 µL SINGLE" in app.lbl_head_badge.cget("text")
+        p20_choices = list(app.proto_workflow_cb["values"])
+        assert any("20 µL" in c or "Precision" in c for c in p20_choices)
+        print(f"PASS: 20 uL Single Pipettor selected -> {len(p20_choices)} protocols populated.")
+
+        # 7d. Test 8-Channel Multi (8x1000 uL)
+        app.proto_pipettor_var.set("8-Channel Multi (8×1000 µL)")
+        app._on_proto_pipettor_selected()
+        assert app.lims.pipettor.multichannel is True
+        assert app.lims.pipettor.tip_volume == 1000.0
+        assert "8×1000 µL MULTI" in app.lbl_head_badge.cget("text")
+        p1000_choices = list(app.proto_workflow_cb["values"])
+        assert len(p1000_choices) >= 5
+        print(f"PASS: 8x1000 uL Multi Pipettor selected -> {len(p1000_choices)} protocols populated.")
+
+        # 7e. Test Quick Homing & Safe Z Tools
+        app.current_pos = {"X": 45.0, "Y": 60.0, "Z": 25.0}
+        app.jog_vars["X"].set(45.0)
+        app.jog_vars["Z"].set(25.0)
+        app.quick_home_head()
+        assert app.current_pos["X"] == 0.0 and app.current_pos["Y"] == 0.0 and app.current_pos["Z"] == 0.0
+        assert app.jog_vars["X"].get() == 0.0 and app.jog_vars["Z"].get() == 0.0
+        print("PASS: Quick Home Head verified (origin reset to 0,0,0).")
+
+        app.jog_vars["Z"].set(89.32)
+        app.quick_safe_z()
+        assert app.jog_vars["Z"].get() == 0.0
+        print("PASS: Quick Safe Z verified (Z clearance reset to 0.0 mm).")
+
     finally:
         try:
             app.on_closing()

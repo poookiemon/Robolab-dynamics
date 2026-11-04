@@ -238,15 +238,26 @@ class LIMSMasterApp:
         # -------------------------------------------------------------
         protocolmenu = tk.Menu(menubar, tearoff=0)
 
-        # Submenu: 8-Channel (8×1000 µL)
+        # Submenu: 8-Channel Multi (8×1000 µL)
         m8ch = tk.Menu(protocolmenu, tearoff=0)
         m8ch.add_command(label="🟢 Media Change + 7.5 µL Drug (Plate 5 & 6)", command=lambda: self.action_load_8ch_media_change_and_drug(7.5))
         m8ch.add_command(label="🟢 Media Change + 5.0 µL Drug (Plate 5 & 6)", command=lambda: self.action_load_8ch_media_change_and_drug(5.0))
         m8ch.add_command(label="🟢 DMSO-Drug Serial Dilution (Select Wells)...", command=self.action_load_8ch_dmso_dilution)
+        m8ch.add_command(label="🟢 Fresh Media Only Multi-Dispense (22 steps)", command=self.action_load_8ch_fresh_media_only)
+        m8ch.add_command(label="🧪 Test Slot 5 Media Removal (Col 3 Tips ➔ Return Col 1)", command=self.action_load_slot5_media_removal_test)
         m8ch.add_separator()
-        m8ch.add_command(label="8×1000 µL EHM Media Change (Plate 5 & Plate 6)...", command=self.action_load_8ch_1000ul_media_change_protocol)
+        m8ch.add_command(label="8×1000 µL EHM Media Change Wizard...", command=self.action_load_8ch_1000ul_media_change_protocol)
         m8ch.add_command(label="8-Channel Calibrated Heights & Depths...", command=self.action_open_8ch_height_settings)
         protocolmenu.add_cascade(label="8-Channel Multi (8×1000 µL)", menu=m8ch)
+
+        # Submenu: 8-Channel Multi (1-10 µL)
+        m10ch = tk.Menu(protocolmenu, tearoff=0)
+        m10ch.add_command(label="🟢 Media Change + 7.5 µL Drug (Plate 5 & 6)", command=lambda: self.action_load_10ul_multi_media_change_and_drug(7.5))
+        m10ch.add_command(label="🟢 Media Change + 5.0 µL Drug (Plate 5 & 6)", command=lambda: self.action_load_10ul_multi_media_change_and_drug(5.0))
+        m10ch.add_command(label="🟢 DMSO-Drug Serial Dilution (Select Wells)...", command=self.action_load_10ul_multi_dmso_dilution)
+        m10ch.add_command(label="🟢 Fresh Media Only Multi-Dispense (22 steps)", command=self.action_load_10ul_multi_fresh_media_only)
+        m10ch.add_command(label="🧪 Test Slot 5 Media Removal (Col 3 Tips ➔ Return Col 1)", command=self.action_load_slot5_media_removal_test)
+        protocolmenu.add_cascade(label="8-Channel Multi (1-10 µL)", menu=m10ch)
 
         # Submenu: 300 µL Single-Channel
         m300 = tk.Menu(protocolmenu, tearoff=0)
@@ -278,8 +289,13 @@ class LIMSMasterApp:
         # 3. HARDWARE MENU
         # -------------------------------------------------------------
         hwmenu = tk.Menu(menubar, tearoff=0)
-        hwmenu.add_command(label="Switch to 1×200 µL (Single-Channel)", command=lambda: self.switch_pipettor_head(False))
-        hwmenu.add_command(label="Switch to 8×1000 µL (8-Channel Manifold)", command=lambda: self.switch_pipettor_head(True))
+        hwmenu.add_command(label="Switch to 8×1000 µL Multi-Channel", command=lambda: self.switch_pipettor_head("8-Channel Multi (8×1000 µL)"))
+        hwmenu.add_command(label="Switch to 8×10 µL Multi-Channel (1-10 µL)", command=lambda: self.switch_pipettor_head("8-Channel Multi (1-10 µL)"))
+        hwmenu.add_command(label="Switch to 1×300 µL Single-Channel", command=lambda: self.switch_pipettor_head("300 µL Single-Channel"))
+        hwmenu.add_command(label="Switch to 1×20 µL Single-Channel", command=lambda: self.switch_pipettor_head("20 µL Single-Channel"))
+        hwmenu.add_separator()
+        hwmenu.add_command(label="Reset / Home Pipette Head", command=self.quick_home_head)
+        hwmenu.add_command(label="Retract to Safe Z (0 mm)", command=self.quick_safe_z)
         hwmenu.add_separator()
         hwmenu.add_command(label="8-Channel Calibrated Heights & Depths...", command=self.action_open_8ch_height_settings)
         menubar.add_cascade(label="Hardware", menu=hwmenu)
@@ -1212,26 +1228,104 @@ class LIMSMasterApp:
         else:
             self.root.after(0, lambda v=bval: self.has_tip_var.set(v))
 
-    def switch_pipettor_head(self, multichannel: bool, quiet: bool = False):
+    def switch_pipettor_head(self, multichannel=None, quiet: bool = False, tip_volume: float = None, head_name: str = None):
         if getattr(self, 'is_running', False):
             messagebox.showwarning("Protocol Active", "Cannot switch pipettor head mode while a protocol is running.")
             return
-        target_vol = 1000.0 if multichannel else 200.0
-        label = "8×1000 µL (8-Channel Manifold)" if multichannel else "1×200 µL (Single-Channel)"
-        self.head_mode_var.set(label)
 
-        ok, msg = self.lims.pipettor.reconfigure(tip_volume=target_vol, multichannel=multichannel)
+        # Determine head type from string or arguments
+        if head_name is None and isinstance(multichannel, str):
+            head_name = multichannel
+            multichannel = None
+
+        if head_name is not None:
+            hn = head_name.lower()
+            if "1000" in hn or "8×1000" in hn:
+                is_multi = True
+                target_vol = 1000.0
+                label = "8-Channel Multi (8×1000 µL)"
+                badge_txt = "HEAD: 8×1000 µL MULTI"
+                badge_bg = "#6f42c1"
+            elif "1-10" in hn or "8×10" in hn or "10 µl" in hn or "10ul" in hn or ("10" in hn and "1000" not in hn):
+                is_multi = True
+                target_vol = 10.0
+                label = "8-Channel Multi (1-10 µL)"
+                badge_txt = "HEAD: 8×10 µL MULTI"
+                badge_bg = "#20c997"
+            elif "300" in hn:
+                is_multi = False
+                target_vol = 300.0
+                label = "300 µL Single-Channel"
+                badge_txt = "HEAD: 1×300 µL SINGLE"
+                badge_bg = "#fd7e14"
+            elif "20" in hn and "200" not in hn:
+                is_multi = False
+                target_vol = 20.0
+                label = "20 µL Single-Channel"
+                badge_txt = "HEAD: 1×20 µL SINGLE"
+                badge_bg = "#0d6efd"
+            elif "8-ch" in hn or "manifold" in hn or "multi" in hn:
+                is_multi = True
+                target_vol = 1000.0
+                label = "8-Channel Multi (8×1000 µL)"
+                badge_txt = "HEAD: 8×1000 µL MULTI"
+                badge_bg = "#6f42c1"
+            else:
+                is_multi = False
+                target_vol = 200.0
+                label = "1×200 µL (Single-Channel)"
+                badge_txt = "HEAD: 1×200 µL SINGLE"
+                badge_bg = "#0d6efd"
+        else:
+            is_multi = bool(multichannel)
+            if tip_volume is not None:
+                target_vol = float(tip_volume)
+                if is_multi and target_vol <= 50.0:
+                    label = "8-Channel Multi (1-10 µL)"
+                    badge_txt = "HEAD: 8×10 µL MULTI"
+                    badge_bg = "#20c997"
+                elif not is_multi and target_vol == 300.0:
+                    label = "300 µL Single-Channel"
+                    badge_txt = "HEAD: 1×300 µL SINGLE"
+                    badge_bg = "#fd7e14"
+                elif not is_multi and target_vol <= 50.0:
+                    label = "20 µL Single-Channel"
+                    badge_txt = "HEAD: 1×20 µL SINGLE"
+                    badge_bg = "#0d6efd"
+                elif is_multi:
+                    label = "8-Channel Multi (8×1000 µL)"
+                    badge_txt = "HEAD: 8×1000 µL MULTI"
+                    badge_bg = "#6f42c1"
+                else:
+                    label = "1×200 µL (Single-Channel)"
+                    badge_txt = "HEAD: 1×200 µL SINGLE"
+                    badge_bg = "#0d6efd"
+            else:
+                target_vol = 1000.0 if is_multi else 200.0
+                label = "8-Channel Multi (8×1000 µL)" if is_multi else "1×200 µL (Single-Channel)"
+                badge_txt = "HEAD: 8×1000 µL MULTI" if is_multi else "HEAD: 1×200 µL SINGLE"
+                badge_bg = "#6f42c1" if is_multi else "#0d6efd"
+
+        self.head_mode_var.set(label)
+        if hasattr(self, 'proto_pipettor_var') and self.proto_pipettor_var.get() != label:
+            self.proto_pipettor_var.set(label)
+
+        ok, msg = self.lims.pipettor.reconfigure(tip_volume=target_vol, multichannel=is_multi)
         # Keep BiohitInterface bound to the same pipettor object
         self.lims.hw.pipettor = self.lims.pipettor
 
-        if multichannel:
+        if is_multi:
             # 8-channel manifold has no tip oscillation/capacitance sensor; disable LLD surface probing automatically
             if hasattr(self, 'lld_tracking_var'):
                 self.lld_tracking_var.set(False)
             if hasattr(self, 'dynamic_z_var'):
                 self.dynamic_z_var.set(False)
             if hasattr(self, 'tip_length_var'):
-                self.tip_length_var.set(self.TIP_1000_LENGTH_MM)
+                # 10 uL multi and 300 uL single share the same tip height stack (~50 mm)
+                if target_vol <= 50.0:
+                    self.tip_length_var.set(getattr(self, 'CAL_TIP_LENGTH_MM', 50.0))
+                else:
+                    self.tip_length_var.set(getattr(self, 'TIP_1000_LENGTH_MM', 60.0))
         else:
             # Single-channel head supports tip oscillation/LLD and dynamic Z tracking; restore defaults
             if hasattr(self, 'lld_tracking_var'):
@@ -1239,18 +1333,16 @@ class LIMSMasterApp:
             if hasattr(self, 'dynamic_z_var'):
                 self.dynamic_z_var.set(True)
             if hasattr(self, 'tip_length_var'):
-                self.tip_length_var.set(self.CAL_TIP_LENGTH_MM)
+                self.tip_length_var.set(getattr(self, 'CAL_TIP_LENGTH_MM', 50.0))
 
         if hasattr(self, 'lbl_head_badge'):
-            badge_bg = "#6f42c1" if multichannel else "#0d6efd"
-            badge_txt = "HEAD: 8×1000 µL MULTI" if multichannel else "HEAD: 1×200 µL SINGLE"
             self.lbl_head_badge.config(text=badge_txt, bg=badge_bg)
 
         if hasattr(self, 'logger'):
             sensor_note = (
                 f"8-channel head has no liquid-level sensor -> uses fixed calibrated heights "
-                f"(1000 µL tip compensation -{self.EIGHT_CH_TIP_Z_COMP_MM:.1f} mm)"
-                if multichannel else "Liquid-level sensor (LLD) available"
+                f"(tip compensation -{self.EIGHT_CH_TIP_Z_COMP_MM:.1f} mm)"
+                if is_multi else "Liquid-level sensor (LLD) available"
             )
             self.logger.info(f"[HEAD MODE] Switched to {label} ({msg}) | {sensor_note}")
         if not quiet and not ok:
@@ -1258,8 +1350,9 @@ class LIMSMasterApp:
 
     def _on_head_mode_combo(self, event=None):
         sel = self.head_mode_var.get()
-        is_multi = "8×1000" in sel or "8-Channel" in sel
-        self.switch_pipettor_head(is_multi, quiet=True)
+        self.switch_pipettor_head(sel, quiet=True)
+        if hasattr(self, '_update_protocol_dropdown'):
+            self._update_protocol_dropdown()
 
     def build_jog_tab(self):
         f_conn = ttk.LabelFrame(self.tab_jog, text="Hardware Handshake & Pipettor Head", padding=15)
@@ -1279,7 +1372,12 @@ class LIMSMasterApp:
         head_cb = ttk.Combobox(
             f_conn,
             textvariable=self.head_mode_var,
-            values=["1×200 µL (Single-Channel)", "8×1000 µL (8-Channel Manifold)"],
+            values=[
+                "8-Channel Multi (8×1000 µL)",
+                "8-Channel Multi (1-10 µL)",
+                "300 µL Single-Channel",
+                "20 µL Single-Channel",
+            ],
             state="readonly",
             width=26,
         )
@@ -1912,9 +2010,14 @@ class LIMSMasterApp:
         wf_head_cb = ttk.Combobox(
             head_bar,
             textvariable=self.head_mode_var,
-            values=["1×200 µL (Single-Channel)", "8×1000 µL (8-Channel Manifold)"],
+            values=[
+                "8-Channel Multi (8×1000 µL)",
+                "8-Channel Multi (1-10 µL)",
+                "300 µL Single-Channel",
+                "20 µL Single-Channel",
+            ],
             state="readonly",
-            width=24,
+            width=26,
         )
         wf_head_cb.pack(side=tk.RIGHT, padx=(4, 0))
         wf_head_cb.bind("<<ComboboxSelected>>", self._on_head_mode_combo)
@@ -1992,124 +2095,97 @@ class LIMSMasterApp:
                    command=lambda: [self.wf_box.delete(0, tk.END), self.workflow_sequence.clear(), self._update_estimated_timer_preview()]).pack(fill=tk.X)
         ttk.Separator(pane_ctrl, orient="horizontal").pack(fill=tk.X, pady=8)
 
-        # Instant Load Protocols (Green Updated Protocols)
-        lbl_inst = ttk.Label(pane_ctrl, text="⚡ INSTANT PROTOCOL LOAD (🟢 UPDATED PROTOCOLS)", font=("Arial", 10, "bold"), foreground="#28a745")
-        lbl_inst.pack(fill=tk.X, pady=(2, 4))
+        # Clean 2-Step Protocol & Pipettor Selector Frame
+        proto_frame = ttk.LabelFrame(pane_ctrl, text="⚡ Protocols & Workflows", padding=8)
+        proto_frame.pack(fill=tk.X, pady=(2, 6))
 
-        # --- GROUP 1: 8-CHANNEL MULTI (8x1000 uL) ---
-        lbl_g1 = ttk.Label(pane_ctrl, text="🟢 8-Channel Multi Pipettor (8×1000 µL):", font=("Arial", 8, "bold"), foreground="#155724")
-        lbl_g1.pack(fill=tk.X, pady=(3, 1))
+        # 1. Pipettor Selection
+        ttk.Label(proto_frame, text="1. Select Pipettor:", font=("Arial", 9, "bold")).pack(anchor="w", pady=(0, 2))
+        self.proto_pipettor_var = tk.StringVar(value=self.head_mode_var.get())
+        self.proto_pipettor_cb = ttk.Combobox(
+            proto_frame,
+            textvariable=self.proto_pipettor_var,
+            values=[
+                "8-Channel Multi (8×1000 µL)",
+                "8-Channel Multi (1-10 µL)",
+                "300 µL Single-Channel",
+                "20 µL Single-Channel",
+            ],
+            state="readonly",
+        )
+        self.proto_pipettor_cb.pack(fill=tk.X, pady=(0, 6))
+        self.proto_pipettor_cb.bind("<<ComboboxSelected>>", self._on_proto_pipettor_selected)
 
-        tk.Button(
-            pane_ctrl,
-            text="🟢 [8-CH] Media Change + 7.5 µL Drug Addition",
-            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
-            font=("Arial", 9, "bold"),
-            command=lambda: self.action_load_8ch_media_change_and_drug(7.5)
-        ).pack(fill=tk.X, pady=1)
+        # 2. Protocol Selection
+        ttk.Label(proto_frame, text="2. Available Protocols:", font=("Arial", 9, "bold")).pack(anchor="w", pady=(0, 2))
+        self.proto_workflow_var = tk.StringVar()
+        self.proto_workflow_cb = ttk.Combobox(
+            proto_frame,
+            textvariable=self.proto_workflow_var,
+            state="readonly",
+        )
+        self.proto_workflow_cb.pack(fill=tk.X, pady=(0, 6))
 
-        tk.Button(
-            pane_ctrl,
-            text="🟢 [8-CH] Media Change + 5.0 µL Drug Addition",
-            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
-            font=("Arial", 9, "bold"),
-            command=lambda: self.action_load_8ch_media_change_and_drug(5.0)
-        ).pack(fill=tk.X, pady=1)
+        # Action Button to Load Protocol
+        self.btn_load_proto = tk.Button(
+            proto_frame,
+            text="🟢 Load Selected Protocol",
+            bg="#28a745",
+            fg="white",
+            activebackground="#218838",
+            activeforeground="white",
+            font=("Arial", 10, "bold"),
+            relief="raised",
+            bd=2,
+            command=self._execute_selected_protocol_load,
+        )
+        self.btn_load_proto.pack(fill=tk.X, pady=(2, 8))
 
-        tk.Button(
-            pane_ctrl,
-            text="🟢 [8-CH] DMSO-Drug Dilution (Select Drug Wells)",
-            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
-            font=("Arial", 9, "bold"),
-            command=self.action_load_8ch_dmso_dilution
-        ).pack(fill=tk.X, pady=1)
+        # Quick Tools & Homing Row
+        ttk.Label(proto_frame, text="Quick Tools & Homing:", font=("Arial", 8, "bold"), foreground="#495057").pack(anchor="w", pady=(0, 2))
+        tools_row = ttk.Frame(proto_frame)
+        tools_row.pack(fill=tk.X, pady=(0, 6))
 
-        tk.Button(
-            pane_ctrl,
-            text="🟢 [8-CH] Media Change Only (Plates 5 & 6 — 500 µL)",
-            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
-            font=("Arial", 9, "bold"),
-            command=self.action_load_8ch_1000ul_media_change_protocol
-        ).pack(fill=tk.X, pady=1)
+        btn_home = tk.Button(
+            tools_row,
+            text="🏠 Home",
+            bg="#0d6efd",
+            fg="white",
+            font=("Arial", 8, "bold"),
+            command=self.quick_home_head,
+        )
+        btn_home.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 2))
 
-        tk.Button(
-            pane_ctrl,
-            text="🧪 Test Slot 5 Media Removal (Col 3 Tips ➔ Return Col 1)",
-            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
-            font=("Arial", 9, "bold"),
-            command=self.action_load_slot5_media_removal_test,
-        ).pack(fill=tk.X, pady=(1, 4))
-
-        # --- GROUP 2: 300 uL SINGLE-CHANNEL ---
-        lbl_g2 = ttk.Label(pane_ctrl, text="🟢 300 µL Single-Channel Pipette:", font=("Arial", 8, "bold"), foreground="#155724")
-        lbl_g2.pack(fill=tk.X, pady=(3, 1))
-
-        tk.Button(
-            pane_ctrl,
-            text="🟢 [300 µL] Media Change + 7.5 µL Drug Addition",
-            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
-            font=("Arial", 9, "bold"),
-            command=lambda: self.action_load_300ul_media_change_and_drug(7.5)
-        ).pack(fill=tk.X, pady=1)
-
-        tk.Button(
-            pane_ctrl,
-            text="🟢 [300 µL] Media Change + 5.0 µL Drug Addition",
-            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
-            font=("Arial", 9, "bold"),
-            command=lambda: self.action_load_300ul_media_change_and_drug(5.0)
-        ).pack(fill=tk.X, pady=1)
-
-        tk.Button(
-            pane_ctrl,
-            text="🟢 [300 µL] DMSO-Drug Dilution (Select Drug Wells)",
-            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
-            font=("Arial", 9, "bold"),
-            command=self.action_load_300ul_dmso_dilution
-        ).pack(fill=tk.X, pady=(1, 4))
-
-        # --- GROUP 3: 20 uL SINGLE-CHANNEL ---
-        lbl_g3 = ttk.Label(pane_ctrl, text="🟢 20 µL Single-Channel Pipette:", font=("Arial", 8, "bold"), foreground="#155724")
-        lbl_g3.pack(fill=tk.X, pady=(3, 1))
-
-        tk.Button(
-            pane_ctrl,
-            text="🟢 [20 µL] Precision Drug Addition (7.5 µL) + Mix",
-            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
-            font=("Arial", 9, "bold"),
-            command=lambda: self.action_load_20ul_drug_addition(7.5)
-        ).pack(fill=tk.X, pady=1)
-
-        tk.Button(
-            pane_ctrl,
-            text="🟢 [20 µL] Precision Drug Addition (5.0 µL) + Mix",
-            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
-            font=("Arial", 9, "bold"),
-            command=lambda: self.action_load_20ul_drug_addition(5.0)
-        ).pack(fill=tk.X, pady=1)
-
-        tk.Button(
-            pane_ctrl,
-            text="🟢 [20 µL] DMSO-Drug Dilution (Select Drug Wells)",
-            bg="#28a745", fg="white", activebackground="#218838", activeforeground="white",
-            font=("Arial", 9, "bold"),
-            command=self.action_load_20ul_dmso_dilution
-        ).pack(fill=tk.X, pady=(1, 4))
-
-        # 8-Channel Height Memory (Calibrate Depths)
-        tk.Button(
-            pane_ctrl,
-            text="⚙️ 8-Channel Height Memory (Calibrate Depths)",
+        btn_safez = tk.Button(
+            tools_row,
+            text="⬆️ Safe Z",
             bg="#17a2b8",
             fg="white",
-            font=("Arial", 9, "bold"),
-            command=self.action_open_8ch_height_settings,
-        ).pack(fill=tk.X, pady=(2, 4))
+            font=("Arial", 8, "bold"),
+            command=self.quick_safe_z,
+        )
+        btn_safez.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(2, 2))
 
-        ttk.Separator(pane_ctrl, orient="horizontal").pack(fill=tk.X, pady=6)
-        ttk.Button(pane_ctrl, text="📥 Convert & Import Python (.py)", command=self.action_import_python_protocol).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="📂 Load JSON Protocol", command=self.action_load_workflow).pack(fill=tk.X, pady=2)
-        ttk.Button(pane_ctrl, text="💾 Save Protocol As JSON...", command=self.action_save_workflow_as).pack(fill=tk.X, pady=2)
+        btn_heights = tk.Button(
+            tools_row,
+            text="⚙️ Heights",
+            bg="#6c757d",
+            fg="white",
+            font=("Arial", 8, "bold"),
+            command=self.action_open_8ch_height_settings,
+        )
+        btn_heights.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(2, 0))
+
+        # File Import/Export Row
+        file_row = ttk.Frame(proto_frame)
+        file_row.pack(fill=tk.X, pady=(0, 2))
+
+        ttk.Button(file_row, text="📂 Load JSON", command=self.action_load_workflow).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 2))
+        ttk.Button(file_row, text="💾 Save JSON", command=self.action_save_workflow_as).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(2, 2))
+        ttk.Button(file_row, text="📥 Import .py", command=self.action_import_python_protocol).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(2, 0))
+
+        # Initialize protocol dropdown options based on initial pipettor selection
+        self._update_protocol_dropdown()
 
         # Protocol Viewer Frame with Dual Scrollbars (Vertical & Horizontal)
         box_frame = ttk.Frame(pane_list)
@@ -2690,7 +2766,7 @@ class LIMSMasterApp:
 
         def on_confirm():
             # 1. Switch pipettor head mode live if needed
-            self.switch_pipettor_head(is_multichannel, quiet=True)
+            self.switch_pipettor_head(pipettor_mode if pipettor_mode else is_multichannel, quiet=True)
 
             # Apply any reservoir labware selections made via comboboxes
             for s_name, (c_var, c_map) in slot_combos.items():
@@ -2749,6 +2825,169 @@ class LIMSMasterApp:
             command=on_confirm
         ).pack(side=tk.RIGHT, padx=5)
         ttk.Button(btn_f, text="Cancel", command=top.destroy).pack(side=tk.RIGHT)
+
+    # -------------------------------------------------------------------------
+    # DYNAMIC PROTOCOL DROPDOWN & QUICK HOMING HELPERS
+    # -------------------------------------------------------------------------
+    def _get_protocols_for_pipettor(self, pipettor_name: str) -> dict:
+        """Returns ordered dict mapping protocol display labels to loading functions for the given pipettor."""
+        p_name = str(pipettor_name).lower()
+        if ("1-10" in p_name or "8×10" in p_name or ("10" in p_name and "1000" not in p_name)) and ("multi" in p_name or "8" in p_name):
+            return {
+                "Media Change + 7.5 µL Drug Addition (Plates 5 & 6)": lambda: self.action_load_10ul_multi_media_change_and_drug(7.5),
+                "Media Change + 5.0 µL Drug Addition (Plates 5 & 6)": lambda: self.action_load_10ul_multi_media_change_and_drug(5.0),
+                "DMSO-Drug Dilution (Select Drug Wells)": self.action_load_10ul_multi_dmso_dilution,
+                "Fresh Media Only Multi-Dispense (22 steps)": self.action_load_10ul_multi_fresh_media_only,
+                "Test Slot 5 Media Removal (Col 3 Tips ➔ Return Col 1)": self.action_load_slot5_media_removal_test,
+            }
+        elif "300" in p_name:
+            return {
+                "Media Change + 7.5 µL Drug Addition (2 Plates)": lambda: self.action_load_300ul_media_change_and_drug(7.5),
+                "Media Change + 5.0 µL Drug Addition (2 Plates)": lambda: self.action_load_300ul_media_change_and_drug(5.0),
+                "DMSO-Drug Dilution (Select Drug Wells)": self.action_load_300ul_dmso_dilution,
+            }
+        elif "20" in p_name:
+            return {
+                "Precision Drug Addition (7.5 µL) + Mix": lambda: self.action_load_20ul_drug_addition(7.5),
+                "Precision Drug Addition (5.0 µL) + Mix": lambda: self.action_load_20ul_drug_addition(5.0),
+                "Precision DMSO-Drug Dilution (Select Wells)": self.action_load_20ul_dmso_dilution,
+            }
+        else:  # Default: 8-Channel Multi (8×1000 µL)
+            return {
+                "Media Change + 7.5 µL Drug Addition (Plates 5 & 6)": lambda: self.action_load_8ch_media_change_and_drug(7.5),
+                "Media Change + 5.0 µL Drug Addition (Plates 5 & 6)": lambda: self.action_load_8ch_media_change_and_drug(5.0),
+                "Media Change Only (Plates 5 & 6 — 500 µL Dispense)": self.action_load_8ch_1000ul_media_change_protocol,
+                "DMSO-Drug Dilution (Select Drug Wells)": self.action_load_8ch_dmso_dilution,
+                "Fresh Media Only Multi-Dispense (22 steps)": self.action_load_8ch_fresh_media_only,
+                "Test Slot 5 Media Removal (Col 3 Tips ➔ Return Col 1)": self.action_load_slot5_media_removal_test,
+                "EHM Media Change Wizard / Dialog...": self.action_load_8ch_1000ul_media_change_protocol,
+            }
+
+    def _update_protocol_dropdown(self, event=None):
+        """Updates the protocol combobox choices to match the currently selected pipettor."""
+        pipettor = self.proto_pipettor_var.get() if hasattr(self, 'proto_pipettor_var') else self.head_mode_var.get()
+        protocols_map = self._get_protocols_for_pipettor(pipettor)
+        choices = list(protocols_map.keys())
+        if hasattr(self, 'proto_workflow_cb'):
+            self.proto_workflow_cb['values'] = choices
+            cur = self.proto_workflow_var.get() if hasattr(self, 'proto_workflow_var') else ""
+            if cur not in choices and choices:
+                self.proto_workflow_var.set(choices[0])
+
+    def _on_proto_pipettor_selected(self, event=None):
+        """Called when user changes pipettor dropdown in the protocol panel."""
+        sel_pipettor = self.proto_pipettor_var.get()
+        self.switch_pipettor_head(sel_pipettor, quiet=True)
+        self._update_protocol_dropdown()
+
+    def _execute_selected_protocol_load(self):
+        """Loads the currently selected protocol in the dropdown."""
+        pipettor = self.proto_pipettor_var.get()
+        self.switch_pipettor_head(pipettor, quiet=True)
+        proto_name = self.proto_workflow_var.get()
+        protocols_map = self._get_protocols_for_pipettor(pipettor)
+        loader_fn = protocols_map.get(proto_name)
+        if loader_fn and callable(loader_fn):
+            loader_fn()
+        else:
+            messagebox.showinfo("Select Protocol", "Please select a valid protocol from the dropdown.")
+
+    def quick_home_head(self):
+        """Resets pipette head to safety origin (HOME)."""
+        if getattr(self, 'is_running', False):
+            messagebox.showwarning("Protocol Running", "Cannot home head while a protocol is actively running.")
+            return
+        try:
+            if hasattr(self, 'lims') and hasattr(self.lims, 'hw') and self.lims.hw.is_initialized:
+                hw_inst = getattr(self.lims.pipettor, 'hardware', None)
+                if hw_inst and hasattr(hw_inst, 'initialize'):
+                    hw_inst.initialize()
+            self.current_pos = {"X": 0.0, "Y": 0.0, "Z": 0.0}
+            if hasattr(self, 'jog_vars'):
+                for a in ("X", "Y", "Z"):
+                    if a in self.jog_vars:
+                        self.jog_vars[a].set(0.0)
+            if hasattr(self, 'logger'):
+                self.logger.info("[HOME] Pipette head reset to safety origin (X=0.0, Y=0.0, Z=0.0)")
+            if hasattr(self, 'lbl_stat_pos'):
+                self.lbl_stat_pos.config(text="POS: X:0.0 Y:0.0 Z:0.0")
+        except Exception as e:
+            if hasattr(self, 'logger'):
+                self.logger.error(f"[HOME ERROR] Failed to home head: {e}")
+            messagebox.showerror("Homing Error", f"Error during head reset: {e}")
+
+    def quick_safe_z(self):
+        """Immediately moves Z-axis up to safety clearance (Z = 0.0 mm)."""
+        if getattr(self, 'is_running', False):
+            messagebox.showwarning("Protocol Running", "Cannot move Z while a protocol is actively running.")
+            return
+        try:
+            self._quick_move_z(0.0)
+            if hasattr(self, 'logger'):
+                self.logger.info("[SAFE Z] Retracted Z-axis to clearance origin (Z=0.0 mm)")
+        except Exception as e:
+            if hasattr(self, 'logger'):
+                self.logger.error(f"[SAFE Z ERROR] Failed to retract Z: {e}")
+
+    # -------------------------------------------------------------------------
+    # 0. 8-CHANNEL MULTI (1-10 µL) PROTOCOL LOADERS
+    # -------------------------------------------------------------------------
+    def action_load_10ul_multi_media_change_and_drug(self, volume: float = 7.5):
+        self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
+        self.action_load_8ch_media_change_and_drug(volume=volume)
+
+    def action_load_10ul_multi_dmso_dilution(self):
+        self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
+        self.action_load_8ch_dmso_dilution()
+
+    def action_load_10ul_multi_fresh_media_only(self):
+        self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
+        self.action_load_8ch_fresh_media_only()
+
+    def action_load_8ch_fresh_media_only(self):
+        filename = "ehm_8ch_1000ul_fresh_media_only_multi_dispense.json"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        cand_paths = [
+            os.path.join(script_dir, "protocols", filename),
+            os.path.join(repo_root, "protocols", filename),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if not target_path:
+            messagebox.showerror("File Not Found", f"Could not locate {filename}")
+            return
+
+        deck_setup = {
+            "Slot_1": "(Empty / Clearance)",
+            "Slot_2": "(Empty / Clearance)",
+            "Slot_3": "myriamed_48_well.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "myriamed_48_well.json",
+            "Slot_6": "reservoir_7_column.json",
+        }
+        slot_descs = {
+            "Slot_1": "Empty clearance zone",
+            "Slot_2": "Empty clearance zone",
+            "Slot_3": "Plate 1 / Plt 5 (Myriamed 48-well EHM, Cols 1..6)",
+            "Slot_4": "Tip Rack (Cols 1-2 fresh tips)",
+            "Slot_5": "Plate 2 / Plt 6 (Myriamed 48-well EHM, Cols 1..6)",
+            "Slot_6": "7-Col Reservoir (R6: Fresh Plate 1 [>27 mL], R7: Fresh Plate 2 [>27 mL])",
+        }
+        with open(target_path, "r") as f:
+            seq = json.load(f)
+
+        def do_load():
+            self._populate_workflow_from_sequence(seq, "[8-CH] Fresh Media Only Multi-Dispense (22 steps)")
+
+        self.show_protocol_deck_setup_modal(
+            protocol_name="[8-CH] Fresh Media Only Multi-Dispense (Plate 5 & 6)",
+            pipettor_mode=self.head_mode_var.get(),
+            is_multichannel=True,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descs,
+            sequence=seq,
+            on_confirm_callback=do_load
+        )
 
     # -------------------------------------------------------------------------
     # 1. 8-CHANNEL MULTI PIPETTOR (8x1000 uL)

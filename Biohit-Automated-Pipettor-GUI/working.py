@@ -113,7 +113,10 @@ class Labware:
 class Pipettor:
     def __init__(self, tip_volume: float = 200.0, multichannel: bool = False):
         self.multichannel = bool(multichannel)
-        self.tip_volume = 1000.0 if (self.multichannel or tip_volume >= 1000.0) else float(tip_volume)
+        if tip_volume is not None:
+            self.tip_volume = float(tip_volume)
+        else:
+            self.tip_volume = 1000.0 if self.multichannel else 200.0
         self.channels = 8 if self.multichannel else 1
         self.hardware_context = None
         self.hardware = None
@@ -131,16 +134,19 @@ class Pipettor:
                     initialize=False
                 )
                 self.hardware = self.hardware_context.__enter__()
-                return True, f"Hardware driver configured ({'8x1000uL Multi' if self.multichannel else f'1x{vol_literal}uL Single'})."
+                return True, f"Hardware driver configured ({self.channels}x{int(self.tip_volume)}uL {'Multi' if self.multichannel else 'Single'})."
             except Exception as e:
                 print(f"Hardware Initialization Error: {e}")
                 return False, f"Hardware Initialization Error: {e}"
-        return True, f"Simulation mode configured ({'8x1000uL Multi' if self.multichannel else f'1x{int(self.tip_volume)}uL Single'})."
+        return True, f"Simulation mode configured ({self.channels}x{int(self.tip_volume)}uL {'Multi' if self.multichannel else 'Single'})."
 
     def reconfigure(self, tip_volume: float, multichannel: bool) -> Tuple[bool, str]:
-        """Safely switches between Single-Channel (200uL) and 8-Channel (1000uL) driver configurations."""
+        """Safely switches between Single-Channel (20uL, 200uL, 300uL) and Multi-Channel (10uL, 1000uL) driver configurations."""
         self.multichannel = bool(multichannel)
-        self.tip_volume = 1000.0 if (self.multichannel or tip_volume >= 1000.0) else float(tip_volume)
+        if tip_volume is not None:
+            self.tip_volume = float(tip_volume)
+        else:
+            self.tip_volume = 1000.0 if self.multichannel else 200.0
         self.channels = 8 if self.multichannel else 1
         vol_literal = 1000 if (self.multichannel or self.tip_volume >= 1000.0) else 200
 
@@ -153,7 +159,7 @@ class Pipettor:
                 else:
                     setattr(self.hardware, "_AbstractPipettor__multichannel", False)
                     self.hardware.tip_volume = vol_literal
-                return True, f"Hardware driver reconfigured live ({'8x1000uL Multi' if self.multichannel else f'1x{vol_literal}uL Single'})."
+                return True, f"Hardware driver reconfigured live ({self.channels}x{int(self.tip_volume)}uL {'Multi' if self.multichannel else 'Single'})."
             except Exception as e:
                 print(f"Live reconfigure fallback to reopen: {e}")
 
