@@ -377,8 +377,9 @@ class Reservoir6Column(LabwareBase):
 class Reservoir7Column(LabwareBase):
     """
     7-Column Reagent Reservoir on Slot 6 (lanes R1..R7 / A1..A7).
-    User-calibrated on Slot 6: A1 is at X=108.36, Y=179.9, Z=89.32.
-    Pitch across columns is 15.0 mm.
+    User-calibrated on Slot 6:
+      R1=108.36, R2=93.36, R3=74.61, R4=55.86, R5=37.11, R6=18.36, R7=5.46.
+      Y=179.9, Z=89.32.
     """
     def __init__(self, **kwargs):
         defaults = {
@@ -400,7 +401,7 @@ class Reservoir7Column(LabwareBase):
                 defaults[k] = kwargs.pop(k)
         super().__init__(**defaults)
         self.is_8ch_calibrated = True
-        self.col_x = kwargs.get("col_x", [108.36, 93.36, 78.36, 63.36, 48.36, 33.36, 18.36])
+        self.col_x = kwargs.get("col_x", [108.36, 93.36, 74.61, 55.86, 37.11, 18.36, 5.46])
         self.center_y = kwargs.get("center_y", 179.9)
         self.aspirate_z_mm = kwargs.get("aspirate_z_mm", 89.32)  # Operator calibrated depth to take fresh media
         self.dispense_brim_z_mm = kwargs.get("dispense_brim_z_mm", 59.32)  # Discard height up (3cm above bottom 89.32mm)

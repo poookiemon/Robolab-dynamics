@@ -4726,9 +4726,9 @@ class LIMSMasterApp:
                 ci = int(str(well_id).upper().strip().lstrip("R")) - 1
             return ox + col_dx[ci], oy + (0.0 if front else 31.5)
 
-        # 5b. 7-COLUMN RESERVOIR (User calibrated on Slot 6: A1 = 108.36, Y = 179.9, pitch 15.0mm)
+        # 5b. 7-COLUMN RESERVOIR (User calibrated on Slot 6: R1=108.36, R2=93.36, R3=74.61, R4=55.86, R5=37.11, R6=18.36, R7=5.46)
         if kind == "reservoir_7":
-            col_x = [108.36, 93.36, 78.36, 63.36, 48.36, 33.36, 18.36]
+            col_x = [108.36, 93.36, 74.61, 55.86, 37.11, 18.36, 5.46]
             ci = c_idx if (c_idx is not None and 0 <= c_idx < 7) else 0
             if c_idx is None and str(well_id or "").upper().strip().lstrip("R") in ("1", "2", "3", "4", "5", "6", "7"):
                 ci = int(str(well_id).upper().strip().lstrip("R")) - 1
