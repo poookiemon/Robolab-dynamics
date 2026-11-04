@@ -613,8 +613,8 @@ class TipRack96(LabwareBase):
             if k in defaults:
                 defaults[k] = kwargs.pop(k)
         super().__init__(**defaults)
-        self.calibrated_a1_x = kwargs.get("calibrated_a1_x", 105.12)
-        self.calibrated_a1_y = kwargs.get("calibrated_a1_y", 53.62)
+        self.calibrated_a1_x = kwargs.get("calibrated_a1_x", 105.60)
+        self.calibrated_a1_y = kwargs.get("calibrated_a1_y", 53.02)
         self.pickup_approach_z = kwargs.get("pickup_approach_z", 75.0)
         self.pickup_limit_z = kwargs.get("pickup_limit_z", 98.0)
         self.pickup_force = kwargs.get("pickup_force", 26)
@@ -733,9 +733,9 @@ class DeckSlot:
             "Slot_1": (238.2, 13.0),
             "Slot_2": (95.5, 13.0),
             "Slot_3": (243.81, 53.0),
-            "Slot_4": (105.0, 53.0),
-            "Slot_5": (243.81, 149.23),
-            "Slot_6": (105.0, 149.23),
+            "Slot_4": (105.60, 53.02),
+            "Slot_5": (243.24, 178.69),
+            "Slot_6": (108.81, 183.64),
         }
         if self.name in calibrated_origins:
             return calibrated_origins[self.name]
