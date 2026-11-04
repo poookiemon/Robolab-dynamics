@@ -2778,10 +2778,10 @@ class LIMSMasterApp:
         slot_descs = {
             "Slot_1": f"96-Well Drug Plate (Rows A-H, Cols 1..6, {volume:g} µL)",
             "Slot_2": "Clearance zone (Empty)",
-            "Slot_3": "Plate 5 (Myriamed 48-well EHM, Cols 1..6)",
+            "Slot_3": "Plate 1 / Plt 5 (Myriamed 48-well EHM, Cols 1..6)",
             "Slot_4": "1000 µL Tip Rack (Cols 1-6 fresh tips, Cols 12-7 graveyard)",
-            "Slot_5": "Plate 6 (Myriamed 48-well EHM, Cols 1..6)",
-            "Slot_6": "7-Col Reservoir (R1: Fresh P5 [>27 mL], R2: Fresh P6 [>27 mL], R7: Waste)",
+            "Slot_5": "Plate 2 / Plt 6 (Myriamed 48-well EHM, Cols 1..6)",
+            "Slot_6": "7-Col Reservoir (R1: Discard Plate 1, R2: Discard Plate 2, R6: Fresh Plate 1 [>27 mL], R7: Fresh Plate 2 [>27 mL])",
         }
         with open(target_path, "r") as f:
             seq = json.load(f)
@@ -3668,10 +3668,10 @@ class LIMSMasterApp:
         deck_lf.pack(fill=tk.X, pady=(0, 8))
         deck_info = (
             "• Slot_1 & Slot_2: EMPTY (Clear clearance zone)\n"
-            "• Slot_3: Plate 5 (48-Well EHM Plate, Cols 1..6)\n"
+            "• Slot_3: Plate 1 / Plt 5 (48-Well EHM Plate, Cols 1..6)\n"
             "• Slot_4: 1000 µL Tip Rack (Full Mode: Cols 1-4 | Fresh-Only: Cols 1-2)\n"
-            "• Slot_5: Plate 6 (48-Well EHM Plate, Cols 1..6)\n"
-            "• Slot_6: Reagent Reservoir (R1: Plate 5 Fresh Media | R2: Plate 6 Fresh Media | Waste)"
+            "• Slot_5: Plate 2 / Plt 6 (48-Well EHM Plate, Cols 1..6)\n"
+            "• Slot_6: 7-Col Reservoir (R1: Discard Plt 1 | R2: Discard Plt 2 | R6: Fresh Plt 1 | R7: Fresh Plt 2)"
         )
         ttk.Label(deck_lf, text=deck_info, font=("Consolas", 8), justify=tk.LEFT).pack(anchor="w")
 
@@ -3737,23 +3737,33 @@ class LIMSMasterApp:
 
         res_row2 = ttk.Frame(res_lf)
         res_row2.pack(fill=tk.X, pady=4)
-        ttk.Label(res_row2, text="Plate 5 Media Lane:").pack(side=tk.LEFT)
-        p5_lane_var = tk.StringVar(value="1")
-        ttk.Entry(res_row2, textvariable=p5_lane_var, width=4, justify="center").pack(side=tk.LEFT, padx=(4, 12))
+        ttk.Label(res_row2, text="Plt 1 Discard:").pack(side=tk.LEFT)
+        p5_waste_var = tk.StringVar(value="1")
+        ttk.Entry(res_row2, textvariable=p5_waste_var, width=3, justify="center").pack(side=tk.LEFT, padx=(2, 6))
 
-        ttk.Label(res_row2, text="Plate 6 Media Lane:").pack(side=tk.LEFT)
-        p6_lane_var = tk.StringVar(value="2")
-        ttk.Entry(res_row2, textvariable=p6_lane_var, width=4, justify="center").pack(side=tk.LEFT, padx=(4, 12))
+        ttk.Label(res_row2, text="Plt 2 Discard:").pack(side=tk.LEFT)
+        p6_waste_var = tk.StringVar(value="2")
+        ttk.Entry(res_row2, textvariable=p6_waste_var, width=3, justify="center").pack(side=tk.LEFT, padx=(2, 6))
 
-        ttk.Label(res_row2, text="Liquid Waste Lane:").pack(side=tk.LEFT)
-        waste_lane_var = tk.StringVar(value="7")
-        ttk.Entry(res_row2, textvariable=waste_lane_var, width=4, justify="center").pack(side=tk.LEFT, padx=(4, 4))
+        ttk.Label(res_row2, text="Plt 1 Fresh:").pack(side=tk.LEFT)
+        p5_lane_var = tk.StringVar(value="6")
+        ttk.Entry(res_row2, textvariable=p5_lane_var, width=3, justify="center").pack(side=tk.LEFT, padx=(2, 6))
+
+        ttk.Label(res_row2, text="Plt 2 Fresh:").pack(side=tk.LEFT)
+        p6_lane_var = tk.StringVar(value="7")
+        ttk.Entry(res_row2, textvariable=p6_lane_var, width=3, justify="center").pack(side=tk.LEFT, padx=(2, 4))
 
         def _update_waste_default(*_):
             if "7" in res_labware_var.get():
-                waste_lane_var.set("7")
+                p5_waste_var.set("1")
+                p6_waste_var.set("2")
+                p5_lane_var.set("6")
+                p6_lane_var.set("7")
             else:
-                waste_lane_var.set("6")
+                p5_waste_var.set("1")
+                p6_waste_var.set("2")
+                p5_lane_var.set("5")
+                p6_lane_var.set("6")
         res_labware_var.trace_add("write", _update_waste_default)
 
         ttk.Label(opt_lf, text="Tip-Drop Destination:", font=("Arial", 9, "bold")).pack(anchor="w", pady=(4, 1))
@@ -3792,9 +3802,10 @@ class LIMSMasterApp:
                 cal_dx = float(dx_var.get())
                 cal_dy = float(dy_var.get())
                 cal_dz = float(dz_var.get())
+                p5_w = int(p5_waste_var.get())
+                p6_w = int(p6_waste_var.get())
                 p5_l = int(p5_lane_var.get())
                 p6_l = int(p6_lane_var.get())
-                waste_l = int(waste_lane_var.get())
             except ValueError:
                 messagebox.showerror("Invalid Number", "Volumes, lanes, and calibration offsets must be valid numbers.", parent=top)
                 return
@@ -3818,8 +3829,10 @@ class LIMSMasterApp:
                 media_addition_mode=med_mode,
                 p5_res_lane=p5_l,
                 p6_res_lane=p6_l,
-                waste_lane=waste_l,
+                p5_waste_lane=p5_w,
+                p6_waste_lane=p6_w,
                 reservoir_labware=res_file,
+                multi_dispense=(f_vol == 500.0),
             )
 
             # Configure 6-slot deck: Slot_1 & Slot_2 empty; Slot_3 Plate 5; Slot_4 Tips; Slot_5 Plate 6; Slot_6 Reservoir

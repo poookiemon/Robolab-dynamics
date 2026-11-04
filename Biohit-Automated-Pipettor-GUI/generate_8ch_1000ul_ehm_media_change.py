@@ -34,8 +34,10 @@ def build_8ch_ehm_media_change_steps(
     tip_drop_mode: str = "rack_graveyard",
     use_shovel: bool = True,
     media_addition_mode: str = "all_8ch",
-    p5_res_lane: int = 1,
-    p6_res_lane: int = 2,
+    p5_res_lane: int = 6,
+    p6_res_lane: int = 7,
+    p5_waste_lane: int = 1,
+    p6_waste_lane: int = 2,
     waste_lane: int = None,
     reservoir_labware: str = "reservoir_7_column.json",
     multi_dispense: bool = True,
@@ -57,15 +59,23 @@ def build_8ch_ehm_media_change_steps(
     :param media_addition_mode:
         - "all_8ch" (Default): Media addition uses all 8 channels across rows A-H simultaneously.
         - "offset_drugs": Legacy multi-drug condition offset tip-picking.
-    :param p5_res_lane: Reservoir lane number for Plate 5 fresh media (default 1 -> A1).
-    :param p6_res_lane: Reservoir lane number for Plate 6 fresh media (default 2 -> A2).
-    :param waste_lane: Reservoir lane number for liquid waste (default 7 for 7-col reservoir, 6 for 6-col).
+    :param p5_res_lane: Reservoir lane number for Plate 5 fresh media (default 6 -> A6).
+    :param p6_res_lane: Reservoir lane number for Plate 6 fresh media (default 7 -> A7).
+    :param p5_waste_lane: Reservoir lane number for Plate 5 discard (default 1 -> A1).
+    :param p6_waste_lane: Reservoir lane number for Plate 6 discard (default 2 -> A2).
+    :param waste_lane: General reservoir lane number for liquid waste (defaults to p6_waste_lane).
     :param reservoir_labware: Labware JSON filename for Slot 6 (default "reservoir_7_column.json").
     """
     steps: List[Dict[str, Any]] = []
 
+    if "reservoir_6" in str(reservoir_labware):
+        if p5_res_lane == 6 and p6_res_lane == 7:
+            p5_res_lane = 5
+            p6_res_lane = 6
+        if waste_lane is None or waste_lane == 7:
+            waste_lane = 2
     if waste_lane is None:
-        waste_lane = 7 if "reservoir_7" in str(reservoir_labware) else 6
+        waste_lane = p6_waste_lane
 
     waste_well = f"A{waste_lane}"
 
@@ -135,7 +145,9 @@ def build_8ch_ehm_media_change_steps(
                 "label": f"[DROP 8-CH] Ch {channels_str} -> Slot_6 {waste_well} Waste | {desc}",
             })
 
-    def add_plate_removal(plate_slot: str, plate_label: str, tip_col: int):
+    def add_plate_removal(plate_slot: str, plate_label: str, tip_col: int, waste_lane_num: int = None):
+        target_waste_lane = waste_lane_num if waste_lane_num is not None else waste_lane
+        target_waste_well = f"A{target_waste_lane}"
         add_pick_tip(tip_col, 0, "A-H", f"A{tip_col}-H{tip_col}", f"{plate_label} Old Media Removal")
         for c in range(1, 7):
             steps.append({
@@ -154,13 +166,13 @@ def build_8ch_ehm_media_change_steps(
                 "action": "Dispense Media",
                 "mode": "auto",
                 "slot": "Slot_6",
-                "well": waste_well,
+                "well": target_waste_well,
                 "volume": float(remove_vol_ul),
                 "labware": reservoir_labware,
                 "eight_ch_symmetric": True,
                 "mounted_channels": "A-H",
                 "track_liquid": False,
-                "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g} µL to Slot_6 {waste_well} Waste ({plate_label} Col {c})",
+                "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g} µL to Slot_6 {target_waste_well} Waste ({plate_label} Col {c})",
             })
         add_discard_tip("A-H", f"{plate_label} Old Media Tips")
 
@@ -236,17 +248,17 @@ def build_8ch_ehm_media_change_steps(
     # OPTION A: ALL 8 CHANNELS FULL-PARALLEL MEDIA ADDITION (DEFAULT)
     # =========================================================================
     if media_addition_mode == "all_8ch":
-        # 1. PLATE 5 (Slot_3)
+        # 1. PLATE 5 (Slot_3) -> Waste to Lane 1 (A1)
         if include_old_media_removal and p5_rem_col is not None:
-            add_plate_removal("Slot_3", "Plate 5", p5_rem_col)
+            add_plate_removal("Slot_3", "Plate 5", p5_rem_col, p5_waste_lane)
 
         add_pick_tip(p5_fresh_col, 0, "A-H", f"A{p5_fresh_col}-H{p5_fresh_col}", "Plate 5 Fresh Media (All 8 Channels)")
         add_reservoir_to_plate(p5_res_lane, "Slot_3", "Plate 5", "A-H", "Fresh Media")
         add_discard_tip("A-H", "Plate 5 Fresh Media Tips")
 
-        # 2. PLATE 6 (Slot_5)
+        # 2. PLATE 6 (Slot_5) -> Waste to Lane 2 (A2)
         if include_old_media_removal and p6_rem_col is not None:
-            add_plate_removal("Slot_5", "Plate 6", p6_rem_col)
+            add_plate_removal("Slot_5", "Plate 6", p6_rem_col, p6_waste_lane)
 
         add_pick_tip(p6_fresh_col, 0, "A-H", f"A{p6_fresh_col}-H{p6_fresh_col}", "Plate 6 Fresh Media (All 8 Channels)")
         add_reservoir_to_plate(p6_res_lane, "Slot_5", "Plate 6", "A-H", "Fresh Media")
@@ -259,7 +271,7 @@ def build_8ch_ehm_media_change_steps(
     # =========================================================================
     # PLATE 5 (Slot_3): 3 Conditions (Rows A-C Drug 11, Rows D-F Drug 12, Rows G-H Drug 13)
     if include_old_media_removal and p5_rem_col is not None:
-        add_plate_removal("Slot_3", "Plate 5", p5_rem_col)
+        add_plate_removal("Slot_3", "Plate 5", p5_rem_col, p5_waste_lane)
 
     # 1) Drug 11 (Rows A, B, C) <- Tips F,G,H on Ch A,B,C (+5 rows) <- R1
     add_pick_tip(p5_fresh_col, +5, "A-C", f"F{p5_fresh_col}-H{p5_fresh_col}", "Plate 5 Drug 11 (Rows A-C)")
@@ -278,7 +290,7 @@ def build_8ch_ehm_media_change_steps(
 
     # PLATE 6 (Slot_5): 4 Conditions (Row H Control, Row A Drug 13, Rows B-D Drug 14, Rows E-G Drug 15)
     if include_old_media_removal and p6_rem_col is not None:
-        add_plate_removal("Slot_5", "Plate 6", p6_rem_col)
+        add_plate_removal("Slot_5", "Plate 6", p6_rem_col, p6_waste_lane)
 
     # 4) Control / Drug 0 (Row H) <- Tip A on Ch H (-7 rows) <- CLEAN R4
     add_pick_tip(p6_fresh_col, -7, "H", f"A{p6_fresh_col}", "Plate 6 Control (Row H from clean R4)")
@@ -421,7 +433,7 @@ def save_default_protocols():
         remove_vol_ul=550.0,
         pick_col=3,
         return_col=1,
-        waste_lane=7,
+        waste_lane=2,
         reservoir_labware="reservoir_7_column.json",
     )
     full_steps = build_8ch_ehm_media_change_steps(
@@ -430,9 +442,10 @@ def save_default_protocols():
         fresh_vol_ul=500.0,
         tip_drop_mode="rack_graveyard",
         media_addition_mode="all_8ch",
-        p5_res_lane=1,
-        p6_res_lane=2,
-        waste_lane=7,
+        p5_res_lane=6,
+        p6_res_lane=7,
+        p5_waste_lane=1,
+        p6_waste_lane=2,
         reservoir_labware="reservoir_7_column.json",
         multi_dispense=True,
     )
@@ -442,9 +455,10 @@ def save_default_protocols():
         fresh_vol_ul=500.0,
         tip_drop_mode="rack_graveyard",
         media_addition_mode="all_8ch",
-        p5_res_lane=1,
-        p6_res_lane=2,
-        waste_lane=7,
+        p5_res_lane=6,
+        p6_res_lane=7,
+        p5_waste_lane=1,
+        p6_waste_lane=2,
         reservoir_labware="reservoir_7_column.json",
         multi_dispense=True,
     )
@@ -454,9 +468,11 @@ def save_default_protocols():
         fresh_vol_ul=500.0,
         tip_drop_mode="slot6_waste",
         media_addition_mode="all_8ch",
-        p5_res_lane=1,
-        p6_res_lane=2,
-        waste_lane=7,
+        p5_res_lane=6,
+        p6_res_lane=7,
+        p5_waste_lane=1,
+        p6_waste_lane=2,
+        waste_lane=2,
         reservoir_labware="reservoir_7_column.json",
         multi_dispense=True,
     )
@@ -466,9 +482,11 @@ def save_default_protocols():
         fresh_vol_ul=500.0,
         tip_drop_mode="slot6_waste",
         media_addition_mode="all_8ch",
-        p5_res_lane=1,
-        p6_res_lane=2,
-        waste_lane=7,
+        p5_res_lane=6,
+        p6_res_lane=7,
+        p5_waste_lane=1,
+        p6_waste_lane=2,
+        waste_lane=2,
         reservoir_labware="reservoir_7_column.json",
         multi_dispense=True,
     )

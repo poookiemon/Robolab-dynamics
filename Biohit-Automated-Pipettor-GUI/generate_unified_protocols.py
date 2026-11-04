@@ -29,15 +29,24 @@ def build_8ch_media_change_and_drug_steps(
     reservoir_labware: str = "reservoir_7_column.json",
     drug_source_slot: str = "Slot_1",
     drug_source_labware: str = "generic_96_well_plate.json",
+    p5_waste_lane: int = 1,
+    p6_waste_lane: int = 2,
+    p5_fresh_lane: int = 6,
+    p6_fresh_lane: int = 7,
 ) -> List[Dict[str, Any]]:
     """
     Builds 100% 0-contamination 8-channel protocol for Plate 5 (Slot 3) & Plate 6 (Slot 5).
-    - Media removal: Rows A-H, Col 1..6 low-to-high into Slot 6 Waste (A7) at Z=59.32 (3cm above, contact-free).
-    - Fresh media addition: Rows A-H, 500 uL from Slot 6 R1/R2, contact-free at Z=12.33 (1cm above rim).
+    - Media removal: Plate 5 -> Slot 6 R1 (A1), Plate 6 -> Slot 6 R2 (A2) at Z=59.32 (contact-free).
+    - Fresh media addition: Plate 5 from Slot 6 R6 (A6), Plate 6 from Slot 6 R7 (A7) at Z=12.33 (contact-free).
     - Drug addition: Rows A-H, drug_vol_ul from Drug Plate (Slot 1) into Col 1..6 with 5x 100 uL in-place mixing.
     """
     steps: List[Dict[str, Any]] = []
-    waste_well = "A7" if "reservoir_7" in reservoir_labware else "A6"
+
+    if "reservoir_6" in reservoir_labware:
+        p5_fresh_lane = 5
+        p6_fresh_lane = 6
+        p5_waste_lane = 1
+        p6_waste_lane = 2
 
     # Plate 5 configuration:
     # Tips: Col 1 for removal, Col 2 for fresh media, Col 5 for drug addition
@@ -45,7 +54,7 @@ def build_8ch_media_change_and_drug_steps(
     # -------------------------------------------------------------
     # 1. PLATE 5 (Slot 3)
     # -------------------------------------------------------------
-    # Step A: Media Removal (Col 1 Tips)
+    # Step A: Media Removal (Col 1 Tips) -> Slot 6 Lane 1 (A1) Discard
     steps.append({
         "action": "Pick Up Tip",
         "mode": "auto",
@@ -75,13 +84,13 @@ def build_8ch_media_change_and_drug_steps(
             "action": "Dispense Media",
             "mode": "auto",
             "slot": "Slot_6",
-            "well": waste_well,
+            "well": f"A{p5_waste_lane}",
             "volume": float(remove_vol_ul),
             "labware": reservoir_labware,
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g} µL to Slot_6 {waste_well} Waste (Plate 5 Col {c})",
+            "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g} µL to Slot_6 A{p5_waste_lane} Waste (Plate 5 Col {c})",
         })
     steps.append({
         "action": "Discard Tip",
@@ -97,7 +106,7 @@ def build_8ch_media_change_and_drug_steps(
         "label": "[DROP 8-CH] Eject Plate 5 Old Media Tips -> Slot_4 Col 12 Graveyard",
     })
 
-    # Step B: Fresh Media Addition (Col 2 Tips) - Multi-Dispense: Aspirate 1000 µL, Dispense 500 µL + 500 µL Contact-Free
+    # Step B: Fresh Media Addition (Col 2 Tips) - Multi-Dispense from Slot 6 Lane 6 (A6)
     steps.append({
         "action": "Pick Up Tip",
         "mode": "auto",
@@ -115,13 +124,13 @@ def build_8ch_media_change_and_drug_steps(
             "action": "Aspirate Media",
             "mode": "auto",
             "slot": "Slot_6",
-            "well": "A1",
+            "well": f"A{p5_fresh_lane}",
             "volume": 1000.0,
             "labware": reservoir_labware,
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[ASPIRATE 8-CH] 1000 µL from Slot_6 R1 (Plate 5 Cols {c1}&{c2})",
+            "label": f"[ASPIRATE 8-CH] 1000 µL from Slot_6 R{p5_fresh_lane} (Plate 5 Cols {c1}&{c2})",
         })
         steps.append({
             "action": "Dispense Media",
@@ -219,7 +228,7 @@ def build_8ch_media_change_and_drug_steps(
     # -------------------------------------------------------------
     # 2. PLATE 6 (Slot 5)
     # -------------------------------------------------------------
-    # Step A: Media Removal (Col 3 Tips)
+    # Step A: Media Removal (Col 3 Tips) -> Slot 6 Lane 2 (A2) Discard
     steps.append({
         "action": "Pick Up Tip",
         "mode": "auto",
@@ -249,13 +258,13 @@ def build_8ch_media_change_and_drug_steps(
             "action": "Dispense Media",
             "mode": "auto",
             "slot": "Slot_6",
-            "well": waste_well,
+            "well": f"A{p6_waste_lane}",
             "volume": float(remove_vol_ul),
             "labware": reservoir_labware,
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g} µL to Slot_6 {waste_well} Waste (Plate 6 Col {c})",
+            "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g} µL to Slot_6 A{p6_waste_lane} Waste (Plate 6 Col {c})",
         })
     steps.append({
         "action": "Discard Tip",
@@ -271,7 +280,7 @@ def build_8ch_media_change_and_drug_steps(
         "label": "[DROP 8-CH] Eject Plate 6 Old Media Tips -> Slot_4 Col 9 Graveyard",
     })
 
-    # Step B: Fresh Media Addition (Col 4 Tips) - Multi-Dispense: Aspirate 1000 µL, Dispense 500 µL + 500 µL Contact-Free
+    # Step B: Fresh Media Addition (Col 4 Tips) - Multi-Dispense from Slot 6 Lane 7 (A7)
     steps.append({
         "action": "Pick Up Tip",
         "mode": "auto",
@@ -289,13 +298,13 @@ def build_8ch_media_change_and_drug_steps(
             "action": "Aspirate Media",
             "mode": "auto",
             "slot": "Slot_6",
-            "well": "A2",
+            "well": f"A{p6_fresh_lane}",
             "volume": 1000.0,
             "labware": reservoir_labware,
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[ASPIRATE 8-CH] 1000 µL from Slot_6 R2 (Plate 6 Cols {c1}&{c2})",
+            "label": f"[ASPIRATE 8-CH] 1000 µL from Slot_6 R{p6_fresh_lane} (Plate 6 Cols {c1}&{c2})",
         })
         steps.append({
             "action": "Dispense Media",

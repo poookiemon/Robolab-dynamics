@@ -336,8 +336,8 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
             active_ch = [c for c in range(8) if mounted[c]]
             assert active_ch == expected_ch
             if slot == "Slot_6":
-                # Dispensing old media waste into R6 at brim Z = 78.0 - 20.5 = 57.5 mm
-                assert well == "A6" and (abs(tz - 59.32) < 1e-4 or abs(tz - 57.5) < 1e-4), f"Expected 59.32mm or 57.5mm, got {tz}"
+                # Dispensing old media waste into reservoir discard lane at brim Z = 59.32 mm
+                assert well in ("A1", "A2", "A6", "A7") and (abs(tz - 59.32) < 1e-4 or abs(tz - 57.5) < 1e-4), f"Expected 59.32mm or 57.5mm, got {tz}"
                 assert held_source_lane == "OLD_MEDIA"
             elif slot in ("Slot_3", "Slot_5"):
                 # Dispensing fresh media onto EHM plate at brim Z = 12.33 mm (1cm above bottom)
@@ -380,9 +380,10 @@ def main():
             fresh_vol_ul=500.0,
             tip_drop_mode="rack_graveyard",
             media_addition_mode="all_8ch",
-            p5_res_lane=1,
-            p6_res_lane=2,
-            waste_lane=7,
+            p5_res_lane=6,
+            p6_res_lane=7,
+            p5_waste_lane=1,
+            p6_waste_lane=2,
             reservoir_labware="reservoir_7_column.json",
             multi_dispense=False,
         )
@@ -396,9 +397,10 @@ def main():
             fresh_vol_ul=500.0,
             tip_drop_mode="rack_graveyard",
             media_addition_mode="all_8ch",
-            p5_res_lane=1,
-            p6_res_lane=2,
-            waste_lane=7,
+            p5_res_lane=6,
+            p6_res_lane=7,
+            p5_waste_lane=1,
+            p6_waste_lane=2,
             reservoir_labware="reservoir_7_column.json",
             multi_dispense=True,
         )
@@ -411,9 +413,10 @@ def main():
             fresh_vol_ul=500.0,
             tip_drop_mode="rack_graveyard",
             media_addition_mode="all_8ch",
-            p5_res_lane=1,
-            p6_res_lane=2,
-            waste_lane=7,
+            p5_res_lane=6,
+            p6_res_lane=7,
+            p5_waste_lane=1,
+            p6_waste_lane=2,
             reservoir_labware="reservoir_7_column.json",
             multi_dispense=False,
         )
@@ -426,9 +429,10 @@ def main():
             fresh_vol_ul=500.0,
             tip_drop_mode="rack_graveyard",
             media_addition_mode="all_8ch",
-            p5_res_lane=1,
-            p6_res_lane=2,
-            waste_lane=7,
+            p5_res_lane=6,
+            p6_res_lane=7,
+            p5_waste_lane=1,
+            p6_waste_lane=2,
             reservoir_labware="reservoir_7_column.json",
             multi_dispense=True,
         )

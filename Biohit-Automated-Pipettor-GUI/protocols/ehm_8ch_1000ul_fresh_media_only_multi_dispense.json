@@ -15,13 +15,13 @@
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A1",
+    "well": "A6",
     "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R1 (Ch A-H: Fresh Media, for Cols 1&2)"
+    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R6 (Ch A-H: Fresh Media, for Cols 1&2)"
   },
   {
     "action": "Dispense Media",
@@ -52,13 +52,13 @@
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A1",
+    "well": "A6",
     "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R1 (Ch A-H: Fresh Media, for Cols 3&4)"
+    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R6 (Ch A-H: Fresh Media, for Cols 3&4)"
   },
   {
     "action": "Dispense Media",
@@ -89,13 +89,13 @@
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A1",
+    "well": "A6",
     "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R1 (Ch A-H: Fresh Media, for Cols 5&6)"
+    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R6 (Ch A-H: Fresh Media, for Cols 5&6)"
   },
   {
     "action": "Dispense Media",
@@ -126,14 +126,14 @@
     "action": "Discard Tip",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A7",
+    "well": "A2",
     "volume": 0.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
     "discard_z_override": 48.0,
     "mounted_channels": "A-H",
-    "label": "[DROP 8-CH] Ch A-H -> Slot_6 A7 Waste | Plate 5 Fresh Media Tips"
+    "label": "[DROP 8-CH] Ch A-H -> Slot_6 A2 Waste | Plate 5 Fresh Media Tips"
   },
   {
     "action": "Pick Up Tip",
@@ -151,13 +151,13 @@
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A2",
+    "well": "A7",
     "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R2 (Ch A-H: Fresh Media, for Cols 1&2)"
+    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R7 (Ch A-H: Fresh Media, for Cols 1&2)"
   },
   {
     "action": "Dispense Media",
@@ -188,13 +188,13 @@
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A2",
+    "well": "A7",
     "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R2 (Ch A-H: Fresh Media, for Cols 3&4)"
+    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R7 (Ch A-H: Fresh Media, for Cols 3&4)"
   },
   {
     "action": "Dispense Media",
@@ -225,13 +225,13 @@
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A2",
+    "well": "A7",
     "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R2 (Ch A-H: Fresh Media, for Cols 5&6)"
+    "label": "[ASPIRATE 8-CH] 1000 \u00b5L from Slot_6 R7 (Ch A-H: Fresh Media, for Cols 5&6)"
   },
   {
     "action": "Dispense Media",
@@ -262,13 +262,13 @@
     "action": "Discard Tip",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A7",
+    "well": "A2",
     "volume": 0.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "tip_offset_rows": 0,
     "discard_z_override": 48.0,
     "mounted_channels": "A-H",
-    "label": "[DROP 8-CH] Ch A-H -> Slot_6 A7 Waste | Plate 6 Fresh Media Tips"
+    "label": "[DROP 8-CH] Ch A-H -> Slot_6 A2 Waste | Plate 6 Fresh Media Tips"
   }
 ]

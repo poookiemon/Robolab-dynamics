@@ -27,13 +27,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A1",
     "volume": 550.0,
     "labware": "reservoir_6_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 5 Col 1)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A1 Waste (Plate 5 Col 1)"
   },
   {
     "action": "Aspirate Media",
@@ -51,13 +51,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A1",
     "volume": 550.0,
     "labware": "reservoir_6_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 5 Col 2)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A1 Waste (Plate 5 Col 2)"
   },
   {
     "action": "Aspirate Media",
@@ -75,13 +75,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A1",
     "volume": 550.0,
     "labware": "reservoir_6_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 5 Col 3)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A1 Waste (Plate 5 Col 3)"
   },
   {
     "action": "Aspirate Media",
@@ -99,13 +99,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A1",
     "volume": 550.0,
     "labware": "reservoir_6_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 5 Col 4)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A1 Waste (Plate 5 Col 4)"
   },
   {
     "action": "Aspirate Media",
@@ -123,13 +123,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A1",
     "volume": 550.0,
     "labware": "reservoir_6_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 5 Col 5)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A1 Waste (Plate 5 Col 5)"
   },
   {
     "action": "Aspirate Media",
@@ -147,13 +147,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A1",
     "volume": 550.0,
     "labware": "reservoir_6_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 5 Col 6)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A1 Waste (Plate 5 Col 6)"
   },
   {
     "action": "Discard Tip",
@@ -703,13 +703,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A2",
     "volume": 550.0,
     "labware": "reservoir_6_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 6 Col 1)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A2 Waste (Plate 6 Col 1)"
   },
   {
     "action": "Aspirate Media",
@@ -727,13 +727,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A2",
     "volume": 550.0,
     "labware": "reservoir_6_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 6 Col 2)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A2 Waste (Plate 6 Col 2)"
   },
   {
     "action": "Aspirate Media",
@@ -751,13 +751,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A2",
     "volume": 550.0,
     "labware": "reservoir_6_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 6 Col 3)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A2 Waste (Plate 6 Col 3)"
   },
   {
     "action": "Aspirate Media",
@@ -775,13 +775,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A2",
     "volume": 550.0,
     "labware": "reservoir_6_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 6 Col 4)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A2 Waste (Plate 6 Col 4)"
   },
   {
     "action": "Aspirate Media",
@@ -799,13 +799,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A2",
     "volume": 550.0,
     "labware": "reservoir_6_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 6 Col 5)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A2 Waste (Plate 6 Col 5)"
   },
   {
     "action": "Aspirate Media",
@@ -823,13 +823,13 @@
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
-    "well": "A6",
+    "well": "A2",
     "volume": 550.0,
     "labware": "reservoir_6_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A6 Waste (Plate 6 Col 6)"
+    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A2 Waste (Plate 6 Col 6)"
   },
   {
     "action": "Discard Tip",
