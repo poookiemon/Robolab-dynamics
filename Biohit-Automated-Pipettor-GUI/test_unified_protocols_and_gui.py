@@ -76,6 +76,19 @@ def test_gui_loading():
         assert len(app.workflow_sequence) == 26
         print("PASS: 8-Channel DMSO Dilution loaded (26 steps).")
 
+        # 2b. 8-Channel Multi (1-10 uL) Dedicated Drug Addition to BOTH EHM Plates
+        p10_path = os.path.join(SCRIPT_DIR, "protocols", "ehm_8ch_10ul_drug_addition_to_ehm_7.5uL.json")
+        with open(p10_path, "r") as f:
+            seq10 = json.load(f)
+        app._populate_workflow_from_sequence(seq10, "1-10 uL Drug Addition to EHM 7.5uL")
+        assert len(app.workflow_sequence) == 48
+        p1_steps = [s for s in seq10 if s.get("slot") == "Slot_5" and s.get("action") == "Dispense Media"]
+        p2_steps = [s for s in seq10 if s.get("slot") == "Slot_6" and s.get("action") == "Dispense Media"]
+        assert len(p1_steps) == 6, f"Expected 6 column dispenses for Plate 1 (Slot 5), got {len(p1_steps)}"
+        assert len(p2_steps) == 6, f"Expected 6 column dispenses for Plate 2 (Slot 6), got {len(p2_steps)}"
+        assert all(s.get("slot") == "Slot_3" for s in seq10 if s.get("action") == "Aspirate Media"), "All drug aspirations must come from Slot 3"
+        print("PASS: 8-Channel Multi (1-10 µL) Drug Addition to Both EHMs verified (48 steps: Slot 3 Drug -> Slot 5 Plt 1 & Slot 6 Plt 2).")
+
         # 3. 300 uL Single-Channel Media Change + 7.5 uL Drug
         app.switch_pipettor_head(False, quiet=True)
         assert app.lims.pipettor.multichannel is False

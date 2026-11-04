@@ -541,39 +541,43 @@ def build_8ch_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.json")
 
 def build_8ch_10ul_drug_addition_steps(
     drug_vol_ul: float = 7.5,
-    drug_source_slot: str = "Slot_5",
+    drug_source_slot: str = "Slot_3",
     drug_source_labware: str = "generic_96_well_plate.json",
-    target_ehm_slot: str = "Slot_3",
-    target_ehm_labware: str = "myriamed_48_well.json",
+    ehm_plate1_slot: str = "Slot_5",
+    ehm_plate2_slot: str = "Slot_6",
+    ehm_labware: str = "myriamed_48_well.json",
+    tip_rack_slot: str = "Slot_4",
+    tip_labware: str = "tip_rack_1000ul.json",
     mix_cycles: int = 5,
     mix_vol_ul: float = 8.0,
     discard_z: float = 40.5,
 ) -> List[Dict[str, Any]]:
     """
-    Builds dedicated 8-Channel Multi (1-10 µL) Drug Addition protocol.
-    Transfers prepped drug from 96-well dilution plate (Slot 5) into 48-well EHM plate (Slot 3)
-    across Columns 1..6 with 100% 0-contamination:
-    - Dedicated fresh tips per column (Slot 4 Columns 1..6)
-    - High precision drug aspiration (7.5 µL or 5.0 µL) across Rows A-H simultaneously
-    - In-place dispense & mix (5x 8.0 µL, safe within 10 µL tips) in EHM wells
-    - Ejects used tips into Slot 4 empty rack graveyard (Cols 12..7) at Z=40.5 mm
+    Builds dedicated 8-Channel Multi (1-10 µL) Drug Addition protocol for BOTH EHM Plates.
+    Deck:
+    - Slot 1: Empty clearance zone
+    - Slot 2: Empty clearance zone
+    - Slot 3: Prepped DMSO-Drug Diluted Ready Plate (96-well)
+    - Slot 4: 1-10 µL Tip Rack (Cols 1..6 for Plate 1, Cols 7..12 for Plate 2)
+    - Slot 5: EHM Plate 1 (48-well, Cols 1..6)
+    - Slot 6: EHM Plate 2 (48-well, Cols 1..6)
     """
     steps: List[Dict[str, Any]] = []
+
+    # 1. PLATE 1 (Slot 5) - Uses Tip Rack Columns 1..6
     for c in range(1, 7):
-        # 1. Pick Up Tips (Cols 1..6)
         steps.append({
             "action": "Pick Up Tip",
             "mode": "auto",
-            "slot": "Slot_4",
+            "slot": tip_rack_slot,
             "well": f"A{c}",
             "volume": 0.0,
-            "labware": "tip_rack_1000ul.json",
+            "labware": tip_labware,
             "eight_ch_symmetric": True,
             "tip_offset_rows": 0,
             "mounted_channels": "A-H",
-            "label": f"[PICK 1-10µL TIPS] Slot_4 Col {c} (A{c}-H{c}) | Col {c} Drug Addition",
+            "label": f"[PICK 1-10µL TIPS] Slot_4 Col {c} (A{c}-H{c}) | Plate 1 Col {c} Drug Addition",
         })
-        # 2. Aspirate Prepped Drug from 96-Well Plate (Slot 5)
         steps.append({
             "action": "Aspirate Media",
             "mode": "auto",
@@ -584,38 +588,91 @@ def build_8ch_10ul_drug_addition_steps(
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[ASPIRATE DRUG] {drug_vol_ul:g} µL from {drug_source_slot} (96-Well Drug Plate) Col {c} [Rows A-H]",
+            "label": f"[ASPIRATE DRUG] {drug_vol_ul:g} µL from Slot_3 Ready Plate Col {c} [Rows A-H]",
         })
-        # 3. Dispense & In-Place Mix in EHM Plate (Slot 3)
         steps.append({
             "action": "Dispense Media",
             "mode": "auto",
-            "slot": target_ehm_slot,
+            "slot": ehm_plate1_slot,
             "well": f"A{c}",
             "volume": float(drug_vol_ul),
-            "labware": target_ehm_labware,
+            "labware": ehm_labware,
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "mix_cycles": mix_cycles,
             "mix_volume": float(mix_vol_ul),
             "track_liquid": False,
-            "label": f"[DRUG+MIX 1-10µL] {drug_vol_ul:g} µL -> {target_ehm_slot} EHM Col {c} [{mix_cycles}x {mix_vol_ul:g} µL In-Place Mix]",
+            "label": f"[DRUG+MIX 1-10µL] {drug_vol_ul:g} µL -> Plate 1 Col {c} [{mix_cycles}x {mix_vol_ul:g} µL In-Place Mix]",
         })
-        # 4. Discard Used Tips into Slot 4 Graveyard
-        graveyard_col = 13 - c  # Cols 12, 11, 10, 9, 8, 7
         steps.append({
             "action": "Discard Tip",
             "mode": "auto",
-            "slot": "Slot_4",
-            "well": f"A{graveyard_col}",
+            "slot": tip_rack_slot,
+            "well": f"A{c}",
             "volume": 0.0,
-            "labware": "tip_rack_1000ul.json",
+            "labware": tip_labware,
             "eight_ch_symmetric": True,
             "tip_offset_rows": 0,
             "discard_z_override": float(discard_z),
             "mounted_channels": "A-H",
-            "label": f"[DROP TIPS] Eject Col {c} Drug Tips -> Slot_4 Col {graveyard_col} Graveyard (Z={discard_z}mm)",
+            "label": f"[DROP TIPS] Return Col {c} Tips -> Slot_4 Col {c} Empty Rack (Z={discard_z}mm)",
         })
+
+    # 2. PLATE 2 (Slot 6) - Uses Tip Rack Columns 7..12
+    for c in range(1, 7):
+        tip_c = c + 6
+        steps.append({
+            "action": "Pick Up Tip",
+            "mode": "auto",
+            "slot": tip_rack_slot,
+            "well": f"A{tip_c}",
+            "volume": 0.0,
+            "labware": tip_labware,
+            "eight_ch_symmetric": True,
+            "tip_offset_rows": 0,
+            "mounted_channels": "A-H",
+            "label": f"[PICK 1-10µL TIPS] Slot_4 Col {tip_c} (A{tip_c}-H{tip_c}) | Plate 2 Col {c} Drug Addition",
+        })
+        steps.append({
+            "action": "Aspirate Media",
+            "mode": "auto",
+            "slot": drug_source_slot,
+            "well": f"A{c}",
+            "volume": float(drug_vol_ul),
+            "labware": drug_source_labware,
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-H",
+            "track_liquid": False,
+            "label": f"[ASPIRATE DRUG] {drug_vol_ul:g} µL from Slot_3 Ready Plate Col {c} [Rows A-H]",
+        })
+        steps.append({
+            "action": "Dispense Media",
+            "mode": "auto",
+            "slot": ehm_plate2_slot,
+            "well": f"A{c}",
+            "volume": float(drug_vol_ul),
+            "labware": ehm_labware,
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-H",
+            "mix_cycles": mix_cycles,
+            "mix_volume": float(mix_vol_ul),
+            "track_liquid": False,
+            "label": f"[DRUG+MIX 1-10µL] {drug_vol_ul:g} µL -> Plate 2 Col {c} [{mix_cycles}x {mix_vol_ul:g} µL In-Place Mix]",
+        })
+        steps.append({
+            "action": "Discard Tip",
+            "mode": "auto",
+            "slot": tip_rack_slot,
+            "well": f"A{tip_c}",
+            "volume": 0.0,
+            "labware": tip_labware,
+            "eight_ch_symmetric": True,
+            "tip_offset_rows": 0,
+            "discard_z_override": float(discard_z),
+            "mounted_channels": "A-H",
+            "label": f"[DROP TIPS] Return Col {tip_c} Tips -> Slot_4 Col {tip_c} Empty Rack (Z={discard_z}mm)",
+        })
+
     return steps
 
 

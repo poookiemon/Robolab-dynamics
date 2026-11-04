@@ -2661,17 +2661,12 @@ class LIMSMasterApp:
             desc = slot_descriptions.get(s_name, "Empty clearance slot")
             is_empty = (s_label in empty_slots) or ("Empty" in lw_file) or ("Clearance" in desc)
             is_tip = "tip" in lw_file.lower()
+            is_plate = any(k in lw_file.lower() for k in ("plate", "96", "48", "ehm", "myriamed"))
             is_res = (
                 not is_empty
                 and not is_tip
-                and (
-                    "reservoir" in lw_file.lower()
-                    or "reservoir" in desc.lower()
-                    or ("media" in desc.lower() and "plate" not in desc.lower() and "myriamed" not in lw_file.lower())
-                    or ("waste" in desc.lower() and "plate" not in desc.lower() and "trough" not in lw_file.lower())
-                    or ("dmso" in desc.lower())
-                    or ("buffer" in desc.lower())
-                )
+                and not is_plate
+                and ("reservoir" in lw_file.lower() or "reservoir" in desc.lower())
             )
 
             if is_empty:
@@ -2911,18 +2906,18 @@ class LIMSMasterApp:
         deck_setup = {
             "Slot_1": "(Empty / Clearance)",
             "Slot_2": "(Empty / Clearance)",
-            "Slot_3": "myriamed_48_well.json",
+            "Slot_3": "generic_96_well_plate.json",
             "Slot_4": "tip_rack_1000ul.json",
-            "Slot_5": "generic_96_well_plate.json",
-            "Slot_6": "reservoir_7_column.json",
+            "Slot_5": "myriamed_48_well.json",
+            "Slot_6": "myriamed_48_well.json",
         }
         slot_descs = {
             "Slot_1": "Empty clearance zone",
             "Slot_2": "Empty clearance zone",
-            "Slot_3": "Target EHM Plate (Cols 1..6)",
-            "Slot_4": "1-10 µL Tip Rack (Cols 1-6 fresh, Cols 7-12 graveyard)",
-            "Slot_5": "Prepped DMSO-Drug Dilution Plate (96-Well, Cols 1..6)",
-            "Slot_6": "Reagent Reservoir (Clearance)",
+            "Slot_3": "Prepped DMSO-Drug Diluted Ready Plate (96-Well)",
+            "Slot_4": "1-10 µL Tip Rack (Full 96 Tips: Cols 1..6 for Plate 1, Cols 7..12 for Plate 2)",
+            "Slot_5": "Plate 1 (Myriamed 48-Well EHM, Cols 1..6)",
+            "Slot_6": "Plate 2 (Myriamed 48-Well EHM, Cols 1..6)",
         }
         with open(target_path, "r") as f:
             seq = json.load(f)
