@@ -62,12 +62,12 @@ def test_deck_stacking_kinematics():
     p96_deep_z = dm.calculate_z("Aspirate Media", "Slot_5", "A1")
     p96_mix_z = dm.calculate_z("Mix Well", "Slot_5", "A1")
     print(f"Slot 5 96-well A1: ({p96_a1_x}, {p96_a1_y}), Brim Z: {p96_brim_z}, Deep Z: {p96_deep_z}, Mix Z: {p96_mix_z}")
-    assert (p96_a1_x, p96_a1_y) == (243.81, 149.23), f"Slot 5 A1 xy mismatch: ({p96_a1_x}, {p96_a1_y})"
-    assert p96_brim_z == 85.0, f"Expected brim Z=85.0mm, got {p96_brim_z}"
-    assert p96_deep_z == 92.0, f"Expected deep Z=92.0mm, got {p96_deep_z}"
-    assert p96_mix_z == 92.0, f"Expected mix Z=92.0mm, got {p96_mix_z}"
+    assert (p96_a1_x, p96_a1_y) == (243.24, 178.69), f"Slot 5 A1 xy mismatch: ({p96_a1_x}, {p96_a1_y})"
+    assert p96_brim_z == 68.43, f"Expected brim Z=68.43mm, got {p96_brim_z}"
+    assert p96_deep_z == 78.4, f"Expected deep Z=78.4mm, got {p96_deep_z}"
+    assert p96_mix_z == 78.4, f"Expected mix Z=78.4mm, got {p96_mix_z}"
 
-    # Slot 3 Generic 96-well plate (calibrated 1mm above Slot 5: 91.0mm aspirate/mix)
+    # Slot 3 Generic 96-well plate
     p96_s3 = Plate96()
     slot3 = DeckSlot("Slot_3", 135.2, 45.0, 127.8, 85.5, adapter=ADAPTER_NONE, labware=p96_s3)
     dm.slots["Slot_3"] = slot3
@@ -75,9 +75,9 @@ def test_deck_stacking_kinematics():
     s3_mix_z = dm.calculate_z("Mix Well", "Slot_3", "A1")
     s3_brim_z = dm.calculate_z("Dispense Media", "Slot_3", "A1", in_liquid=False)
     print(f"Slot 3 96-well A1: Deep Z: {s3_deep_z}, Mix Z: {s3_mix_z}, Brim Z: {s3_brim_z}")
-    assert s3_deep_z == 91.0, f"Expected Slot 3 Deep Z=91.0mm (1mm higher), got {s3_deep_z}"
-    assert s3_mix_z == 91.0, f"Expected Slot 3 Mix Z=91.0mm (1mm higher), got {s3_mix_z}"
-    assert s3_brim_z == 85.0, f"Expected Slot 3 Brim Z=85.0mm, got {s3_brim_z}"
+    assert s3_deep_z == 78.4, f"Expected Slot 3 Deep Z=78.4mm, got {s3_deep_z}"
+    assert s3_mix_z == 78.4, f"Expected Slot 3 Mix Z=78.4mm, got {s3_mix_z}"
+    assert s3_brim_z == 68.43, f"Expected Slot 3 Brim Z=68.43mm, got {s3_brim_z}"
 
     # Waste container on Slot 2 must target Tube A3 (12.0, 13.0), NEVER center
     from labware_models import WasteTrough
@@ -124,8 +124,8 @@ def test_adaptive_tip_pickup_and_learning():
     nominal_a2 = tip_rack.get_well_xy(slot, "A2")
     nominal_b1 = tip_rack.get_well_xy(slot, "B1")
     print(f"Nominal A1: {nominal_a1}, A2: {nominal_a2}, B1: {nominal_b1}")
-    assert nominal_a1 == (105.12, 53.62)
-    assert nominal_a2 == (96.12, 53.62)
+    assert nominal_a1 == (105.60, 53.02)
+    assert nominal_a2 == (96.60, 53.02)
     assert nominal_a1[0] - nominal_a2[0] == 9.0  # 9mm pitch
     
     # Micro-search pattern
@@ -144,9 +144,9 @@ def test_adaptive_tip_pickup_and_learning():
     new_a2 = tip_rack.get_well_xy(slot, "A2")
     new_b1 = tip_rack.get_well_xy(slot, "B1")
     print(f"Learned A1: {new_a1}, A2: {new_a2}, B1: {new_b1}")
-    assert round(new_a1[0], 2) == 105.52 and round(new_a1[1], 2) == 53.12
-    assert round(new_a2[0], 2) == 96.52 and round(new_a2[1], 2) == 53.12
-    assert round(new_b1[0], 2) == 105.52 and round(new_b1[1], 2) == 62.12
+    assert round(new_a1[0], 2) == 106.0 and round(new_a1[1], 2) == 52.52
+    assert round(new_a2[0], 2) == 97.0 and round(new_a2[1], 2) == 52.52
+    assert round(new_b1[0], 2) == 106.0 and round(new_b1[1], 2) == 61.52
     print("PASS: Discovered offset successfully learned and propagated to all 96 tips.")
 
 

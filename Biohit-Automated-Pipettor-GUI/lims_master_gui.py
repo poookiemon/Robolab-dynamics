@@ -5032,7 +5032,11 @@ class LIMSMasterApp:
         - Applies `tip_offset_rows * 9.0` mm Y shift for offset partial tip-picking / tip-shoveling.
         - Applies `self.eight_ch_cal_offset['X']` and `self.eight_ch_cal_offset['Y']` fine calibration trims.
         """
-        is_8ch_step = bool((step and step.get('eight_ch_symmetric')) or self.lims.pipettor.multichannel)
+        is_8ch_step = bool(step and step.get('eight_ch_symmetric'))
+        if not is_8ch_step and self.lims.pipettor.multichannel:
+            # Only treat as 8-ch symmetric step if the active workflow actually contains 8-ch symmetric steps
+            is_8ch_step = any(s.get('eight_ch_symmetric') for s in getattr(self, 'workflow_sequence', []))
+
         if not is_8ch_step:
             return self._calculate_xy(slot_name, well_id)
 
@@ -5665,6 +5669,14 @@ class LIMSMasterApp:
         needs_8ch = any(s.get('eight_ch_symmetric') for s in self.workflow_sequence)
         if needs_8ch and not self.lims.pipettor.multichannel:
             self.switch_pipettor_head(True, quiet=True)
+        elif not needs_8ch and self.lims.pipettor.multichannel:
+            max_v = max((float(s.get('volume', 0.0) or 0.0) for s in self.workflow_sequence), default=7.5)
+            if max_v <= 15.0:
+                self.switch_pipettor_head("1-10 µL Single-Channel", quiet=True)
+            elif max_v <= 50.0:
+                self.switch_pipettor_head("20 µL Single-Channel", quiet=True)
+            else:
+                self.switch_pipettor_head("300 µL Single-Channel", quiet=True)
         has_mix_steps = any(int(s.get('mix_cycles', 0)) > 0 or s.get('action') == "Mix Well" for s in self.workflow_sequence)
         if has_mix_steps:
             self.enable_mixing_for_run = messagebox.askyesno(

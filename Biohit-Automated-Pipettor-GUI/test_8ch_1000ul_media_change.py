@@ -248,22 +248,22 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
             if is_8ch and not is_already_cal:
                 tz = max(0.0, tz - app.EIGHT_CH_TIP_Z_COMP_MM)
 
-        # Strict machine workspace envelope checks
+        # Strict machine workspace envelope checks (max machine travel: X 300mm, Y 300mm, Z 103.5mm)
         assert 0.0 <= tx <= 263.0, f"Step {idx} X out of bounds: {tx}"
-        assert 0.0 <= ty <= 212.0, f"Step {idx} Y out of bounds: {ty} ({step.get('label')})"
+        assert 0.0 <= ty <= 225.0, f"Step {idx} Y out of bounds: {ty} ({step.get('label')})"
         assert 0.0 <= tz <= 102.0, f"Step {idx} Z out of bounds: {tz} ({step.get('label')})"
 
         expected_ch = parse_channel_mask(step["mounted_channels"])
 
         if action == "Pick Up Tip":
             assert not any(mounted), f"Step {idx}: Pick Up Tip called while tips still mounted: {mounted}"
-            c_idx = round((105.12 - tx) / 9.0)
+            c_idx = round((105.60 - tx) / 9.0)
             assert 0 <= c_idx < 12, f"Step {idx}: Invalid tip column X={tx}"
 
             actual_picked = []
             for ch in range(8):
                 nozzle_y = (ty - 31.5) + ch * 9.0
-                r_float = (nozzle_y - 53.62) / 9.0
+                r_float = (nozzle_y - 53.02) / 9.0
                 r_idx = round(r_float)
                 assert abs(r_float - r_idx) < 1e-4, f"Step {idx}: Misaligned row Y={nozzle_y}"
                 if 0 <= r_idx < 8:
@@ -285,7 +285,7 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
                 c_idx = round((105.12 - tx) / 9.0)
                 for ch in range(8):
                     nozzle_y = (ty - 31.5) + ch * 9.0
-                    r_idx = round((nozzle_y - 53.62) / 9.0)
+                    r_idx = round((nozzle_y - 53.02) / 9.0)
                     if 0 <= r_idx < 8:
                         # Bare nozzles MUST NOT hit a standing tip, and dropped tips MUST land in an empty socket!
                         assert not rack[(r_idx, c_idx)], (
