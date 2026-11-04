@@ -258,26 +258,15 @@ class LIMSMasterApp:
         m10ch.add_command(label="🟢 Drug Addition to EHM (5.0 µL) + Mix", command=lambda: self.action_load_10ul_multi_drug_addition_to_ehm(5.0))
         protocolmenu.add_cascade(label="8-Channel Multi (1-10 µL) [Drug Addition to EHM]", menu=m10ch)
 
-        protocolmenu.add_separator()
-
-        # Submenu: Legacy Workflows
-        mlegacy = tk.Menu(protocolmenu, tearoff=0)
-        mlegacy.add_command(label="Plate 2 Row H Media Change Only...", command=self.action_load_plate2_rowH_protocol)
-        mlegacy.add_command(label="Bakar Dilution Plate (Media Change)...", command=self.action_load_bakar_media_change_serial_dilution_protocol)
-        mlegacy.add_command(label="DMSO-Drug Plate Prep (Initial Loading)...", command=self.action_load_dmso_dilution_protocol)
-        mlegacy.add_command(label="Drug Addition Only (2 Plates, 5 µL)...", command=self.action_load_drug_addition_only_protocol)
-        protocolmenu.add_cascade(label="Legacy Workflows", menu=mlegacy)
-
         menubar.add_cascade(label="Protocols", menu=protocolmenu)
 
         # -------------------------------------------------------------
         # 3. HARDWARE MENU
         # -------------------------------------------------------------
         hwmenu = tk.Menu(menubar, tearoff=0)
-        hwmenu.add_command(label="Switch to 8×1000 µL Multi-Channel", command=lambda: self.switch_pipettor_head("8-Channel Multi (8×1000 µL)"))
-        hwmenu.add_command(label="Switch to 8×10 µL Multi-Channel (1-10 µL)", command=lambda: self.switch_pipettor_head("8-Channel Multi (1-10 µL)"))
-        hwmenu.add_command(label="Switch to 1×300 µL Single-Channel", command=lambda: self.switch_pipettor_head("300 µL Single-Channel"))
-        hwmenu.add_command(label="Switch to 1×20 µL Single-Channel", command=lambda: self.switch_pipettor_head("20 µL Single-Channel"))
+        hwmenu.add_command(label="Switch to 8×1000 µL Multi-Channel [Media Change]", command=lambda: self.switch_pipettor_head("8-Channel Multi (8×1000 µL)"))
+        hwmenu.add_command(label="Switch to 1×300 µL Single-Channel [Prepping DMSO-Drug]", command=lambda: self.switch_pipettor_head("300 µL Single-Channel"))
+        hwmenu.add_command(label="Switch to 8×10 µL Multi-Channel [Drug Addition to EHM]", command=lambda: self.switch_pipettor_head("8-Channel Multi (1-10 µL)"))
         hwmenu.add_separator()
         hwmenu.add_command(label="Reset / Home Pipette Head", command=self.quick_home_head)
         hwmenu.add_command(label="Retract to Safe Z (0 mm)", command=self.quick_safe_z)
