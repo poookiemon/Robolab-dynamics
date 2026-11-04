@@ -76,18 +76,26 @@ def test_gui_loading():
         assert len(app.workflow_sequence) == 26
         print("PASS: 8-Channel DMSO Dilution loaded (26 steps).")
 
-        # 2b. 8-Channel Multi (1-10 uL) Dedicated Drug Addition to BOTH EHM Plates
-        p10_path = os.path.join(SCRIPT_DIR, "protocols", "ehm_8ch_10ul_drug_addition_to_ehm_7.5uL.json")
+        # 2b. 1-10 µL Single-Channel Dedicated Drug Addition to BOTH EHM Plates
+        p10_path = os.path.join(SCRIPT_DIR, "protocols", "ehm_1ch_10ul_drug_addition_to_ehm_7.5uL.json")
         with open(p10_path, "r") as f:
             seq10 = json.load(f)
         app._populate_workflow_from_sequence(seq10, "1-10 uL Drug Addition to EHM 7.5uL")
-        assert len(app.workflow_sequence) == 48
+        assert len(app.workflow_sequence) == 252, f"Expected 252 steps, got {len(app.workflow_sequence)}"
         p1_steps = [s for s in seq10 if s.get("slot") == "Slot_5" and s.get("action") == "Dispense Media"]
         p2_steps = [s for s in seq10 if s.get("slot") == "Slot_6" and s.get("action") == "Dispense Media"]
-        assert len(p1_steps) == 6, f"Expected 6 column dispenses for Plate 1 (Slot 5), got {len(p1_steps)}"
-        assert len(p2_steps) == 6, f"Expected 6 column dispenses for Plate 2 (Slot 6), got {len(p2_steps)}"
+        assert len(p1_steps) == 48, f"Expected 48 dispenses for Plate 1 (Slot 5), got {len(p1_steps)}"
+        assert len(p2_steps) == 42, f"Expected 42 dispenses for Plate 2 (Slot 6), got {len(p2_steps)}"
         assert all(s.get("slot") == "Slot_3" for s in seq10 if s.get("action") == "Aspirate Media"), "All drug aspirations must come from Slot 3"
-        print("PASS: 8-Channel Multi (1-10 µL) Drug Addition to Both EHMs verified (48 steps: Slot 3 Drug -> Slot 5 Plt 1 & Slot 6 Plt 2).")
+        pick_tips = [s.get("well") for s in seq10 if s.get("action") == "Pick Up Tip"]
+        discard_tips = [s.get("well") for s in seq10 if s.get("action") == "Discard Tip"]
+        assert len(pick_tips) == 36, f"Expected 36 tips picked, got {len(pick_tips)}"
+        assert len(discard_tips) == 36, f"Expected 36 tips discarded, got {len(discard_tips)}"
+        # Verify fresh tips come from Cols 1..5 and graveyard is Cols 7..11
+        assert all(int(w[1:]) <= 5 for w in pick_tips), "All fresh tips must be picked from Columns 1..5"
+        assert all(int(w[1:]) >= 7 for w in discard_tips), "All used tips must be discarded to Graveyard Columns 7..11"
+        assert all(s.get("discard_z_override") == 40.5 for s in seq10 if s.get("action") == "Discard Tip"), "Graveyard discard Z must be 40.5 mm"
+        print("PASS: 1-10 µL Single-Channel Drug Addition to Both EHMs verified (252 steps: 36 tips, Slot 3 Drug -> Slot 5 Plt 1 & Slot 6 Plt 2).")
 
         # 3. 300 uL Single-Channel Media Change + 7.5 uL Drug
         app.switch_pipettor_head(False, quiet=True)
@@ -174,16 +182,16 @@ def test_gui_loading():
         assert hasattr(app, "proto_workflow_cb"), "proto_workflow_cb missing"
         assert hasattr(app, "btn_load_proto"), "btn_load_proto missing"
 
-        # 7a. Test 8-Channel Multi (1-10 uL)
-        app.proto_pipettor_var.set("8-Channel Multi (1-10 µL) [Drug Addition to EHM]")
+        # 7a. Test 1-10 µL Single-Channel
+        app.proto_pipettor_var.set("1-10 µL Single-Channel [Drug Addition to EHM]")
         app._on_proto_pipettor_selected()
-        assert app.lims.pipettor.multichannel is True
+        assert app.lims.pipettor.multichannel is False
         assert app.lims.pipettor.tip_volume == 10.0
-        assert "8×10 µL MULTI" in app.lbl_head_badge.cget("text")
+        assert "1-10 µL SINGLE" in app.lbl_head_badge.cget("text")
         p10_choices = list(app.proto_workflow_cb["values"])
         assert any("7.5 µL" in c for c in p10_choices)
         assert any("5.0 µL" in c for c in p10_choices)
-        print(f"PASS: 1-10 uL Multi Pipettor selected -> {len(p10_choices)} protocols populated: {p10_choices}")
+        print(f"PASS: 1-10 uL Single Pipettor selected -> {len(p10_choices)} protocols populated: {p10_choices}")
 
         # 7b. Test 300 uL Single-Channel
         app.proto_pipettor_var.set("300 µL Single-Channel [Prepping DMSO-Drug]")
