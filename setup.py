@@ -35,6 +35,8 @@ setup(
         "ttkbootstrap",
         "watchdog",
         "Pillow",
+        "pycparser",
+        "cffi",
     ],
     extras_require={
         "full": [

@@ -12,8 +12,12 @@ try:
     print("SUCCESS: Hardware Bridge Established via native biohit_pipettor package.")
 except Exception as e:
     HAS_BIOHIT_DLL = False
-    print(f"CRITICAL: Bridge failed. Ensure 'biohit_pipettor' is installed. Error: {e}")
-    traceback.print_exc()
+    err_str = str(e)
+    print(f"Hardware Bridge Notice: 'biohit_pipettor' not loaded ({e}).")
+    if "pycparser" in err_str:
+        print("💡 REQUIRED FIX: Run 'pip install pycparser' in your Command Prompt.")
+    elif "mono" in err_str or "netfx" in err_str:
+        print("💡 Hardware Bridge Notice: Simulation mode active.")
     RealBiohitPipettor = None
 
 

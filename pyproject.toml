@@ -19,6 +19,8 @@ dependencies = [
     "ttkbootstrap",
     "watchdog",
     "Pillow",
+    "pycparser",
+    "cffi",
 ]
 
 [project.optional-dependencies]
