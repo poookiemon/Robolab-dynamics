@@ -5935,16 +5935,39 @@ class LIMSMasterApp:
 
                     if action == "Pick Up Tip":
                         cal_dz = float(self.eight_ch_cal_offset.get("Z", 0.0)) if is_8ch else 0.0
-                        collar_z = float(self.calibrated_heights.get("tip_rack_collar_z", 64.49))
-                        configured_limit = float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 75.0))
-                        pickup_limit = (
-                            min(99.0, max(70.0, configured_limit + extra_z + cal_dz))
-                            if is_8ch
-                            else min(92.0, max(70.0, configured_limit + extra_z))
-                        )
+                        tip_vol = getattr(self.lims.pipettor, 'tip_volume', 1000.0)
+                        is_10ul = (is_8ch and tip_vol <= 50.0)
+
+                        if is_10ul:
+                            # Dedicated 8-Channel 1-10 µL head (calibrated collar Z=64.49mm)
+                            collar_z = float(self.calibrated_heights.get("tip_10ul_collar_z", 64.49))
+                            configured_limit = float(self.calibrated_heights.get("tip_10ul_limit_z", 75.0))
+                            approach_z = float(self.calibrated_heights.get("tip_10ul_approach_z", 50.0))
+                            extra_press = float(self.calibrated_heights.get("tip_10ul_extra_press_mm", 2.50))
+                            pickup_limit = min(92.0, max(68.0, configured_limit + extra_z + cal_dz))
+                            valid_collar_min = 48.0
+                            valid_collar_max = max(74.0, collar_z + 8.0)
+                        elif is_8ch:
+                            # Dedicated 8×1000 µL Multi-Channel (Monday calibrated heights)
+                            collar_z = float(self.calibrated_heights.get("tip_rack_collar_z", 86.36))
+                            configured_limit = float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 98.0))
+                            approach_z = float(self.calibrated_heights.get("tip_rack_pickup_approach_z", 75.0))
+                            extra_press = float(self.calibrated_heights.get("tip_pickup_extra_press_mm", 2.50))
+                            pickup_limit = min(99.5, max(88.0, configured_limit + extra_z + cal_dz))
+                            valid_collar_min = 84.0
+                            valid_collar_max = min(98.5, configured_limit - 0.5)
+                        else:
+                            # Single-Channel (e.g. 300 µL or 20 µL)
+                            collar_z = float(self.calibrated_heights.get("tip_rack_collar_z", 86.36))
+                            configured_limit = 87.0
+                            approach_z = 50.0
+                            extra_press = 1.50
+                            pickup_limit = min(92.0, max(70.0, configured_limit + extra_z))
+                            valid_collar_min = 48.0
+                            valid_collar_max = 86.0
+
                         hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                         labware_obj = self.lims.deck_labware.get(slot_name)
-                        approach_z = float(self.calibrated_heights.get("tip_rack_pickup_approach_z", 50.0))
 
                         tip_rack_model = None
                         if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
@@ -5958,7 +5981,7 @@ class LIMSMasterApp:
                             self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
                             time.sleep(0.05)
                             if not self.lims.pipettor.hardware:
-                                return True, collar_z + 2.80
+                                return True, collar_z + 2.50
 
                             hw = self.lims.pipettor.hardware
                             hw.z_speed = hw_speed
@@ -5977,15 +6000,11 @@ class LIMSMasterApp:
                             curr_z = getattr(hw, 'z_position', 0.0)
 
                             # 1. VALID SEATED TIP:
-                            # On the adapterless deck, tip rims sit at Z=64.49mm and seat down to Z=67.29mm.
-                            # Any height between 48.0mm and 74.0mm represents a successfully acquired tip.
-                            # An empty socket plunges past Z >= 75.0mm down to bottom (Z >= 84mm).
-                            valid_collar = (48.0 <= curr_z <= max(74.0, collar_z + 8.0))
-                            is_seated = valid_collar
+                            valid_collar = (valid_collar_min <= curr_z <= valid_collar_max)
+                            is_seated = valid_collar or (pick_ok and curr_z >= valid_collar_min)
 
                             if is_seated:
-                                # High-torque mechanical seating press & double-tap to wedge nozzles firmly into tip collars
-                                extra_press = float(self.calibrated_heights.get("tip_pickup_extra_press_mm", 2.80)) if is_8ch else 1.50
+                                # Monday High-torque mechanical seating press & double-tap to wedge nozzles firmly into tip collars
                                 if extra_press > 0:
                                     try:
                                         press_target = min(pickup_limit, curr_z + extra_press)
@@ -5994,7 +6013,7 @@ class LIMSMasterApp:
                                         hw.move_z(press_target)
                                         time.sleep(0.25)
                                         # Double-tap: slight retract and re-press for airtight friction lock
-                                        if press_target - curr_z >= 1.2:
+                                        if press_target - curr_z >= 1.0:
                                             hw.move_z(max(curr_z, press_target - 1.0))
                                             time.sleep(0.1)
                                             hw.move_z(press_target)
