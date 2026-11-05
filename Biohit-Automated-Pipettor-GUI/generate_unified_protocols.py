@@ -24,7 +24,7 @@ ROWS = "ABCDEFGH"
 
 def build_8ch_media_change_and_drug_steps(
     drug_vol_ul: float = 7.5,
-    remove_vol_ul: float = 550.0,
+    remove_vol_ul: float = 500.0,
     fresh_vol_ul: float = 500.0,
     reservoir_labware: str = "reservoir_7_column.json",
     drug_source_slot: str = "Slot_1",
@@ -54,7 +54,7 @@ def build_8ch_media_change_and_drug_steps(
     # -------------------------------------------------------------
     # 1. PLATE 5 (Slot 3)
     # -------------------------------------------------------------
-    # Step A: Media Removal (Col 1 Tips) -> Slot 6 Lane 1 (A1) Discard
+    # Step A: Media Removal (Col 1 Tips) -> Slot 6 Lane 1 (A1) Discard (Pooled 500+500 µL)
     steps.append({
         "action": "Pick Up Tip",
         "mode": "auto",
@@ -67,30 +67,45 @@ def build_8ch_media_change_and_drug_steps(
         "mounted_channels": "A-H",
         "label": "[PICK 8-CH] Slot_4 Col 1 (A1-H1) | Plate 5 Old Media Removal",
     })
-    for c in range(1, 7):
+    for c1, c2 in [(1, 2), (3, 4), (5, 6)]:
         steps.append({
             "action": "Aspirate Media",
             "mode": "auto",
             "slot": "Slot_3",
-            "well": f"A{c}",
+            "well": f"A{c1}",
             "volume": float(remove_vol_ul),
             "labware": "myriamed_48_well.json",
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[REMOVE 8-CH] Aspirate {remove_vol_ul:g} µL from Plate 5 Col {c} [Rows A-H]",
+            "no_air_cushion": True,
+            "label": f"[REMOVE 8-CH] Aspirate {remove_vol_ul:g} µL from Plate 5 Col {c1} (1/2 to {remove_vol_ul*2:g} µL pooled) [Rows A-H]",
         })
+        steps.append({
+            "action": "Aspirate Media",
+            "mode": "auto",
+            "slot": "Slot_3",
+            "well": f"A{c2}",
+            "volume": float(remove_vol_ul),
+            "labware": "myriamed_48_well.json",
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-H",
+            "track_liquid": False,
+            "no_air_cushion": True,
+            "label": f"[REMOVE 8-CH] Aspirate {remove_vol_ul:g} µL from Plate 5 Col {c2} (2/2 to {remove_vol_ul*2:g} µL pooled) [Rows A-H]",
+        })
+        pooled_rem = float(remove_vol_ul * 2)
         steps.append({
             "action": "Dispense Media",
             "mode": "auto",
             "slot": "Slot_6",
             "well": f"A{p5_waste_lane}",
-            "volume": float(remove_vol_ul),
+            "volume": pooled_rem,
             "labware": reservoir_labware,
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g} µL to Slot_6 A{p5_waste_lane} Waste (Plate 5 Col {c})",
+            "label": f"[WASTE 8-CH] Dispense {pooled_rem:g} µL pooled to Slot_6 A{p5_waste_lane} Waste (Plate 5 Cols {c1}&{c2})",
         })
     steps.append({
         "action": "Discard Tip",
@@ -228,7 +243,7 @@ def build_8ch_media_change_and_drug_steps(
     # -------------------------------------------------------------
     # 2. PLATE 6 (Slot 5)
     # -------------------------------------------------------------
-    # Step A: Media Removal (Col 3 Tips) -> Slot 6 Lane 2 (A2) Discard
+    # Step A: Media Removal (Col 3 Tips) -> Slot 6 Lane 2 (A2) Discard (Pooled 500+500 µL)
     steps.append({
         "action": "Pick Up Tip",
         "mode": "auto",
@@ -241,30 +256,45 @@ def build_8ch_media_change_and_drug_steps(
         "mounted_channels": "A-H",
         "label": "[PICK 8-CH] Slot_4 Col 3 (A3-H3) | Plate 6 Old Media Removal",
     })
-    for c in range(1, 7):
+    for c1, c2 in [(1, 2), (3, 4), (5, 6)]:
         steps.append({
             "action": "Aspirate Media",
             "mode": "auto",
             "slot": "Slot_5",
-            "well": f"A{c}",
+            "well": f"A{c1}",
             "volume": float(remove_vol_ul),
             "labware": "myriamed_48_well.json",
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[REMOVE 8-CH] Aspirate {remove_vol_ul:g} µL from Plate 6 Col {c} [Rows A-H]",
+            "no_air_cushion": True,
+            "label": f"[REMOVE 8-CH] Aspirate {remove_vol_ul:g} µL from Plate 6 Col {c1} (1/2 to {remove_vol_ul*2:g} µL pooled) [Rows A-H]",
         })
+        steps.append({
+            "action": "Aspirate Media",
+            "mode": "auto",
+            "slot": "Slot_5",
+            "well": f"A{c2}",
+            "volume": float(remove_vol_ul),
+            "labware": "myriamed_48_well.json",
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-H",
+            "track_liquid": False,
+            "no_air_cushion": True,
+            "label": f"[REMOVE 8-CH] Aspirate {remove_vol_ul:g} µL from Plate 6 Col {c2} (2/2 to {remove_vol_ul*2:g} µL pooled) [Rows A-H]",
+        })
+        pooled_rem = float(remove_vol_ul * 2)
         steps.append({
             "action": "Dispense Media",
             "mode": "auto",
             "slot": "Slot_6",
             "well": f"A{p6_waste_lane}",
-            "volume": float(remove_vol_ul),
+            "volume": pooled_rem,
             "labware": reservoir_labware,
             "eight_ch_symmetric": True,
             "mounted_channels": "A-H",
             "track_liquid": False,
-            "label": f"[WASTE 8-CH] Dispense {remove_vol_ul:g} µL to Slot_6 A{p6_waste_lane} Waste (Plate 6 Col {c})",
+            "label": f"[WASTE 8-CH] Dispense {pooled_rem:g} µL pooled to Slot_6 A{p6_waste_lane} Waste (Plate 6 Cols {c1}&{c2})",
         })
     steps.append({
         "action": "Discard Tip",

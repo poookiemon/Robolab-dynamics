@@ -16,144 +16,114 @@
     "mode": "auto",
     "slot": "Slot_3",
     "well": "A1",
-    "volume": 550.0,
+    "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 5 Col 1 [Rows A-H]"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A1",
-    "volume": 550.0,
-    "labware": "reservoir_7_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A-H",
-    "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A1 Waste (Plate 5 Col 1)"
+    "no_air_cushion": true,
+    "label": "[REMOVE 8-CH] Aspirate 500 \u00b5L from Plate 5 Col 1 (1/2 to 1000 \u00b5L pooled) [Rows A-H]"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_3",
     "well": "A2",
-    "volume": 550.0,
+    "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 5 Col 2 [Rows A-H]"
+    "no_air_cushion": true,
+    "label": "[REMOVE 8-CH] Aspirate 500 \u00b5L from Plate 5 Col 2 (2/2 to 1000 \u00b5L pooled) [Rows A-H]"
   },
   {
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
     "well": "A1",
-    "volume": 550.0,
+    "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A1 Waste (Plate 5 Col 2)"
+    "label": "[WASTE 8-CH] Dispense 1000 \u00b5L pooled to Slot_6 A1 Waste (Plate 5 Cols 1&2)"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_3",
     "well": "A3",
-    "volume": 550.0,
+    "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 5 Col 3 [Rows A-H]"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A1",
-    "volume": 550.0,
-    "labware": "reservoir_7_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A-H",
-    "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A1 Waste (Plate 5 Col 3)"
+    "no_air_cushion": true,
+    "label": "[REMOVE 8-CH] Aspirate 500 \u00b5L from Plate 5 Col 3 (1/2 to 1000 \u00b5L pooled) [Rows A-H]"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_3",
     "well": "A4",
-    "volume": 550.0,
+    "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 5 Col 4 [Rows A-H]"
+    "no_air_cushion": true,
+    "label": "[REMOVE 8-CH] Aspirate 500 \u00b5L from Plate 5 Col 4 (2/2 to 1000 \u00b5L pooled) [Rows A-H]"
   },
   {
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
     "well": "A1",
-    "volume": 550.0,
+    "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A1 Waste (Plate 5 Col 4)"
+    "label": "[WASTE 8-CH] Dispense 1000 \u00b5L pooled to Slot_6 A1 Waste (Plate 5 Cols 3&4)"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_3",
     "well": "A5",
-    "volume": 550.0,
+    "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 5 Col 5 [Rows A-H]"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A1",
-    "volume": 550.0,
-    "labware": "reservoir_7_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A-H",
-    "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A1 Waste (Plate 5 Col 5)"
+    "no_air_cushion": true,
+    "label": "[REMOVE 8-CH] Aspirate 500 \u00b5L from Plate 5 Col 5 (1/2 to 1000 \u00b5L pooled) [Rows A-H]"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_3",
     "well": "A6",
-    "volume": 550.0,
+    "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 5 Col 6 [Rows A-H]"
+    "no_air_cushion": true,
+    "label": "[REMOVE 8-CH] Aspirate 500 \u00b5L from Plate 5 Col 6 (2/2 to 1000 \u00b5L pooled) [Rows A-H]"
   },
   {
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
     "well": "A1",
-    "volume": 550.0,
+    "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A1 Waste (Plate 5 Col 6)"
+    "label": "[WASTE 8-CH] Dispense 1000 \u00b5L pooled to Slot_6 A1 Waste (Plate 5 Cols 5&6)"
   },
   {
     "action": "Discard Tip",
@@ -502,144 +472,114 @@
     "mode": "auto",
     "slot": "Slot_5",
     "well": "A1",
-    "volume": 550.0,
+    "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 6 Col 1 [Rows A-H]"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A2",
-    "volume": 550.0,
-    "labware": "reservoir_7_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A-H",
-    "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A2 Waste (Plate 6 Col 1)"
+    "no_air_cushion": true,
+    "label": "[REMOVE 8-CH] Aspirate 500 \u00b5L from Plate 6 Col 1 (1/2 to 1000 \u00b5L pooled) [Rows A-H]"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_5",
     "well": "A2",
-    "volume": 550.0,
+    "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 6 Col 2 [Rows A-H]"
+    "no_air_cushion": true,
+    "label": "[REMOVE 8-CH] Aspirate 500 \u00b5L from Plate 6 Col 2 (2/2 to 1000 \u00b5L pooled) [Rows A-H]"
   },
   {
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
     "well": "A2",
-    "volume": 550.0,
+    "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A2 Waste (Plate 6 Col 2)"
+    "label": "[WASTE 8-CH] Dispense 1000 \u00b5L pooled to Slot_6 A2 Waste (Plate 6 Cols 1&2)"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_5",
     "well": "A3",
-    "volume": 550.0,
+    "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 6 Col 3 [Rows A-H]"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A2",
-    "volume": 550.0,
-    "labware": "reservoir_7_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A-H",
-    "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A2 Waste (Plate 6 Col 3)"
+    "no_air_cushion": true,
+    "label": "[REMOVE 8-CH] Aspirate 500 \u00b5L from Plate 6 Col 3 (1/2 to 1000 \u00b5L pooled) [Rows A-H]"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_5",
     "well": "A4",
-    "volume": 550.0,
+    "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 6 Col 4 [Rows A-H]"
+    "no_air_cushion": true,
+    "label": "[REMOVE 8-CH] Aspirate 500 \u00b5L from Plate 6 Col 4 (2/2 to 1000 \u00b5L pooled) [Rows A-H]"
   },
   {
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
     "well": "A2",
-    "volume": 550.0,
+    "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A2 Waste (Plate 6 Col 4)"
+    "label": "[WASTE 8-CH] Dispense 1000 \u00b5L pooled to Slot_6 A2 Waste (Plate 6 Cols 3&4)"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_5",
     "well": "A5",
-    "volume": 550.0,
+    "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 6 Col 5 [Rows A-H]"
-  },
-  {
-    "action": "Dispense Media",
-    "mode": "auto",
-    "slot": "Slot_6",
-    "well": "A2",
-    "volume": 550.0,
-    "labware": "reservoir_7_column.json",
-    "eight_ch_symmetric": true,
-    "mounted_channels": "A-H",
-    "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A2 Waste (Plate 6 Col 5)"
+    "no_air_cushion": true,
+    "label": "[REMOVE 8-CH] Aspirate 500 \u00b5L from Plate 6 Col 5 (1/2 to 1000 \u00b5L pooled) [Rows A-H]"
   },
   {
     "action": "Aspirate Media",
     "mode": "auto",
     "slot": "Slot_5",
     "well": "A6",
-    "volume": 550.0,
+    "volume": 500.0,
     "labware": "myriamed_48_well.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[REMOVE 8-CH] Aspirate 550 \u00b5L from Plate 6 Col 6 [Rows A-H]"
+    "no_air_cushion": true,
+    "label": "[REMOVE 8-CH] Aspirate 500 \u00b5L from Plate 6 Col 6 (2/2 to 1000 \u00b5L pooled) [Rows A-H]"
   },
   {
     "action": "Dispense Media",
     "mode": "auto",
     "slot": "Slot_6",
     "well": "A2",
-    "volume": 550.0,
+    "volume": 1000.0,
     "labware": "reservoir_7_column.json",
     "eight_ch_symmetric": true,
     "mounted_channels": "A-H",
     "track_liquid": false,
-    "label": "[WASTE 8-CH] Dispense 550 \u00b5L to Slot_6 A2 Waste (Plate 6 Col 6)"
+    "label": "[WASTE 8-CH] Dispense 1000 \u00b5L pooled to Slot_6 A2 Waste (Plate 6 Cols 5&6)"
   },
   {
     "action": "Discard Tip",

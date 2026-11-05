@@ -4038,11 +4038,12 @@ class LIMSMasterApp:
         vol_row = ttk.Frame(opt_lf)
         vol_row.pack(fill=tk.X, pady=4)
         ttk.Label(vol_row, text="Remove Vol (µL/well):").pack(side=tk.LEFT)
-        rem_vol_var = tk.StringVar(value="550.0")
+        rem_vol_var = tk.StringVar(value="500.0")
         ttk.Entry(vol_row, textvariable=rem_vol_var, width=8, justify="center").pack(side=tk.LEFT, padx=(4, 16))
         ttk.Label(vol_row, text="Fresh Media Vol (µL/well):").pack(side=tk.LEFT)
         fresh_vol_var = tk.StringVar(value="500.0")
         ttk.Entry(vol_row, textvariable=fresh_vol_var, width=8, justify="center").pack(side=tk.LEFT, padx=4)
+        ttk.Label(vol_row, text="(Pooled 500+500 µL)", font=("Arial", 8, "italic"), foreground="#6f42c1").pack(side=tk.LEFT, padx=6)
 
         # Reservoir Lanes Configuration Frame
         res_lf = ttk.LabelFrame(body, text="Slot 6 Reservoir Configuration", padding=8)
@@ -4152,7 +4153,7 @@ class LIMSMasterApp:
                 p5_waste_lane=p5_w,
                 p6_waste_lane=p6_w,
                 reservoir_labware=res_file,
-                multi_dispense=(f_vol == 500.0),
+                multi_dispense=(f_vol <= 500.0 and r_vol <= 500.0),
             )
 
             # Configure 6-slot deck: Slot_1 & Slot_2 empty; Slot_3 Plate 5; Slot_4 Tips; Slot_5 Plate 6; Slot_6 Reservoir

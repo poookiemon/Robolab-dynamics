@@ -358,7 +358,7 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
     all_48 = {f"{r}{c}" for r in ROWS for c in range(1, 7)}
     assert set(filled_wells["Slot_3"].keys()) == all_48, "Plate 5 missing wells!"
     assert set(filled_wells["Slot_5"].keys()) == all_48, "Plate 6 missing wells!"
-    if len(loaded_cols) >= 4 and len(steps) > 110:
+    if len(loaded_cols) >= 4 and len(steps) >= 44:
         assert removed_wells["Slot_3"] == all_48, "Plate 5 old media removal incomplete!"
         assert removed_wells["Slot_5"] == all_48, "Plate 6 old media removal incomplete!"
 
@@ -390,10 +390,10 @@ def main():
         assert len(steps_all8_full_1to1) == 56, f"Expected 56 steps, got {len(steps_all8_full_1to1)}"
         simulate_all_8ch_media_change(app, "All 8 Channels Full Media Change 1-to-1 (56 steps)", steps_all8_full_1to1, loaded_cols={1, 2, 3, 4})
 
-        # 1b. All 8 Channels Full Media Change (50 steps multi-dispense: 4 full tip cols, 96/96 wells)
+        # 1b. All 8 Channels Full Media Change (44 steps multi-dispense / pooled removal: 4 full tip cols, 96/96 wells)
         steps_all8_full_multi = build_8ch_ehm_media_change_steps(
             include_old_media_removal=True,
-            remove_vol_ul=550.0,
+            remove_vol_ul=500.0,
             fresh_vol_ul=500.0,
             tip_drop_mode="rack_graveyard",
             media_addition_mode="all_8ch",
@@ -404,8 +404,8 @@ def main():
             reservoir_labware="reservoir_7_column.json",
             multi_dispense=True,
         )
-        assert len(steps_all8_full_multi) == 50, f"Expected 50 steps, got {len(steps_all8_full_multi)}"
-        simulate_all_8ch_media_change(app, "All 8 Channels Full Media Change Multi-Dispense (50 steps)", steps_all8_full_multi, loaded_cols={1, 2, 3, 4})
+        assert len(steps_all8_full_multi) == 44, f"Expected 44 steps, got {len(steps_all8_full_multi)}"
+        simulate_all_8ch_media_change(app, "All 8 Channels Full Media Change Multi-Dispense (44 steps)", steps_all8_full_multi, loaded_cols={1, 2, 3, 4})
 
         # 2a. All 8 Channels Fresh Media Only (28 steps 1-to-1: 2 full tip cols, 96/96 wells)
         steps_all8_fresh_1to1 = build_8ch_ehm_media_change_steps(
