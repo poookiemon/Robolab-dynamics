@@ -4881,8 +4881,8 @@ class LIMSMasterApp:
         "Slot_2": (95.5, 13.0),    # calibrated (front left, 3-well reservoir/waste trough A1)
         "Slot_3": (243.81, 53.0),  # calibrated (exact center: X=243.81, Y=53.0)
         "Slot_4": (105.60, 53.02), # calibrated (96-well A1 X=105.60, 8-ch center Y=84.52 -> A1 Y=53.02)
-        "Slot_5": (243.24, 178.69), # calibrated (exact center: X=243.24, Y=178.69)
-        "Slot_6": (108.81, 183.64), # calibrated (Slot 6 7-column reservoir A1 / R1)
+        "Slot_5": (243.24, 147.19), # calibrated (8-ch center Y=178.69 -> A1 Y=147.19)
+        "Slot_6": (105.60, 147.19), # calibrated (8-ch center Y=178.69 -> A1 Y=147.19; 7-col res uses Y=183.64)
     }
 
     # Calibrated per-slot column tables for 96-format labware (override pitch math)

@@ -734,8 +734,8 @@ class DeckSlot:
             "Slot_2": (95.5, 13.0),
             "Slot_3": (243.81, 53.0),
             "Slot_4": (105.60, 53.02),
-            "Slot_5": (243.24, 178.69),
-            "Slot_6": (108.81, 183.64),
+            "Slot_5": (243.24, 147.19),
+            "Slot_6": (105.60, 147.19),
         }
         if self.name in calibrated_origins:
             return calibrated_origins[self.name]
