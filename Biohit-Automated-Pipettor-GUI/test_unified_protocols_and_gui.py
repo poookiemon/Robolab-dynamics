@@ -128,11 +128,11 @@ def test_gui_loading():
         app.switch_pipettor_head(True, quiet=True)
         res6 = Reservoir6Column(source_file="reservoir_6_column.json")
         res7 = Reservoir7Column(source_file="reservoir_7_column.json")
-        assert app._calculate_z("Aspirate Media", res6, "A1", "auto", 0.0, "Slot_6") == 58.34
+        assert app._calculate_z("Aspirate Media", res6, "A1", "auto", 0.0, "Slot_6") == 90.42
         assert app._calculate_z("Dispense Media", res6, "A6", "auto", 0.0, "Slot_6") == 8.37
-        assert app._calculate_z("Aspirate Media", res7, "A1", "auto", 0.0, "Slot_6") == 58.34
+        assert app._calculate_z("Aspirate Media", res7, "A1", "auto", 0.0, "Slot_6") == 90.42
         assert app._calculate_z("Dispense Media", res7, "A7", "auto", 0.0, "Slot_6") == 8.37
-        print("PASS: Calibrated heights verified identical (Z=58.34 take, Z=8.37 discard) for both 6-col and 7-col reservoirs.")
+        print("PASS: Calibrated heights verified identical (Z=90.42 take, Z=8.37 discard) for both 6-col and 7-col reservoirs.")
 
         # 6. Test Tip Requirements and Clearance Slots Analysis
         print("\n--- 3. Testing Tip Requirements & Empty Clearance Slots ---")

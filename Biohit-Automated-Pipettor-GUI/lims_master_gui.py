@@ -128,7 +128,7 @@ class LIMSMasterApp:
             "ehm_aspirate_z": 24.17,
             "ehm_dispense_z": 14.17,
             "waste_dispense_z": 59.32,
-            "reservoir_aspirate_z": 89.32,
+            "reservoir_aspirate_z": 90.42,
             "tip_rack_discard_z": 42.0,
             "tip_rack_pickup_approach_z": 75.0,
             "tip_rack_pickup_limit_z": 98.0,
@@ -3901,7 +3901,7 @@ class LIMSMasterApp:
         fields = [
             ("ehm_aspirate_z", "EHM Old Media Removal (Inside Well):", "24.17"),
             ("ehm_dispense_z", "EHM Fresh Media Addition (1cm Above Bottom):", "14.17"),
-            ("reservoir_aspirate_z", "Slot 6 Fresh Media Reservoir (Deep to Take Media):", "89.32"),
+            ("reservoir_aspirate_z", "Slot 6 Fresh Media Reservoir (Deep to Take Media):", "90.42"),
             ("waste_dispense_z", "Slot 6 Waste Dispense (Up / 3cm Above Bottom):", "59.32"),
             ("tip_rack_discard_z", "Slot 4 Tip Rack Return / Discard Height:", "42.00"),
             ("tip_rack_collar_z", "Slot 4 Tip Collar / Rim (Photo Alignment):", "86.36"),
@@ -5256,7 +5256,7 @@ class LIMSMasterApp:
                 if action == "Dispense Media":
                     return min(float(self.calibrated_heights.get("waste_dispense_z", 8.37)) + slot_z_offset + extra_z, 103.5)
                 elif action in ("Aspirate Media", "Mix Well"):
-                    return min(float(self.calibrated_heights.get("reservoir_aspirate_z", 58.34)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("reservoir_aspirate_z", 90.42)) + slot_z_offset + extra_z, 103.5)
                 elif action == "Discard Tip":
                     return min(float(self.calibrated_heights.get("waste_tip_drop_z", 8.37)) + slot_z_offset + extra_z, 103.5)
             elif slot_name == "Slot_4" and action == "Discard Tip":
@@ -5297,7 +5297,7 @@ class LIMSMasterApp:
             elif kind == "reservoir_6":
                 base_z = 101.0 if deep else 78.0
             elif kind == "reservoir_7":
-                base_z = 58.34 if deep else 8.37  # 58.34 deep to take media, 8.37 discard/dispense
+                base_z = 90.42 if deep else 8.37  # 90.42 deep to take media, 8.37 discard/dispense
             elif kind == "ehm48":
                 base_z = 24.17 if deep else 14.17  # 24.17 inside well, 14.17 dispense (10mm above bottom)
             elif kind == "tip_rack":

@@ -374,7 +374,7 @@ class Reservoir7Column(LabwareBase):
     7-Column Reagent Reservoir on Slot 6 (lanes R1..R7 / A1..A7).
     User-calibrated on Slot 6:
       R1=108.81, R2=93.81, R3=75.06, R4=56.31, R5=37.56, R6=18.81, R7=5.91.
-      Y=183.64, Z=58.34 (aspirate), Z=8.37 (discard/dispense).
+      Y=183.64, Z=90.42 (aspirate), Z=8.37 (discard/dispense).
     """
     def __init__(self, **kwargs):
         defaults = {
@@ -385,7 +385,7 @@ class Reservoir7Column(LabwareBase):
             "z_height_mm": 35.0,
             "well_depth_mm": 32.0,
             "well_radius_mm": 6.5,
-            "max_safe_bottom_z": 62.0,
+            "max_safe_bottom_z": 95.0,
             "dead_volume_ul": 2000.0,
             "max_volume_ul": 40000.0,
             "pitch_x_mm": 15.0,
@@ -398,7 +398,7 @@ class Reservoir7Column(LabwareBase):
         self.is_8ch_calibrated = True
         self.col_x = kwargs.get("col_x", [108.81, 93.81, 75.06, 56.31, 37.56, 18.81, 5.91])
         self.center_y = kwargs.get("center_y", 183.64)
-        self.aspirate_z_mm = kwargs.get("aspirate_z_mm", 58.34)  # Operator calibrated depth to take fresh media
+        self.aspirate_z_mm = kwargs.get("aspirate_z_mm", 90.42)  # Operator calibrated depth to take fresh media
         self.dispense_brim_z_mm = kwargs.get("dispense_brim_z_mm", 8.37)  # Discard height up
         self.discard_tip_z_mm = kwargs.get("discard_tip_z_mm", 8.37)
 

@@ -155,7 +155,7 @@ def simulate_all_8ch_media_change(app: LIMSMasterApp, name: str, steps, loaded_c
                     removed_wells[slot].add(f"{r}{col_num}")
                 held_media = "OLD_MEDIA"
             elif slot == "Slot_6":
-                assert abs(tz - 58.34) < 1e-6, f"Expected 7-well reservoir aspirate 58.34mm, got {tz}"
+                assert abs(tz - 90.42) < 1e-6, f"Expected 7-well reservoir aspirate 90.42mm, got {tz}"
                 held_media = well
 
         elif action == "Dispense Media":
@@ -315,8 +315,8 @@ def simulate_protocol_variant(app: LIMSMasterApp, name: str, steps, loaded_cols,
                     tip_taint[ch] = f"OLD_{slot}_{ROWS[ch]}"
                 held_source_lane = "OLD_MEDIA"
             elif slot == "Slot_6":
-                # Fresh media aspiration from Reservoir (Z = 58.34mm)
-                assert abs(tz - 58.34) < 1e-4 or abs(tz - 80.5) < 1e-4, f"Expected 58.34mm or 80.5mm, got {tz}"
+                # Fresh media aspiration from Reservoir (Z = 90.42mm)
+                assert abs(tz - 90.42) < 1e-4 or abs(tz - 80.5) < 1e-4, f"Expected 90.42mm or 80.5mm, got {tz}"
                 lbl = step.get("label", "")
                 if "Control" in lbl:
                     # CRITICAL: R4 must have ZERO drug taint when Control is aspirated!

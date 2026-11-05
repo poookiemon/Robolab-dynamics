@@ -44,9 +44,9 @@ def main():
     # Verify Z heights
     asp_z = app._calculate_z("Aspirate Media", res7, "A1", "auto", 0.0, "Slot_6")
     disp_z = app._calculate_z("Dispense Media", res7, "A1", "auto", 0.0, "Slot_6")
-    assert abs(asp_z - 58.34) < 1e-4, f"Aspirate Z expected 58.34, got {asp_z}"
+    assert abs(asp_z - 90.42) < 1e-4, f"Aspirate Z expected 90.42, got {asp_z}"
     assert abs(disp_z - 8.37) < 1e-4, f"Dispense Z expected 8.37, got {disp_z}"
-    print("PASS: 7-Well Reservoir A1..A7 (X=108.81..18.81, Y=183.64, Z=58.34 aspirate, Z=8.37 dispense) verified!")
+    print("PASS: 7-Well Reservoir A1..A7 (X=108.81..18.81, Y=183.64, Z=90.42 aspirate, Z=8.37 dispense) verified!")
 
     print("\n--- 2. Testing EHM Declared Physical Z (24.17 mm downwards) ---")
     ehm_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "labware", "myriamed_48_well.json")
