@@ -252,11 +252,14 @@ class LIMSMasterApp:
         m300.add_command(label="🟢 Prepping DMSO-Drug Serial Dilution (96-Well Plate)...", command=self.action_load_300ul_dmso_dilution)
         protocolmenu.add_cascade(label="300 µL Single-Channel [Prepping DMSO-Drug]", menu=m300)
 
-        # Submenu 3: 1-10 µL Single-Channel [Drug Addition to EHM]
+        # Submenu 3: 8-Channel Multi (1-10 µL) [Drug Addition to EHM]
         m10ch = tk.Menu(protocolmenu, tearoff=0)
-        m10ch.add_command(label="🟢 Drug Addition to EHM (7.5 µL) + Mix", command=lambda: self.action_load_10ul_drug_addition_to_ehm(7.5))
-        m10ch.add_command(label="🟢 Drug Addition to EHM (5.0 µL) + Mix", command=lambda: self.action_load_10ul_drug_addition_to_ehm(5.0))
-        protocolmenu.add_cascade(label="1-10 µL Single-Channel [Drug Addition to EHM]", menu=m10ch)
+        m10ch.add_command(label="🟢 [5-Tip Parallel] Drug Addition to EHM (7.5 µL) + Mix", command=lambda: self.action_load_10ul_parallel_drug_addition(7.5))
+        m10ch.add_command(label="🟢 [5-Tip Parallel] Drug Addition to EHM (5.0 µL) + Mix", command=lambda: self.action_load_10ul_parallel_drug_addition(5.0))
+        m10ch.add_separator()
+        m10ch.add_command(label="🟢 [Triplicate Assay] Drug Addition to EHM (7.5 µL) + Mix", command=lambda: self.action_load_10ul_triplicate_drug_addition(7.5))
+        m10ch.add_command(label="🟢 [Triplicate Assay] Drug Addition to EHM (5.0 µL) + Mix", command=lambda: self.action_load_10ul_triplicate_drug_addition(5.0))
+        protocolmenu.add_cascade(label="8-Channel Multi (1-10 µL) [Drug Addition to EHM]", menu=m10ch)
 
         menubar.add_cascade(label="Protocols", menu=protocolmenu)
 
@@ -266,7 +269,7 @@ class LIMSMasterApp:
         hwmenu = tk.Menu(menubar, tearoff=0)
         hwmenu.add_command(label="Switch to 8×1000 µL Multi-Channel [Media Change]", command=lambda: self.switch_pipettor_head("8-Channel Multi (8×1000 µL)"))
         hwmenu.add_command(label="Switch to 1×300 µL Single-Channel [Prepping DMSO-Drug]", command=lambda: self.switch_pipettor_head("300 µL Single-Channel"))
-        hwmenu.add_command(label="Switch to 1-10 µL Single-Channel [Drug Addition to EHM]", command=lambda: self.switch_pipettor_head("1-10 µL Single-Channel"))
+        hwmenu.add_command(label="Switch to 8-Channel Multi (1-10 µL) [Drug Addition to EHM]", command=lambda: self.switch_pipettor_head("8-Channel Multi (1-10 µL)"))
         hwmenu.add_separator()
         hwmenu.add_command(label="Reset / Home Pipette Head", command=self.quick_home_head)
         hwmenu.add_command(label="Retract to Safe Z (0 mm)", command=self.quick_safe_z)
@@ -747,9 +750,23 @@ class LIMSMasterApp:
                         if len(w) > 1 and w[1:].isdigit():
                             cols.append(int(w[1:]))
                     cols = sorted(list(set(cols)))
-                    total_tips = len(wells) * 8
+                    ch_counts = []
+                    for s in pickup_steps:
+                        if s.get("slot") == ts:
+                            m_ch = str(s.get("mounted_channels", "A-H")).strip().upper()
+                            if "-" in m_ch:
+                                s_ch, e_ch = m_ch.split("-", 1)
+                                count = ord(e_ch.strip()) - ord(s_ch.strip()) + 1
+                            else:
+                                count = 1
+                            ch_counts.append(count)
+                    tips_per_col = max(ch_counts) if ch_counts else 8
+                    total_tips = len(wells) * tips_per_col
                     col_str = f"Cols {cols[0]}..{cols[-1]}" if len(cols) > 4 else f"Cols {', '.join(str(c) for c in cols)}"
-                    tips_info.append(f"{ts_label}: {total_tips} fresh tips ({len(cols)} full columns: {col_str})")
+                    if tips_per_col == 5:
+                        tips_info.append(f"{ts_label}: {total_tips} fresh tips ({tips_per_col} tips per column: Rows A–E across {col_str})")
+                    else:
+                        tips_info.append(f"{ts_label}: {total_tips} fresh tips ({len(cols)} columns: {col_str})")
                 else:
                     total_tips = len(wells)
                     cols = sorted(list(set(int(w[1:]) for w in wells if len(w) > 1 and w[1:].isdigit())))
@@ -1223,10 +1240,11 @@ class LIMSMasterApp:
                 badge_txt = "HEAD: 8×1000 µL MULTI"
                 badge_bg = "#6f42c1"
             elif "1-10" in hn or "8×10" in hn or "10 µl" in hn or "10ul" in hn or ("10" in hn and "1000" not in hn):
-                is_multi = False
+                is_single = "single" in hn
+                is_multi = not is_single
                 target_vol = 10.0
-                label = "1-10 µL Single-Channel"
-                badge_txt = "HEAD: 1-10 µL SINGLE"
+                label = "1-10 µL Single-Channel" if is_single else "8-Channel Multi (1-10 µL)"
+                badge_txt = "HEAD: 1-10 µL SINGLE" if is_single else "HEAD: 8×10 µL MULTI"
                 badge_bg = "#20c997"
             elif "300" in hn:
                 is_multi = False
@@ -1351,7 +1369,7 @@ class LIMSMasterApp:
             values=[
                 "8-Channel Multi (8×1000 µL) [Media Change]",
                 "300 µL Single-Channel [Prepping DMSO-Drug]",
-                "1-10 µL Single-Channel [Drug Addition to EHM]",
+                "8-Channel Multi (1-10 µL) [Drug Addition to EHM]",
             ],
             state="readonly",
             width=26,
@@ -1988,7 +2006,7 @@ class LIMSMasterApp:
             values=[
                 "8-Channel Multi (8×1000 µL) [Media Change]",
                 "300 µL Single-Channel [Prepping DMSO-Drug]",
-                "1-10 µL Single-Channel [Drug Addition to EHM]",
+                "8-Channel Multi (1-10 µL) [Drug Addition to EHM]",
             ],
             state="readonly",
             width=26,
@@ -2082,7 +2100,7 @@ class LIMSMasterApp:
             values=[
                 "8-Channel Multi (8×1000 µL) [Media Change]",
                 "300 µL Single-Channel [Prepping DMSO-Drug]",
-                "1-10 µL Single-Channel [Drug Addition to EHM]",
+                "8-Channel Multi (1-10 µL) [Drug Addition to EHM]",
             ],
             state="readonly",
         )
@@ -2808,8 +2826,10 @@ class LIMSMasterApp:
             }
         elif "1-10" in p_name or "8×10" in p_name or "10 µl" in p_name or ("10" in p_name and "1000" not in p_name):
             return {
-                "Drug Addition to EHM (7.5 µL) + Mix": lambda: self.action_load_10ul_drug_addition_to_ehm(7.5),
-                "Drug Addition to EHM (5.0 µL) + Mix": lambda: self.action_load_10ul_drug_addition_to_ehm(5.0),
+                "[5-Tip Parallel] Drug Addition to EHM (7.5 µL) + Mix": lambda: self.action_load_10ul_parallel_drug_addition(7.5),
+                "[5-Tip Parallel] Drug Addition to EHM (5.0 µL) + Mix": lambda: self.action_load_10ul_parallel_drug_addition(5.0),
+                "[Triplicate Assay] Drug Addition to EHM (7.5 µL) + Mix": lambda: self.action_load_10ul_triplicate_drug_addition(7.5),
+                "[Triplicate Assay] Drug Addition to EHM (5.0 µL) + Mix": lambda: self.action_load_10ul_triplicate_drug_addition(5.0),
             }
         elif "300" in p_name:
             return {
@@ -2889,11 +2909,11 @@ class LIMSMasterApp:
                 self.logger.error(f"[SAFE Z ERROR] Failed to retract Z: {e}")
 
     # -------------------------------------------------------------------------
-    # 0. 1-10 µL SINGLE-CHANNEL PROTOCOL LOADERS
+    # 0. 8-CHANNEL 1-10 µL PROTOCOL LOADERS
     # -------------------------------------------------------------------------
-    def action_load_10ul_drug_addition_to_ehm(self, volume: float = 7.5):
-        self.switch_pipettor_head("1-10 µL Single-Channel", quiet=True)
-        filename = f"ehm_1ch_10ul_drug_addition_to_ehm_{volume:g}uL.json"
+    def action_load_10ul_parallel_drug_addition(self, volume: float = 7.5):
+        self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
+        filename = f"ehm_8ch_10ul_parallel_drug_addition_{volume:g}uL.json"
         script_dir = os.path.dirname(os.path.abspath(__file__))
         repo_root = os.path.dirname(script_dir)
         cand_paths = [
@@ -2919,7 +2939,55 @@ class LIMSMasterApp:
             "Slot_1": "Empty clearance zone",
             "Slot_2": "Empty clearance zone",
             "Slot_3": "Prepped DMSO-Drug Diluted Ready Plate (96-Well, Rows A..E: 5 Drugs x 6 Concs)",
-            "Slot_4": "1-10 µL Tip Rack (Cols 1..5 Fresh Tips [36 used], Cols 7..11 Graveyard [36 ejected at Z=40.5mm])",
+            "Slot_4": "1-10 µL Tip Rack (30 Fresh Tips: Rows A–E across Cols 1..6; Graveyard: Cols 7..12 at Z=40.5mm)",
+            "Slot_5": "Plate 1 (Myriamed 48-Well EHM, Cols 1..6, 8.5mm raised Z)",
+            "Slot_6": "Plate 2 (Myriamed 48-Well EHM, Cols 1..6, 8.5mm raised Z)",
+        }
+        with open(target_path, "r") as f:
+            seq = json.load(f)
+
+        def do_load():
+            self._populate_workflow_from_sequence(seq, f"[8-CH 1-10 µL Parallel] Drug Addition ({volume:g} µL) to EHM")
+
+        self.show_protocol_deck_setup_modal(
+            protocol_name=f"[8-CH 1-10 µL Parallel] Drug Addition to EHM ({volume:g} µL) + Mix",
+            pipettor_mode="8-Channel Multi (1-10 µL)",
+            is_multichannel=True,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descs,
+            sequence=seq,
+            on_confirm_callback=do_load
+        )
+
+    def action_load_10ul_triplicate_drug_addition(self, volume: float = 7.5):
+        self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
+        filename = f"ehm_1ch_10ul_triplicate_drug_addition_{volume:g}uL.json"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        cand_paths = [
+            os.path.join(script_dir, "protocols", filename),
+            os.path.join(repo_root, "protocols", filename),
+            os.path.join(script_dir, "protocols", f"ehm_1ch_10ul_drug_addition_to_ehm_{volume:g}uL.json"),
+            os.path.join(repo_root, "protocols", f"ehm_1ch_10ul_drug_addition_to_ehm_{volume:g}uL.json"),
+        ]
+        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        if not target_path:
+            messagebox.showerror("File Not Found", f"Could not locate {filename}")
+            return
+
+        deck_setup = {
+            "Slot_1": "(Empty / Clearance)",
+            "Slot_2": "(Empty / Clearance)",
+            "Slot_3": "generic_96_well_plate.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "myriamed_48_well.json",
+            "Slot_6": "myriamed_48_well.json",
+        }
+        slot_descs = {
+            "Slot_1": "Empty clearance zone",
+            "Slot_2": "Empty clearance zone",
+            "Slot_3": "Prepped DMSO-Drug Diluted Ready Plate (96-Well, Rows A..E: 5 Drugs x 6 Concs)",
+            "Slot_4": "1-10 µL Tip Rack (36 Fresh Tips: Cols 1..5 [A1..D5]; Graveyard: Cols 7..11 [A7..D11] at Z=40.5mm)",
             "Slot_5": "Plate 1 (Myriamed 48-Well EHM: Triplicates for Drug 1 [Rows A-C], Drug 2 [Rows D-F], Drug 3 Reps 1-2 [Rows G-H])",
             "Slot_6": "Plate 2 (Myriamed 48-Well EHM: Triplicates for Drug 3 Rep 3 [Row A], Drug 4 [Rows B-D], Drug 5 [Rows E-G], Control [Row H])",
         }
@@ -2927,20 +2995,23 @@ class LIMSMasterApp:
             seq = json.load(f)
 
         def do_load():
-            self._populate_workflow_from_sequence(seq, f"[1-10 µL Single] Drug Addition ({volume:g} µL) to EHM")
+            self._populate_workflow_from_sequence(seq, f"[1-10 µL Triplicates] Drug Addition ({volume:g} µL) to EHM")
 
         self.show_protocol_deck_setup_modal(
-            protocol_name=f"[1-10 µL Single] Drug Addition to EHM ({volume:g} µL) + Mix",
-            pipettor_mode="1-10 µL Single-Channel",
-            is_multichannel=False,
+            protocol_name=f"[1-10 µL Triplicates] Drug Addition to EHM ({volume:g} µL) + Mix",
+            pipettor_mode="8-Channel Multi (1-10 µL)",
+            is_multichannel=True,
             deck_setup=deck_setup,
             slot_descriptions=slot_descs,
             sequence=seq,
             on_confirm_callback=do_load
         )
 
+    def action_load_10ul_drug_addition_to_ehm(self, volume: float = 7.5):
+        return self.action_load_10ul_parallel_drug_addition(volume=volume)
+
     def action_load_10ul_multi_drug_addition_to_ehm(self, volume: float = 7.5):
-        return self.action_load_10ul_drug_addition_to_ehm(volume=volume)
+        return self.action_load_10ul_parallel_drug_addition(volume=volume)
 
     def action_load_10ul_multi_media_change_and_drug(self, volume: float = 7.5):
         self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
@@ -5038,7 +5109,18 @@ class LIMSMasterApp:
             is_8ch_step = any(s.get('eight_ch_symmetric') for s in getattr(self, 'workflow_sequence', []))
 
         if not is_8ch_step:
-            return self._calculate_xy(slot_name, well_id)
+            coords = self._calculate_xy(slot_name, well_id)
+            if not coords:
+                return None
+            tx, ty = coords
+            # When an 8-channel head is mounted on the carriage, Nozzle 1 is physically at (ty - 31.50mm).
+            # When executing a single-well step with Channel 1 (Nozzle 1), shift carriage by +31.50mm in Y
+            # so Nozzle 1 lands centered at ty, and Nozzles 2..8 land centered over subsequent rows (never on walls).
+            lw_obj = self.lims.deck_labware.get(slot_name)
+            kind = self._lw_kind(lw_obj)
+            if self.lims.pipettor.multichannel and kind in ("ehm48", "plate96", "tip_rack"):
+                ty += 31.50
+            return tx, ty
 
         lw_obj = self.lims.deck_labware.get(slot_name)
         kind = self._lw_kind(lw_obj)
@@ -5898,7 +5980,7 @@ class LIMSMasterApp:
                             # Any height between 48.0mm and 74.0mm represents a successfully acquired tip.
                             # An empty socket plunges past Z >= 75.0mm down to bottom (Z >= 84mm).
                             valid_collar = (48.0 <= curr_z <= max(74.0, collar_z + 8.0))
-                            is_seated = valid_collar and (pick_ok or (curr_z < pickup_limit - 1.0))
+                            is_seated = valid_collar
 
                             if is_seated:
                                 # High-torque mechanical seating press & double-tap to wedge nozzles firmly into tip collars

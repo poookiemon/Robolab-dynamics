@@ -536,7 +536,133 @@ def build_8ch_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.json")
 
 
 # =============================================================================
-# 1b. 1-10 µL SINGLE-CHANNEL PIPETTOR - DEDICATED DRUG ADDITION TO BOTH EHMs
+# 1b. 8-CHANNEL MULTI (1-10 µL) - PARALLEL 5-TIP DRUG ADDITION TO BOTH EHMs
+# =============================================================================
+
+def build_8ch_10ul_parallel_drug_addition_steps(
+    drug_vol_ul: float = 7.5,
+    drug_source_slot: str = "Slot_3",
+    drug_source_labware: str = "generic_96_well_plate.json",
+    ehm_plate1_slot: str = "Slot_5",
+    ehm_plate2_slot: str = "Slot_6",
+    ehm_labware: str = "myriamed_48_well.json",
+    tip_rack_slot: str = "Slot_4",
+    tip_labware: str = "tip_rack_1000ul.json",
+    mix_cycles: int = 5,
+    mix_vol_ul: float = 8.0,
+    discard_z: float = 40.5,
+) -> List[Dict[str, Any]]:
+    """
+    Builds dedicated 8-Channel Multi (1-10 µL) Parallel Drug Addition protocol for BOTH EHM Plates.
+    Transfers 5 prepped drugs (Rows A..E) across Columns 1..6 simultaneously:
+    - 5 tips picked per column (Slot 4 Columns 1..6, mounted on Channels A–E)
+    - Kinematics centered at Y=84.52 mm (Nozzles 1..5 in Rows A..E, Nozzles 6..8 over empty sockets, 0 wall collisions)
+    - High-precision drug aspiration (7.5 µL or 5.0 µL) from Slot 3 Ready Plate
+    - In-place dispense & mix (5x 8.0 µL) into Plate 1 (Slot 5) and Plate 2 (Slot 6)
+    - Ejects used tips into Slot 4 empty rack graveyard (Cols 7..12) at Z=40.5 mm
+    Deck:
+    - Slot 1: Empty clearance zone
+    - Slot 2: Empty clearance zone
+    - Slot 3: Prepped DMSO-Drug Diluted Ready Plate (96-well, Rows A..E: 5 drugs, Cols 1..6: 6 concs)
+    - Slot 4: 1-10 µL Tip Rack (30 Fresh Tips: Rows A–E in Cols 1..6; Graveyard: Cols 7..12)
+    - Slot 5: Plate 1 (Myriamed 48-well EHM, Cols 1..6)
+    - Slot 6: Plate 2 (Myriamed 48-well EHM, Cols 1..6)
+    """
+    steps: List[Dict[str, Any]] = []
+
+    for c in range(1, 7):
+        # 1. Pick 5 tips from Slot 4 Column c (Channels A–E)
+        steps.append({
+            "action": "Pick Up Tip",
+            "mode": "auto",
+            "slot": tip_rack_slot,
+            "well": f"A{c}",
+            "volume": 0.0,
+            "labware": tip_labware,
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-E",
+            "label": f"[PICK 1-10µL TIPS] Slot_4 Col {c} (5 Tips: Rows A–E) | Col {c} Drug Addition",
+        })
+
+        # 2. Aspirate from Slot 3 Ready Plate Col c for Plate 1
+        steps.append({
+            "action": "Aspirate Media",
+            "mode": "auto",
+            "slot": drug_source_slot,
+            "well": f"A{c}",
+            "volume": float(drug_vol_ul),
+            "labware": drug_source_labware,
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-E",
+            "track_liquid": False,
+            "label": f"[ASPIRATE 5-DRUGS] {drug_vol_ul:g} µL from Slot_3 Ready Plate Col {c} [Rows A-E]",
+        })
+
+        # 3. Dispense & mix into Plate 1 (Slot 5) Col c
+        steps.append({
+            "action": "Dispense Media",
+            "mode": "auto",
+            "slot": ehm_plate1_slot,
+            "well": f"A{c}",
+            "volume": float(drug_vol_ul),
+            "labware": ehm_labware,
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-E",
+            "mix_cycles": mix_cycles,
+            "mix_volume": float(mix_vol_ul),
+            "track_liquid": False,
+            "label": f"[DRUG+MIX] {drug_vol_ul:g} µL -> Plate 1 Col {c} [{mix_cycles}x {mix_vol_ul:g} µL Mix, Rows A-E]",
+        })
+
+        # 4. Aspirate from Slot 3 Ready Plate Col c for Plate 2
+        steps.append({
+            "action": "Aspirate Media",
+            "mode": "auto",
+            "slot": drug_source_slot,
+            "well": f"A{c}",
+            "volume": float(drug_vol_ul),
+            "labware": drug_source_labware,
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-E",
+            "track_liquid": False,
+            "label": f"[ASPIRATE 5-DRUGS] {drug_vol_ul:g} µL from Slot_3 Ready Plate Col {c} [Rows A-E]",
+        })
+
+        # 5. Dispense & mix into Plate 2 (Slot 6) Col c
+        steps.append({
+            "action": "Dispense Media",
+            "mode": "auto",
+            "slot": ehm_plate2_slot,
+            "well": f"A{c}",
+            "volume": float(drug_vol_ul),
+            "labware": ehm_labware,
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-E",
+            "mix_cycles": mix_cycles,
+            "mix_volume": float(mix_vol_ul),
+            "track_liquid": False,
+            "label": f"[DRUG+MIX] {drug_vol_ul:g} µL -> Plate 2 Col {c} [{mix_cycles}x {mix_vol_ul:g} µL Mix, Rows A-E]",
+        })
+
+        # 6. Discard 5 tips to Slot 4 Graveyard Column c+6 (Cols 7..12) at Z=40.5mm
+        steps.append({
+            "action": "Discard Tip",
+            "mode": "auto",
+            "slot": tip_rack_slot,
+            "well": f"A{c + 6}",
+            "volume": 0.0,
+            "labware": tip_labware,
+            "eight_ch_symmetric": True,
+            "mounted_channels": "A-E",
+            "discard_z_override": float(discard_z),
+            "label": f"[DROP TIPS] Eject 5 Tips -> Slot_4 Col {c + 6} Graveyard (Z={discard_z}mm)",
+        })
+
+    return steps
+
+
+# =============================================================================
+# 1c. 1-10 µL TRIPLICATE DOSE-RESPONSE PROTOCOL (36 CONDITIONS IN TRIPLICATE)
 # =============================================================================
 
 def build_1ch_10ul_drug_addition_steps(
@@ -699,8 +825,9 @@ def build_1ch_10ul_drug_addition_steps(
     return steps
 
 
-# Alias for backward compatibility
-build_8ch_10ul_drug_addition_steps = build_1ch_10ul_drug_addition_steps
+# Aliases
+build_8ch_10ul_drug_addition_steps = build_8ch_10ul_parallel_drug_addition_steps
+build_1ch_10ul_triplicate_drug_addition_steps = build_1ch_10ul_drug_addition_steps
 
 
 # =============================================================================
@@ -1026,11 +1153,17 @@ def save_all_unified_protocols():
         "ehm_8ch_1000ul_media_change_and_drug_5.0uL.json": build_8ch_media_change_and_drug_steps(5.0),
         "ehm_8ch_1000ul_dmso_drug_dilution.json": build_8ch_dmso_dilution_steps(),
 
-        # 1b. 1-10 µL Single-Channel Dedicated Drug Addition to EHM
-        "ehm_1ch_10ul_drug_addition_to_ehm_7.5uL.json": build_1ch_10ul_drug_addition_steps(7.5),
-        "ehm_1ch_10ul_drug_addition_to_ehm_5.0uL.json": build_1ch_10ul_drug_addition_steps(5.0),
-        "ehm_8ch_10ul_drug_addition_to_ehm_7.5uL.json": build_1ch_10ul_drug_addition_steps(7.5),
-        "ehm_8ch_10ul_drug_addition_to_ehm_5.0uL.json": build_1ch_10ul_drug_addition_steps(5.0),
+        # 1b. 8-Channel Multi (1-10 µL) Parallel 5-Tip Protocol (Rows A-E, Cols 1..6 -> Both Plates)
+        "ehm_8ch_10ul_parallel_drug_addition_7.5uL.json": build_8ch_10ul_parallel_drug_addition_steps(7.5),
+        "ehm_8ch_10ul_parallel_drug_addition_5.0uL.json": build_8ch_10ul_parallel_drug_addition_steps(5.0),
+        "ehm_8ch_10ul_drug_addition_to_ehm_7.5uL.json": build_8ch_10ul_parallel_drug_addition_steps(7.5),
+        "ehm_8ch_10ul_drug_addition_to_ehm_5.0uL.json": build_8ch_10ul_parallel_drug_addition_steps(5.0),
+
+        # 1c. 1-10 µL Triplicate Dose-Response Protocol (36 conditions in triplicate)
+        "ehm_1ch_10ul_triplicate_drug_addition_7.5uL.json": build_1ch_10ul_triplicate_drug_addition_steps(7.5),
+        "ehm_1ch_10ul_triplicate_drug_addition_5.0uL.json": build_1ch_10ul_triplicate_drug_addition_steps(5.0),
+        "ehm_1ch_10ul_drug_addition_to_ehm_7.5uL.json": build_1ch_10ul_triplicate_drug_addition_steps(7.5),
+        "ehm_1ch_10ul_drug_addition_to_ehm_5.0uL.json": build_1ch_10ul_triplicate_drug_addition_steps(5.0),
 
         # 2. 300 uL Single-Channel
         "ehm_1ch_300ul_media_change_and_drug_7.5uL.json": build_1ch_300ul_media_change_and_drug_steps(7.5),
