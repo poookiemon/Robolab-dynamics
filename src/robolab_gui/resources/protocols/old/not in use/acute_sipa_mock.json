@@ -1,0 +1,219 @@
+[
+    {
+        "action": "Pick Tip",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A1",
+        "volume": 50.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A1",
+        "volume": 50.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A2",
+        "volume": 50.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A2",
+        "volume": 50.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A3",
+        "volume": 50.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A3",
+        "volume": 50.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A4",
+        "volume": 50.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A4",
+        "volume": 50.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A5",
+        "volume": 50.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A5",
+        "volume": 50.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A6",
+        "volume": 50.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A6",
+        "volume": 50.0
+    },
+    {
+        "action": "Drop Tip",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1"
+    },
+    {
+        "action": "Pick Tip",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A2",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "B1",
+        "volume": 50.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B1",
+        "volume": 50.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "B2",
+        "volume": 50.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B2",
+        "volume": 50.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "B3",
+        "volume": 50.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B3",
+        "volume": 50.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "B4",
+        "volume": 50.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B4",
+        "volume": 50.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "B5",
+        "volume": 50.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B5",
+        "volume": 50.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "B6",
+        "volume": 50.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B6",
+        "volume": 50.0
+    },
+    {
+        "action": "Drop Tip",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1"
+    },
+    {
+        "action": "System: Incubate (Wait)",
+        "mode": "auto",
+        "volume": 300.0
+    },
+    {
+        "action": "System: FOC48 Measurement",
+        "mode": "auto",
+        "well": "A1"
+    },
+    {
+        "action": "System: Data Analysis",
+        "mode": "auto",
+        "folder": "C:/Data",
+        "type": "Hill Equation"
+    },
+    {
+        "action": "System: Database Upload",
+        "mode": "auto",
+        "config": "db.json"
+    }
+]

@@ -1,0 +1,55 @@
+[
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A1",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 100.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "H2",
+        "volume": 100.0,
+        "extra_z": 0.0,
+        "labware": "generic_96_well_plate.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H2",
+        "volume": 22.0,
+        "extra_z": 0.0,
+        "labware": "generic_96_well_plate.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "H2",
+        "volume": 22.0,
+        "extra_z": 0.0,
+        "labware": "generic_96_well_plate.json",
+        "mix_cycles": 5,
+        "mix_volume": 100.0
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 0.0,
+        "extra_z": 0.0
+    }
+]

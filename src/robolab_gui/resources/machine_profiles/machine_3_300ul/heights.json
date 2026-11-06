@@ -1,0 +1,23 @@
+{
+  "machine_id": "Machine 3: 300 µL",
+  "pipettor_type": "300 µL Single-Channel",
+  "tip_volume_ul": 300.0,
+  "tip_rack_pickup_approach_z": 50.0,
+  "tip_rack_collar_z": 86.36,
+  "tip_rack_pickup_limit_z": 87.0,
+  "tip_pickup_extra_press_mm": 1.5,
+  "tip_rack_discard_z": 40.5,
+  "ehm_aspirate_z": 86.0,
+  "ehm_dispense_z": 84.0,
+  "plate96_aspirate_z": 78.40,
+  "plate96_dispense_z": 68.43,
+  "reservoir_3_aspirate_z": 86.0,
+  "reservoir_aspirate_z": 86.0,
+  "reservoir_7_aspirate_z": 86.0,
+  "reservoir_7_dispense_z": 8.37,
+  "waste_dispense_z": 8.37,
+  "waste_tip_drop_z": 8.37,
+  "eight_ch_x_offset": 0.0,
+  "eight_ch_y_offset": 0.0,
+  "eight_ch_z_offset": 0.0
+}

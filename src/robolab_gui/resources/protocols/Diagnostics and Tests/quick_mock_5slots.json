@@ -1,0 +1,66 @@
+[
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A1",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 50.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 50.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A1",
+        "volume": 50.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B1",
+        "volume": 50.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 50.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 50.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 0.0,
+        "extra_z": 0.0
+    }
+]

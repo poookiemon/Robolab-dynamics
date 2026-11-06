@@ -1,0 +1,53 @@
+{
+    "labware_name": "Tube Rack 2x6 - 2 mL Falcon Tubes (on 90mm Height Block)",
+    "format": "12-tube rack (2 rows A-B x 6 columns 1-6)",
+    "_comment": "Calibrated on Slot_1: A1 is at X=245.0, Y=0.0, rim Z=75.0mm. Column pitch 18.0mm, row pitch 18.0mm. Falcon tube depth 40.0mm. Safe aspirate Z=98.0mm (23mm inside tube, leaving 17mm bottom clearance, well clear of the 103.5mm machine travel limit).",
+    "z_height_mm": 104.6,
+    "grid": {
+        "rows": 2,
+        "columns": 6
+    },
+    "well_a1_offset": {
+        "x": 9.0,
+        "y": 9.0
+    },
+    "spacing": {
+        "x": 18.0,
+        "y": 18.0
+    },
+    "well_properties": {
+        "diameter_mm": 8.7,
+        "radius_mm": 4.35,
+        "depth_mm": 40.0,
+        "max_volume_ul": 2000.0
+    },
+    "physical": {
+        "adapter_height_mm": 90.0,
+        "rim_height_mm": 104.6,
+        "tube_height_mm": 40.0,
+        "tube_bottom_height_mm": 64.6
+    },
+    "kinematics": {
+        "a1_slot1": {"x": 245.0, "y": 0.0},
+        "a1_slot2": {"x": 109.8, "y": 0.0},
+        "pitch_col_mm": 18.0,
+        "pitch_row_mm": 18.0,
+        "calibrated": true
+    },
+    "z_calibration": {
+        "rim_z": 75.0,
+        "dispense_below_rim_mm": 5.0,
+        "aspirate_depth_mm": 23.0,
+        "bottom_wall_mm": 1.0
+    },
+    "z": {
+        "aspirate": 98.0,
+        "dispense": 80.0,
+        "discard_tip": 80.0
+    },
+    "z_limits": {
+        "recommended_aspirate_z": 98.0,
+        "recommended_dispense_z": 80.0,
+        "max_safe_bottom_z": 100.0
+    }
+}

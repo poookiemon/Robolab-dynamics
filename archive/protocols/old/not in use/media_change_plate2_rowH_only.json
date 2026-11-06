@@ -1,0 +1,606 @@
+[
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C3",
+        "labware": "tip_rack_1000ul.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H1",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H1",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H1",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H2",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H2",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H2",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H3",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H3",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H3",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H4",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H4",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H4",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H5",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H5",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H5",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H6",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H6",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H6",
+        "volume": 190.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 190.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A3",
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "D3",
+        "labware": "tip_rack_1000ul.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H1",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H1",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H1",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H2",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H2",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H2",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H3",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H3",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H3",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H4",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H4",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H4",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H5",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H5",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H5",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H6",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H6",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A2",
+        "volume": 165.0,
+        "labware": "reservoir_3_well.json"
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "H6",
+        "volume": 165.0,
+        "labware": "myriamed_48_well.json"
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A3",
+        "labware": "reservoir_3_well.json"
+    }
+]

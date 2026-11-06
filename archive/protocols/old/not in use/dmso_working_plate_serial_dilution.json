@@ -1,0 +1,220 @@
+[
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A1",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 131.4,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 131.4,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 100.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A2",
+        "volume": 100.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 100.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A3",
+        "volume": 100.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 100.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A4",
+        "volume": 100.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_2",
+        "well": "A1",
+        "volume": 100.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A5",
+        "volume": 100.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A2",
+        "volume": 0.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A1",
+        "volume": 14.6,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 14.6,
+        "extra_z": 0.0,
+        "mix_cycles": 4,
+        "mix_volume": 80.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 46.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A2",
+        "volume": 46.0,
+        "extra_z": 0.0,
+        "mix_cycles": 4,
+        "mix_volume": 80.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A2",
+        "volume": 46.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A3",
+        "volume": 46.0,
+        "extra_z": 0.0,
+        "mix_cycles": 4,
+        "mix_volume": 80.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A3",
+        "volume": 46.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A4",
+        "volume": 46.0,
+        "extra_z": 0.0,
+        "mix_cycles": 4,
+        "mix_volume": 80.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A4",
+        "volume": 46.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A5",
+        "volume": 46.0,
+        "extra_z": 0.0,
+        "mix_cycles": 4,
+        "mix_volume": 80.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A5",
+        "volume": 46.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 46.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_6",
+        "well": "A1",
+        "volume": 0.0,
+        "extra_z": 0.0
+    }
+]

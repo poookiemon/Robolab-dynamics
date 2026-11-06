@@ -1,0 +1,12 @@
+{
+    "labware_name": "Corning 12 Well Plate",
+    "z_height_mm": 20.2,
+    "grid": {"rows": 3, "columns": 4},
+    "well_a1_offset": {"x": 13.2, "y": 17.7},
+    "spacing": {"x": 26.01, "y": 26.01},
+    "well_properties": {
+        "depth_mm": 17.5,
+        "max_volume_ul": 6300.0,
+        "radius_mm": 11.0
+    }
+}

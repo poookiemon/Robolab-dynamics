@@ -1,14 +1,22 @@
+"""Transitional compatibility launcher for RoboLab GUI.
+
+Launches the modern modular robolab_gui package by default,
+or falls back to legacy lims_master_gui.py if '--legacy' is provided.
+"""
+
 import sys
 import os
 
-def launch():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    biohit_dir = os.path.join(base_dir, "Biohit-Automated-Pipettor-GUI")
-    if biohit_dir not in sys.path:
-        sys.path.insert(0, biohit_dir)
-    
-    from lims_master_gui import launch as run_gui
-    run_gui()
-
-if __name__ == "__main__":
-    launch()
+if "--legacy" in sys.argv:
+    legacy_dir = os.path.join(os.path.dirname(__file__), "Biohit-Automated-Pipettor-GUI")
+    sys.path.insert(0, legacy_dir)
+    os.chdir(legacy_dir)
+    import lims_master_gui
+    lims_master_gui.main()
+else:
+    # Ensure src is on python path for direct checkout runs
+    src_dir = os.path.join(os.path.dirname(__file__), "src")
+    if src_dir not in sys.path:
+        sys.path.insert(0, src_dir)
+    from robolab_gui.app import main
+    main()

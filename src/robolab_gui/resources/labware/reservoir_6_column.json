@@ -1,0 +1,33 @@
+{
+    "labware_name": "6-Column Reagent Reservoir",
+    "z_height_mm": 105.81,
+    "grid": {
+        "rows": 1,
+        "columns": 6
+    },
+    "well_a1_offset": {
+        "x": 1.3,
+        "y": 41.6
+    },
+    "spacing": {
+        "x": 21.0,
+        "y": 0.0
+    },
+    "well_properties": {
+        "depth_mm": 40.5,
+        "radius_mm": 3.0,
+        "max_volume_ul": 50000.0
+    },
+    "is_8ch_calibrated": true,
+    "z": {
+        "aspirate": 89.32,
+        "dispense": 59.32,
+        "discard_tip": 48.0
+    },
+    "z_limits": {
+        "recommended_aspirate_z": 89.32,
+        "recommended_dispense_z": 59.32,
+        "recommended_discard_z": 48.0,
+        "max_safe_bottom_z": 92.0
+    }
+}

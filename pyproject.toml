@@ -1,55 +1,70 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "robolab-dynamics"
-version = "1.0.0"
-description = "Biohit Automated Pipettor GUI & LIMS Controller"
+name = "robolab-gui"
+version = "3.0.0"
+description = "Automated Liquid Handling & Laboratory Automation Platform"
 readme = "README.md"
-authors = [{ name = "Robolab Dynamics Team" }]
 requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "Bhagyashri", email = "shri@example.com" }
+]
+keywords = ["laboratory-automation", "liquid-handler", "biohit", "lims", "pyopensci"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
 dependencies = [
-    "numpy",
-    "scipy",
-    "pandas",
-    "matplotlib",
-    "seaborn",
-    "plotly",
-    "ttkbootstrap",
-    "watchdog",
-    "Pillow",
-    "pycparser",
-    "cffi",
+    "pillow>=9.0.0",
 ]
 
 [project.optional-dependencies]
-full = [
-    "PyQt6",
-    "PyQt6-WebEngine",
-    "pyvista",
-    "pyvistaqt",
-    "pythonnet",
+analysis = [
+    "pandas>=1.5.0",
+    "seaborn>=0.12.0",
+    "matplotlib>=3.6.0",
+    "scipy>=1.9.0",
+]
+hardware = [
+    "pythonnet>=3.0.0; sys_platform == 'win32'",
+    "pyserial>=3.5",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+qt = [
+    "PyQt6>=6.4.0",
+]
+all = [
+    "robolab-gui[analysis,hardware,test,qt]",
 ]
 
 [project.scripts]
-robolab-gui = "robolab_gui.lims_master_gui:launch"
-biohit-gui = "robolab_gui.lims_master_gui:launch"
+robolab-gui = "robolab_gui.app:main"
 
-[project.urls]
-Homepage = "https://github.com/poookiemon/Robolab-dynamics"
-Repository = "https://github.com/poookiemon/Robolab-dynamics.git"
+[project.gui-scripts]
+robolab = "robolab_gui.app:main"
 
-[tool.setuptools]
-package-dir = {"robolab_gui" = "Biohit-Automated-Pipettor-GUI"}
-packages = ["robolab_gui"]
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools.package-data]
-"robolab_gui" = [
-    "*.json",
-    "labware/*.json",
-    "protocols/*.json",
-    "protocols/*/*.json",
-    "protocols/*/*/*.json",
-    "assets/*",
+robolab_gui = [
+    "resources/machine_profiles/**/*.json",
+    "resources/labware/**/*.json",
+    "resources/protocols/**/*.json",
+    "resources/default_workspaces/**/*.json",
+    "resources/assets/**/*",
 ]

@@ -1,0 +1,8 @@
+{
+    "labware_name": "24 Well Plate",
+    "z_height_mm": 20.2,
+    "grid": {"rows": 4, "columns": 6},
+    "well_a1_offset": {"x": 7.0, "y": 14.5},
+    "spacing": {"x": 19.30, "y": 19.30},
+    "well_properties": {"radius_mm": 7.8}
+}

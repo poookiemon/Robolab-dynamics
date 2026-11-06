@@ -1,0 +1,25 @@
+{
+    "labware_name": "Deep Waste Reservoir",
+    "z_height_mm": 43.35,
+    "grid": {
+        "rows": 1,
+        "columns": 1
+    },
+    "well_a1_offset": {
+        "x": 62.9,
+        "y": 27.5
+    },
+    "spacing": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "well_properties": {
+        "depth_mm": 40.0,
+        "radius_mm": 3.0
+    },
+    "z_limits": {
+        "recommended_dispense_z": 90.0,
+        "recommended_discard_z": 90.0,
+        "max_safe_bottom_z": 103.0
+    }
+}
