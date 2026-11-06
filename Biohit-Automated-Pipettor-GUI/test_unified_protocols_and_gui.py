@@ -37,8 +37,12 @@ def test_protocol_files_exist():
 
     for d in [os.path.join(SCRIPT_DIR, "protocols"), os.path.join(repo_root, "protocols")]:
         for fn in expected_files:
-            fp = os.path.join(d, fn)
-            assert os.path.exists(fp), f"Missing protocol file: {fp}"
+            fp = None
+            for root, _, files in os.walk(d):
+                if fn in files:
+                    fp = os.path.join(root, fn)
+                    break
+            assert fp and os.path.exists(fp), f"Missing protocol file: {fn} in {d}"
             with open(fp, "r") as f:
                 steps = json.load(f)
             assert isinstance(steps, list) and len(steps) > 0, f"Protocol {fn} is empty!"
@@ -60,7 +64,7 @@ def test_gui_loading():
         app.switch_pipettor_head(True, quiet=True)
         assert app.lims.pipettor.multichannel is True
 
-        p8_path = os.path.join(SCRIPT_DIR, "protocols", "ehm_8ch_1000ul_media_change_and_drug_7.5uL.json")
+        p8_path = LIMSMasterApp.resolve_protocol_path("ehm_8ch_1000ul_media_change_and_drug_7.5uL.json")
         with open(p8_path, "r") as f:
             seq8 = json.load(f)
         app._populate_workflow_from_sequence(seq8, "8-CH Media Change + 7.5uL Drug")
@@ -69,7 +73,7 @@ def test_gui_loading():
         print("PASS: 8-Channel Media Change + 7.5 uL Drug loaded (72 steps).")
 
         # 2. 8-Channel DMSO Dilution
-        p8_dmso = os.path.join(SCRIPT_DIR, "protocols", "ehm_8ch_1000ul_dmso_drug_dilution.json")
+        p8_dmso = LIMSMasterApp.resolve_protocol_path("ehm_8ch_1000ul_dmso_drug_dilution.json")
         with open(p8_dmso, "r") as f:
             seq8_dmso = json.load(f)
         app._populate_workflow_from_sequence(seq8_dmso, "8-CH DMSO Dilution")
@@ -77,7 +81,7 @@ def test_gui_loading():
         print("PASS: 8-Channel DMSO Dilution loaded (26 steps).")
 
         # 2b. 1-10 µL Single-Channel Dedicated Drug Addition to BOTH EHM Plates
-        p10_path = os.path.join(SCRIPT_DIR, "protocols", "ehm_1ch_10ul_drug_addition_to_ehm_7.5uL.json")
+        p10_path = LIMSMasterApp.resolve_protocol_path("ehm_1ch_10ul_drug_addition_to_ehm_7.5uL.json")
         with open(p10_path, "r") as f:
             seq10 = json.load(f)
         app._populate_workflow_from_sequence(seq10, "1-10 uL Drug Addition to EHM 7.5uL")
@@ -100,7 +104,7 @@ def test_gui_loading():
         # 3. 300 uL Single-Channel Media Change + 7.5 uL Drug
         app.switch_pipettor_head(False, quiet=True)
         assert app.lims.pipettor.multichannel is False
-        p300_path = os.path.join(SCRIPT_DIR, "protocols", "ehm_1ch_300ul_media_change_and_drug_7.5uL.json")
+        p300_path = LIMSMasterApp.resolve_protocol_path("ehm_1ch_300ul_media_change_and_drug_7.5uL.json")
         with open(p300_path, "r") as f:
             seq300 = json.load(f)
         app._populate_workflow_from_sequence(seq300, "300 uL Media Change + 7.5uL Drug")
@@ -108,7 +112,7 @@ def test_gui_loading():
         print("PASS: 300 uL Single-Channel Media Change + 7.5 uL Drug loaded (1372 steps).")
 
         # 4. 20 uL Single-Channel Drug Addition (7.5 uL)
-        p20_path = os.path.join(SCRIPT_DIR, "protocols", "ehm_1ch_20ul_drug_addition_7.5uL.json")
+        p20_path = LIMSMasterApp.resolve_protocol_path("ehm_1ch_20ul_drug_addition_7.5uL.json")
         with open(p20_path, "r") as f:
             seq20 = json.load(f)
         app._populate_workflow_from_sequence(seq20, "20 uL Drug Addition 7.5uL")
@@ -116,7 +120,7 @@ def test_gui_loading():
         print("PASS: 20 uL Single-Channel Drug Addition loaded (206 steps).")
 
         # 5. 20 uL Single-Channel DMSO Dilution
-        p20_dmso = os.path.join(SCRIPT_DIR, "protocols", "ehm_1ch_20ul_dmso_drug_dilution.json")
+        p20_dmso = LIMSMasterApp.resolve_protocol_path("ehm_1ch_20ul_dmso_drug_dilution.json")
         with open(p20_dmso, "r") as f:
             seq20_dmso = json.load(f)
         app._populate_workflow_from_sequence(seq20_dmso, "20 uL DMSO Dilution")

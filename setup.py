@@ -21,6 +21,8 @@ setup(
             "*.json",
             "labware/*.json",
             "protocols/*.json",
+            "protocols/*/*.json",
+            "protocols/*/*/*.json",
             "assets/*",
         ]
     },

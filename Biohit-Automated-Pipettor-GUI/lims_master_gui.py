@@ -2,6 +2,7 @@ from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import json, logging, threading, time, os, subprocess, math, sys, traceback
+from typing import Optional, Dict, List, Any
 from datetime import datetime, timedelta
 import ctypes  # Native Windows library for ghost mouse
 from working import LIMSOrchestrator, Labware, DeckSlot, Pipettor
@@ -2358,20 +2359,51 @@ class LIMSMasterApp:
         except ValueError:
             self.lbl_safe_z.config(text=f"⚠️ {getattr(labware_obj, 'name', '')}: Z NOT CALIBRATED (set rim_z in its JSON)")
 
-    def action_load_ehm_test_protocol(self):
+    @classmethod
+    def resolve_protocol_path(cls, *filenames: str) -> Optional[str]:
+        """
+        Resolves a protocol file path by searching protocols root and machine subfolders:
+        - 'Machine 1 - 8x1000 uL'
+        - 'Machine 2 - 1-10 uL'
+        - 'Machine 3 - 300 uL'
+        - 'Diagnostics and Tests'
+        - 'old/not in use'
+        """
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        cand_paths = [
-            os.path.join(script_dir, "protocols", "mock_ehm_diagonal_a1_to_h6.json"),
-            os.path.join(os.getcwd(), "protocols", "mock_ehm_diagonal_a1_to_h6.json"),
-            os.path.join(script_dir, "protocols", "ehm_48_well_test.json"),
-            os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "protocols", "ehm_48_well_test.json"),
-            os.path.join(os.getcwd(), "protocols", "ehm_48_well_test.json"),
+        repo_root = os.path.dirname(script_dir)
+        search_roots = [
+            os.path.join(script_dir, "protocols"),
+            os.path.join(repo_root, "protocols"),
+            os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "protocols"),
+            os.path.join(os.getcwd(), "protocols"),
         ]
-        target_path = None
-        for p in cand_paths:
-            if os.path.exists(p):
-                target_path = p
-                break
+        subfolders = [
+            "",
+            "Machine 1 - 8x1000 uL",
+            "Machine 2 - 1-10 uL",
+            "Machine 3 - 300 uL",
+            "Diagnostics and Tests",
+            os.path.join("old", "not in use"),
+        ]
+        for fn in filenames:
+            if not fn:
+                continue
+            if os.path.isabs(fn) and os.path.exists(fn):
+                return fn
+            for root in search_roots:
+                if not os.path.isdir(root):
+                    continue
+                for sub in subfolders:
+                    target = os.path.join(root, sub, fn) if sub else os.path.join(root, fn)
+                    if os.path.exists(target):
+                        return target
+                for r, _, files in os.walk(root):
+                    if fn in files:
+                        return os.path.join(r, fn)
+        return None
+
+    def action_load_ehm_test_protocol(self):
+        target_path = self.resolve_protocol_path("mock_ehm_diagonal_a1_to_h6.json", "ehm_48_well_test.json")
         if target_path:
             with open(target_path, 'r') as f:
                 loaded_sequence = json.load(f)
@@ -2397,17 +2429,7 @@ class LIMSMasterApp:
             messagebox.showerror("File Not Found", "Could not locate ehm_48_well_test.json")
 
     def action_load_quick_mock_protocol(self):
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        cand_paths = [
-            os.path.join(script_dir, "protocols", "quick_mock_5slots.json"),
-            os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "protocols", "quick_mock_5slots.json"),
-            os.path.join(os.getcwd(), "protocols", "quick_mock_5slots.json"),
-        ]
-        target_path = None
-        for p in cand_paths:
-            if os.path.exists(p):
-                target_path = p
-                break
+        target_path = self.resolve_protocol_path("quick_mock_5slots.json")
         if target_path:
             with open(target_path, 'r') as f:
                 loaded_sequence = json.load(f)
@@ -2446,17 +2468,7 @@ class LIMSMasterApp:
             messagebox.showerror("File Not Found", "Could not locate quick_mock_5slots.json")
 
     def action_load_slot5_rowA_protocol(self):
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        cand_paths = [
-            os.path.join(script_dir, "protocols", "slot5_96well_rowA_test.json"),
-            os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "protocols", "slot5_96well_rowA_test.json"),
-            os.path.join(os.getcwd(), "protocols", "slot5_96well_rowA_test.json"),
-        ]
-        target_path = None
-        for p in cand_paths:
-            if os.path.exists(p):
-                target_path = p
-                break
+        target_path = self.resolve_protocol_path("slot5_96well_rowA_test.json")
         if target_path:
             with open(target_path, 'r') as f:
                 loaded_sequence = json.load(f)
@@ -2483,18 +2495,7 @@ class LIMSMasterApp:
             messagebox.showerror("File Not Found", "Could not locate slot5_96well_rowA_test.json")
 
     def action_load_liquid_test_protocol(self):
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        cand_paths = [
-            os.path.join(script_dir, "protocols", "test_lld_slot1_a1_media_removal.json"),
-            os.path.join(os.path.dirname(script_dir), "protocols", "test_lld_slot1_a1_media_removal.json"),
-            os.path.join(script_dir, "protocols", "Test_Liquid_Level_Detection.json"),
-            os.path.join(os.path.dirname(script_dir), "protocols", "Test_Liquid_Level_Detection.json"),
-        ]
-        target_path = None
-        for p in cand_paths:
-            if os.path.exists(p):
-                target_path = p
-                break
+        target_path = self.resolve_protocol_path("test_lld_slot1_a1_media_removal.json", "Test_Liquid_Level_Detection.json")
         if target_path:
             with open(target_path, 'r') as f:
                 loaded_sequence = json.load(f)
@@ -2914,15 +2915,10 @@ class LIMSMasterApp:
     def action_load_10ul_parallel_drug_addition(self, volume: float = 7.5):
         self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
         filename = f"ehm_8ch_10ul_parallel_drug_addition_{volume:g}uL.json"
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
-        cand_paths = [
-            os.path.join(script_dir, "protocols", filename),
-            os.path.join(repo_root, "protocols", filename),
-            os.path.join(script_dir, "protocols", f"ehm_8ch_10ul_drug_addition_to_ehm_{volume:g}uL.json"),
-            os.path.join(repo_root, "protocols", f"ehm_8ch_10ul_drug_addition_to_ehm_{volume:g}uL.json"),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(
+            filename,
+            f"ehm_8ch_10ul_drug_addition_to_ehm_{volume:g}uL.json"
+        )
         if not target_path:
             messagebox.showerror("File Not Found", f"Could not locate {filename}")
             return
@@ -2962,15 +2958,10 @@ class LIMSMasterApp:
     def action_load_10ul_triplicate_drug_addition(self, volume: float = 7.5):
         self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
         filename = f"ehm_1ch_10ul_triplicate_drug_addition_{volume:g}uL.json"
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
-        cand_paths = [
-            os.path.join(script_dir, "protocols", filename),
-            os.path.join(repo_root, "protocols", filename),
-            os.path.join(script_dir, "protocols", f"ehm_1ch_10ul_drug_addition_to_ehm_{volume:g}uL.json"),
-            os.path.join(repo_root, "protocols", f"ehm_1ch_10ul_drug_addition_to_ehm_{volume:g}uL.json"),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(
+            filename,
+            f"ehm_1ch_10ul_drug_addition_to_ehm_{volume:g}uL.json"
+        )
         if not target_path:
             messagebox.showerror("File Not Found", f"Could not locate {filename}")
             return
@@ -3027,13 +3018,7 @@ class LIMSMasterApp:
 
     def action_load_8ch_fresh_media_only(self):
         filename = "ehm_8ch_1000ul_fresh_media_only_multi_dispense.json"
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
-        cand_paths = [
-            os.path.join(script_dir, "protocols", filename),
-            os.path.join(repo_root, "protocols", filename),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(filename)
         if not target_path:
             messagebox.showerror("File Not Found", f"Could not locate {filename}")
             return
@@ -3076,13 +3061,7 @@ class LIMSMasterApp:
     def action_load_8ch_media_change_and_drug(self, volume: float = 7.5):
         vol_str = f"{volume:.1f}uL" if volume in (5.0, 7.5) else f"{volume:g}uL"
         filename = f"ehm_8ch_1000ul_media_change_and_drug_{vol_str}.json"
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
-        cand_paths = [
-            os.path.join(script_dir, "protocols", filename),
-            os.path.join(repo_root, "protocols", filename),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(filename)
         if not target_path:
             messagebox.showerror("File Not Found", f"Could not locate {filename}")
             return
@@ -3121,13 +3100,7 @@ class LIMSMasterApp:
 
     def action_load_8ch_dmso_dilution(self):
         filename = "ehm_8ch_1000ul_dmso_drug_dilution.json"
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
-        cand_paths = [
-            os.path.join(script_dir, "protocols", filename),
-            os.path.join(repo_root, "protocols", filename),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(filename)
         if not target_path:
             messagebox.showerror("File Not Found", f"Could not locate {filename}")
             return
@@ -3174,14 +3147,10 @@ class LIMSMasterApp:
     def action_load_300ul_media_change_and_drug(self, volume: float = 7.5):
         vol_str = f"{volume:.1f}uL" if volume in (5.0, 7.5) else f"{volume:g}uL"
         filename = f"ehm_1ch_300ul_media_change_and_drug_{vol_str}.json"
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
-        cand_paths = [
-            os.path.join(script_dir, "protocols", filename),
-            os.path.join(repo_root, "protocols", filename),
-            os.path.join(script_dir, "protocols", f"media_change_and_drug_addition_2_plates_{vol_str}.json"),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(
+            filename,
+            f"media_change_and_drug_addition_2_plates_{vol_str}.json"
+        )
         if not target_path:
             messagebox.showerror("File Not Found", f"Could not locate {filename}")
             return
@@ -3220,14 +3189,10 @@ class LIMSMasterApp:
 
     def action_load_300ul_dmso_dilution(self):
         filename = "ehm_1ch_300ul_dmso_drug_dilution.json"
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
-        cand_paths = [
-            os.path.join(script_dir, "protocols", filename),
-            os.path.join(repo_root, "protocols", filename),
-            os.path.join(script_dir, "protocols", "1_Serial_Dilution_Plate.json"),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(
+            filename,
+            "1_Serial_Dilution_Plate.json"
+        )
         if not target_path:
             messagebox.showerror("File Not Found", f"Could not locate {filename}")
             return
@@ -3274,13 +3239,7 @@ class LIMSMasterApp:
     def action_load_20ul_drug_addition(self, volume: float = 7.5):
         vol_str = f"{volume:.1f}uL" if volume in (5.0, 7.5) else f"{volume:g}uL"
         filename = f"ehm_1ch_20ul_drug_addition_{vol_str}.json"
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
-        cand_paths = [
-            os.path.join(script_dir, "protocols", filename),
-            os.path.join(repo_root, "protocols", filename),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(filename)
         if not target_path:
             messagebox.showerror("File Not Found", f"Could not locate {filename}")
             return
@@ -3319,13 +3278,7 @@ class LIMSMasterApp:
 
     def action_load_20ul_dmso_dilution(self):
         filename = "ehm_1ch_20ul_dmso_drug_dilution.json"
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
-        cand_paths = [
-            os.path.join(script_dir, "protocols", filename),
-            os.path.join(repo_root, "protocols", filename),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(filename)
         if not target_path:
             messagebox.showerror("File Not Found", f"Could not locate {filename}")
             return
@@ -3373,18 +3326,12 @@ class LIMSMasterApp:
         return self.action_load_media_and_drug_protocol(7.5)
 
     def action_load_media_and_drug_resume_g1_protocol(self, volume: float = 7.5):
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
         vol_suffix = f"_{volume:.1f}uL" if volume == 5.0 else "_7.5uL"
-        cand_paths = [
-            os.path.join(script_dir, "protocols", f"media_change_and_drug_addition_2_plates_resume_G1{vol_suffix}.json"),
-            os.path.join(repo_root, "protocols", f"media_change_and_drug_addition_2_plates_resume_G1{vol_suffix}.json"),
-            os.path.join(script_dir, "protocols", f"2_EHM_Media_Change_and_Drug_Addition_resume_G1{vol_suffix}.json"),
-            os.path.join(repo_root, "protocols", f"2_EHM_Media_Change_and_Drug_Addition_resume_G1{vol_suffix}.json"),
-            os.path.join(script_dir, "protocols", "media_change_and_drug_addition_2_plates_resume_G1.json"),
-            os.path.join(repo_root, "protocols", "media_change_and_drug_addition_2_plates_resume_G1.json"),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(
+            f"media_change_and_drug_addition_2_plates_resume_G1{vol_suffix}.json",
+            f"2_EHM_Media_Change_and_Drug_Addition_resume_G1{vol_suffix}.json",
+            "media_change_and_drug_addition_2_plates_resume_G1.json",
+        )
         if target_path:
             with open(target_path, 'r') as f:
                 loaded_sequence = json.load(f)
@@ -3434,15 +3381,10 @@ class LIMSMasterApp:
             messagebox.showerror("File Not Found", f"Could not locate media_change_and_drug_addition_2_plates_resume_G1{vol_suffix}.json")
 
     def action_load_plate2_rowH_protocol(self):
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
-        cand_paths = [
-            os.path.join(script_dir, "protocols", "media_change_plate2_rowH_only.json"),
-            os.path.join(repo_root, "protocols", "media_change_plate2_rowH_only.json"),
-            os.path.join(script_dir, "protocols", "plate2_rowH_media_change_only.json"),
-            os.path.join(repo_root, "protocols", "plate2_rowH_media_change_only.json"),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(
+            "media_change_plate2_rowH_only.json",
+            "plate2_rowH_media_change_only.json",
+        )
         if target_path:
             with open(target_path, 'r') as f:
                 loaded_sequence = json.load(f)
@@ -3492,15 +3434,10 @@ class LIMSMasterApp:
             messagebox.showerror("File Not Found", "Could not locate media_change_plate2_rowH_only.json")
 
     def action_load_drug_addition_only_protocol(self):
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
-        cand_paths = [
-            os.path.join(script_dir, "protocols", "drug_addition_only_2_ehm_plates.json"),
-            os.path.join(repo_root, "protocols", "drug_addition_only_2_ehm_plates.json"),
-            os.path.join(script_dir, "protocols", "2b_EHM_Drug_Addition.json"),
-            os.path.join(repo_root, "protocols", "2b_EHM_Drug_Addition.json"),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(
+            "drug_addition_only_2_ehm_plates.json",
+            "2b_EHM_Drug_Addition.json",
+        )
         if target_path:
             with open(target_path, 'r') as f:
                 loaded_sequence = json.load(f)
@@ -3549,15 +3486,10 @@ class LIMSMasterApp:
             messagebox.showerror("File Not Found", "Could not locate drug_addition_only_2_ehm_plates.json")
 
     def action_load_dmso_dilution_protocol(self):
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
-        cand_paths = [
-            os.path.join(script_dir, "protocols", "1_Serial_Dilution_Plate.json"),
-            os.path.join(repo_root, "protocols", "1_Serial_Dilution_Plate.json"),
-            os.path.join(script_dir, "protocols", "bakar_v2_drug_dmso_initial_loading.json"),
-            os.path.join(repo_root, "protocols", "bakar_v2_drug_dmso_initial_loading.json"),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(
+            "1_Serial_Dilution_Plate.json",
+            "bakar_v2_drug_dmso_initial_loading.json",
+        )
         if target_path:
             with open(target_path, 'r') as f:
                 loaded_sequence = json.load(f)
@@ -3766,13 +3698,9 @@ class LIMSMasterApp:
         ttk.Button(btn_frame, text="Apply & Load Protocol", command=on_apply).pack(side=tk.RIGHT, padx=5)
 
     def action_load_bakar_media_change_serial_dilution_protocol(self):
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        repo_root = os.path.dirname(script_dir)
-        cand_paths = [
-            os.path.join(script_dir, "protocols", "bakar_v2_drug_dmso_media_change_step.json"),
-            os.path.join(repo_root, "protocols", "bakar_v2_drug_dmso_media_change_step.json"),
-        ]
-        target_path = next((p for p in cand_paths if os.path.exists(p)), None)
+        target_path = self.resolve_protocol_path(
+            "bakar_v2_drug_dmso_media_change_step.json"
+        )
         if target_path:
             with open(target_path, 'r') as f:
                 loaded_sequence = json.load(f)
@@ -3822,8 +3750,8 @@ class LIMSMasterApp:
         if hasattr(self, 'draw_deck'):
             self.draw_deck()
 
-        p_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "protocols", "test_slot5_media_removal_col3_to_col1.json")
-        if not os.path.exists(p_path):
+        p_path = self.resolve_protocol_path("test_slot5_media_removal_col3_to_col1.json")
+        if not p_path or not os.path.exists(p_path):
             from generate_8ch_1000ul_ehm_media_change import build_slot5_media_removal_test
             steps = build_slot5_media_removal_test()
         else:
@@ -6903,7 +6831,14 @@ class LIMSMasterApp:
             with open(filepath, 'w') as f: json.dump(self.workflow_sequence, f, indent=4)
 
     def action_load_workflow(self):
-        filepath = filedialog.askopenfilename(title="Import Workflow Sequence", filetypes=[("JSON Protocol", "*.json")])
+        proto_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "protocols")
+        if not os.path.isdir(proto_dir):
+            proto_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "protocols")
+        filepath = filedialog.askopenfilename(
+            title="Import Workflow Sequence",
+            initialdir=proto_dir if os.path.isdir(proto_dir) else None,
+            filetypes=[("JSON Protocol", "*.json"), ("All Files", "*.*")]
+        )
         if filepath:
             try:
                 with open(filepath, 'r') as f:

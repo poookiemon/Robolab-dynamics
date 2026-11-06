@@ -468,8 +468,8 @@ def save_default_protocols():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.dirname(script_dir)
     out_dirs = [
-        os.path.join(script_dir, "protocols"),
-        os.path.join(repo_root, "protocols"),
+        os.path.join(script_dir, "protocols", "Machine 1 - 8x1000 uL"),
+        os.path.join(repo_root, "protocols", "Machine 1 - 8x1000 uL"),
     ]
 
     slot5_test_steps = build_slot5_media_removal_test(

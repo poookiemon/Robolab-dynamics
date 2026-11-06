@@ -49,5 +49,7 @@ packages = ["robolab_gui"]
     "*.json",
     "labware/*.json",
     "protocols/*.json",
+    "protocols/*/*.json",
+    "protocols/*/*/*.json",
     "assets/*",
 ]
