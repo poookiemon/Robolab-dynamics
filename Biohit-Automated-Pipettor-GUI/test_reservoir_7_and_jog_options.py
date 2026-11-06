@@ -19,6 +19,7 @@ def main():
     root = tk.Tk()
     root.withdraw()
     app = LIMSMasterApp(root)
+    app.switch_machine_profile("machine_1_8x1000", save_to_disk=False)
 
     print("\n--- 1. Testing 7-Well Reservoir Kinematics on Slot 6 ---")
     lw_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "labware", "reservoir_7_column.json")

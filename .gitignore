@@ -6,3 +6,12 @@ build/
 dist/
 Biohit-Automated-Pipettor-GUI/logs/*.log
 logs/*.log
+Biohit-Automated-Pipettor-GUI/logs/*.html
+Biohit-Automated-Pipettor-GUI/logs/*.csv
+logs/*.html
+logs/*.csv
+.machine_id
+*.machine_id
+config/.machine_id
+Biohit-Automated-Pipettor-GUI/.machine_id
+

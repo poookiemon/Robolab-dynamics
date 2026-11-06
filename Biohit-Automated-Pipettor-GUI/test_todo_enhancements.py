@@ -23,7 +23,7 @@ from working import Labware
 def test_dmso_drug_plate_prep_popup_remapping(app: LIMSMasterApp):
     print("\n--- 1. Testing DMSO-Drug Plate Prep Auto-Import & Stock Drug Well Remapping ---")
     for fname in ("1_Serial_Dilution_Plate.json", "bakar_v2_drug_dmso_initial_loading.json"):
-        p = os.path.join(script_dir, "protocols", fname)
+        p = app.resolve_protocol_path(fname)
         assert os.path.exists(p), f"Missing synced protocol: {p}"
         with open(p, "r") as f:
             seq = json.load(f)
@@ -61,9 +61,9 @@ def test_dmso_drug_plate_prep_popup_remapping(app: LIMSMasterApp):
             assert app.workflow_sequence[idx]["slot"] == "Slot_3"
             assert float(app.workflow_sequence[idx]["volume"]) == 22.0
 
-        # Slot_1 steps must use selected DMSO labware
-        slot1_lws = {s["labware"] for s in app.workflow_sequence if s.get("slot") == "Slot_1"}
-        assert slot1_lws == {"reservoir_3_well.json"}, f"Expected reservoir_3_well.json on Slot_1, got {slot1_lws}"
+        # Slot_1 / Slot_6 DMSO steps must use selected DMSO labware
+        dmso_lws = {s["labware"] for s in app.workflow_sequence if s.get("slot") in ("Slot_1", "Slot_6") and "Aspirate" in s.get("action", "")}
+        assert dmso_lws == {"reservoir_3_well.json"}, f"Expected reservoir_3_well.json for DMSO, got {dmso_lws}"
 
         # All 5 waste dispenses (24,49,74,99,124) & 5 discards (25,50,75,100,125) must target Slot_2 A1
         for end_idx in (23, 24, 48, 49, 73, 74, 98, 99, 123, 124):
@@ -318,7 +318,7 @@ def test_weighted_time_estimation_speed_factor_and_pause_compensation(app: LIMSM
     assert app.format_hms(0) == "00h 00m 00s"
 
     # 2. Full 1,372-step 2-plate Media Change + Drug protocol baseline (~4.5 - 4.8 hours)
-    full_proto_path = os.path.join(repo_root, "protocols", "media_change_and_drug_addition_2_plates_7.5uL.json")
+    full_proto_path = app.resolve_protocol_path("media_change_and_drug_addition_2_plates_7.5uL.json")
     with open(full_proto_path, "r") as f:
         seq_1372 = json.load(f)
     assert len(seq_1372) == 1372

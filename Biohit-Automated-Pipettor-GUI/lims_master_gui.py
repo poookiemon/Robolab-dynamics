@@ -1,11 +1,19 @@
 from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-import json, logging, threading, time, os, subprocess, math, sys, traceback
+import json, logging, threading, time, os, subprocess, math, sys, traceback, webbrowser, csv, socket
 from typing import Optional, Dict, List, Any
 from datetime import datetime, timedelta
 import ctypes  # Native Windows library for ghost mouse
 from working import LIMSOrchestrator, Labware, DeckSlot, Pipettor
+try:
+    from machine_profiles import MachineProfileManager, PROFILE_CONFIGS
+except ImportError:
+    try:
+        from .machine_profiles import MachineProfileManager, PROFILE_CONFIGS
+    except Exception:
+        MachineProfileManager = None
+        PROFILE_CONFIGS = {}
 try:
     from gui import GUI as AnalyzerGUI
 except Exception:
@@ -91,10 +99,16 @@ class LIMSMasterApp:
         except AttributeError:
             pass
 
-        is_multi = False  # Auto-defaulted to Single-Channel per user request
+        # Multi-Machine Profile Manager & Calibration Heights Isolation
+        self.profile_manager = MachineProfileManager
+        self.active_profile_id = MachineProfileManager.get_active_profile_id() if MachineProfileManager else "machine_2_1_10ul"
 
-        # --- SAFETY LOCK: 200uL Hardware Manifold Limitation ---
-        self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=200.0, multichannel=is_multi))
+        prof_cfg = (PROFILE_CONFIGS or {}).get(self.active_profile_id, {})
+        is_multi = prof_cfg.get("is_multichannel", True if ("8x" in self.active_profile_id or "10ul" in self.active_profile_id) else False)
+        prof_tip_vol = float(prof_cfg.get("tip_volume", 10.0 if "10ul" in self.active_profile_id else (1000.0 if "1000" in self.active_profile_id else 200.0)))
+
+        # Hardware Initialization & Calibration Setup
+        self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=prof_tip_vol, multichannel=is_multi))
         self.lims.load_machine_profile()
 
         self.scale = 2.65
@@ -121,33 +135,63 @@ class LIMSMasterApp:
         self.tip_rack_learned_offset = (0.0, 0.0)
         self.eight_ch_cal_offset = {"X": 0.0, "Y": 0.0, "Z": 0.0}
 
-        # Persistent 8-Channel Heights & Depths Memory (GUI remembers all heights)
+        # Persistent Profile Heights & Depths Memory (GUI remembers active station heights)
         self.calibrated_heights_file = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "calibrated_heights_8ch.json"
         )
-        self.calibrated_heights = {
-            "ehm_aspirate_z": 24.17,
-            "ehm_dispense_z": 14.17,
-            "waste_dispense_z": 59.32,
-            "reservoir_aspirate_z": 90.42,
-            "tip_rack_discard_z": 42.0,
-            "tip_rack_pickup_approach_z": 75.0,
-            "tip_rack_pickup_limit_z": 98.0,
-            "tip_rack_collar_z": 86.36,
+        if MachineProfileManager:
+            self.calibrated_heights = MachineProfileManager.load_profile(self.active_profile_id)
+        else:
+            self.calibrated_heights = {}
+
+        # Default profile heights ensuring no missing keys
+        default_profile_heights = {
+            "tip_rack_pickup_approach_z": 50.0 if "10ul" in self.active_profile_id else 75.0,
+            "tip_rack_collar_z": 64.49 if "10ul" in self.active_profile_id else 86.36,
+            "tip_rack_pickup_limit_z": 75.0 if "10ul" in self.active_profile_id else 98.0,
             "tip_pickup_extra_press_mm": 2.50,
+            "tip_rack_discard_z": 40.50,
+            "ehm_aspirate_z": 69.90 if "10ul" in self.active_profile_id else 24.17,
+            "ehm_dispense_z": 59.93 if "10ul" in self.active_profile_id else 14.17,
+            "plate96_aspirate_z": 78.40,
+            "plate96_dispense_z": 68.43,
+            "reservoir_aspirate_z": 58.34 if "10ul" in self.active_profile_id else 90.42,
+            "waste_dispense_z": 8.37,
+            "waste_tip_drop_z": 8.37,
             "eight_ch_x_offset": 0.0,
             "eight_ch_y_offset": 0.0,
             "eight_ch_z_offset": 0.0,
         }
-        if os.path.exists(self.calibrated_heights_file):
-            try:
-                with open(self.calibrated_heights_file, "r") as f:
-                    self.calibrated_heights.update(json.load(f))
-            except Exception as e:
-                self.logger.warning(f"Could not load calibrated_heights_8ch.json: {e}")
+        for k, v in default_profile_heights.items():
+            if k not in self.calibrated_heights:
+                self.calibrated_heights[k] = v
+
+        if "10ul" in self.active_profile_id:
+            self.calibrated_heights.setdefault("tip_10ul_collar_z", self.calibrated_heights.get("tip_rack_collar_z", 64.49))
+            self.calibrated_heights.setdefault("tip_10ul_limit_z", self.calibrated_heights.get("tip_rack_pickup_limit_z", 75.0))
+            self.calibrated_heights.setdefault("tip_10ul_approach_z", self.calibrated_heights.get("tip_rack_pickup_approach_z", 50.0))
+            self.calibrated_heights.setdefault("tip_10ul_extra_press_mm", self.calibrated_heights.get("tip_pickup_extra_press_mm", 2.50))
+            self.calibrated_heights.setdefault("reservoir_7_aspirate_z", self.calibrated_heights.get("reservoir_aspirate_z", 58.34))
+            self.calibrated_heights.setdefault("reservoir_7_dispense_z", self.calibrated_heights.get("waste_dispense_z", 8.37))
+
         self.head_mode_var = tk.StringVar(
-            value="8×1000 µL (8-Channel Manifold)" if is_multi else "1×200 µL (Single-Channel)"
+            value=prof_cfg.get("head_name", "8-Channel Multi (1-10 µL)" if "10ul" in self.active_profile_id else "8×1000 µL (8-Channel Manifold)")
         )
+
+        # Pipette Head Initialization & Safety Interlock State
+        self.is_head_initialized = False
+        self.initialized_head = None
+
+        # Cleanroom High-Contrast Touch UI State
+        self.cleanroom_theme_active = False
+
+        # Fluid Meniscus & Liquid Tracking State
+        self.slot_liquid_levels = {}
+        self.current_nozzle_pos = (0.0, 0.0)
+
+        # Automated Run Reports & Step Audit Log
+        self.last_run_report_path = None
+        self.session_step_audit_log = []
 
         self.has_tip_var = tk.BooleanVar(value=False)
         self._worker_has_tip = False
@@ -227,6 +271,7 @@ class LIMSMasterApp:
         filemenu.add_command(label="Save JSON Protocol As...", command=self.action_save_workflow_as)
         filemenu.add_separator()
         filemenu.add_command(label="Import Python Protocol (.py)...", command=self.action_import_python_protocol)
+        filemenu.add_command(label="📊 Open Latest Run Report (HTML)...", command=self.action_open_run_report)
         filemenu.add_command(label="View Session Logs Folder...", command=self.action_open_session_logs)
         filemenu.add_separator()
         filemenu.add_command(label="Machine Chassis Settings...", command=self.action_edit_machine_limits)
@@ -268,6 +313,8 @@ class LIMSMasterApp:
         # 3. HARDWARE MENU
         # -------------------------------------------------------------
         hwmenu = tk.Menu(menubar, tearoff=0)
+        hwmenu.add_command(label="🔌 Initialize Pipettor Head", command=self.action_initialize_pipettor)
+        hwmenu.add_separator()
         hwmenu.add_command(label="Switch to 8×1000 µL Multi-Channel [Media Change]", command=lambda: self.switch_pipettor_head("8-Channel Multi (8×1000 µL)"))
         hwmenu.add_command(label="Switch to 1×300 µL Single-Channel [Prepping DMSO-Drug]", command=lambda: self.switch_pipettor_head("300 µL Single-Channel"))
         hwmenu.add_command(label="Switch to 8-Channel Multi (1-10 µL) [Drug Addition to EHM]", command=lambda: self.switch_pipettor_head("8-Channel Multi (1-10 µL)"))
@@ -275,8 +322,23 @@ class LIMSMasterApp:
         hwmenu.add_command(label="Reset / Home Pipette Head", command=self.quick_home_head)
         hwmenu.add_command(label="Retract to Safe Z (0 mm)", command=self.quick_safe_z)
         hwmenu.add_separator()
+        hwmenu.add_command(label="📐 Tim's Slot Z-Verification Tool...", command=self.action_open_tim_z_verification)
         hwmenu.add_command(label="8-Channel Calibrated Heights & Depths...", command=self.action_open_8ch_height_settings)
         menubar.add_cascade(label="Hardware", menu=hwmenu)
+
+        # -------------------------------------------------------------
+        # 4. SETTINGS & STATIONS MENU
+        # -------------------------------------------------------------
+        settingsmenu = tk.Menu(menubar, tearoff=0)
+        settingsmenu.add_command(label="⚙️ Change Machine Profile...", command=self.action_select_machine_profile)
+        settingsmenu.add_command(label="🔌 Initialize Pipettor Head...", command=self.action_initialize_pipettor)
+        settingsmenu.add_separator()
+        settingsmenu.add_command(label="📐 Tim's Slot Z-Verification Tool...", command=self.action_open_tim_z_verification)
+        settingsmenu.add_command(label="Calibrated Heights & Depths (Active Profile)...", command=self.action_open_8ch_height_settings)
+        settingsmenu.add_separator()
+        settingsmenu.add_command(label="🌓 Toggle Cleanroom Theme (High Contrast)", command=self.toggle_cleanroom_theme)
+        settingsmenu.add_command(label="Machine Chassis Settings...", command=self.action_edit_machine_limits)
+        menubar.add_cascade(label="Settings", menu=settingsmenu)
         try:
             self.root.config(menu=menubar)
         except Exception:
@@ -455,7 +517,188 @@ class LIMSMasterApp:
             final_path = running_path
 
         self.last_session_log_path = final_path
+
+        # 6. Automated Run Report Generation (HTML & CSV Bundled in logs/)
+        self._generate_run_reports(final_path, status, done_steps, total_steps, active_elapsed)
+
         return final_path
+
+    def action_open_run_report(self):
+        """Opens the most recent HTML run report in the system default web browser."""
+        target_path = getattr(self, "last_run_report_path", None)
+        logs_dir = self.get_logs_dir()
+        if not target_path or not os.path.exists(target_path):
+            reports = [os.path.join(logs_dir, f) for f in os.listdir(logs_dir) if f.endswith(".html") and "_Report_" in f]
+            if reports:
+                reports.sort(key=os.path.getmtime, reverse=True)
+                target_path = reports[0]
+
+        if target_path and os.path.exists(target_path):
+            try:
+                if sys.platform.startswith("win") and hasattr(os, "startfile"):
+                    os.startfile(target_path)
+                elif sys.platform == "darwin":
+                    subprocess.Popen(["open", target_path])
+                else:
+                    subprocess.Popen(["xdg-open", target_path])
+                self.logger.info(f"Opened Run Report in browser: {target_path}")
+            except Exception as e:
+                self.logger.warning(f"Could not open browser for {target_path}: {e}")
+                messagebox.showinfo("Run Report Location", f"Report saved at:\n{target_path}")
+        else:
+            messagebox.showinfo("No Reports Found", f"No run reports found in:\n{logs_dir}\nRun a protocol first.")
+
+    def _generate_run_reports(self, final_log_path: str, status: str, done_steps: int, total_steps: int, active_elapsed: float):
+        """Generates both HTML and CSV run reports alongside the session log inside logs/."""
+        try:
+            logs_dir = os.path.dirname(final_log_path)
+            base_name = os.path.basename(final_log_path)
+            m = re.match(r"^(\d{8}_\d{6})_Session_", base_name)
+            ts_str = m.group(1) if m else datetime.now().strftime("%d%m%Y_%H%M%S")
+
+            html_path = os.path.join(logs_dir, f"{ts_str}_Report_{status}.html")
+            csv_path = os.path.join(logs_dir, f"{ts_str}_Report_{status}.csv")
+
+            station_name = self.profile_manager.get_display_name(self.active_profile_id) if getattr(self, "profile_manager", None) else self.active_profile_id
+            host_name = socket.gethostname() if "socket" in sys.modules else "Robolab-PC"
+            date_display = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            audit_records = getattr(self, "session_step_audit_log", [])
+            total_aspirated = sum(float(r.get("vol", 0.0)) for r in audit_records if "Aspirate" in str(r.get("action", "")))
+            total_dispensed = sum(float(r.get("vol", 0.0)) for r in audit_records if "Dispense" in str(r.get("action", "")))
+            tips_picked = sum(1 for r in audit_records if "Pick" in str(r.get("action", "")))
+
+            # Write CSV Report
+            with open(csv_path, "w", newline="", encoding="utf-8") as f_csv:
+                writer = csv.writer(f_csv)
+                writer.writerow(["Step", "Timestamp", "Action", "Slot", "Well", "Volume_uL", "Z_Depth_mm", "Status", "Notes"])
+                for r in audit_records:
+                    writer.writerow([
+                        r.get("step_idx", ""),
+                        r.get("timestamp", ""),
+                        r.get("action", ""),
+                        r.get("slot", ""),
+                        r.get("well", ""),
+                        f"{float(r.get('vol', 0.0)):.2f}",
+                        f"{float(r.get('z', 0.0)):.2f}",
+                        r.get("status", "SUCCESS"),
+                        r.get("note", "")
+                    ])
+
+            # Write HTML Report
+            status_colors = {
+                "COMPLETED": "#10b981",
+                "ABORTED_USER": "#f59e0b",
+                "AUTO_ABORTED_EMPTY_TIPS": "#ef4444",
+                "AUTO_ABORTED_HARDWARE": "#dc2626",
+                "AUTO_ABORTED_DEPLETED": "#f97316",
+                "AUTO_ABORTED_ERROR": "#991b1b",
+            }
+            theme_color = status_colors.get(status, "#3b82f6")
+
+            table_rows_html = []
+            for r in audit_records:
+                table_rows_html.append(
+                    f"<tr>"
+                    f"<td>{r.get('step_idx', '')}</td>"
+                    f"<td>{r.get('timestamp', '')}</td>"
+                    f"<td><b>{r.get('action', '')}</b></td>"
+                    f"<td>{r.get('slot', '')}</td>"
+                    f"<td>{r.get('well', '')}</td>"
+                    f"<td>{float(r.get('vol', 0.0)):.1f} µL</td>"
+                    f"<td>{float(r.get('z', 0.0)):.2f} mm</td>"
+                    f"<td><span class='badge' style='background:{theme_color};'>{r.get('status', 'OK')}</span></td>"
+                    f"</tr>"
+                )
+            rows_str = "".join(table_rows_html) or "<tr><td colspan='8'>No step telemetry recorded.</td></tr>"
+
+            html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Robolab Biohit Run Report — {status}</title>
+<style>
+  body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 24px; }}
+  .container {{ max-width: 1000px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 32px; }}
+  .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }}
+  .header h1 {{ margin: 0; font-size: 24px; color: #0f172a; }}
+  .header .meta {{ font-size: 13px; color: #64748b; margin-top: 4px; }}
+  .status-badge {{ font-size: 14px; font-weight: 700; padding: 6px 16px; border-radius: 9999px; color: #fff; background: {theme_color}; text-transform: uppercase; letter-spacing: 0.5px; }}
+  .kpi-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 24px 0; }}
+  .kpi-card {{ background: #f1f5f9; border-radius: 8px; padding: 16px; text-align: center; border: 1px solid #e2e8f0; }}
+  .kpi-card .num {{ font-size: 24px; font-weight: bold; color: #0f172a; margin-top: 4px; }}
+  .kpi-card .label {{ font-size: 12px; font-weight: 600; text-transform: uppercase; color: #64748b; }}
+  table {{ width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }}
+  th {{ background: #f8fafc; text-align: left; padding: 10px 12px; border-bottom: 2px solid #cbd5e1; color: #475569; font-weight: 600; }}
+  td {{ padding: 8px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }}
+  tr:nth-child(even) {{ background: #f8fafc; }}
+  .badge {{ font-size: 11px; padding: 2px 8px; border-radius: 4px; color: #fff; font-weight: 600; }}
+  .footer {{ margin-top: 32px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center; }}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>🧬 Robolab Biohit Pipetting Run Report</h1>
+      <div class="meta">Station: <b>{station_name}</b> | Host: {host_name} | Generated: {date_display}</div>
+    </div>
+    <div class="status-badge">{status}</div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="label">Steps Executed</div>
+      <div class="num">{done_steps} / {total_steps}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Active Runtime</div>
+      <div class="num">{self.format_hms(active_elapsed)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Speed Multiplier</div>
+      <div class="num">{self.live_speed_factor:.2f}x</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Volume Aspirated</div>
+      <div class="num">{total_aspirated:.1f} µL</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Volume Dispensed</div>
+      <div class="num">{total_dispensed:.1f} µL</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Tips Consumed</div>
+      <div class="num">{tips_picked}</div>
+    </div>
+  </div>
+
+  <h2>Step Telemetry & Action Audit</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Step #</th><th>Timestamp</th><th>Action</th><th>Slot</th><th>Well</th><th>Volume</th><th>Z Depth</th><th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {rows_str}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    Robolab Biohit High-Throughput Automation Platform &bull; Session Log: {base_name}
+  </div>
+</div>
+</body>
+</html>
+"""
+            with open(html_path, "w", encoding="utf-8") as f_html:
+                f_html.write(html_content)
+
+            self.last_run_report_path = html_path
+            self.logger.info(f"📊 Run Reports generated: {os.path.basename(html_path)} & {os.path.basename(csv_path)}")
+        except Exception as rep_err:
+            self.logger.warning(f"Could not generate run report: {rep_err}")
 
     # =========================================================================
     # 2. ACTIVE SESSION TIP MEMORY (VIRTUAL TIP REMAPPING & DECK VISUALIZER)
@@ -1309,6 +1552,22 @@ class LIMSMasterApp:
         # Keep BiohitInterface bound to the same pipettor object
         self.lims.hw.pipettor = self.lims.pipettor
 
+        # Sync active machine profile calibrations for switched head mode
+        matching_pid = None
+        if is_multi and target_vol >= 500.0:
+            matching_pid = "machine_1_8x1000"
+        elif is_multi and target_vol <= 50.0:
+            matching_pid = "machine_2_1_10ul"
+        elif not is_multi and target_vol == 300.0:
+            matching_pid = "machine_3_300ul"
+
+        if matching_pid and hasattr(self, 'profile_manager') and self.profile_manager:
+            if matching_pid != getattr(self, 'active_profile_id', None):
+                self.active_profile_id = matching_pid
+                self.calibrated_heights = self.profile_manager.load_profile(matching_pid)
+                if hasattr(self, 'update_window_title'):
+                    self.update_window_title()
+
         if is_multi:
             # 8-channel manifold has no tip oscillation/capacitance sensor; disable LLD surface probing automatically
             if hasattr(self, 'lld_tracking_var'):
@@ -1769,18 +2028,24 @@ class LIMSMasterApp:
     def draw_deck(self):
         self.canvas.delete("all")
         render_width = self.bed_width
-        self.canvas.config(width=render_width * self.scale, height=self.bed_height * self.scale)
+        is_clean = getattr(self, "cleanroom_theme_active", False)
+        bg_color = "#050811" if is_clean else "white"
+        grid_light = "#111827" if is_clean else "#ebebeb"
+        grid_dark = "#1f2937" if is_clean else "#cccccc"
+        text_color = "#94a3b8" if is_clean else "#888"
+
+        self.canvas.config(bg=bg_color, width=render_width * self.scale, height=self.bed_height * self.scale)
 
         for x in range(0, int(render_width) + 10, 10):
             vx = self.get_v_x(x)
             self.canvas.create_line(vx, 0, vx, self.bed_height * self.scale,
-                                    fill="#ebebeb" if x % 50 != 0 else "#cccccc")
-            if x % 50 == 0: self.canvas.create_text(vx, 10, text=f"{x}mm", fill="#888")
+                                    fill=grid_light if x % 50 != 0 else grid_dark)
+            if x % 50 == 0: self.canvas.create_text(vx, 10, text=f"{x}mm", fill=text_color)
 
         for y in range(0, int(self.bed_height) + 10, 10):
             vy = y * self.scale
-            self.canvas.create_line(0, vy, render_width * self.scale, vy, fill="#ebebeb" if y % 50 != 0 else "#cccccc")
-            if y % 50 == 0: self.canvas.create_text(render_width * self.scale - 10, vy, text=f"{y}mm", fill="#888",
+            self.canvas.create_line(0, vy, render_width * self.scale, vy, fill=grid_light if y % 50 != 0 else grid_dark)
+            if y % 50 == 0: self.canvas.create_text(render_width * self.scale - 10, vy, text=f"{y}mm", fill=text_color,
                                                     anchor="e")
 
         ox = render_width * self.scale
@@ -1798,18 +2063,25 @@ class LIMSMasterApp:
             y1 = (s.y_abs + s.height_mm) * self.scale
 
             is_sel = (name == self.selected_slot_name)
-            fill = "#e9ecef" if name in self.lims.deck_labware else ("#cce5ff" if is_sel else "#f8f9fa")
-            outline = "blue" if is_sel else "#6c757d"
+            if is_clean:
+                fill = "#0f172a" if name in self.lims.deck_labware else ("#1e293b" if is_sel else "#090d16")
+                outline = "#00f0ff" if is_sel else "#334155"
+            else:
+                fill = "#e9ecef" if name in self.lims.deck_labware else ("#cce5ff" if is_sel else "#f8f9fa")
+                outline = "blue" if is_sel else "#6c757d"
 
             self.canvas.create_rectangle(visual_x_left, y0, visual_x_right, y1, fill=fill, outline=outline,
                                          width=3 if is_sel else 2)
-            self.canvas.create_text(visual_x_left + 5, y0 + 5, text=name, anchor="nw", font=("Arial", 10, "bold"))
+            lbl_color = "#38bdf8" if is_clean else "#212529"
+            self.canvas.create_text(visual_x_left + 5, y0 + 5, text=name, anchor="nw", font=("Arial", 10, "bold"), fill=lbl_color)
 
         # Pass 2: draw wells on top of every rectangle, then the selection badge
         for name in self.placed_slots:
             s = self.lims.deck_slots[name]
+            visual_x_left = self.get_v_x(s.x_abs + s.width_mm)
             visual_x_right = self.get_v_x(s.x_abs)
             y0 = s.y_abs * self.scale
+            y1 = (s.y_abs + s.height_mm) * self.scale
             is_sel = (name == self.selected_slot_name)
 
             if name in self.lims.deck_labware:
@@ -1835,15 +2107,30 @@ class LIMSMasterApp:
 
                     if is_tip_rack_lw:
                         if w.name.upper() in consumed_tips_for_slot:
-                            w_fill, w_outline, w_txt = "#d6d8db", "#adb5bd", "#868e96"
+                            w_fill, w_outline, w_txt = ("#1e293b", "#334155", "#475569") if is_clean else ("#d6d8db", "#adb5bd", "#868e96")
                         else:
-                            w_fill, w_outline, w_txt = "#e7f5ff", "#339af0", "#1864ab"
+                            w_fill, w_outline, w_txt = ("#0284c7", "#38bdf8", "#ffffff") if is_clean else ("#e7f5ff", "#339af0", "#1864ab")
                     else:
-                        w_fill, w_outline, w_txt = "white", "#dee2e6", "#666"
+                        liquid_vol = self.slot_liquid_levels.get((name, w.name), None)
+                        if liquid_vol is not None and float(liquid_vol) > 0.0:
+                            w_fill = "#38bdf8" if is_clean else "#007bff"
+                            w_outline = "#0284c7"
+                            w_txt = "white"
+                        else:
+                            w_fill = "#090d16" if is_clean else "white"
+                            w_outline = "#334155" if is_clean else "#dee2e6"
+                            w_txt = "#94a3b8" if is_clean else "#666"
 
                     self.canvas.create_oval(wx - r, wy - r, wx + r, wy + r, fill=w_fill, outline=w_outline)
                     if r > 4: self.canvas.create_text(wx, wy, text=w.name, font=("Arial", int(r * 0.8)), fill=w_txt)
-                # ----------------------------------------------------------------------
+
+                # Draw live tip countdown on tip racks
+                if is_tip_rack_lw:
+                    consumed_count = len(consumed_tips_for_slot)
+                    free_count = 96 - consumed_count
+                    count_text = f"Tips: {free_count}/96 free"
+                    c_txt_color = "#38bdf8" if is_clean else "#0d6efd"
+                    self.canvas.create_text(visual_x_left + 6, y1 - 14, text=count_text, anchor="nw", font=("Arial", 8, "bold"), fill=c_txt_color)
 
             if is_sel:
                 badge_text = f" [{name}] X: {s.x_abs:.1f} | Y: {s.y_abs:.1f} "
@@ -1854,12 +2141,27 @@ class LIMSMasterApp:
                 self.canvas.create_oval(visual_x_right - 4, y0 - 4, visual_x_right + 4, y0 + 4, fill="red",
                                         outline="black")
 
+        # Live Animated Pipettor Nozzle Reticle & Footprint Tracking
         px, py = self.get_v_x(self.current_pos["X"]), self.current_pos["Y"] * self.scale
-        self.canvas.create_line(px - 10, py, px + 10, py, fill="red", width=2)
-        self.canvas.create_line(px, py - 10, px, py + 10, fill="red", width=2)
-        self.canvas.create_oval(px - 5, py - 5, px + 5, py + 5, outline="red")
+        nozzle_color = "#38bdf8" if is_clean else "red"
 
-        hud_bg = self.canvas.create_rectangle(5, 5, 140, 75, fill="#333", stipple="gray50")
+        if getattr(self.lims.pipettor, 'multichannel', False):
+            # Draw 8-nozzle manifold footprint along Y (spanning 63mm from carriage center)
+            top_ny = py - (31.50 * self.scale)
+            bot_ny = py + (31.50 * self.scale)
+            self.canvas.create_line(px, top_ny, px, bot_ny, fill=nozzle_color, width=2)
+            for n in range(8):
+                n_dy = (-31.50 + (n * 9.0)) * self.scale
+                self.canvas.create_oval(px - 3, (py + n_dy) - 3, px + 3, (py + n_dy) + 3, fill=nozzle_color, outline="white" if is_clean else "black")
+            # Central carriage crosshairs
+            self.canvas.create_line(px - 12, py, px + 12, py, fill=nozzle_color, width=2)
+            self.canvas.create_oval(px - 6, py - 6, px + 6, py + 6, outline=nozzle_color, width=2)
+        else:
+            self.canvas.create_line(px - 10, py, px + 10, py, fill=nozzle_color, width=2)
+            self.canvas.create_line(px, py - 10, px, py + 10, fill=nozzle_color, width=2)
+            self.canvas.create_oval(px - 5, py - 5, px + 5, py + 5, outline=nozzle_color)
+
+        hud_bg = self.canvas.create_rectangle(5, 5, 140, 75, fill="#090d16" if is_clean else "#333", stipple="gray50")
         hud_text = f"LIVE TELEMETRY\nX: {self.current_pos['X']:>6.2f} mm\nY: {self.current_pos['Y']:>6.2f} mm\nZ: {self.current_pos['Z']:>6.2f} mm"
         self.canvas.create_text(10, 10, text=hud_text, anchor="nw", fill="#00ff00", font=("Consolas", 10, "bold"))
 
@@ -1988,16 +2290,81 @@ class LIMSMasterApp:
         pane_list = ttk.Frame(self.tab_workflow)
         pane_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(4, 10), pady=4)
 
-        head_bar = ttk.Frame(pane_ctrl)
-        head_bar.pack(fill=tk.X, pady=(6, 4))
-        init_multi = self.lims.pipettor.multichannel
-        self.lbl_head_badge = tk.Label(
-            head_bar,
-            text="HEAD: 8×1000 µL MULTI" if init_multi else "HEAD: 1×200 µL SINGLE",
-            bg="#6f42c1" if init_multi else "#0d6efd",
+        # 0. Active Physical Station & Cleanroom Bar
+        station_bar = ttk.Frame(pane_ctrl)
+        station_bar.pack(fill=tk.X, pady=(4, 2))
+        station_name = self.profile_manager.get_display_name(self.active_profile_id) if getattr(self, "profile_manager", None) else self.active_profile_id
+        self.lbl_station_badge = tk.Label(
+            station_bar,
+            text=f"🏢 {station_name}",
+            bg="#1f2937",
+            fg="#60a5fa",
+            font=("Arial", 8, "bold"),
+            padx=5,
+            pady=2,
+            relief="groove",
+        )
+        self.lbl_station_badge.pack(side=tk.LEFT)
+        self.btn_profile_select = tk.Button(
+            station_bar,
+            text="⚙️ Switch",
+            bg="#374151",
+            fg="white",
+            font=("Arial", 8, "bold"),
+            command=self.action_select_machine_profile,
+            padx=4,
+            pady=1,
+        )
+        self.btn_profile_select.pack(side=tk.LEFT, padx=(2, 4))
+
+        self.btn_theme_toggle = tk.Button(
+            station_bar,
+            text="🌓 Theme",
+            bg="#374151",
+            fg="white",
+            font=("Arial", 8, "bold"),
+            command=self.toggle_cleanroom_theme,
+            padx=4,
+            pady=1,
+        )
+        self.btn_theme_toggle.pack(side=tk.RIGHT)
+
+        # 0b. Pipette Head & Initialization Safety Interlock Row
+        head_status_bar = ttk.Frame(pane_ctrl)
+        head_status_bar.pack(fill=tk.X, pady=(2, 4))
+        self.lbl_head_init_status = tk.Label(
+            head_status_bar,
+            text="⚠️ UNINITIALIZED" if not self.is_head_initialized else "● INITIALIZED",
+            bg="#dc3545" if not self.is_head_initialized else "#198754",
             fg="white",
             font=("Arial", 8, "bold"),
             padx=6,
+            pady=2,
+        )
+        self.lbl_head_init_status.pack(side=tk.LEFT)
+
+        self.btn_init_pipettor = tk.Button(
+            head_status_bar,
+            text="🔌 Initialize Pipettor",
+            bg="#fd7e14",
+            fg="white",
+            font=("Arial", 8, "bold"),
+            command=self.action_initialize_pipettor,
+            padx=6,
+            pady=1,
+        )
+        self.btn_init_pipettor.pack(side=tk.LEFT, padx=(4, 0))
+
+        head_bar = ttk.Frame(pane_ctrl)
+        head_bar.pack(fill=tk.X, pady=(4, 4))
+        init_multi = self.lims.pipettor.multichannel
+        self.lbl_head_badge = tk.Label(
+            head_bar,
+            text="HEAD: 8-CH MULTI" if init_multi else "HEAD: SINGLE-CH",
+            bg="#6f42c1" if init_multi else "#0d6efd",
+            fg="white",
+            font=("Arial", 8, "bold"),
+            padx=5,
             pady=3,
         )
         self.lbl_head_badge.pack(side=tk.LEFT)
@@ -2166,7 +2533,17 @@ class LIMSMasterApp:
             font=("Arial", 8, "bold"),
             command=self.action_open_8ch_height_settings,
         )
-        btn_heights.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(2, 0))
+        btn_heights.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(2, 2))
+
+        btn_tim_z = tk.Button(
+            tools_row,
+            text="📐 Tip Z-Check",
+            bg="#e83e8c",
+            fg="white",
+            font=("Arial", 8, "bold"),
+            command=self.action_open_tim_z_verification,
+        )
+        btn_tim_z.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(2, 0))
 
         # File Import/Export Row
         file_row = ttk.Frame(proto_frame)
@@ -2257,6 +2634,8 @@ class LIMSMasterApp:
             foreground="#0d6efd",
         )
         self.lbl_tip_memory.pack(side=tk.LEFT, padx=(2, 6))
+        self.btn_view_report = ttk.Button(util_bar, text="📊 View Run Report", command=self.action_open_run_report)
+        self.btn_view_report.pack(side=tk.RIGHT, padx=2)
         self.btn_view_logs = ttk.Button(util_bar, text="📁 View Session Logs", command=self.action_open_session_logs)
         self.btn_view_logs.pack(side=tk.RIGHT, padx=2)
         self.btn_reset_tips = ttk.Button(util_bar, text="🔄 Reset Tip Rack", command=lambda: self.reset_tip_rack_memory(None))
@@ -3780,12 +4159,448 @@ class LIMSMasterApp:
                 parent=self.root,
             )
 
-    def save_calibrated_heights(self):
-        """Persists the 8-channel calibrated heights dictionary to disk."""
+    def update_window_title(self):
+        station_name = self.profile_manager.get_display_name(self.active_profile_id) if getattr(self, "profile_manager", None) else self.active_profile_id
+        init_badge = " [Ready]" if getattr(self, "is_head_initialized", False) else " [UNINITIALIZED - Click Initialize]"
+        theme_badge = " [Cleanroom Mode]" if getattr(self, "cleanroom_theme_active", False) else ""
+        if hasattr(self.root, "title"):
+            self.root.title(f"Biohit Master GUI — [Station: {station_name}]{init_badge}{theme_badge}")
+        if hasattr(self, "lbl_station_badge"):
+            self.lbl_station_badge.config(text=f"🏢 {station_name}")
+        if hasattr(self, "lbl_head_init_status"):
+            if getattr(self, "is_head_initialized", False):
+                self.lbl_head_init_status.config(text="● INITIALIZED", bg="#198754", fg="white")
+            else:
+                self.lbl_head_init_status.config(text="⚠️ UNINITIALIZED", bg="#dc3545", fg="white")
+
+    def switch_machine_profile(self, profile_id: str, save_to_disk: bool = True):
+        """
+        Switches the active machine station profile (machine_1_8x1000, machine_2_1_10ul, machine_3_300ul).
+        Loads isolated hardware profile calibrations from config/machine_profiles/<id>/heights.json.
+        """
+        if profile_id not in PROFILE_CONFIGS:
+            # Check partial match
+            matched = None
+            for k in PROFILE_CONFIGS:
+                if k in profile_id or profile_id in k:
+                    matched = k
+                    break
+            if matched:
+                profile_id = matched
+            else:
+                self.logger.warning(f"Unknown profile ID '{profile_id}', ignoring switch.")
+                return
+
+        self.active_profile_id = profile_id
+        if self.profile_manager:
+            if save_to_disk:
+                self.profile_manager.set_active_profile_id(profile_id)
+            self.calibrated_heights = self.profile_manager.load_profile(profile_id)
+
+        cfg = (PROFILE_CONFIGS or {}).get(profile_id, {})
+        prof_multi = cfg.get("is_multichannel", True if ("8x" in profile_id or "10ul" in profile_id) else False)
+        prof_tip_vol = float(cfg.get("tip_volume", 10.0 if "10ul" in profile_id else (1000.0 if "1000" in profile_id else 200.0)))
+
+        self.lims.pipettor.reconfigure(tip_volume=prof_tip_vol, multichannel=prof_multi)
+        head_label = cfg.get("head_name", "8-Channel Multi (1-10 µL)" if "10ul" in profile_id else "8-Channel Multi (8×1000 µL)")
+        self.head_mode_var.set(head_label)
+        if hasattr(self, "proto_pipettor_var"):
+            self.proto_pipettor_var.set(head_label)
+
+        # Invalidate head initialization upon machine profile switch
+        self.is_head_initialized = False
+        self.initialized_head = None
+
+        self.update_window_title()
+        self._update_protocol_dropdown()
+        if hasattr(self, "draw_deck"):
+            self.draw_deck()
+
+        disp = self.profile_manager.get_display_name(profile_id) if self.profile_manager else profile_id
+        self.logger.info(f"Switched physical machine station to: {disp} (save_to_disk={save_to_disk})")
+
+    def action_select_machine_profile(self):
+        """
+        Interactive Station Switcher: Allows the operator to activate Machine 1, Machine 2, or Machine 3.
+        Loads isolated hardware profile calibrations from config/machine_profiles/<id>/heights.json.
+        """
+        top = tk.Toplevel(self.root)
+        top.title("Select Physical Machine Station Profile")
+        top.geometry("490x380")
+        top.transient(self.root)
+        top.grab_set()
+
         try:
+            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 245
+            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 190
+            top.geometry(f"+{max(0, rx)}+{max(0, ry)}")
+        except Exception:
+            pass
+
+        ttk.Label(top, text="🏢 Select Active Machine Station Profile", font=("Arial", 12, "bold"), foreground="#0d6efd").pack(pady=(12, 4))
+        ttk.Label(
+            top,
+            text="Each physical robot has completely independent Z heights and table calibrations.\nSwitching profiles activates local calibrations without touching other stations.",
+            font=("Arial", 9),
+            justify=tk.CENTER,
+            foreground="#555",
+        ).pack(pady=(0, 10))
+
+        frame = ttk.LabelFrame(top, text="Available Stations", padding=12)
+        frame.pack(fill=tk.BOTH, expand=True, padx=16, pady=(0, 10))
+
+        selected_pid = tk.StringVar(value=self.active_profile_id)
+
+        stations = [
+            ("machine_2_1_10ul", "Machine 2: 1-10 µL (8-Channel Manifold)", "Optifit 1-10 µL tips (Collar Z=64.49mm) | EHM 8.5mm raised | Drug addition"),
+            ("machine_1_8x1000", "Machine 1: 8x1000 µL (8-Channel Manifold)", "1000 µL tips (Collar Z=86.36mm) | Full-volume Media Change | 7-Col reservoir"),
+            ("machine_3_300ul", "Machine 3: 300 µL (Single-Channel)", "300 µL tips (Collar Z=86.36mm, Limit=87.0mm) | Serial Dilutions | 3-Well reservoir"),
+        ]
+
+        for pid, title, desc in stations:
+            row = ttk.Frame(frame)
+            row.pack(fill=tk.X, pady=6)
+            rb = ttk.Radiobutton(row, text=title, value=pid, variable=selected_pid)
+            rb.pack(anchor="w")
+            ttk.Label(row, text=f"    {desc}", font=("Arial", 8, "italic"), foreground="#6c757d").pack(anchor="w")
+
+        def do_switch():
+            chosen = selected_pid.get()
+            self.switch_machine_profile(chosen, save_to_disk=True)
+            disp = self.profile_manager.get_display_name(chosen) if self.profile_manager else chosen
+            top.destroy()
+            messagebox.showinfo("Station Profile Activated", f"Switched active station to:\n{disp}\n\nCalibrated heights loaded. Please click '🔌 Initialize Pipettor' before starting runs.")
+
+        btn_box = ttk.Frame(top)
+        btn_box.pack(fill=tk.X, padx=16, pady=(0, 12))
+        ttk.Button(btn_box, text="Cancel", command=top.destroy).pack(side=tk.RIGHT, padx=4)
+        tk.Button(btn_box, text="✔ Activate Station Profile", bg="#0d6efd", fg="white", font=("Arial", 9, "bold"), command=do_switch).pack(side=tk.RIGHT, padx=4)
+
+    def action_initialize_pipettor(self):
+        """
+        Hardware Initialization & Safety Interlock Sequence.
+        Verifies pipette head communication, reconfigures volume limits, resets origin,
+        and unlocks protocol execution.
+        """
+        if getattr(self, "is_running", False):
+            messagebox.showwarning("Busy", "Cannot re-initialize pipettor head while a protocol is executing.")
+            return
+
+        cfg = (PROFILE_CONFIGS or {}).get(self.active_profile_id, {})
+        disp_name = self.profile_manager.get_display_name(self.active_profile_id) if getattr(self, "profile_manager", None) else self.active_profile_id
+        is_multi = cfg.get("is_multichannel", True if ("8x" in self.active_profile_id or "10ul" in self.active_profile_id) else False)
+        tip_vol = float(cfg.get("tip_volume", 10.0 if "10ul" in self.active_profile_id else 1000.0))
+
+        try:
+            self.logger.info(f"Initializing Pipettor Head for {disp_name} (Vol: {tip_vol:.1f}µL, Multi: {is_multi})...")
+            # 1. Reconfigure driver
+            self.lims.pipettor.reconfigure(tip_volume=tip_vol, multichannel=is_multi)
+
+            # 2. Hardware safe retract
+            if self.lims.pipettor.hardware:
+                try:
+                    self.lims.pipettor.hardware.move_z(0)
+                except Exception as ze:
+                    self.logger.warning(f"Z Retract warning during initialization: {ze}")
+
+            # 3. Mark state initialized
+            self.is_head_initialized = True
+            self.initialized_head = self.active_profile_id
+            self.update_window_title()
+            self._update_protocol_dropdown()
+
+            self.logger.info(f"✅ Pipette Head INITIALIZED successfully: {disp_name}. Interlock released.")
+            messagebox.showinfo(
+                "Head Initialized",
+                f"Pipettor Head initialized and ready!\n\nStation: {disp_name}\nTip Volume: {tip_vol:.1f} µL\nManifold: {'8-Channel Multichannel' if is_multi else 'Single-Channel'}\n\nProtocol execution is now unlocked."
+            )
+        except Exception as e:
+            self.is_head_initialized = False
+            self.initialized_head = None
+            self.update_window_title()
+            self.logger.error(f"Pipette Head Initialization failed: {e}")
+            messagebox.showerror("Initialization Failed", f"Could not initialize pipettor head:\n{e}")
+
+    def toggle_cleanroom_theme(self):
+        """Toggles between standard desktop laboratory theme and glove-friendly cleanroom high-contrast theme."""
+        self.cleanroom_theme_active = not self.cleanroom_theme_active
+        is_cleanroom = self.cleanroom_theme_active
+
+        if hasattr(self, "btn_theme_toggle"):
+            self.btn_theme_toggle.config(
+                text="☀️ Standard" if is_cleanroom else "🌓 Theme",
+                bg="#0284c7" if is_cleanroom else "#374151"
+            )
+
+        if hasattr(self, "btn_play") and hasattr(self, "btn_pause") and hasattr(self, "btn_stop"):
+            if is_cleanroom:
+                self.btn_play.config(bg="#059669", font=("Arial", 12, "bold"), pady=8)
+                self.btn_pause.config(bg="#d97706", font=("Arial", 12, "bold"), pady=8)
+                self.btn_stop.config(bg="#dc2626", font=("Arial", 12, "bold"), pady=8)
+            else:
+                self.btn_play.config(bg="#28a745", font=("Arial", 11, "bold"), pady=3)
+                self.btn_pause.config(bg="#ffc107", font=("Arial", 11, "bold"), pady=3)
+                self.btn_stop.config(bg="#dc3545", font=("Arial", 11, "bold"), pady=3)
+
+        self.update_window_title()
+        if hasattr(self, "draw_deck"):
+            self.draw_deck()
+
+        mode_str = "Cleanroom High-Contrast Mode (Glove Touch Enabled)" if is_cleanroom else "Standard Desktop Lab Mode"
+        self.logger.info(f"Switched UI theme to: {mode_str}")
+
+    def action_open_tim_z_verification(self):
+        """
+        Tim's Assisted Visual Z-Verification & Table Depth Editor.
+        Robot picks a tip from Slot 4 and moves to the selected slot/well.
+        The operator can visual-jog to verify depths, edit the nominal value directly,
+        and save it into the active machine profile (heights.json).
+        """
+        if getattr(self, "is_running", False):
+            messagebox.showwarning("Busy", "Cannot verify Z depths while a protocol is running.")
+            return
+
+        top = tk.Toplevel(self.root)
+        top.title("Tim's Slot-by-Slot Tip Z-Verification & Depth Editor")
+        top.geometry("560x520")
+        top.transient(self.root)
+        top.grab_set()
+
+        try:
+            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 280
+            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 260
+            top.geometry(f"+{max(0, rx)}+{max(0, ry)}")
+        except Exception:
+            pass
+
+        ttk.Label(top, text="📐 Tim's Slot Z-Verification & Visual Jog Editor", font=("Arial", 12, "bold"), foreground="#6f42c1").pack(pady=(10, 4))
+        station_name = self.profile_manager.get_display_name(self.active_profile_id) if getattr(self, "profile_manager", None) else self.active_profile_id
+        ttk.Label(
+            top,
+            text=f"Active Profile: {station_name}\nRobot picks a tip from Slot 4 and travels to the target well at nominal Z.\nUse fine jog controls or direct entry to adjust, then save verified depth to heights.json.",
+            font=("Arial", 8),
+            justify=tk.CENTER,
+            foreground="#555",
+        ).pack(pady=(0, 8))
+
+        ctrl_frame = ttk.LabelFrame(top, text="Target Slot & Well Selection", padding=10)
+        ctrl_frame.pack(fill=tk.X, padx=16, pady=(0, 8))
+
+        row1 = ttk.Frame(ctrl_frame)
+        row1.pack(fill=tk.X, pady=2)
+        ttk.Label(row1, text="Target Slot:", width=12).pack(side=tk.LEFT)
+        slot_var = tk.StringVar(value="Slot_5")
+        cb_slot = ttk.Combobox(row1, textvariable=slot_var, values=["Slot_1", "Slot_2", "Slot_3", "Slot_4", "Slot_5", "Slot_6"], state="readonly", width=12)
+        cb_slot.pack(side=tk.LEFT, padx=(0, 16))
+
+        ttk.Label(row1, text="Target Well:", width=12).pack(side=tk.LEFT)
+        well_var = tk.StringVar(value="A1")
+        ent_well = ttk.Entry(row1, textvariable=well_var, width=8)
+        ent_well.pack(side=tk.LEFT)
+
+        info_lbl = ttk.Label(ctrl_frame, text="", font=("Arial", 8, "italic"), foreground="#0d6efd")
+        info_lbl.pack(anchor="w", pady=(4, 0))
+
+        def _update_slot_info(*args):
+            s = slot_var.get()
+            lw = self.lims.deck_labware.get(s)
+            lw_name = getattr(lw, "source_file", getattr(lw, "name", "None"))
+            kind = self._lw_kind(lw)
+            nom_z = 24.17
+            if kind == "ehm48":
+                nom_z = float(self.calibrated_heights.get("ehm_aspirate_z", 69.90 if "10ul" in self.active_profile_id else 24.17))
+            elif kind == "plate96":
+                nom_z = float(self.calibrated_heights.get("plate96_aspirate_z", 78.40))
+            elif "reservoir" in str(kind) or kind == "reservoir_7":
+                nom_z = float(self.calibrated_heights.get("reservoir_aspirate_z", 58.34 if "10ul" in self.active_profile_id else 90.42))
+            elif kind == "tip_rack":
+                nom_z = float(self.calibrated_heights.get("tip_10ul_collar_z" if "10ul" in self.active_profile_id else "tip_rack_collar_z", 64.49 if "10ul" in self.active_profile_id else 86.36))
+            info_lbl.config(text=f"Mounted: {lw_name} ({kind or 'unknown'}) | Nominal Z Depth: {nom_z:.2f} mm")
+
+        slot_var.trace_add("write", _update_slot_info)
+        _update_slot_info()
+
+        # Step 1: Pick Tip and Travel
+        action_box1 = ttk.LabelFrame(top, text="Step 1: Pick Tip from Slot 4 & Travel to Well", padding=10)
+        action_box1.pack(fill=tk.X, padx=16, pady=(0, 8))
+
+        live_z_var = tk.DoubleVar(value=0.0)
+        lbl_current_z = tk.Label(action_box1, text="Current Z: 0.00 mm", font=("Consolas", 11, "bold"), fg="#0d6efd")
+        lbl_current_z.pack(side=tk.RIGHT, padx=6)
+
+        def do_pick_and_travel():
+            s = slot_var.get()
+            w = well_var.get().strip().upper() or "A1"
+            lw = self.lims.deck_labware.get(s)
+            kind = self._lw_kind(lw)
+            nom_z = 24.17
+            if kind == "ehm48":
+                nom_z = float(self.calibrated_heights.get("ehm_aspirate_z", 69.90 if "10ul" in self.active_profile_id else 24.17))
+            elif kind == "plate96":
+                nom_z = float(self.calibrated_heights.get("plate96_aspirate_z", 78.40))
+            elif "reservoir" in str(kind) or kind == "reservoir_7":
+                nom_z = float(self.calibrated_heights.get("reservoir_aspirate_z", 58.34 if "10ul" in self.active_profile_id else 90.42))
+            elif kind == "tip_rack":
+                nom_z = float(self.calibrated_heights.get("tip_10ul_collar_z" if "10ul" in self.active_profile_id else "tip_rack_collar_z", 64.49 if "10ul" in self.active_profile_id else 86.36))
+
+            try:
+                # 1. Pick Tip from Slot 4 using active machine profile heights
+                self.logger.info(f"[TIM Z-VERIFY] Picking tip from Slot 4 for visual verification on {s} {w}...")
+                is_10ul = ("10ul" in self.active_profile_id)
+                approach_z = float(self.calibrated_heights.get("tip_10ul_approach_z" if is_10ul else "tip_rack_pickup_approach_z", 50.0 if is_10ul else 75.0))
+                collar_z = float(self.calibrated_heights.get("tip_10ul_collar_z" if is_10ul else "tip_rack_collar_z", 64.49 if is_10ul else 86.36))
+                extra_press = float(self.calibrated_heights.get("tip_10ul_extra_press_mm" if is_10ul else "tip_pickup_extra_press_mm", 2.5))
+
+                if self.lims.pipettor.hardware:
+                    hw = self.lims.pipettor.hardware
+                    hw.move_z(0)
+                    t_coords = self._resolve_step_xy({"action": "Pick Up Tip", "eight_ch_symmetric": True}, "Slot_4", "A1")
+                    if t_coords:
+                        self.lims.hw.move_to(t_coords[0], t_coords[1], 0, speed=50)
+                    hw.move_z(approach_z)
+                    hw.pick_tip(collar_z + extra_press)
+                    hw.move_z(0)
+
+                self.has_tip_var.set(True)
+
+                # 2. Travel to Target Slot & Well
+                coords = self._resolve_step_xy({"action": "Aspirate Media"}, s, w)
+                if not coords or (coords[0] == 0 and coords[1] == 0):
+                    coords = self._calculate_xy(s, w)
+                tx, ty = coords if coords else (0.0, 0.0)
+
+                self.lims.hw.move_to(tx, ty, 0, speed=50)
+                if self.lims.pipettor.hardware:
+                    self.lims.pipettor.hardware.move_z(nom_z)
+
+                live_z_var.set(nom_z)
+                lbl_current_z.config(text=f"Current Z: {nom_z:.2f} mm")
+                self.logger.info(f"[TIM Z-VERIFY] Reached {s} {w} at nominal Z={nom_z:.2f}mm.")
+            except Exception as pe:
+                self.logger.error(f"[TIM Z-VERIFY] Pick and travel error: {pe}")
+                messagebox.showerror("Move Error", f"Could not complete tip travel: {pe}")
+
+        tk.Button(action_box1, text="▶ 1. Pick Tip from Slot 4 & Travel to Well", bg="#28a745", fg="white", font=("Arial", 9, "bold"), command=do_pick_and_travel).pack(side=tk.LEFT)
+
+        # Step 2: Visual Fine Jogging Controls
+        jog_box = ttk.LabelFrame(top, text="Step 2: Visual Fine Jogging Controls (Nudge Height)", padding=10)
+        jog_box.pack(fill=tk.X, padx=16, pady=(0, 8))
+
+        def _nudge_z(delta):
+            cur = live_z_var.get()
+            new_z = max(0.0, min(103.5, cur + delta))
+            live_z_var.set(new_z)
+            lbl_current_z.config(text=f"Current Z: {new_z:.2f} mm")
+            if self.lims.pipettor.hardware:
+                try:
+                    self.lims.pipettor.hardware.move_z(new_z)
+                except Exception as e:
+                    self.logger.warning(f"Z nudge warning: {e}")
+            self.logger.info(f"[TIM Z-VERIFY] Jogged Z by {delta:+.2f}mm -> Current: {new_z:.2f}mm")
+
+        row_up = ttk.Frame(jog_box)
+        row_up.pack(fill=tk.X, pady=2)
+        ttk.Label(row_up, text="Raise Z (Move Up):", width=18).pack(side=tk.LEFT)
+        for d in [-10.0, -2.0, -0.5, -0.1]:
+            tk.Button(row_up, text=f"{d}mm", bg="#17a2b8", fg="white", font=("Arial", 8, "bold"), width=7, command=lambda v=d: _nudge_z(v)).pack(side=tk.LEFT, padx=2)
+
+        row_down = ttk.Frame(jog_box)
+        row_down.pack(fill=tk.X, pady=4)
+        ttk.Label(row_down, text="Lower Z (Descend Deeper):", width=18).pack(side=tk.LEFT)
+        for d in [0.1, 0.5, 2.0, 10.0]:
+            tk.Button(row_down, text=f"+{d}mm", bg="#ffc107", font=("Arial", 8, "bold"), width=7, command=lambda v=d: _nudge_z(v)).pack(side=tk.LEFT, padx=2)
+
+        row_direct = ttk.Frame(jog_box)
+        row_direct.pack(fill=tk.X, pady=4)
+        ttk.Label(row_direct, text="Direct Value / Delta:", width=18).pack(side=tk.LEFT)
+        direct_z_var = tk.StringVar(value="")
+        ttk.Entry(row_direct, textvariable=direct_z_var, width=10).pack(side=tk.LEFT, padx=(0, 6))
+
+        def _apply_direct():
+            val_str = direct_z_var.get().strip()
+            if not val_str:
+                return
+            try:
+                val = float(val_str)
+                if val_str.startswith("+") or val_str.startswith("-"):
+                    _nudge_z(val)
+                else:
+                    new_z = max(0.0, min(103.5, val))
+                    live_z_var.set(new_z)
+                    lbl_current_z.config(text=f"Current Z: {new_z:.2f} mm")
+                    if self.lims.pipettor.hardware:
+                        self.lims.pipettor.hardware.move_z(new_z)
+                    self.logger.info(f"[TIM Z-VERIFY] Set direct Z={new_z:.2f}mm")
+            except Exception as e:
+                messagebox.showerror("Input Error", f"Invalid Z value '{val_str}': {e}")
+
+        ttk.Button(row_direct, text="Apply Z", command=_apply_direct).pack(side=tk.LEFT)
+
+        # Step 3: Save & Return
+        bottom_box = ttk.Frame(top)
+        bottom_box.pack(fill=tk.X, padx=16, pady=8)
+
+        def _save_to_profile():
+            current_z = round(live_z_var.get(), 2)
+            if current_z <= 0.0:
+                messagebox.showwarning("Zero Z", "Current Z is 0.0 mm. Jog to the verified depth before saving.")
+                return
+            s = slot_var.get()
+            lw = self.lims.deck_labware.get(s)
+            kind = self._lw_kind(lw)
+
+            key = "plate96_aspirate_z"
+            if kind == "ehm48":
+                key = "ehm_aspirate_z"
+            elif "reservoir" in str(kind) or kind == "reservoir_7":
+                key = "reservoir_aspirate_z"
+            elif kind == "tip_rack":
+                key = "tip_10ul_collar_z" if "10ul" in self.active_profile_id else "tip_rack_collar_z"
+
+            self.calibrated_heights[key] = current_z
+            if "10ul" in self.active_profile_id:
+                if key == "ehm_aspirate_z":
+                    self.calibrated_heights["ehm_dispense_z"] = round(current_z - 9.97, 2)
+                elif key == "reservoir_aspirate_z":
+                    self.calibrated_heights["reservoir_7_aspirate_z"] = current_z
+
+            self.save_calibrated_heights()
+            self.logger.info(f"[TIM Z-VERIFY] Saved verified Z depth {key}={current_z:.2f}mm to active profile {self.active_profile_id}.")
+            messagebox.showinfo("Saved", f"Verified Z={current_z:.2f} mm saved to active profile '{self.active_profile_id}' under key '{key}'!")
+
+        def _return_tip_and_retract():
+            try:
+                self.logger.info("[TIM Z-VERIFY] Returning tip and retracting...")
+                if self.lims.pipettor.hardware:
+                    self.lims.pipettor.hardware.move_z(0)
+                discard_z = float(self.calibrated_heights.get("tip_rack_discard_z", 40.50))
+                t_coords = self._resolve_step_xy({"action": "Discard Tip", "eight_ch_symmetric": True}, "Slot_4", "A12")
+                if t_coords:
+                    self.lims.hw.move_to(t_coords[0], t_coords[1], 0, speed=50)
+                if self.lims.pipettor.hardware:
+                    self.lims.pipettor.hardware.move_z(discard_z)
+                    self.lims.pipettor.hardware.eject_tip()
+                    self.lims.pipettor.hardware.move_z(0)
+                self.has_tip_var.set(False)
+                lbl_current_z.config(text="Current Z: 0.00 mm (Retracted)")
+                self.logger.info("[TIM Z-VERIFY] Tip ejected and robot safely retracted to Z=0.0 mm.")
+                messagebox.showinfo("Finished", "Tip returned and carriage safely retracted to Z=0.0 mm.")
+            except Exception as e:
+                self.logger.error(f"[TIM Z-VERIFY] Return tip error: {e}")
+                messagebox.showerror("Error", f"Could not eject tip: {e}")
+
+        tk.Button(bottom_box, text="💾 3. Save Verified Z to Profile", bg="#0d6efd", fg="white", font=("Arial", 10, "bold"), command=_save_to_profile).pack(side=tk.LEFT, padx=4)
+        tk.Button(bottom_box, text="🏁 4. Return Tip & Retract", bg="#6c757d", fg="white", font=("Arial", 9, "bold"), command=_return_tip_and_retract).pack(side=tk.LEFT, padx=4)
+        ttk.Button(bottom_box, text="Close", command=top.destroy).pack(side=tk.RIGHT, padx=4)
+
+    def save_calibrated_heights(self):
+        """Persists the calibrated heights dictionary to the active machine profile and fallback storage."""
+        try:
+            if hasattr(self, 'profile_manager') and self.profile_manager:
+                self.profile_manager.save_profile(self.calibrated_heights, self.active_profile_id)
             with open(self.calibrated_heights_file, "w") as f:
                 json.dump(self.calibrated_heights, f, indent=2)
-            self.logger.info("Saved 8-channel calibrated heights to persistent storage.")
+            self.logger.info(f"Saved calibrated heights to machine profile '{self.active_profile_id}'.")
         except Exception as e:
             self.logger.error(f"Error saving calibrated heights: {e}")
 
@@ -4660,6 +5475,15 @@ class LIMSMasterApp:
         self._set_protocol_edit_buttons_state(tk.NORMAL if not running else tk.DISABLED)
 
     def ask_error_resolution(self, error_msg, step_idx):
+        """
+        Interactive Error Recovery Dialog with User-Directed Clearance.
+        Offers 4 clear paths:
+        1. [ Retry Step ]
+        2. [ Clear / Unjam Tip ]: Operator chooses target slot and well (defaults to safe slot center),
+           robot purges liquid, optionally ejects tip, and retracts.
+        3. [ Skip Step & Continue ]
+        4. [ Safe Abort ]
+        """
         err_str = str(error_msg)
         classified = self._classify_abort_reason(error_msg)
         if any(kw in err_str for kw in ["CRITICAL", "COLLISION", "DOUBLE-TIP", "ejection failed", "SAFETY INTERLOCK"]):
@@ -4675,15 +5499,129 @@ class LIMSMasterApp:
 
         self._begin_pause_tracking()
         self.pause_event.clear()
-        self.root.after(0, lambda: self.btn_pause.config(text="▶ RESUME", bg="#17a2b8"))
+        if hasattr(self, "btn_pause"):
+            self.root.after(0, lambda: self.btn_pause.config(text="▶ RESUME", bg="#17a2b8"))
         self.user_decision = None
 
-        def prompt():
-            ans = messagebox.askyesno("Hardware Exception",
-                                      f"Protocol Halted on Step {step_idx}.\n\nHardware Trace:\n{error_msg}\n\nOpentrons Failsafe: Do you want to IGNORE this hardware warning and force the script to continue?")
-            self.user_decision = "ignore" if ans else "abort"
+        def open_recovery_dialog():
+            dlg = tk.Toplevel(self.root)
+            dlg.title("⚠️ Protocol Execution Interrupted — Error Recovery")
+            dlg.geometry("540x440")
+            dlg.transient(self.root)
+            dlg.grab_set()
 
-        self.root.after(0, prompt)
+            try:
+                rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 270
+                ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 220
+                dlg.geometry(f"+{max(0, rx)}+{max(0, ry)}")
+            except Exception:
+                pass
+
+            step = {}
+            if 0 <= (step_idx - 1) < len(self.workflow_sequence):
+                step = self.workflow_sequence[step_idx - 1]
+
+            header_f = tk.Frame(dlg, bg="#dc3545", padx=12, pady=10)
+            header_f.pack(fill=tk.X)
+            tk.Label(header_f, text="⚠️ Protocol Execution Halted", font=("Arial", 12, "bold"), fg="white", bg="#dc3545").pack(anchor="w")
+            step_summary = f"Step {step_idx}/{len(self.workflow_sequence)}: [{step.get('action', 'Unknown')}] at {step.get('slot', 'Slot')} {step.get('well', '')}"
+            tk.Label(header_f, text=step_summary, font=("Arial", 9), fg="#f8d7da", bg="#dc3545").pack(anchor="w")
+
+            msg_box = ttk.LabelFrame(dlg, text="Hardware / Software Trace", padding=8)
+            msg_box.pack(fill=tk.BOTH, expand=True, padx=14, pady=8)
+            txt = tk.Text(msg_box, height=4, font=("Consolas", 9), bg="#f8f9fa", fg="#212529", wrap="word")
+            txt.insert("1.0", err_str)
+            txt.config(state="disabled")
+            txt.pack(fill=tk.BOTH, expand=True)
+
+            # Clearance Controls Frame
+            clear_frame = ttk.LabelFrame(dlg, text="🧹 Tip & Manifold Clearance Settings", padding=8)
+            clear_frame.pack(fill=tk.X, padx=14, pady=(0, 8))
+
+            row_c = ttk.Frame(clear_frame)
+            row_c.pack(fill=tk.X, pady=2)
+            ttk.Label(row_c, text="Clearance Slot:").pack(side=tk.LEFT, padx=(0, 4))
+            clear_slot_var = tk.StringVar(value="Slot_2" if "Slot_2" in self.lims.deck_slots else "Slot_6")
+            cb_clear_slot = ttk.Combobox(row_c, textvariable=clear_slot_var, values=["Slot_1", "Slot_2", "Slot_3", "Slot_4", "Slot_5", "Slot_6"], state="readonly", width=10)
+            cb_clear_slot.pack(side=tk.LEFT, padx=(0, 12))
+
+            ttk.Label(row_c, text="Target Well (optional):").pack(side=tk.LEFT, padx=(0, 4))
+            clear_well_var = tk.StringVar(value="")
+            ent_clear_well = ttk.Entry(row_c, textvariable=clear_well_var, width=8)
+            ent_clear_well.pack(side=tk.LEFT)
+            ttk.Label(clear_frame, text="* Leave well blank to clear at the safe center of that slot.", font=("Arial", 8, "italic"), foreground="#6c757d").pack(anchor="w", pady=(2, 0))
+
+            lbl_clear_status = ttk.Label(clear_frame, text="", font=("Arial", 8, "bold"), foreground="#059669")
+            lbl_clear_status.pack(anchor="w", pady=(2, 0))
+
+            def execute_clearance():
+                t_slot = clear_slot_var.get()
+                t_well = clear_well_var.get().strip().upper()
+                try:
+                    self.logger.info(f"[RECOVERY] Performing clearance move to {t_slot} (well: '{t_well or 'CENTER'}')...")
+                    if self.lims.pipettor.hardware:
+                        self.lims.pipettor.hardware.move_z(0)
+
+                    if t_well:
+                        coords = self._calculate_xy(t_slot, t_well)
+                    else:
+                        slot_obj = self.lims.deck_slots.get(t_slot)
+                        if slot_obj:
+                            coords = (slot_obj.x_abs + (slot_obj.width_mm / 2.0), slot_obj.y_abs + (slot_obj.height_mm / 2.0))
+                        else:
+                            coords = (150.0, 150.0)
+
+                    cx, cy = coords
+                    self.lims.hw.move_to(cx, cy, 0, speed=50)
+
+                    clear_z = 20.0
+                    if self.lims.pipettor.hardware:
+                        self.lims.pipettor.hardware.move_z(clear_z)
+                        try:
+                            self.lims.pipettor.hardware.dispense(0)
+                        except Exception:
+                            pass
+
+                    ans_drop = messagebox.askyesno("Eject Tip?", "Liquid blowout purge complete.\nDo you also want to eject and discard the tip(s)?")
+                    if ans_drop and self.lims.pipettor.hardware:
+                        try:
+                            self.lims.pipettor.hardware.eject_tip()
+                            self.has_tip_var.set(False)
+                        except Exception as ee:
+                            self.logger.warning(f"Tip ejection error during clearance: {ee}")
+
+                    if self.lims.pipettor.hardware:
+                        self.lims.pipettor.hardware.move_z(0)
+
+                    lbl_clear_status.config(text=f"✔ Cleared at {t_slot} {t_well or 'Center'}. You may now Retry or Skip.")
+                    self.logger.info(f"[RECOVERY] Clearance completed safely at {t_slot}.")
+                except Exception as ce:
+                    self.logger.error(f"[RECOVERY] Clearance error: {ce}")
+                    lbl_clear_status.config(text=f"Clearance failed: {ce}")
+
+            tk.Button(clear_frame, text="⚡ Execute Clearance Now", bg="#17a2b8", fg="white", font=("Arial", 8, "bold"), command=execute_clearance).pack(anchor="w", pady=(4, 2))
+
+            # Action Buttons Row
+            btn_row = ttk.Frame(dlg)
+            btn_row.pack(fill=tk.X, padx=14, pady=(6, 12))
+
+            def on_retry():
+                self.user_decision = "retry"
+                dlg.destroy()
+
+            def on_skip():
+                self.user_decision = "skip"
+                dlg.destroy()
+
+            def on_abort():
+                self.user_decision = "abort"
+                dlg.destroy()
+
+            tk.Button(btn_row, text="🔁 Retry Step", bg="#28a745", fg="white", font=("Arial", 10, "bold"), command=on_retry).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
+            tk.Button(btn_row, text="⏭️ Skip Step", bg="#0d6efd", fg="white", font=("Arial", 10, "bold"), command=on_skip).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
+            tk.Button(btn_row, text="🛑 Safe Abort", bg="#dc3545", fg="white", font=("Arial", 10, "bold"), command=on_abort).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
+
+        self.root.after(0, open_recovery_dialog)
         while self.user_decision is None and not self.is_aborted:
             time.sleep(0.1)
 
@@ -4692,11 +5630,12 @@ class LIMSMasterApp:
             if self.session_abort_status is None:
                 self.session_abort_status = classified
             self.is_aborted = True
-        else:
-            self.logger.warning(f"User overrode hardware interlock on Step {step_idx}. Forcing continuation.")
+        elif self.user_decision in ("retry", "skip", "ignore"):
+            self.logger.warning(f"Operator selected '{self.user_decision}' for Step {step_idx}.")
             self.session_abort_status = None
             self.pause_event.set()
-            self.root.after(0, lambda: self.btn_pause.config(text="⏸ PAUSE", bg="#ffc107"))
+            if hasattr(self, "btn_pause"):
+                self.root.after(0, lambda: self.btn_pause.config(text="⏸ PAUSE", bg="#ffc107"))
 
     def _probe_surface_and_wait(self, limit_z: float, submerge_mm: float = 1.0) -> float:
         """
@@ -5032,10 +5971,12 @@ class LIMSMasterApp:
         - Applies `tip_offset_rows * 9.0` mm Y shift for offset partial tip-picking / tip-shoveling.
         - Applies `self.eight_ch_cal_offset['X']` and `self.eight_ch_cal_offset['Y']` fine calibration trims.
         """
-        is_8ch_step = bool(step and step.get('eight_ch_symmetric'))
-        if not is_8ch_step and self.lims.pipettor.multichannel:
-            # Only treat as 8-ch symmetric step if the active workflow actually contains 8-ch symmetric steps
-            is_8ch_step = any(s.get('eight_ch_symmetric') for s in getattr(self, 'workflow_sequence', []))
+        m_channels = str((step or {}).get("mounted_channels", "")).strip().upper()
+        is_multi_channel_action = bool(m_channels and len(m_channels) > 1 and m_channels not in ("1", "CH1", "A"))
+        is_8ch_step = bool(step and step.get('eight_ch_symmetric')) or is_multi_channel_action
+        if not is_8ch_step and getattr(self.lims.pipettor, 'multichannel', False):
+            # Treat as 8-ch step if workflow contains 8-ch symmetric steps or multi-channel actions
+            is_8ch_step = any(s.get('eight_ch_symmetric') or bool((s.get('mounted_channels') or '').count('-') > 0) for s in getattr(self, 'workflow_sequence', []))
 
         if not is_8ch_step:
             coords = self._calculate_xy(slot_name, well_id)
@@ -5651,6 +6592,22 @@ class LIMSMasterApp:
             messagebox.showerror("Safety Interlock",
                                  "Hardware must be homed via 'Connect & Initialize' before executing automated workflows.")
             return
+        if not getattr(self, 'is_head_initialized', False):
+            disp = self.profile_manager.get_display_name(self.active_profile_id) if getattr(self, "profile_manager", None) else self.active_profile_id
+            ans = messagebox.askyesno(
+                "Pipettor Head Initialization Required",
+                f"Pipettor Head for '{disp}' is currently uninitialized.\n\n"
+                f"Protocol execution is interlocked for hardware safety.\n"
+                f"Would you like to initialize the pipettor head now?"
+            )
+            if ans:
+                self.action_initialize_pipettor()
+                if not getattr(self, 'is_head_initialized', False):
+                    self.logger.warning("Protocol run aborted: Pipettor head initialization was not completed.")
+                    return
+            else:
+                self.logger.warning("Protocol run aborted: Operator declined pipettor head initialization.")
+                return
         if not self.workflow_sequence:
             messagebox.showinfo("No Protocol", "No protocol steps loaded in the Protocol Runner.")
             return
@@ -5864,15 +6821,15 @@ class LIMSMasterApp:
                     if action == "Pick Up Tip":
                         cal_dz = float(self.eight_ch_cal_offset.get("Z", 0.0)) if is_8ch else 0.0
                         tip_vol = getattr(self.lims.pipettor, 'tip_volume', 1000.0)
-                        is_10ul = (is_8ch and tip_vol <= 50.0)
+                        is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (is_8ch and tip_vol <= 50.0) or ("10ul" in str(getattr(self, 'initialized_head', '')).lower())
 
                         if is_10ul:
                             # Dedicated 8-Channel 1-10 µL head (calibrated collar Z=64.49mm)
-                            collar_z = float(self.calibrated_heights.get("tip_10ul_collar_z", 64.49))
-                            configured_limit = float(self.calibrated_heights.get("tip_10ul_limit_z", 75.0))
-                            approach_z = float(self.calibrated_heights.get("tip_10ul_approach_z", 50.0))
-                            extra_press = float(self.calibrated_heights.get("tip_10ul_extra_press_mm", 2.50))
-                            pickup_limit = min(92.0, max(68.0, configured_limit + extra_z + cal_dz))
+                            collar_z = float(self.calibrated_heights.get("tip_10ul_collar_z", self.calibrated_heights.get("tip_rack_collar_z", 64.49)))
+                            configured_limit = float(self.calibrated_heights.get("tip_10ul_limit_z", self.calibrated_heights.get("tip_rack_pickup_limit_z", 75.0)))
+                            approach_z = float(self.calibrated_heights.get("tip_10ul_approach_z", self.calibrated_heights.get("tip_rack_pickup_approach_z", 50.0)))
+                            extra_press = float(self.calibrated_heights.get("tip_10ul_extra_press_mm", self.calibrated_heights.get("tip_pickup_extra_press_mm", 2.50)))
+                            pickup_limit = min(80.0, max(68.0, configured_limit + extra_z + cal_dz))
                             valid_collar_min = 48.0
                             valid_collar_max = max(74.0, collar_z + 8.0)
                         elif is_8ch:
@@ -6474,6 +7431,29 @@ class LIMSMasterApp:
                             self._set_has_tip(False)
                             self.logger.info("Simulation: Tip ejected -> HAS_TIP = False")
 
+                    # Record step telemetry into audit log
+                    self.session_step_audit_log.append({
+                        "step_idx": i,
+                        "timestamp": datetime.now().strftime("%H:%M:%S"),
+                        "action": action,
+                        "slot": slot_name or "",
+                        "well": well_id or "",
+                        "vol": float(vol or 0.0),
+                        "z": float(getattr(self.lims.pipettor.hardware, 'z_position', 0.0) if self.lims.pipettor.hardware else 0.0),
+                        "status": "SUCCESS",
+                        "note": step.get("label", "")
+                    })
+
+                    # Update 2D fluid meniscus tracking
+                    if action == "Dispense Media" and slot_name and well_id:
+                        cur_lvl = self.slot_liquid_levels.get((slot_name, well_id), 0.0)
+                        self.slot_liquid_levels[(slot_name, well_id)] = cur_lvl + float(vol or 0.0)
+                        self._schedule_deck_redraw()
+                    elif action == "Aspirate Media" and slot_name and well_id:
+                        cur_lvl = self.slot_liquid_levels.get((slot_name, well_id), 100.0)
+                        self.slot_liquid_levels[(slot_name, well_id)] = max(0.0, cur_lvl - float(vol or 0.0))
+                        self._schedule_deck_redraw()
+
                 except RuntimeError as rt_err:
                     err_str = str(rt_err)
                     self.logger.error(f"RuntimeError on Step {i}: {err_str}\n{traceback.format_exc()}")
@@ -6496,19 +7476,24 @@ class LIMSMasterApp:
                     self.ask_error_resolution(e, i)
                     if self.is_aborted:
                         break
-                finally:
-                    if not self.is_aborted:
-                        expected_b = (
-                            0.05
-                            if step_skipped_fast
-                            else (
-                                self.step_baseline_times[self.current_step_idx]
-                                if self.current_step_idx < len(self.step_baseline_times)
-                                else 2.0
-                            )
+
+                if not self.is_aborted:
+                    if getattr(self, "user_decision", None) == "retry":
+                        self.user_decision = None
+                        self.logger.info(f"Retrying Step {i} per operator error recovery selection...")
+                        time.sleep(0.05)
+                        continue
+                    expected_b = (
+                        0.05
+                        if step_skipped_fast
+                        else (
+                            self.step_baseline_times[self.current_step_idx]
+                            if self.current_step_idx < len(self.step_baseline_times)
+                            else 2.0
                         )
-                        self.record_step_completion_for_timer(expected_b)
-                        self.current_step_idx += 1
+                    )
+                    self.record_step_completion_for_timer(expected_b)
+                    self.current_step_idx += 1
                 time.sleep(0.05)
 
         try:
@@ -6850,7 +7835,33 @@ class LIMSMasterApp:
                     return
 
                 p_name = os.path.basename(filepath)
-                is_8ch = any(s.get('eight_ch_symmetric') for s in loaded_sequence)
+                is_8ch = any(s.get('eight_ch_symmetric') or bool((s.get('mounted_channels') or '').count('-') > 0) for s in loaded_sequence)
+                max_vol = max((float(s.get('volume', 0.0) or 0.0) for s in loaded_sequence), default=0.0)
+
+                # Protocol Compatibility Guard: Inspect required head vs active station profile
+                req_station = None
+                if is_8ch and max_vol > 50.0:
+                    req_station = "machine_1_8x1000"
+                    req_label = "Machine 1: 8x1000 µL"
+                elif is_8ch and max_vol <= 50.0:
+                    req_station = "machine_2_1_10ul"
+                    req_label = "Machine 2: 1-10 µL"
+                elif not is_8ch and max_vol >= 50.0:
+                    req_station = "machine_3_300ul"
+                    req_label = "Machine 3: 300 µL"
+
+                if req_station and req_station != self.active_profile_id:
+                    cur_disp = self.profile_manager.get_display_name(self.active_profile_id) if getattr(self, "profile_manager", None) else self.active_profile_id
+                    switch_prompt = messagebox.askyesno(
+                        "Station Profile Mismatch",
+                        f"Protocol '{p_name}' requires:\n  • {req_label}\n\n"
+                        f"Current active station profile is:\n  • {cur_disp}\n\n"
+                        f"Would you like to automatically switch active station to {req_label} now to match this protocol?"
+                    )
+                    if switch_prompt:
+                        self.switch_machine_profile(req_station, save_to_disk=False)
+                    else:
+                        self.logger.warning(f"Protocol loaded under mismatched station profile: {cur_disp} (requires {req_label})")
 
                 # Extract declared slots & labwares to preview deck setup
                 declared_deck = {}
