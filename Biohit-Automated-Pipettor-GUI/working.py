@@ -390,18 +390,38 @@ class LIMSOrchestrator:
         self.hw = BiohitInterface(pipettor=self.pipettor, limits=self.machine_config)
 
     def load_machine_profile(self, filepath: str = "machine_profile.json"):
+        if not os.path.isabs(filepath):
+            pkg_dir = os.path.dirname(os.path.abspath(__file__))
+            cand = os.path.join(pkg_dir, filepath)
+            if os.path.exists(cand):
+                filepath = cand
+            elif os.path.exists(filepath):
+                pass
+            else:
+                filepath = cand
+
         if not os.path.exists(filepath):
             self.machine_config = {"brand": "Biohit", "max_x_mm": 300.0, "max_y_mm": 300.0, "max_z_mm": 310.0,
                                    "tip_length_mm": 50.89}
-            self.save_machine_profile(filepath)
+            try:
+                self.save_machine_profile(filepath)
+            except Exception:
+                pass
             return
-        with open(filepath, 'r') as f:
-            self.machine_config = json.load(f)
+        try:
+            with open(filepath, 'r') as f:
+                self.machine_config = json.load(f)
+        except Exception:
+            self.machine_config = {"brand": "Biohit", "max_x_mm": 300.0, "max_y_mm": 300.0, "max_z_mm": 310.0,
+                                   "tip_length_mm": 50.89}
         if "tip_length_mm" not in self.machine_config: self.machine_config["tip_length_mm"] = 50.89
         self.machine_config["max_z_mm"] = 310.0
 
     def save_machine_profile(self, filepath: str = "machine_profile.json"):
-        with open(filepath, 'w') as f: json.dump(self.machine_config, f, indent=4)
+        try:
+            with open(filepath, 'w') as f: json.dump(self.machine_config, f, indent=4)
+        except Exception:
+            pass
 
     def load_deck_profile(self, filepath: str):
         if not os.path.exists(filepath): raise FileNotFoundError(f"Missing {filepath}.")
