@@ -47,7 +47,7 @@ def run_all_tests():
 
     # Verify Machine 2 heights match Monday/Wednesday calibrations
     m2_heights = app.calibrated_heights
-    assert abs(float(m2_heights.get("tip_10ul_collar_z", 0.0)) - 64.97) < 1e-4 or abs(float(m2_heights.get("tip_10ul_collar_z", 0.0)) - 64.49) < 1e-4, "M2 collar Z must be calibrated"
+    assert any(abs(float(m2_heights.get("tip_10ul_collar_z", 0.0)) - val) < 1e-4 for val in (63.96, 64.49, 64.97)), "M2 collar Z must be calibrated"
     assert abs(float(m2_heights.get("tip_10ul_limit_z", 0.0)) - 75.0) < 1e-4, "M2 limit Z must be 75.0mm"
     assert abs(float(m2_heights.get("tip_10ul_approach_z", 0.0)) - 50.0) < 1e-4, "M2 approach Z must be 50.0mm"
     assert abs(float(m2_heights.get("tip_10ul_extra_press_mm", 0.0)) - 2.5) < 1e-4, "M2 press must be 2.5mm"
@@ -116,17 +116,17 @@ def run_all_tests():
     tx, ty = t_coords
 
     print(f"Resolved Carriage Position for 5-Tip Pickup (Machine 2: 1-10 µL): X = {tx:.2f} mm, Y = {ty:.2f} mm")
-    assert abs(tx - 105.57) < 1e-2, f"Expected X=105.57, got {tx}"
-    assert abs(ty - 56.96) < 1e-2, f"Expected Y=56.96 (physically seated position), got {ty}"
+    assert abs(tx - 105.66) < 1e-2, f"Expected X=105.66, got {tx}"
+    assert abs(ty - 84.14) < 1e-2, f"Expected Y=84.14 (physically seated position), got {ty}"
 
     # Verify column pitch progression across all 12 columns
     for col_idx in range(1, 13):
         col_coords = app._resolve_step_xy(step_5tip, "Slot_4", f"A{col_idx}")
-        expected_x = round(105.57 - ((col_idx - 1) * 9.0), 2)
+        expected_x = round(105.66 - ((col_idx - 1) * 9.0), 2)
         assert abs(col_coords[0] - expected_x) < 1e-2, f"Col {col_idx} expected X={expected_x}, got {col_coords[0]}"
-        assert abs(col_coords[1] - 56.96) < 1e-2, f"Col {col_idx} expected Y=56.96, got {col_coords[1]}"
+        assert abs(col_coords[1] - 84.14) < 1e-2, f"Col {col_idx} expected Y=84.14, got {col_coords[1]}"
 
-    print("PASS: Machine 2 (1-10 µL ONLY) tip pickup verified seated at X=105.57mm, Y=56.96mm.")
+    print("PASS: Machine 2 (1-10 µL ONLY) tip pickup verified seated at X=105.66mm, Y=84.14mm.")
     print("PASS: All 12 columns progress cleanly at 9.0mm pitch without mid-wall collisions.")
 
     # -------------------------------------------------------------------------

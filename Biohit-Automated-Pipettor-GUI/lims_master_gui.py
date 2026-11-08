@@ -5973,7 +5973,7 @@ class LIMSMasterApp:
     def _slot_a1_origin(self, slot_name):
         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
         if slot_name == "Slot_4" and is_10ul:
-            return 105.57, 56.96
+            return 105.66, 52.64
         if slot_name in self.SLOT_A1_ORIGINS:
             return self.SLOT_A1_ORIGINS[slot_name]
         slot_obj = self.lims.deck_slots.get(slot_name)
@@ -6045,16 +6045,16 @@ class LIMSMasterApp:
             if r_idx is not None and 0 <= r_idx < 8 and 0 <= c_idx < 12:
                 if kind == "tip_rack":
                     # Tip rack A1 physically calibrated:
-                    # Machine 2 (1-10 µL ONLY): physically seated reference at X=105.57, Y=56.96
+                    # Machine 2 (1-10 µL ONLY): physically seated reference at X=105.66, Y=52.64 (8-ch center Y=84.14)
                     # Machine 1 (8x1000 µL): standard A1 at X=105.60, Y=53.02 (8-ch center Y=84.52)
                     learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
                     is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
                     if slot_name == "Slot_4":
                         if is_10ul:
-                            return (105.57 - (c_idx * 9.0)) + learned_dx, (56.96 + (r_idx * 9.0)) + learned_dy
+                            return (105.66 - (c_idx * 9.0)) + learned_dx, (52.64 + (r_idx * 9.0)) + learned_dy
                         return (105.60 - (c_idx * 9.0)) + learned_dx, (53.02 + (r_idx * 9.0)) + learned_dy
                     if is_10ul:
-                        return (ox - (c_idx * 9.0)) + learned_dx, (56.96 + (r_idx * 9.0)) + learned_dy
+                        return (ox - (c_idx * 9.0)) + learned_dx, (52.64 + (r_idx * 9.0)) + learned_dy
                     return (ox - (c_idx * 9.0)) + learned_dx, (oy + (r_idx * 9.0)) + learned_dy
                 col_table = self.SLOT_96_COL_OVERRIDES.get(slot_name)
                 tx = col_table[c_idx] if col_table else ox - (c_idx * 9.0)
@@ -6157,13 +6157,29 @@ class LIMSMasterApp:
         kind = self._lw_kind(lw_obj)
         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
 
-        # Machine 2 (1-10 µL ONLY): Tip rack operations (pickup / discard) ALWAYS use verified seated carriage Y=56.96mm
+        # Machine 2 (1-10 µL ONLY): Tip rack operations (pickup / discard)
         if kind == "tip_rack" and is_10ul:
             w_str = str(well_id or "A1").strip().upper()
             col_digits = "".join(ch for ch in w_str if ch.isdigit()) or "1"
             col_i = max(0, min(11, int(col_digits) - 1))
-            tx = round(105.57 - (col_i * 9.0), 2)
-            ty = 56.96
+            tx = round(105.66 - (col_i * 9.0), 2)
+            offset_rows = int((step or {}).get('tip_offset_rows', 0) or 0)
+
+            # Center for all 8 tips on Machine 2 is physically seated at Y=84.14mm (Col 1 at X=105.66mm, Row A at Y=52.64mm).
+            # For n-channel pickup (e.g. 8-tip "A-H", 5-tip "A-E", 4-tip "A-D"):
+            # Carriage aligns active nozzle 0 (Channel A) with target well row (default Row A):
+            if is_8ch_step:
+                m_ch = str((step or {}).get("mounted_channels", "A-H")).strip().upper()
+                c_start = 0
+                if m_ch and m_ch[0] in "ABCDEFGH":
+                    c_start = ord(m_ch[0]) - ord('A')
+                row_char = w_str[0] if (w_str and w_str[0] in "ABCDEFGH") else "A"
+                r_start = ord(row_char) - ord('A')
+                ty = round(84.14 + (r_start - c_start + offset_rows) * 9.0, 2)
+            else:
+                row_char = w_str[0] if (w_str and w_str[0] in "ABCDEFGH") else "A"
+                r_idx = ord(row_char) - ord('A')
+                ty = round(84.14 + (r_idx + offset_rows) * 9.0, 2)
             return tx, ty
 
         if not is_8ch_step:

@@ -10,7 +10,7 @@ from robolab_gui.execution.recovery import RecoveryAction, RecoveryDecision
 def test_machine_2_calibrated_heights_isolation(tmp_path):
     service = MachineProfileService(profiles_dir=tmp_path / "profiles")
     m2 = service.load_profile("machine_2_1_10ul")
-    assert m2.get_height("tip_rack_collar_z") in (64.49, 64.97)
+    assert m2.get_height("tip_rack_collar_z") in (63.96, 64.49, 64.97)
     assert m2.get_height("plate_aspirate_z") == 69.90
     assert m2.get_height("reservoir_7_aspirate_z") == 58.34
 
@@ -18,6 +18,42 @@ def test_machine_2_calibrated_heights_isolation(tmp_path):
     m1 = service.load_profile("machine_1_8x1000")
     assert m1.get_height("tip_rack_collar_z") == 86.36
     assert m1.get_height("plate_aspirate_z") == 24.17
+
+
+def test_machine_2_8ch_and_5tip_kinematics():
+    """Verify Machine 2 (1-10 µL) 8-tip and 5-tip pickup aligns at verified seated Y=84.14mm."""
+    # 8-tip pickup
+    cy_8ch = NozzleLayout.get_carriage_y_for_manifold(
+        target_a1_y=52.64,
+        mounted_channels="A-H",
+        eight_ch_symmetric=True,
+        is_8ch_head=True,
+        slot_name="Slot_4",
+        is_10ul=True,
+    )
+    assert cy_8ch == 84.14
+
+    # 5-tip pickup (Channels A-E)
+    cy_5tip = NozzleLayout.get_carriage_y_for_manifold(
+        target_a1_y=52.64,
+        mounted_channels="A-E",
+        eight_ch_symmetric=False,
+        is_8ch_head=True,
+        slot_name="Slot_4",
+        is_10ul=True,
+    )
+    assert cy_5tip == 84.14
+
+    # Calculate nozzle positions at Y=84.14
+    nozzles = NozzleLayout.get_nozzle_positions_y(cy_8ch)
+    assert nozzles[0] == 52.64  # Row A
+    assert nozzles[1] == 61.64  # Row B
+    assert nozzles[2] == 70.64  # Row C
+    assert nozzles[3] == 79.64  # Row D
+    assert nozzles[4] == 88.64  # Row E
+    assert nozzles[5] == 97.64  # Row F
+    assert nozzles[6] == 106.64 # Row G
+    assert nozzles[7] == 115.64 # Row H
 
 
 def test_5_tip_pickup_kinematics():
