@@ -45,31 +45,30 @@ def create_application_context():
     }
 
 
-def main(ui_framework: str = "tkinter"):
-    """Launch the RoboLab GUI application."""
-    setup_logging()
-    ctx = create_application_context()
+def main(ui_framework: str = "master"):
+    """Launch the complete RoboLab Master GUI application."""
+    if ui_framework.lower() == "modular":
+        setup_logging()
+        ctx = create_application_context()
+        from robolab_gui.ui.tkinter.main_window import MainWindow
+        app = MainWindow(
+            deck_manager=ctx["deck_manager"],
+            session=ctx["session"],
+            profile_service=ctx["profile_service"],
+            catalog=ctx["catalog"],
+            engine=ctx["engine"],
+        )
+        app.mainloop()
+        return
 
-    if ui_framework.lower() == "qt":
-        try:
-            from robolab_gui.ui.qt.main_window import QtMainWindow
-            from PyQt6.QtWidgets import QApplication
-            app = QApplication(sys.argv)
-            win = QtMainWindow(ctx)
-            win.show()
-            sys.exit(app.exec())
-        except ImportError:
-            logging.warning("PyQt6 not available. Falling back to Tkinter UI.")
-
-    from robolab_gui.ui.tkinter.main_window import MainWindow
-    app = MainWindow(
-        deck_manager=ctx["deck_manager"],
-        session=ctx["session"],
-        profile_service=ctx["profile_service"],
-        catalog=ctx["catalog"],
-        engine=ctx["engine"],
-    )
-    app.mainloop()
+    import os
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    legacy_dir = os.path.join(repo_root, "Biohit-Automated-Pipettor-GUI")
+    if legacy_dir not in sys.path:
+        sys.path.insert(0, legacy_dir)
+    os.chdir(legacy_dir)
+    import lims_master_gui
+    lims_master_gui.launch()
 
 
 if __name__ == "__main__":
