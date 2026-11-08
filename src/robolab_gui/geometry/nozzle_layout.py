@@ -63,6 +63,7 @@ class NozzleLayout:
         is_8ch_head: bool = True,
         tip_offset_rows: int = 0,
         slot_name: str = "Slot_4",
+        is_10ul: bool = False,
     ) -> float:
         multi = cls.is_multi_channel(mounted_channels, eight_ch_symmetric)
 
@@ -70,7 +71,9 @@ class NozzleLayout:
             return target_a1_y + (tip_offset_rows * cls.NOZZLE_PITCH_MM)
 
         if multi:
-            if slot_name in ("Slot_3", "Slot_4"):
+            if is_10ul and slot_name == "Slot_4":
+                base_y = 56.96
+            elif slot_name in ("Slot_3", "Slot_4"):
                 base_y = cls.DEFAULT_8CH_CENTER_Y
             elif slot_name in ("Slot_5", "Slot_6"):
                 base_y = 178.69

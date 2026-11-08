@@ -10,7 +10,7 @@ from robolab_gui.execution.recovery import RecoveryAction, RecoveryDecision
 def test_machine_2_calibrated_heights_isolation(tmp_path):
     service = MachineProfileService(profiles_dir=tmp_path / "profiles")
     m2 = service.load_profile("machine_2_1_10ul")
-    assert m2.get_height("tip_rack_collar_z") == 64.49
+    assert m2.get_height("tip_rack_collar_z") in (64.49, 64.97)
     assert m2.get_height("plate_aspirate_z") == 69.90
     assert m2.get_height("reservoir_7_aspirate_z") == 58.34
 

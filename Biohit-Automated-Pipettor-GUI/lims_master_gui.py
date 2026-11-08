@@ -147,7 +147,7 @@ class LIMSMasterApp:
         # Default profile heights ensuring no missing keys
         default_profile_heights = {
             "tip_rack_pickup_approach_z": 50.0 if "10ul" in self.active_profile_id else 75.0,
-            "tip_rack_collar_z": 64.49 if "10ul" in self.active_profile_id else 86.36,
+            "tip_rack_collar_z": 64.97 if "10ul" in self.active_profile_id else 86.36,
             "tip_rack_pickup_limit_z": 75.0 if "10ul" in self.active_profile_id else 98.0,
             "tip_pickup_extra_press_mm": 2.50,
             "tip_rack_discard_z": 40.50,
@@ -167,7 +167,7 @@ class LIMSMasterApp:
                 self.calibrated_heights[k] = v
 
         if "10ul" in self.active_profile_id:
-            self.calibrated_heights.setdefault("tip_10ul_collar_z", self.calibrated_heights.get("tip_rack_collar_z", 64.49))
+            self.calibrated_heights.setdefault("tip_10ul_collar_z", self.calibrated_heights.get("tip_rack_collar_z", 64.97))
             self.calibrated_heights.setdefault("tip_10ul_limit_z", self.calibrated_heights.get("tip_rack_pickup_limit_z", 75.0))
             self.calibrated_heights.setdefault("tip_10ul_approach_z", self.calibrated_heights.get("tip_rack_pickup_approach_z", 50.0))
             self.calibrated_heights.setdefault("tip_10ul_extra_press_mm", self.calibrated_heights.get("tip_pickup_extra_press_mm", 2.50))
@@ -6041,10 +6041,17 @@ class LIMSMasterApp:
         if kind in ("tip_rack", "plate96") or (kind is None and not front):
             if r_idx is not None and 0 <= r_idx < 8 and 0 <= c_idx < 12:
                 if kind == "tip_rack":
-                    # Tip rack A1 physically calibrated at X=105.60, Y=53.02 on Slot 4 (8-ch center Y=84.52)
+                    # Tip rack A1 physically calibrated:
+                    # Machine 2 (1-10 µL ONLY): physically seated reference at X=105.57, Y=56.96
+                    # Machine 1 (8x1000 µL): standard A1 at X=105.60, Y=53.02 (8-ch center Y=84.52)
                     learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
+                    is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
                     if slot_name == "Slot_4":
+                        if is_10ul:
+                            return (105.57 - (c_idx * 9.0)) + learned_dx, (56.96 + (r_idx * 9.0)) + learned_dy
                         return (105.60 - (c_idx * 9.0)) + learned_dx, (53.02 + (r_idx * 9.0)) + learned_dy
+                    if is_10ul:
+                        return (ox - (c_idx * 9.0)) + learned_dx, (56.96 + (r_idx * 9.0)) + learned_dy
                     return (ox - (c_idx * 9.0)) + learned_dx, (oy + (r_idx * 9.0)) + learned_dy
                 col_table = self.SLOT_96_COL_OVERRIDES.get(slot_name)
                 tx = col_table[c_idx] if col_table else ox - (c_idx * 9.0)
@@ -6163,16 +6170,23 @@ class LIMSMasterApp:
         col_digits = "".join(ch for ch in w_str if ch.isdigit()) or "1"
 
         if kind in ("ehm48", "plate96", "tip_rack"):
-            ca = self._calculate_xy(slot_name, f"A{col_digits}")
-            ch = self._calculate_xy(slot_name, f"H{col_digits}")
-            if ca and ch and (ca[0] != 0.0 or ca[1] != 0.0):
-                tx = ca[0]
-                ty = (ca[1] + ch[1]) / 2.0
+            is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
+            if kind == "tip_rack" and is_10ul:
+                # Machine 2 (1-10 µL ONLY): Tip pickup carriage is physically seated at Y=56.96mm
+                col_i = max(0, min(11, int(col_digits) - 1))
+                tx = round(105.57 - (col_i * 9.0), 2)
+                ty = 56.96
             else:
-                coords = self._calculate_xy(slot_name, well_id)
-                if not coords:
-                    return None
-                tx, ty = coords
+                ca = self._calculate_xy(slot_name, f"A{col_digits}")
+                ch = self._calculate_xy(slot_name, f"H{col_digits}")
+                if ca and ch and (ca[0] != 0.0 or ca[1] != 0.0):
+                    tx = ca[0]
+                    ty = (ca[1] + ch[1]) / 2.0
+                else:
+                    coords = self._calculate_xy(slot_name, well_id)
+                    if not coords:
+                        return None
+                    tx, ty = coords
         else:
             coords = self._calculate_xy(slot_name, well_id)
             if not coords:
