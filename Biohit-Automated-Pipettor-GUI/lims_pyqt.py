@@ -361,10 +361,14 @@ class LIMSPyQtApp(QMainWindow):
         f_conn = QGroupBox("Hardware Handshake")
         conn_lay = QHBoxLayout()
         self.port_drop = QComboBox()
-        self.port_drop.addItems(["COM1", "COM2", "COM3"])
+        ports = self.lims.hw.scan_ports()
+        self.port_drop.addItems(ports if ports else ["Select Hardware Port..."])
         conn_lay.addWidget(self.port_drop)
         btn_scan = QPushButton("Scan Ports")
-        btn_scan.clicked.connect(lambda: self.port_drop.addItems(self.lims.hw.scan_ports()))
+        def _scan_and_update():
+            self.port_drop.clear()
+            self.port_drop.addItems(self.lims.hw.scan_ports())
+        btn_scan.clicked.connect(_scan_and_update)
         conn_lay.addWidget(btn_scan)
         btn_conn = QPushButton("Connect & Initialize")
         btn_conn.clicked.connect(self.hw_init)
@@ -392,11 +396,16 @@ class LIMSPyQtApp(QMainWindow):
         layout.addStretch()
 
     def hw_init(self):
-        ok, m = self.lims.hw.connect(self.port_drop.currentText())
+        port_txt = self.port_drop.currentText().strip()
+        if not port_txt or port_txt in ("Select Hardware Port...", "No Ports Detected", "(No Serial Ports Detected)"):
+            QMessageBox.warning(self, "Port Required", "Please select a valid hardware port before connecting and initializing.")
+            return
+        ok, m = self.lims.hw.connect(port_txt)
         if ok:
             ok2, m2 = self.lims.hw.initialize()
             if ok2:
-                self.lbl_hw_stat.setText("ONLINE")
+                clean_port = getattr(self.lims.hw, "extract_clean_port", lambda p: p.split(" — ")[0].strip())(port_txt)
+                self.lbl_hw_stat.setText(f"ONLINE ({clean_port})")
                 self.lbl_hw_stat.setStyleSheet("color: green; font-weight: bold;")
                 self.log(m2)
 

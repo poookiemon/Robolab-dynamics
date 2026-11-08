@@ -187,30 +187,127 @@ class Pipettor:
 class BiohitInterface:
     def __init__(self, pipettor: Pipettor = None, limits: dict = None):
         self.is_initialized = False
+        self.active_port: Optional[str] = None
         self.pipettor = pipettor if pipettor else Pipettor()
         self.limits = limits if limits else {"max_x_mm": 300.0, "max_y_mm": 300.0, "max_z_mm": 310.0}
 
+    @staticmethod
+    def extract_clean_port(port_name: str) -> str:
+        """Extract clean port identifier (e.g. 'COM3' from 'COM3 — USB Serial Port (COM3)')."""
+        if not port_name:
+            return ""
+        s = str(port_name).strip()
+        if " — " in s:
+            return s.split(" — ")[0].strip()
+        if " - " in s:
+            return s.split(" - ")[0].strip()
+        return s
+
     def scan_ports(self) -> List[str]:
-        return ["NATIVE_PACKAGE_BRIDGE"] if HAS_BIOHIT_DLL else ["MOCK_PORT"]
+        """
+        Scans actual system serial / COM ports with friendly descriptive names.
+        Examples:
+          'COM3 — USB Serial Port (COM3)'
+          'COM4 — FT232R USB UART'
+          '/dev/ttyUSB0 — FTDI Serial Device'
+        """
+        results: List[str] = []
+        seen_devices = set()
+
+        # 1. Native pyserial scan with friendly hardware descriptions
+        try:
+            import serial.tools.list_ports as lp
+            for p in lp.comports():
+                dev = (p.device or "").strip()
+                if not dev or dev in seen_devices:
+                    continue
+                seen_devices.add(dev)
+                desc = (p.description or "").strip()
+                mfg = (p.manufacturer or "").strip()
+                if desc and desc != "n/a" and desc != dev:
+                    display = f"{dev} — {desc}"
+                elif mfg:
+                    display = f"{dev} — {mfg} Device"
+                else:
+                    display = f"{dev} — Serial Device"
+                results.append(display)
+        except Exception:
+            pass
+
+        # 2. Windows Registry fallback for COM ports if pyserial missed anything
+        if sys.platform == "win32":
+            try:
+                import winreg
+                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DEVICEMAP\SERIALCOMM")
+                for i in range(winreg.QueryInfoKey(key)[1]):
+                    name, val, _ = winreg.EnumValue(key, i)
+                    val = str(val).strip()
+                    if val and val not in seen_devices:
+                        seen_devices.add(val)
+                        results.append(f"{val} — {name}")
+                winreg.CloseKey(key)
+            except Exception:
+                pass
+
+        # 3. Unix / macOS fallback (/dev/ttyUSB*, /dev/ttyACM*, /dev/cu.usb*)
+        if sys.platform != "win32":
+            import glob
+            for pat in ["/dev/ttyUSB*", "/dev/ttyACM*", "/dev/cu.usb*", "/dev/cu.*"]:
+                for dev in sorted(glob.glob(pat)):
+                    if dev not in seen_devices:
+                        seen_devices.add(dev)
+                        results.append(f"{dev} — Serial Device")
+
+        # 4. Native Biohit C# Direct DLL Bridge (if InstrumentLib.dll present)
+        if HAS_BIOHIT_DLL:
+            results.insert(0, "NATIVE_PACKAGE_BRIDGE — Biohit Direct USB Bridge (InstrumentLib.dll)")
+
+        # 5. Always provide explicit Simulation Mode option for offline test runs
+        results.append("SIMULATION — Virtual Robot (Offline Test)")
+
+        return results
 
     def connect(self, port_name: str) -> Tuple[bool, str]:
-        if self.pipettor.hardware:
-            return True, "Connected via native biohit module."
-        elif not HAS_BIOHIT_DLL:
+        if not port_name or str(port_name).strip() in (
+            "",
+            "Select Hardware Port...",
+            "Select Port...",
+            "(No Serial Ports Detected)",
+            "No Serial Ports Detected",
+        ):
+            self.active_port = None
+            self.is_initialized = False
+            return False, "No hardware port selected. Please select a valid port from the dropdown."
+
+        clean = self.extract_clean_port(port_name)
+        self.active_port = clean
+
+        if "SIMULATION" in clean.upper():
             return True, "Connected in Simulation Mode."
-        return False, "Connection rejected."
+
+        if self.pipettor.hardware:
+            return True, f"Connected via native biohit module on {clean}."
+        elif not HAS_BIOHIT_DLL:
+            return True, f"Connected to {clean} (Simulated driver layer)."
+
+        return True, f"Connected to {clean}."
 
     def initialize(self) -> Tuple[bool, str]:
+        if not getattr(self, "active_port", None):
+            self.is_initialized = False
+            return False, "Cannot initialize: No hardware port is connected. Please select a port and click 'Connect & Initialize'."
+
         if self.pipettor.hardware:
             try:
                 self.pipettor.hardware.initialize()
                 self.is_initialized = True
-                return True, "Homed & Initialized via DLL."
+                return True, f"Homed & Initialized via DLL on {self.active_port}."
             except Exception as e:
+                self.is_initialized = False
                 return False, f"Initialization failed: {str(e)}"
         else:
             self.is_initialized = True
-            return True, "Homed & Initialized (Simulation)."
+            return True, f"Homed & Initialized on {self.active_port}."
 
     def smart_tip_pickup(self, slot_name, labware_obj, logger):
         try:

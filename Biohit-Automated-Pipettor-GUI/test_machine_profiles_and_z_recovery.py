@@ -20,10 +20,16 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lims_master_gui import LIMSMasterApp
 from machine_profiles import MachineProfileManager, PROFILE_CONFIGS
 from working import Labware
+from tkinter import messagebox
 
 def run_all_tests():
     root = tk.Tk()
     root.withdraw()
+
+    # Non-interactive messagebox patch for automated test suite
+    messagebox.showinfo = lambda *a, **k: None
+    messagebox.showwarning = lambda *a, **k: None
+    messagebox.showerror = lambda *a, **k: None
 
     print("======================================================================")
     print("Running Machine Profiles, 5-Tip Kinematics & Z-Recovery Test Suite")
@@ -71,6 +77,10 @@ def run_all_tests():
     app.is_head_initialized = False
     assert not app.is_head_initialized, "Head must start uninitialized"
     print("PASS: Safety interlock uninitialized state verified.")
+
+    # Connect hardware port first so head initialization safety interlock allows head init
+    app.lims.hw.connect("SIMULATION — Virtual Robot (Offline Test)")
+    app.lims.hw.initialize()
 
     # Initialize head
     app.action_initialize_pipettor()

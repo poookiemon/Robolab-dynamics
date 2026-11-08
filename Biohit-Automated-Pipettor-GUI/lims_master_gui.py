@@ -1718,11 +1718,13 @@ class LIMSMasterApp:
     def build_jog_tab(self):
         f_conn = ttk.LabelFrame(self.tab_jog, text="Hardware Handshake & Pipettor Head", padding=15)
         f_conn.pack(fill=tk.X, padx=20, pady=10)
-        self.port_var = tk.StringVar()
-        self.port_drop = ttk.Combobox(f_conn, textvariable=self.port_var, state="readonly", width=22)
+        self.port_var = tk.StringVar(value="Select Hardware Port...")
+        self.port_drop = ttk.Combobox(f_conn, textvariable=self.port_var, state="readonly", width=38)
         self.port_drop.pack(side=tk.LEFT, padx=5)
+        self.port_drop.bind("<<ComboboxSelected>>", self._on_port_selected)
         ttk.Button(f_conn, text="Scan Ports", command=self.hw_scan).pack(side=tk.LEFT, padx=5)
-        ttk.Button(f_conn, text="Connect & Initialize", command=self.hw_init).pack(side=tk.LEFT, padx=10)
+        self.btn_hw_init = ttk.Button(f_conn, text="Connect & Initialize", command=self.hw_init)
+        self.btn_hw_init.pack(side=tk.LEFT, padx=10)
         self.hw_stat_can = tk.Canvas(f_conn, width=20, height=20, highlightthickness=0)
         self.hw_stat_can.pack(side=tk.LEFT, padx=5)
         self.hw_led = self.hw_stat_can.create_oval(2, 2, 18, 18, fill="gray")
@@ -1822,6 +1824,12 @@ class LIMSMasterApp:
             "• Direct Motion: Moves directly without pulling Z up to 0 (stays at current height)"
         )
         ttk.Label(f_guide, text=guide_text, font=("Consolas", 9), foreground="#0056b3").pack(anchor="w")
+
+        # Auto-scan available ports on initialization
+        try:
+            self.hw_scan(announce=False)
+        except Exception:
+            pass
 
     def _quick_move_z(self, z_target):
         self.jog_vars["Z"].set(round(float(z_target), 2))
@@ -4426,6 +4434,15 @@ class LIMSMasterApp:
         """
         if getattr(self, "is_running", False):
             messagebox.showwarning("Busy", "Cannot re-initialize pipettor head while a protocol is executing.")
+            return
+
+        if not getattr(self.lims.hw, "is_initialized", False):
+            self.logger.warning("Pipettor head initialization blocked: Hardware port is not connected or initialized.")
+            messagebox.showwarning(
+                "Hardware Port Required",
+                "Hardware port has not been connected or initialized yet.\n\n"
+                "Please go to the 'Jog & Calibration' tab, select your hardware port (e.g. COM3), and click 'Connect & Initialize' first."
+            )
             return
 
         cfg = (PROFILE_CONFIGS or {}).get(self.active_profile_id, {})
@@ -7698,56 +7715,102 @@ class LIMSMasterApp:
             self.root.after(0, lambda: self.update_ui_state(False))
             self.root.after(0, lambda: self.progress_var.set(0))
 
-    def hw_scan(self):
+    def _on_port_selected(self, event=None):
+        sel = (self.port_var.get() or "").strip()
+        if sel and sel not in ("Select Hardware Port...", "(No Serial Ports Detected)"):
+            self.logger.info(f"[PORT SELECTION] Selected hardware port: {sel}")
+
+    def hw_scan(self, announce: bool = True):
         ports = self.lims.hw.scan_ports()
         self.port_drop['values'] = ports
+        cur = (self.port_var.get() or "").strip()
+        if cur in ports:
+            self.port_var.set(cur)
+        elif len(ports) == 1 and not ports[0].startswith("("):
+            self.port_var.set(ports[0])
+        elif len(ports) > 1:
+            com_ports = [p for p in ports if ("COM" in p or "usb" in p.lower()) and not p.startswith("(")]
+            if com_ports:
+                self.port_var.set(com_ports[0])
+            else:
+                self.port_var.set("Select Hardware Port...")
+        else:
+            self.port_var.set("Select Hardware Port...")
+
+        if announce:
+            self.logger.info(f"Scanned {len(ports)} hardware port(s): {', '.join(ports)}")
 
     def hw_init(self):
-        ok, m = self.lims.hw.connect(self.port_var.get())
-        if ok:
-            ok2, m2 = self.lims.hw.initialize()
-            if ok2:
-                self.hw_stat_can.itemconfig(self.hw_led, fill="green")
-                self.lbl_hw_stat.config(text="ONLINE", foreground="green")
-                self.logger.info(m2)
+        selected_port = (self.port_var.get() or "").strip()
+        if not selected_port or selected_port in ("Select Hardware Port...", "Select Port...", "(No Serial Ports Detected)"):
+            self.logger.warning("Hardware initialization blocked: No hardware port selected.")
+            messagebox.showwarning(
+                "Hardware Port Required",
+                "Hardware initialization cannot proceed: No hardware port is selected.\n\n"
+                "Please choose a valid serial/COM port from the dropdown, then click 'Connect & Initialize'."
+            )
+            return
 
-                # --- STARTUP INTERLOCK: Speed and Force Integration ---
-                if self.lims.pipettor.hardware:
-                    try:
-                        self.lims.pipettor.hardware.aspirate_speed = 1
-                        self.lims.pipettor.hardware.tip_pickup_force = 20
-                        self.logger.info("Startup Interlock: Plunger speeds and pickup force calibrated.")
-                    except Exception as e:
-                        self.logger.warning(f"Initial speed lock failed: {e}")
-                # ------------------------------------------------------
+        clean_port = getattr(self.lims.hw, "extract_clean_port", lambda p: p.split(" — ")[0].strip())(selected_port)
+        self.logger.info(f"Connecting to hardware port: {selected_port} ({clean_port})...")
+        ok, m = self.lims.hw.connect(selected_port)
+        if not ok:
+            self.hw_stat_can.itemconfig(self.hw_led, fill="red")
+            self.lbl_hw_stat.config(text="ERROR", foreground="red")
+            self.logger.error(f"Hardware connection failed on {clean_port}: {m}")
+            messagebox.showerror("Connection Failed", f"Could not connect to {selected_port}:\n{m}")
+            return
 
-                if self.lims.pipettor.hardware:
-                    try:
-                        hw = self.lims.pipettor.hardware
-                        hx = round(float(getattr(hw, 'x_position', 0.0)), 2)
-                        hy = round(float(getattr(hw, 'y_position', 0.0)), 2)
-                        hz = round(float(getattr(hw, 'z_position', 0.0)), 2)
-                        for ax, v in [("X", hx), ("Y", hy), ("Z", hz)]:
-                            self.jog_vars[ax].set(v)
-                            self.current_pos[ax] = v
-                    except Exception:
-                        pass
+        ok2, m2 = self.lims.hw.initialize()
+        if ok2:
+            self.hw_stat_can.itemconfig(self.hw_led, fill="green")
+            self.lbl_hw_stat.config(text=f"ONLINE ({clean_port})", foreground="green")
+            self.logger.info(f"✅ {m2}")
 
-                for axis in ["X", "Y", "Z"]:
-                    self.jog_sliders[axis].config(state='normal')
-                    self.deck_jog_sliders[axis].config(state='normal')
-                    if hasattr(self, 'jog_btns') and axis in self.jog_btns:
-                        self.jog_btns[axis].config(state='normal')
-                    if hasattr(self, 'deck_jog_btns') and axis in self.deck_jog_btns:
-                        self.deck_jog_btns[axis].config(state='normal')
-                for btn in getattr(self, 'jog_nudge_btns', []):
-                    try:
-                        btn.config(state='normal')
-                    except Exception:
-                        pass
-                self.start_telemetry()
+            # --- STARTUP INTERLOCK: Speed and Force Integration ---
+            if self.lims.pipettor.hardware:
+                try:
+                    self.lims.pipettor.hardware.aspirate_speed = 1
+                    self.lims.pipettor.hardware.tip_pickup_force = 20
+                    self.logger.info("Startup Interlock: Plunger speeds and pickup force calibrated.")
+                except Exception as e:
+                    self.logger.warning(f"Initial speed lock failed: {e}")
+            # ------------------------------------------------------
+
+            if self.lims.pipettor.hardware:
+                try:
+                    hw = self.lims.pipettor.hardware
+                    hx = round(float(getattr(hw, 'x_position', 0.0)), 2)
+                    hy = round(float(getattr(hw, 'y_position', 0.0)), 2)
+                    hz = round(float(getattr(hw, 'z_position', 0.0)), 2)
+                    for ax, v in [("X", hx), ("Y", hy), ("Z", hz)]:
+                        self.jog_vars[ax].set(v)
+                        self.current_pos[ax] = v
+                except Exception:
+                    pass
+
+            for axis in ["X", "Y", "Z"]:
+                self.jog_sliders[axis].config(state='normal')
+                self.deck_jog_sliders[axis].config(state='normal')
+                if hasattr(self, 'jog_btns') and axis in self.jog_btns:
+                    self.jog_btns[axis].config(state='normal')
+                if hasattr(self, 'deck_jog_btns') and axis in self.deck_jog_btns:
+                    self.deck_jog_btns[axis].config(state='normal')
+            for btn in getattr(self, 'jog_nudge_btns', []):
+                try:
+                    btn.config(state='normal')
+                except Exception:
+                    pass
+            self.start_telemetry()
+            messagebox.showinfo(
+                "Hardware Online",
+                f"Successfully connected and initialized!\n\nPort: {selected_port}\nStatus: ONLINE & HOMED"
+            )
         else:
-            self.logger.error(f"Connection failed: {m}")
+            self.hw_stat_can.itemconfig(self.hw_led, fill="red")
+            self.lbl_hw_stat.config(text="INIT FAILED", foreground="red")
+            self.logger.error(f"Hardware initialization failed on {clean_port}: {m2}")
+            messagebox.showerror("Initialization Failed", f"Could not home/initialize hardware on {clean_port}:\n{m2}")
 
     def run_direct_op(self, c):
         if not self.lims.hw.is_initialized: return
