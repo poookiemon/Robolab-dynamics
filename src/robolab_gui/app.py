@@ -64,11 +64,35 @@ def main(ui_framework: str = "master"):
     import os
     repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     legacy_dir = os.path.join(repo_root, "Biohit-Automated-Pipettor-GUI")
-    if legacy_dir not in sys.path:
-        sys.path.insert(0, legacy_dir)
-    os.chdir(legacy_dir)
-    import lims_master_gui
-    lims_master_gui.launch()
+    if not os.path.isdir(legacy_dir):
+        cand_cwd = os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI")
+        if os.path.isdir(cand_cwd):
+            legacy_dir = cand_cwd
+        else:
+            user_cand = os.path.join(os.path.expanduser("~"), "PycharmProjects", "Robolab-dynamics", "Biohit-Automated-Pipettor-GUI")
+            if os.path.isdir(user_cand):
+                legacy_dir = user_cand
+
+    if os.path.isdir(legacy_dir):
+        if legacy_dir not in sys.path:
+            sys.path.insert(0, legacy_dir)
+        os.chdir(legacy_dir)
+        import lims_master_gui
+        lims_master_gui.launch()
+        return
+
+    # Graceful fallback to modular MainWindow if standalone legacy directory is absent
+    setup_logging()
+    ctx = create_application_context()
+    from robolab_gui.ui.tkinter.main_window import MainWindow
+    app = MainWindow(
+        deck_manager=ctx["deck_manager"],
+        session=ctx["session"],
+        profile_service=ctx["profile_service"],
+        catalog=ctx["catalog"],
+        engine=ctx["engine"],
+    )
+    app.mainloop()
 
 
 if __name__ == "__main__":
