@@ -3500,7 +3500,7 @@ class LIMSMasterApp:
 
     def action_load_10ul_multi_media_change_and_drug(self, volume: float = 7.5):
         self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
-        self.action_load_8ch_media_change_and_drug(volume=volume)
+        self.action_load_10ul_parallel_drug_addition(volume=volume)
 
     def action_load_10ul_multi_dmso_dilution(self):
         self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
@@ -5912,10 +5912,10 @@ class LIMSMasterApp:
     SLOT_A1_ORIGINS = {
         "Slot_1": (238.2, 13.0),   # calibrated (front right, height-block slot)
         "Slot_2": (95.5, 13.0),    # calibrated (front left, 3-well reservoir/waste trough A1)
-        "Slot_3": (243.81, 53.0),  # calibrated (exact center: X=243.81, Y=53.0)
-        "Slot_4": (105.66, 55.64), # calibrated (Machine 2 1-10µL: A1 X=105.66, A1 Y=55.64, 8-ch center Y=87.14)
-        "Slot_5": (243.24, 147.19), # calibrated (8-ch center Y=178.69 -> A1 Y=147.19)
-        "Slot_6": (105.60, 147.19), # calibrated (8-ch center Y=178.69 -> A1 Y=147.19; 7-col res uses Y=183.64)
+        "Slot_3": (243.81, 56.64), # calibrated (Machine 2 1-10µL: A1 X=243.81, A1 Y=56.64, 8-ch center Y=88.14)
+        "Slot_4": (105.66, 56.64), # calibrated (Machine 2 1-10µL: A1 X=105.66, A1 Y=56.64, 8-ch center Y=88.14)
+        "Slot_5": (243.24, 150.81), # calibrated (Machine 2: 8-ch center Y=182.31 -> A1 Y=150.81)
+        "Slot_6": (105.60, 150.81), # calibrated (Machine 2: 8-ch center Y=182.31 -> A1 Y=150.81; 7-col res uses Y=183.64)
     }
 
     # Calibrated per-slot column tables for 96-format labware (override pitch math)
@@ -5972,8 +5972,19 @@ class LIMSMasterApp:
 
     def _slot_a1_origin(self, slot_name):
         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
-        if slot_name == "Slot_4" and is_10ul:
-            return 105.66, 55.64
+        if is_10ul:
+            if slot_name == "Slot_4":
+                return 105.66, 56.64
+            if slot_name == "Slot_3":
+                return 243.81, 56.64
+            if slot_name == "Slot_5":
+                return 243.24, 150.81
+            if slot_name == "Slot_6":
+                return 105.60, 150.81
+            if slot_name == "Slot_1":
+                return 238.20, 16.62
+            if slot_name == "Slot_2":
+                return 95.50, 16.62
         if slot_name in self.SLOT_A1_ORIGINS:
             return self.SLOT_A1_ORIGINS[slot_name]
         slot_obj = self.lims.deck_slots.get(slot_name)
@@ -6004,14 +6015,15 @@ class LIMSMasterApp:
         return r_idx, c_idx
 
     def _calculate_xy(self, slot_name, well_id):
-        # Immediate Machine 2 (1-10 µL ONLY) Slot 4 tip rack override (prevents any hidden fallback or deck model bypass)
+        # Immediate Machine 2 (1-10 µL ONLY) Slot 3 & Slot 4 override (prevents any hidden fallback or deck model bypass)
         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
-        if slot_name == "Slot_4" and is_10ul:
+        if slot_name in ("Slot_3", "Slot_4") and is_10ul:
             r_idx, c_idx = self._parse_well(well_id)
             ci = c_idx if (c_idx is not None and 0 <= c_idx < 12) else 0
             ri = r_idx if (r_idx is not None and 0 <= r_idx < 8) else 0
-            learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
-            return round(105.66 - (ci * 9.0) + learned_dx, 2), round(55.64 + (ri * 9.0) + learned_dy, 2)
+            base_x = 105.66 if slot_name == "Slot_4" else 243.81
+            learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0)) if slot_name == "Slot_4" else (0.0, 0.0)
+            return round(base_x - (ci * 9.0) + learned_dx, 2), round(56.64 + (ri * 9.0) + learned_dy, 2)
 
         # 0. Object-Oriented DeckManager Kinematics
         if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
@@ -6166,7 +6178,7 @@ class LIMSMasterApp:
         kind = self._lw_kind(lw_obj)
         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
 
-        # Machine 2 (1-10 µL ONLY): Tip rack operations (pickup / discard) with +3.0mm fine calibration (Center Y=87.14mm, Row A=55.64mm)
+        # Machine 2 (1-10 µL ONLY): Tip rack operations (pickup / discard) with +4.0mm fine calibration (Center Y=88.14mm, Row A=56.64mm)
         is_tip_op = (kind == "tip_rack" or slot_name == "Slot_4" or (step or {}).get("action") == "Pick Up Tip")
         if is_tip_op and is_10ul:
             w_str = str(well_id or "A1").strip().upper()
@@ -6175,7 +6187,7 @@ class LIMSMasterApp:
             tx = round(105.66 - (col_i * 9.0), 2)
             offset_rows = int((step or {}).get('tip_offset_rows', 0) or 0)
 
-            # Center for all 8 tips on Machine 2 is calibrated at Y=87.14mm (Col 1 at X=105.66mm, Row A at Y=55.64mm).
+            # Center for all 8 tips on Machine 2 is calibrated at Y=88.14mm (Col 1 at X=105.66mm, Row A at Y=56.64mm).
             # For n-channel pickup (e.g. 8-tip "A-H", 5-tip "A-E", 4-tip "A-D"):
             # Carriage aligns active nozzle 0 (Channel A) with target well row (default Row A):
             if is_8ch_step:
@@ -6185,12 +6197,12 @@ class LIMSMasterApp:
                     c_start = ord(m_ch[0]) - ord('A')
                 row_char = w_str[0] if (w_str and w_str[0] in "ABCDEFGH") else "A"
                 r_start = ord(row_char) - ord('A')
-                ty = round(87.14 + (r_start - c_start + offset_rows) * 9.0, 2)
+                ty = round(88.14 + (r_start - c_start + offset_rows) * 9.0, 2)
             else:
                 row_char = w_str[0] if (w_str and w_str[0] in "ABCDEFGH") else "A"
                 r_idx = ord(row_char) - ord('A')
-                ty = round(87.14 + (r_idx + offset_rows) * 9.0, 2)
-            self.logger.info(f"🎯 [MACHINE 2: 1-10µL] Resolved Slot 4 tip pickup: X={tx:.2f}mm, Y={ty:.2f}mm (Center Y=87.14mm, Row A=55.64mm)")
+                ty = round(88.14 + (r_idx + offset_rows) * 9.0, 2)
+            self.logger.info(f"🎯 [MACHINE 2: 1-10µL] Resolved Slot 4 tip pickup: X={tx:.2f}mm, Y={ty:.2f}mm (Center Y=88.14mm, Row A=56.64mm)")
             return tx, ty
 
         if not is_8ch_step:

@@ -11,10 +11,10 @@ import re
 DEFAULT_SLOT_A1_ORIGINS: Dict[str, Tuple[float, float]] = {
     "Slot_1": (238.2, 13.0),   # Front right (height-block slot, 2mL Falcon rack A1)
     "Slot_2": (95.5, 13.0),    # Front left (3-well reservoir / waste trough A1)
-    "Slot_3": (243.81, 53.0),  # Mid right (96-well / EHM plate center: X=243.81, Y=53.0)
-    "Slot_4": (105.66, 55.64), # Mid left (Machine 2 1-10µL calibrated: A1 X=105.66, A1 Y=55.64, Center Y=87.14)
-    "Slot_5": (243.24, 147.19), # Rear right (8-ch center Y=178.69 -> A1 Y=147.19)
-    "Slot_6": (105.60, 147.19), # Rear left (8-ch center Y=178.69 -> A1 Y=147.19; 7-col res uses Y=183.64)
+    "Slot_3": (243.81, 56.64), # Mid right (Machine 2 1-10µL: A1 X=243.81, A1 Y=56.64, Center Y=88.14)
+    "Slot_4": (105.66, 56.64), # Mid left (Machine 2 1-10µL calibrated: A1 X=105.66, A1 Y=56.64, Center Y=88.14)
+    "Slot_5": (243.24, 150.81), # Rear right (Machine 2 1-10µL: Center Y=182.31 -> A1 Y=150.81)
+    "Slot_6": (105.60, 150.81), # Rear left (Machine 2 1-10µL: Center Y=182.31 -> A1 Y=150.81)
 }
 
 # Calibrated per-slot column X tables for 96-format labware (overrides pitch math)
