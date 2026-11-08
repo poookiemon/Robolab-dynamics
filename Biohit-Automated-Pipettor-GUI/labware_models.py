@@ -613,10 +613,10 @@ class TipRack96(LabwareBase):
             if k in defaults:
                 defaults[k] = kwargs.pop(k)
         super().__init__(**defaults)
-        self.calibrated_a1_x = kwargs.get("calibrated_a1_x", 105.60)
-        self.calibrated_a1_y = kwargs.get("calibrated_a1_y", 53.02)
-        self.pickup_approach_z = kwargs.get("pickup_approach_z", 75.0)
-        self.pickup_limit_z = kwargs.get("pickup_limit_z", 98.0)
+        self.calibrated_a1_x = kwargs.get("calibrated_a1_x", 105.66)
+        self.calibrated_a1_y = kwargs.get("calibrated_a1_y", 55.64)
+        self.pickup_approach_z = kwargs.get("pickup_approach_z", 50.0)
+        self.pickup_limit_z = kwargs.get("pickup_limit_z", 75.0)
         self.pickup_force = kwargs.get("pickup_force", 26)
         self.learned_rack_offset_x = 0.0
         self.learned_rack_offset_y = 0.0
@@ -626,8 +626,9 @@ class TipRack96(LabwareBase):
         r_idx, c_idx = self.parse_well(well_id)
         if r_idx is None or c_idx is None:
             return slot.center_x, slot.center_y
-        base_x = self.calibrated_a1_x + self.learned_rack_offset_x
-        base_y = self.calibrated_a1_y + self.learned_rack_offset_y
+        ox, oy = slot.origin_a1_xy
+        base_x = ox + self.learned_rack_offset_x
+        base_y = oy + self.learned_rack_offset_y
         return base_x - (c_idx * self.pitch_x_mm), base_y + (r_idx * self.pitch_y_mm)
 
     def apply_learned_offset(self, delta_x: float, delta_y: float):
@@ -733,7 +734,7 @@ class DeckSlot:
             "Slot_1": (238.2, 13.0),
             "Slot_2": (95.5, 13.0),
             "Slot_3": (243.81, 53.0),
-            "Slot_4": (105.60, 53.02),
+            "Slot_4": (105.66, 55.64),
             "Slot_5": (243.24, 147.19),
             "Slot_6": (105.60, 147.19),
         }

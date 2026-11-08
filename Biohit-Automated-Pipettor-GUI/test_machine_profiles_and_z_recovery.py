@@ -117,16 +117,16 @@ def run_all_tests():
 
     print(f"Resolved Carriage Position for 5-Tip Pickup (Machine 2: 1-10 µL): X = {tx:.2f} mm, Y = {ty:.2f} mm")
     assert abs(tx - 105.66) < 1e-2, f"Expected X=105.66, got {tx}"
-    assert abs(ty - 84.14) < 1e-2, f"Expected Y=84.14 (physically seated position), got {ty}"
+    assert abs(ty - 87.14) < 1e-2, f"Expected Y=87.14 (physically seated position), got {ty}"
 
     # Verify column pitch progression across all 12 columns
     for col_idx in range(1, 13):
         col_coords = app._resolve_step_xy(step_5tip, "Slot_4", f"A{col_idx}")
         expected_x = round(105.66 - ((col_idx - 1) * 9.0), 2)
         assert abs(col_coords[0] - expected_x) < 1e-2, f"Col {col_idx} expected X={expected_x}, got {col_coords[0]}"
-        assert abs(col_coords[1] - 84.14) < 1e-2, f"Col {col_idx} expected Y=84.14, got {col_coords[1]}"
+        assert abs(col_coords[1] - 87.14) < 1e-2, f"Col {col_idx} expected Y=87.14, got {col_coords[1]}"
 
-    print("PASS: Machine 2 (1-10 µL ONLY) tip pickup verified seated at X=105.66mm, Y=84.14mm.")
+    print("PASS: Machine 2 (1-10 µL ONLY) tip pickup verified seated at X=105.66mm, Y=87.14mm.")
     print("PASS: All 12 columns progress cleanly at 9.0mm pitch without mid-wall collisions.")
 
     # -------------------------------------------------------------------------

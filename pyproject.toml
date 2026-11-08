@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robolab-gui"
-version = "3.0.3"
+version = "3.0.4"
 description = "Automated Liquid Handling & Laboratory Automation Platform"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -55,6 +55,8 @@ all = [
 robolab = "robolab_gui.app:main"
 robolab-gui = "robolab_gui.app:main"
 biohit-gui = "robolab_gui.app:main"
+robolab-dynamics = "robolab_gui.app:main"
+biohit = "robolab_gui.app:main"
 
 [tool.setuptools]
 package-dir = {"" = "src", "robolab_legacy" = "Biohit-Automated-Pipettor-GUI"}
@@ -91,6 +93,7 @@ robolab_gui = [
 ]
 robolab_legacy = [
     "*.json",
+    "config/**/*.json",
     "labware/*.json",
     "protocols/**/*.json",
     "assets/*",

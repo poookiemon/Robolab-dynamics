@@ -12,14 +12,14 @@ DEFAULT_SLOT_A1_ORIGINS: Dict[str, Tuple[float, float]] = {
     "Slot_1": (238.2, 13.0),   # Front right (height-block slot, 2mL Falcon rack A1)
     "Slot_2": (95.5, 13.0),    # Front left (3-well reservoir / waste trough A1)
     "Slot_3": (243.81, 53.0),  # Mid right (96-well / EHM plate center: X=243.81, Y=53.0)
-    "Slot_4": (105.60, 53.02), # Mid left (96-well A1 X=105.60, 8-ch center Y=84.52 -> A1 Y=53.02)
+    "Slot_4": (105.66, 55.64), # Mid left (Machine 2 1-10µL calibrated: A1 X=105.66, A1 Y=55.64, Center Y=87.14)
     "Slot_5": (243.24, 147.19), # Rear right (8-ch center Y=178.69 -> A1 Y=147.19)
     "Slot_6": (105.60, 147.19), # Rear left (8-ch center Y=178.69 -> A1 Y=147.19; 7-col res uses Y=183.64)
 }
 
 # Calibrated per-slot column X tables for 96-format labware (overrides pitch math)
 DEFAULT_SLOT_96_COL_OVERRIDES: Dict[str, List[float]] = {
-    "Slot_4": [round(105.60 - (c * 9.0), 2) for c in range(12)],
+    "Slot_4": [round(105.66 - (c * 9.0), 2) for c in range(12)],
     "Slot_5": [round(243.24 - (c * 9.0), 2) for c in range(12)],
 }
 
