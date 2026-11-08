@@ -26,22 +26,46 @@ class StationIdentityService:
     }
 
     @classmethod
+    def get_candidate_paths(cls) -> list[Path]:
+        """Return candidate paths where .machine_id may reside."""
+        candidates = [Path(os.getcwd()) / ".machine_id"]
+        cwd = Path(os.getcwd())
+        if cwd.name == "Biohit-Automated-Pipettor-GUI":
+            candidates.append(cwd.parent / ".machine_id")
+        else:
+            candidates.append(cwd / "Biohit-Automated-Pipettor-GUI" / ".machine_id")
+        return candidates
+
+    @classmethod
     def get_machine_id_file_path(cls) -> Path:
-        """Return the location of the local .machine_id file."""
+        """Return the primary location of the local .machine_id file."""
         return Path(os.getcwd()) / ".machine_id"
+
+    @classmethod
+    def has_persisted_station_profile(cls) -> bool:
+        """Return True if a non-empty .machine_id file exists on this local computer."""
+        for p in cls.get_candidate_paths():
+            if p.is_file():
+                try:
+                    val = p.read_text(encoding="utf-8").strip()
+                    if val:
+                        return True
+                except Exception:
+                    pass
+        return False
 
     @classmethod
     def resolve_station_profile_id(cls) -> str:
         """Resolve active station ID via hierarchy: 1. .machine_id, 2. hostname, 3. default."""
         # 1. Read local .machine_id if present
-        id_path = cls.get_machine_id_file_path()
-        if id_path.exists():
-            try:
-                val = id_path.read_text(encoding="utf-8").strip()
-                if val:
-                    return val
-            except Exception:
-                pass
+        for id_path in cls.get_candidate_paths():
+            if id_path.exists():
+                try:
+                    val = id_path.read_text(encoding="utf-8").strip()
+                    if val:
+                        return val
+                except Exception:
+                    pass
 
         # 2. Check hostname
         try:
@@ -56,10 +80,10 @@ class StationIdentityService:
 
     @classmethod
     def set_station_profile_id(cls, profile_id: str, persist: bool = True) -> None:
-        """Persist chosen station profile ID to local .machine_id."""
+        """Persist chosen station profile ID to local .machine_id across candidate paths."""
         if persist:
-            id_path = cls.get_machine_id_file_path()
-            try:
-                id_path.write_text(profile_id.strip() + "\n", encoding="utf-8")
-            except Exception as e:
-                pass
+            for id_path in cls.get_candidate_paths():
+                try:
+                    id_path.write_text(profile_id.strip() + "\n", encoding="utf-8")
+                except Exception:
+                    pass

@@ -48,6 +48,11 @@ class MainWindow(tk.Tk):
         self._build_tabs()
         self._build_status_bar()
 
+        # Prompt for station selection if this workstation has not yet remembered its machine identity
+        from robolab_gui.configuration.station_identity import StationIdentityService
+        if not StationIdentityService.has_persisted_station_profile():
+            self.after(350, self._open_station_dialog)
+
     def _update_title(self):
         prof = self.profile_service.active_profile
         self.title(f"RoboLab GUI v3.0 — [Station: {prof.display_name}]")

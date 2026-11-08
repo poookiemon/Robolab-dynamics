@@ -59,6 +59,24 @@ class MachineProfileManager:
         return [os.path.join(r, ".machine_id") for r in _find_roots()]
 
     @classmethod
+    def has_persisted_profile_id(cls) -> bool:
+        """Returns True if a valid non-empty .machine_id file exists on this local computer."""
+        for p in cls.get_id_file_paths():
+            if os.path.isfile(p):
+                try:
+                    with open(p, "r", encoding="utf-8") as f:
+                        val = f.read().strip()
+                        if val:
+                            if val in PROFILE_CONFIGS:
+                                return True
+                            for k in PROFILE_CONFIGS:
+                                if k.lower() in val.lower() or val.lower() in k.lower():
+                                    return True
+                except Exception:
+                    pass
+        return False
+
+    @classmethod
     def get_active_profile_id(cls) -> str:
         """Reads local station identity from .machine_id, with fallback to default."""
         for p in cls.get_id_file_paths():

@@ -242,6 +242,11 @@ class LIMSMasterApp:
         self.root.update()
         self.emergency_reset()
 
+        # Prompt operator to identify and remember station on this computer if .machine_id is not yet set
+        if getattr(self, "profile_manager", None) and hasattr(self.profile_manager, "has_persisted_profile_id"):
+            if not self.profile_manager.has_persisted_profile_id():
+                self.root.after(350, lambda: self.action_select_machine_profile(is_initial_setup=True))
+
     def on_closing(self):
         self.telemetry_active = False
         self.is_aborted = True
@@ -263,6 +268,8 @@ class LIMSMasterApp:
         # 1. FILE MENU (Generic Workspace & Protocol Files)
         # -------------------------------------------------------------
         filemenu = tk.Menu(menubar, tearoff=0)
+        filemenu.add_command(label="🏢 Machine Station Profile...", command=self.action_select_machine_profile)
+        filemenu.add_separator()
         filemenu.add_command(label="New Deck Layout", command=self.action_new_deck)
         filemenu.add_command(label="Load Workspace...", command=self.action_load_deck)
         filemenu.add_command(label="Save Workspace As...", command=self.action_save_deck_as)
@@ -4295,35 +4302,48 @@ class LIMSMasterApp:
         disp = self.profile_manager.get_display_name(profile_id) if self.profile_manager else profile_id
         self.logger.info(f"Switched physical machine station to: {disp} (save_to_disk={save_to_disk})")
 
-    def action_select_machine_profile(self):
+    def action_select_machine_profile(self, is_initial_setup: bool = False):
         """
         Interactive Station Switcher: Allows the operator to activate Machine 1, Machine 2, or Machine 3.
-        Loads isolated hardware profile calibrations from config/machine_profiles/<id>/heights.json.
+        Loads isolated hardware profile calibrations from config/machine_profiles/<id>/heights.json
+        and persists station identity locally to .machine_id without touching git.
         """
         top = tk.Toplevel(self.root)
         top.title("Select Physical Machine Station Profile")
-        top.geometry("490x380")
+        top.geometry("520x420")
         top.transient(self.root)
         top.grab_set()
 
         try:
-            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 245
-            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 190
+            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 260
+            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - 210
             top.geometry(f"+{max(0, rx)}+{max(0, ry)}")
+            top.lift()
+            top.attributes("-topmost", True)
+            top.after_idle(lambda: top.attributes("-topmost", False))
         except Exception:
             pass
 
-        ttk.Label(top, text="🏢 Select Active Machine Station Profile", font=("Arial", 12, "bold"), foreground="#0d6efd").pack(pady=(12, 4))
+        header_text = "🏢 Workstation Setup — Select Robot Profile" if is_initial_setup else "🏢 Select Active Machine Station Profile"
+        ttk.Label(top, text=header_text, font=("Arial", 12, "bold"), foreground="#0d6efd").pack(pady=(12, 4))
+        
+        info_sub = (
+            "This computer has not yet remembered its physical robot station.\n"
+            "Please select which robot this computer is running so it can remember it."
+            if is_initial_setup else
+            "Each physical robot has completely independent Z heights and table calibrations.\n"
+            "Switching profiles activates local calibrations without touching other stations."
+        )
         ttk.Label(
             top,
-            text="Each physical robot has completely independent Z heights and table calibrations.\nSwitching profiles activates local calibrations without touching other stations.",
+            text=info_sub,
             font=("Arial", 9),
             justify=tk.CENTER,
             foreground="#555",
         ).pack(pady=(0, 10))
 
         frame = ttk.LabelFrame(top, text="Available Stations", padding=12)
-        frame.pack(fill=tk.BOTH, expand=True, padx=16, pady=(0, 10))
+        frame.pack(fill=tk.BOTH, expand=True, padx=16, pady=(0, 8))
 
         selected_pid = tk.StringVar(value=self.active_profile_id)
 
@@ -4335,22 +4355,44 @@ class LIMSMasterApp:
 
         for pid, title, desc in stations:
             row = ttk.Frame(frame)
-            row.pack(fill=tk.X, pady=6)
+            row.pack(fill=tk.X, pady=5)
             rb = ttk.Radiobutton(row, text=title, value=pid, variable=selected_pid)
             rb.pack(anchor="w")
             ttk.Label(row, text=f"    {desc}", font=("Arial", 8, "italic"), foreground="#6c757d").pack(anchor="w")
 
+        # Remember on this computer checkbox
+        rem_frame = ttk.Frame(top)
+        rem_frame.pack(fill=tk.X, padx=16, pady=(0, 8))
+        remember_var = tk.BooleanVar(value=True)
+        chk = ttk.Checkbutton(
+            rem_frame,
+            text="📌 Remember this machine on this computer (.machine_id)",
+            variable=remember_var,
+        )
+        chk.pack(anchor="w")
+        ttk.Label(
+            rem_frame,
+            text="   Saves locally to .machine_id so this workstation automatically remembers on next launch.",
+            font=("Arial", 8, "italic"),
+            foreground="#6c757d",
+        ).pack(anchor="w")
+
         def do_switch():
             chosen = selected_pid.get()
-            self.switch_machine_profile(chosen, save_to_disk=True)
+            do_persist = remember_var.get()
+            self.switch_machine_profile(chosen, save_to_disk=do_persist)
             disp = self.profile_manager.get_display_name(chosen) if self.profile_manager else chosen
             top.destroy()
-            messagebox.showinfo("Station Profile Activated", f"Switched active station to:\n{disp}\n\nCalibrated heights loaded. Please click '🔌 Initialize Pipettor' before starting runs.")
+            save_msg = "Remembered in .machine_id on this computer." if do_persist else "Active for this session only."
+            messagebox.showinfo(
+                "Station Profile Activated",
+                f"Workstation assigned to:\n{disp}\n\n{save_msg}\n\nCalibrated heights loaded. Please click '🔌 Initialize Pipettor' before starting runs."
+            )
 
         btn_box = ttk.Frame(top)
         btn_box.pack(fill=tk.X, padx=16, pady=(0, 12))
         ttk.Button(btn_box, text="Cancel", command=top.destroy).pack(side=tk.RIGHT, padx=4)
-        tk.Button(btn_box, text="✔ Activate Station Profile", bg="#0d6efd", fg="white", font=("Arial", 9, "bold"), command=do_switch).pack(side=tk.RIGHT, padx=4)
+        tk.Button(btn_box, text="✔ Activate & Remember Profile", bg="#0d6efd", fg="white", font=("Arial", 9, "bold"), command=do_switch).pack(side=tk.RIGHT, padx=4)
 
     def action_initialize_pipettor(self):
         """
