@@ -62,26 +62,32 @@ def main(ui_framework: str = "master"):
         return
 
     import os
+    # 1. If running directly inside a git clone / developer workspace, use the local directory
     repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    legacy_dir = os.path.join(repo_root, "Biohit-Automated-Pipettor-GUI")
-    if not os.path.isdir(legacy_dir):
-        cand_cwd = os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI")
-        if os.path.isdir(cand_cwd):
-            legacy_dir = cand_cwd
-        else:
-            user_cand = os.path.join(os.path.expanduser("~"), "PycharmProjects", "Robolab-dynamics", "Biohit-Automated-Pipettor-GUI")
-            if os.path.isdir(user_cand):
-                legacy_dir = user_cand
+    dev_legacy_dir = os.path.join(repo_root, "Biohit-Automated-Pipettor-GUI")
+    if os.path.isdir(os.path.join(repo_root, ".git")) and os.path.isdir(dev_legacy_dir):
+        if dev_legacy_dir not in sys.path:
+            sys.path.insert(0, dev_legacy_dir)
+        os.chdir(dev_legacy_dir)
+        try:
+            import lims_master_gui
+            lims_master_gui.launch()
+            return
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            try:
+                import tkinter as tk
+                from tkinter import messagebox
+                root = tk.Tk()
+                root.withdraw()
+                messagebox.showerror("RoboLab Boot Error", f"Fatal error during application startup:\n\n{e}\n\n{traceback.format_exc()}")
+                root.destroy()
+            except Exception:
+                pass
+            raise
 
-    if os.path.isdir(legacy_dir):
-        if legacy_dir not in sys.path:
-            sys.path.insert(0, legacy_dir)
-        os.chdir(legacy_dir)
-        import lims_master_gui
-        lims_master_gui.launch()
-        return
-
-    # Check packaged robolab_legacy from site-packages (for direct pip installs without repo clone)
+    # 2. For pip installations, run the packaged robolab_legacy module from site-packages
     try:
         import robolab_legacy.lims_master_gui as legacy_gui
         pkg_legacy_dir = os.path.dirname(legacy_gui.__file__)
