@@ -105,8 +105,10 @@ class ExecutionEngine:
             # Virtual Tip Remapping
             act = step.action.lower()
             if "pick" in act and "tip" in act:
+                if not step.slot or step.slot.upper() in ("AUTO", "DEFAULT", "NONE", ""):
+                    step.slot = "Slot_4"
                 is_8ch = step.eight_ch_symmetric or (str(step.mounted_channels).count("-") > 0)
-                remapped_well = self.tip_tracker.resolve_next_tip(step.slot, is_8ch_pickup=is_8ch)
+                remapped_well = self.tip_tracker.resolve_next_tip(step.slot, is_8ch_pickup=is_8ch, requested_well=step.well)
                 if not remapped_well:
                     self.abort(RunStatus.AUTO_ABORTED_EMPTY_TIPS)
                     break

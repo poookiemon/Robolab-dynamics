@@ -810,15 +810,27 @@ class LIMSMasterApp:
         if redraw:
             self._schedule_deck_redraw()
 
-    def resolve_session_tip(self, slot_name: str, requested_well: str):
+    def get_default_tip_slot(self) -> str:
+        """Locates the deck slot containing the active tip rack, defaulting to Slot_4."""
+        if hasattr(self, "lims") and hasattr(self.lims, "deck_labware"):
+            for s_name, lw in self.lims.deck_labware.items():
+                lw_file = getattr(lw, "source_file", getattr(lw, "name", ""))
+                if "tip" in str(lw_file).lower():
+                    return s_name
+        return "Slot_4"
+
+    def resolve_session_tip(self, slot_name: str, requested_well: str = None):
         """
         Virtual Tip Remapping:
-        - If `requested_well` has NOT been consumed in this active GUI session, returns `(requested_well, False)`.
-        - If `requested_well` WAS already consumed in a previous run (or earlier in this session),
-          dynamically remaps to the next available unconsumed tip in column-major order (`A1..H1 -> A2..H2 -> ...`).
+        - If `requested_well` is specified (e.g. 'C2') and has NOT been consumed, returns `(requested_well, False)` (works as before).
+        - If `requested_well` is NOT specified (None, empty, or 'Auto'), starts from the default start spot ('A1')
+          and takes the next available unconsumed tip in column-major order (`A1..H1 -> A2..H2 -> ...`).
+        - If `requested_well` was already consumed, dynamically remaps to the next available unconsumed tip.
         - Returns `(None, True)` if all 96 tips in `slot_name` are exhausted.
         """
-        req = (requested_well or "A1").strip().upper()
+        req = (requested_well or "").strip().upper()
+        is_auto_request = not req or req in ("AUTO", "DEFAULT", "NEXT", "NONE", "")
+
         tracker = self._get_tip_tracker(slot_name)
         ordered = self._ordered_tip_wells(slot_name)
         consumed = tracker["consumed"]
@@ -826,16 +838,40 @@ class LIMSMasterApp:
         if len(consumed) >= len(ordered):
             return None, True
 
-        if req in ordered and req not in consumed:
+        # If user explicitly requested a specific well (other than Auto) and it's fresh, use it directly!
+        if not is_auto_request and req in ordered and req not in consumed:
             return req, False
 
+        # If unspecified (auto) or already consumed: start from default start spot (A1) or current cursor
         start = min(tracker.get("cursor", 0), len(ordered))
         for idx in list(range(start, len(ordered))) + list(range(0, start)):
             cand = ordered[idx]
             if cand not in consumed:
-                return cand, (cand != req)
+                return cand, (cand != req if not is_auto_request else False)
 
         return None, True
+
+    def resolve_8ch_session_tip_col(self, slot_name: str, requested_well: str = None) -> int:
+        """
+        8-Channel column resolution:
+        - If user specified a well/column (e.g. 'A3' -> col 3), returns that column.
+        - If unspecified (Auto / None / empty), starts from default start column (1) and finds next available column.
+        """
+        tracker = self._get_tip_tracker(slot_name)
+        consumed = tracker["consumed"]
+
+        req = (requested_well or "").strip().upper()
+        if req and req not in ("AUTO", "DEFAULT", "NEXT", "NONE"):
+            col_digits = "".join(ch for ch in req if ch.isdigit())
+            if col_digits and 1 <= int(col_digits) <= 12:
+                return int(col_digits)
+
+        # Unspecified or Auto: find first column with fresh tips starting from Column 1
+        for col in range(1, 13):
+            col_wells = [f"{r}{col}" for r in "ABCDEFGH"]
+            if not any(w in consumed for w in col_wells):
+                return col
+        return 1
 
     @staticmethod
     def _expand_8ch_tip_sockets(step: dict, well_id: str) -> list:
@@ -5092,7 +5128,9 @@ class LIMSMasterApp:
                         return
 
             if action in ["Pick Up Tip", "Discard Tip"]:
-                msg = f"[{action.upper()}] from {slot}, Well {well}" if action == "Pick Up Tip" else f"[{action.upper()}] into {slot} (Waste Trough)"
+                slot_str = slot or "Default Tip Rack"
+                well_str = f"Well {well}" if well and well.upper() not in ("AUTO", "DEFAULT", "NONE", "") else "Auto (Default Start Spot)"
+                msg = f"[{action.upper()}] from {slot_str}, {well_str}" if action == "Pick Up Tip" else f"[{action.upper()}] into {slot} (Waste Trough)"
             elif action == "Detect Liquid Level":
                 msg = f"[{action.upper()}] at {slot}, Well {well}"
             else:
@@ -5123,7 +5161,9 @@ class LIMSMasterApp:
         elif mode == "manual":
             return f"[{action.upper()}] Manual -> X:{step_data.get('x',0)} Y:{step_data.get('y',0)} Z:{step_data.get('z',0)} Vol:{vol}uL"
         elif action in ["Pick Up Tip", "Discard Tip"]:
-            return f"[{action.upper()}] from {slot}, Well {well}" if action == "Pick Up Tip" else f"[{action.upper()}] into {slot} (Well {well})"
+            slot_str = slot or "Default Tip Rack"
+            well_str = f"Well {well}" if well and well.upper() not in ("AUTO", "DEFAULT", "NONE", "") else "Auto (Default Start Spot)"
+            return f"[{action.upper()}] from {slot_str}, {well_str}" if action == "Pick Up Tip" else f"[{action.upper()}] into {slot} (Well {well})"
         elif action == "Detect Liquid Level":
             return f"[{action.upper()}] at {slot}, Well {well}"
         else:
@@ -6814,6 +6854,10 @@ class LIMSMasterApp:
                     slot_name, well_id = step.get('slot', ''), step.get('well', '')
                     target_x, target_y, target_z = None, None, None
 
+                    # If slot is unspecified for tip pickup, default to the mounted tip rack (or Slot_4)
+                    if action == "Pick Up Tip" and (not slot_name or slot_name.upper() in ("AUTO", "DEFAULT", "NONE", "")):
+                        slot_name = self.get_default_tip_slot()
+
                     if mode == "manual":
                         target_x, target_y, target_z = step.get('x', 0.0), step.get('y', 0.0), step.get('z', 0.0)
                     elif slot_name in self.lims.deck_slots:
@@ -6831,21 +6875,27 @@ class LIMSMasterApp:
                                 continue
 
                         # --- ACTIVE SESSION TIP MEMORY (Virtual Tip Remapping) ---
-                        if action == "Pick Up Tip" and not is_8ch:
-                            resolved_well, was_remapped = self.resolve_session_tip(slot_name, well_id)
-                            if resolved_well is None:
-                                self.session_abort_status = "AUTO_ABORTED_EMPTY_TIPS"
-                                self.logger.critical(
-                                    f"🛑 All 96 tip sockets in {slot_name} are exhausted in this session! "
-                                    f"Load a fresh tip box and click '🔄 Reset Tip Rack'."
-                                )
-                                self.is_aborted = True
-                                break
-                            if was_remapped:
-                                self.logger.info(
-                                    f"[TIP MEMORY] Virtual Tip Remap on {slot_name}: Requested {well_id} -> Remapped to {resolved_well}"
-                                )
-                            well_id = resolved_well
+                        if action == "Pick Up Tip":
+                            if not is_8ch:
+                                resolved_well, was_remapped = self.resolve_session_tip(slot_name, well_id)
+                                if resolved_well is None:
+                                    self.session_abort_status = "AUTO_ABORTED_EMPTY_TIPS"
+                                    self.logger.critical(
+                                        f"🛑 All 96 tip sockets in {slot_name} are exhausted in this session! "
+                                        f"Load a fresh tip box and click '🔄 Reset Tip Rack'."
+                                    )
+                                    self.is_aborted = True
+                                    break
+                                if was_remapped:
+                                    self.logger.info(
+                                        f"[TIP MEMORY] Virtual Tip Remap on {slot_name}: Requested {well_id or 'Auto'} -> Remapped to {resolved_well}"
+                                    )
+                                well_id = resolved_well
+                            else:
+                                if not well_id or well_id.strip().upper() in ("AUTO", "DEFAULT", "NEXT", "NONE", ""):
+                                    col = self.resolve_8ch_session_tip_col(slot_name, well_id)
+                                    well_id = f"A{col}"
+                                    self.logger.info(f"[TIP MEMORY] 8-Channel tip pickup auto-resolved to default Column {col} ({well_id})")
                         # ---------------------------------------------------------
 
                         coords = self._resolve_step_xy(step, slot_name, well_id)
