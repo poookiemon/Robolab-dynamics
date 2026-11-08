@@ -90,8 +90,19 @@ def main(ui_framework: str = "master"):
         os.chdir(pkg_legacy_dir)
         legacy_gui.launch()
         return
-    except Exception:
-        pass
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        try:
+            import tkinter as tk
+            from tkinter import messagebox
+            root = tk.Tk()
+            root.withdraw()
+            messagebox.showerror("RoboLab Boot Error", f"Failed to start RoboLab GUI:\n\n{e}\n\n{traceback.format_exc()}")
+            root.destroy()
+        except Exception:
+            pass
+        raise
 
     # Graceful fallback to modular MainWindow if standalone legacy directory is absent
     setup_logging()

@@ -8471,13 +8471,24 @@ class LIMSMasterApp:
 
 
 def launch():
-    """Entry point for robolab-gui / biohit-gui CLI commands."""
+    """Entry point for robolab / robolab-gui / biohit-gui CLI commands."""
     pkg_dir = os.path.dirname(os.path.abspath(__file__))
     if pkg_dir not in sys.path:
         sys.path.insert(0, pkg_dir)
-    root = tk.Tk()
-    app = LIMSMasterApp(root)
-    root.mainloop()
+    os.chdir(pkg_dir)
+    try:
+        root = tk.Tk()
+        app = LIMSMasterApp(root)
+        root.mainloop()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        try:
+            from tkinter import messagebox
+            messagebox.showerror("RoboLab Boot Error", f"Fatal error during application startup:\n\n{e}\n\n{traceback.format_exc()}")
+        except Exception:
+            pass
+        raise
 
 
 if __name__ == "__main__":
