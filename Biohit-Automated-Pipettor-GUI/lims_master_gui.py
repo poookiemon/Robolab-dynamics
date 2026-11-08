@@ -5971,6 +5971,9 @@ class LIMSMasterApp:
         return slot_name in ("Slot_1", "Slot_2")
 
     def _slot_a1_origin(self, slot_name):
+        is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
+        if slot_name == "Slot_4" and is_10ul:
+            return 105.57, 56.96
         if slot_name in self.SLOT_A1_ORIGINS:
             return self.SLOT_A1_ORIGINS[slot_name]
         slot_obj = self.lims.deck_slots.get(slot_name)
@@ -6150,6 +6153,19 @@ class LIMSMasterApp:
             # Treat as 8-ch step if workflow contains 8-ch symmetric steps or multi-channel actions
             is_8ch_step = any(s.get('eight_ch_symmetric') or bool((s.get('mounted_channels') or '').count('-') > 0) for s in getattr(self, 'workflow_sequence', []))
 
+        lw_obj = self.lims.deck_labware.get(slot_name)
+        kind = self._lw_kind(lw_obj)
+        is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
+
+        # Machine 2 (1-10 µL ONLY): Tip rack operations (pickup / discard) ALWAYS use verified seated carriage Y=56.96mm
+        if kind == "tip_rack" and is_10ul:
+            w_str = str(well_id or "A1").strip().upper()
+            col_digits = "".join(ch for ch in w_str if ch.isdigit()) or "1"
+            col_i = max(0, min(11, int(col_digits) - 1))
+            tx = round(105.57 - (col_i * 9.0), 2)
+            ty = 56.96
+            return tx, ty
+
         if not is_8ch_step:
             coords = self._calculate_xy(slot_name, well_id)
             if not coords:
@@ -6158,35 +6174,24 @@ class LIMSMasterApp:
             # When an 8-channel head is mounted on the carriage, Nozzle 1 is physically at (ty - 31.50mm).
             # When executing a single-well step with Channel 1 (Nozzle 1), shift carriage by +31.50mm in Y
             # so Nozzle 1 lands centered at ty, and Nozzles 2..8 land centered over subsequent rows (never on walls).
-            lw_obj = self.lims.deck_labware.get(slot_name)
-            kind = self._lw_kind(lw_obj)
             if self.lims.pipettor.multichannel and kind in ("ehm48", "plate96", "tip_rack"):
                 ty += 31.50
             return tx, ty
 
-        lw_obj = self.lims.deck_labware.get(slot_name)
-        kind = self._lw_kind(lw_obj)
         w_str = str(well_id or "A1").strip().upper()
         col_digits = "".join(ch for ch in w_str if ch.isdigit()) or "1"
 
         if kind in ("ehm48", "plate96", "tip_rack"):
-            is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
-            if kind == "tip_rack" and is_10ul:
-                # Machine 2 (1-10 µL ONLY): Tip pickup carriage is physically seated at Y=56.96mm
-                col_i = max(0, min(11, int(col_digits) - 1))
-                tx = round(105.57 - (col_i * 9.0), 2)
-                ty = 56.96
+            ca = self._calculate_xy(slot_name, f"A{col_digits}")
+            ch = self._calculate_xy(slot_name, f"H{col_digits}")
+            if ca and ch and (ca[0] != 0.0 or ca[1] != 0.0):
+                tx = ca[0]
+                ty = (ca[1] + ch[1]) / 2.0
             else:
-                ca = self._calculate_xy(slot_name, f"A{col_digits}")
-                ch = self._calculate_xy(slot_name, f"H{col_digits}")
-                if ca and ch and (ca[0] != 0.0 or ca[1] != 0.0):
-                    tx = ca[0]
-                    ty = (ca[1] + ch[1]) / 2.0
-                else:
-                    coords = self._calculate_xy(slot_name, well_id)
-                    if not coords:
-                        return None
-                    tx, ty = coords
+                coords = self._calculate_xy(slot_name, well_id)
+                if not coords:
+                    return None
+                tx, ty = coords
         else:
             coords = self._calculate_xy(slot_name, well_id)
             if not coords:
@@ -7063,6 +7068,8 @@ class LIMSMasterApp:
                                 tip_rack_model = lw_cand
 
                         def _do_pick(tx, ty):
+                            if is_10ul:
+                                self.logger.info(f"🎯 [MACHINE 2: 1-10µL] Tip pickup moving to seated coordinates: X={tx:.2f}mm, Y={ty:.2f}mm, Z_collar={collar_z:.2f}mm")
                             if self.lims.pipettor.hardware:
                                 self.lims.pipettor.hardware.move_z(0)
                             self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
