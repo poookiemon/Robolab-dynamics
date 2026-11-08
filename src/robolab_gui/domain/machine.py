@@ -43,3 +43,8 @@ class MachineProfile:
     def set_height(self, key: str, value: float) -> None:
         """Update a calibrated Z height."""
         self.calibrated_heights[key] = round(float(value), 2)
+
+    @property
+    def profile_id(self) -> str:
+        """Alias for profile id."""
+        return self.id
