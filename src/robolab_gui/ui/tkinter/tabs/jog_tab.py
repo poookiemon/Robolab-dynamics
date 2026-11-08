@@ -26,11 +26,11 @@ class JogCalibrationTab(ttk.Frame):
         ttk.Button(jog_frame, text="Home All (0,0,0)", command=self._home).pack(side="left", padx=10, pady=10)
         ttk.Button(jog_frame, text="Safe Traverse (Z=0)", command=self._safe_z).pack(side="left", padx=10, pady=10)
 
-        # Tim's Z-check tool launcher button
-        tim_frame = ttk.LabelFrame(self, text="Assisted Calibration Tools")
-        tim_frame.pack(fill="x", padx=15, pady=10)
+        # Slot Z-check tool launcher button
+        cal_frame = ttk.LabelFrame(self, text="Assisted Calibration Tools")
+        cal_frame.pack(fill="x", padx=15, pady=10)
 
-        ttk.Button(tim_frame, text="🔍 Tim's Slot-by-Slot Tip Z-Verification Tool...", command=self._open_z_check).pack(padx=15, pady=15, anchor="w")
+        ttk.Button(cal_frame, text="🔍 Slot-by-Slot Tip Z-Verification Tool...", command=self._open_z_check).pack(padx=15, pady=15, anchor="w")
 
     def _home(self):
         if self.session.is_connected():

@@ -329,7 +329,7 @@ class LIMSMasterApp:
         hwmenu.add_command(label="Reset / Home Pipette Head", command=self.quick_home_head)
         hwmenu.add_command(label="Retract to Safe Z (0 mm)", command=self.quick_safe_z)
         hwmenu.add_separator()
-        hwmenu.add_command(label="📐 Tim's Slot Z-Verification Tool...", command=self.action_open_tim_z_verification)
+        hwmenu.add_command(label="📐 Slot Z-Verification Tool...", command=self.action_open_slot_z_verification)
         hwmenu.add_command(label="8-Channel Calibrated Heights & Depths...", command=self.action_open_8ch_height_settings)
         menubar.add_cascade(label="Hardware", menu=hwmenu)
 
@@ -340,7 +340,7 @@ class LIMSMasterApp:
         settingsmenu.add_command(label="⚙️ Change Machine Profile...", command=self.action_select_machine_profile)
         settingsmenu.add_command(label="🔌 Initialize Pipettor Head...", command=self.action_initialize_pipettor)
         settingsmenu.add_separator()
-        settingsmenu.add_command(label="📐 Tim's Slot Z-Verification Tool...", command=self.action_open_tim_z_verification)
+        settingsmenu.add_command(label="📐 Slot Z-Verification Tool...", command=self.action_open_slot_z_verification)
         settingsmenu.add_command(label="Calibrated Heights & Depths (Active Profile)...", command=self.action_open_8ch_height_settings)
         settingsmenu.add_separator()
         settingsmenu.add_command(label="🌓 Toggle Cleanroom Theme (High Contrast)", command=self.toggle_cleanroom_theme)
@@ -4467,9 +4467,9 @@ class LIMSMasterApp:
         mode_str = "Cleanroom High-Contrast Mode (Glove Touch Enabled)" if is_cleanroom else "Standard Desktop Lab Mode"
         self.logger.info(f"Switched UI theme to: {mode_str}")
 
-    def action_open_tim_z_verification(self):
+    def action_open_slot_z_verification(self):
         """
-        Tim's Assisted Visual Z-Verification & Table Depth Editor.
+        Assisted Visual Z-Verification & Table Depth Editor.
         Robot picks a tip from Slot 4 and moves to the selected slot/well.
         The operator can visual-jog to verify depths, edit the nominal value directly,
         and save it into the active machine profile (heights.json).
@@ -4479,7 +4479,7 @@ class LIMSMasterApp:
             return
 
         top = tk.Toplevel(self.root)
-        top.title("Tim's Slot-by-Slot Tip Z-Verification & Depth Editor")
+        top.title("Slot-by-Slot Tip Z-Verification & Depth Editor")
         top.geometry("560x520")
         top.transient(self.root)
         top.grab_set()
@@ -4491,7 +4491,7 @@ class LIMSMasterApp:
         except Exception:
             pass
 
-        ttk.Label(top, text="📐 Tim's Slot Z-Verification & Visual Jog Editor", font=("Arial", 12, "bold"), foreground="#6f42c1").pack(pady=(10, 4))
+        ttk.Label(top, text="📐 Slot Z-Verification & Visual Jog Editor", font=("Arial", 12, "bold"), foreground="#6f42c1").pack(pady=(10, 4))
         station_name = self.profile_manager.get_display_name(self.active_profile_id) if getattr(self, "profile_manager", None) else self.active_profile_id
         ttk.Label(
             top,
@@ -4563,7 +4563,7 @@ class LIMSMasterApp:
 
             try:
                 # 1. Pick Tip from Slot 4 using active machine profile heights
-                self.logger.info(f"[TIM Z-VERIFY] Picking tip from Slot 4 for visual verification on {s} {w}...")
+                self.logger.info(f"[Z-VERIFY] Picking tip from Slot 4 for visual verification on {s} {w}...")
                 is_10ul = ("10ul" in self.active_profile_id)
                 approach_z = float(self.calibrated_heights.get("tip_10ul_approach_z" if is_10ul else "tip_rack_pickup_approach_z", 50.0 if is_10ul else 75.0))
                 collar_z = float(self.calibrated_heights.get("tip_10ul_collar_z" if is_10ul else "tip_rack_collar_z", 64.49 if is_10ul else 86.36))
@@ -4593,9 +4593,9 @@ class LIMSMasterApp:
 
                 live_z_var.set(nom_z)
                 lbl_current_z.config(text=f"Current Z: {nom_z:.2f} mm")
-                self.logger.info(f"[TIM Z-VERIFY] Reached {s} {w} at nominal Z={nom_z:.2f}mm.")
+                self.logger.info(f"[Z-VERIFY] Reached {s} {w} at nominal Z={nom_z:.2f}mm.")
             except Exception as pe:
-                self.logger.error(f"[TIM Z-VERIFY] Pick and travel error: {pe}")
+                self.logger.error(f"[Z-VERIFY] Pick and travel error: {pe}")
                 messagebox.showerror("Move Error", f"Could not complete tip travel: {pe}")
 
         tk.Button(action_box1, text="▶ 1. Pick Tip from Slot 4 & Travel to Well", bg="#28a745", fg="white", font=("Arial", 9, "bold"), command=do_pick_and_travel).pack(side=tk.LEFT)
@@ -4614,7 +4614,7 @@ class LIMSMasterApp:
                     self.lims.pipettor.hardware.move_z(new_z)
                 except Exception as e:
                     self.logger.warning(f"Z nudge warning: {e}")
-            self.logger.info(f"[TIM Z-VERIFY] Jogged Z by {delta:+.2f}mm -> Current: {new_z:.2f}mm")
+            self.logger.info(f"[Z-VERIFY] Jogged Z by {delta:+.2f}mm -> Current: {new_z:.2f}mm")
 
         row_up = ttk.Frame(jog_box)
         row_up.pack(fill=tk.X, pady=2)
@@ -4648,7 +4648,7 @@ class LIMSMasterApp:
                     lbl_current_z.config(text=f"Current Z: {new_z:.2f} mm")
                     if self.lims.pipettor.hardware:
                         self.lims.pipettor.hardware.move_z(new_z)
-                    self.logger.info(f"[TIM Z-VERIFY] Set direct Z={new_z:.2f}mm")
+                    self.logger.info(f"[Z-VERIFY] Set direct Z={new_z:.2f}mm")
             except Exception as e:
                 messagebox.showerror("Input Error", f"Invalid Z value '{val_str}': {e}")
 
@@ -4683,12 +4683,12 @@ class LIMSMasterApp:
                     self.calibrated_heights["reservoir_7_aspirate_z"] = current_z
 
             self.save_calibrated_heights()
-            self.logger.info(f"[TIM Z-VERIFY] Saved verified Z depth {key}={current_z:.2f}mm to active profile {self.active_profile_id}.")
+            self.logger.info(f"[Z-VERIFY] Saved verified Z depth {key}={current_z:.2f}mm to active profile {self.active_profile_id}.")
             messagebox.showinfo("Saved", f"Verified Z={current_z:.2f} mm saved to active profile '{self.active_profile_id}' under key '{key}'!")
 
         def _return_tip_and_retract():
             try:
-                self.logger.info("[TIM Z-VERIFY] Returning tip and retracting...")
+                self.logger.info("[Z-VERIFY] Returning tip and retracting...")
                 if self.lims.pipettor.hardware:
                     self.lims.pipettor.hardware.move_z(0)
                 discard_z = float(self.calibrated_heights.get("tip_rack_discard_z", 40.50))
@@ -4701,15 +4701,17 @@ class LIMSMasterApp:
                     self.lims.pipettor.hardware.move_z(0)
                 self.has_tip_var.set(False)
                 lbl_current_z.config(text="Current Z: 0.00 mm (Retracted)")
-                self.logger.info("[TIM Z-VERIFY] Tip ejected and robot safely retracted to Z=0.0 mm.")
+                self.logger.info("[Z-VERIFY] Tip ejected and robot safely retracted to Z=0.0 mm.")
                 messagebox.showinfo("Finished", "Tip returned and carriage safely retracted to Z=0.0 mm.")
             except Exception as e:
-                self.logger.error(f"[TIM Z-VERIFY] Return tip error: {e}")
+                self.logger.error(f"[Z-VERIFY] Return tip error: {e}")
                 messagebox.showerror("Error", f"Could not eject tip: {e}")
 
         tk.Button(bottom_box, text="💾 3. Save Verified Z to Profile", bg="#0d6efd", fg="white", font=("Arial", 10, "bold"), command=_save_to_profile).pack(side=tk.LEFT, padx=4)
         tk.Button(bottom_box, text="🏁 4. Return Tip & Retract", bg="#6c757d", fg="white", font=("Arial", 9, "bold"), command=_return_tip_and_retract).pack(side=tk.LEFT, padx=4)
         ttk.Button(bottom_box, text="Close", command=top.destroy).pack(side=tk.RIGHT, padx=4)
+
+    action_open_tim_z_verification = action_open_slot_z_verification
 
     def save_calibrated_heights(self):
         """Persists the calibrated heights dictionary to the active machine profile and fallback storage."""

@@ -5,7 +5,7 @@ Comprehensive End-to-End Verification Test Suite for:
 2. Machine 2 Monday/Wednesday Calibrated Heights Verification
 3. Pipettor Head Initialization & Protocol Safety Interlock
 4. 5-Tip Pickup Kinematics & Wall Elimination Fix (Row A-E Centering)
-5. Tim's Slot-by-Slot Tip Z-Verification & Depth Editor Logic
+5. Slot-by-Slot Tip Z-Verification & Depth Editor Logic
 6. Interactive Error Recovery with Clearance & Retry Step Flow
 7. 2D Deck Meniscus Tracking & Cleanroom High-Contrast Theme Toggle
 8. Automated Run Reports (HTML & CSV in logs/)
@@ -128,9 +128,9 @@ def run_all_tests():
     print("PASS: 0 divider wall collisions verified! Wall landing bug eliminated.")
 
     # -------------------------------------------------------------------------
-    # TEST 4: Tim's Slot-by-Slot Tip Z-Verification Tool
+    # TEST 4: Slot-by-Slot Tip Z-Verification Tool
     # -------------------------------------------------------------------------
-    print("\n--- 4. Testing Tim's Slot-by-Slot Tip Z-Verification Logic ---")
+    print("\n--- 4. Testing Slot-by-Slot Tip Z-Verification Logic ---")
     # Verify nominal depths logic across labware kinds
     ehm_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "labware", "myriamed_48_well.json")
     ehm_lw = Labware(ehm_path)
@@ -150,7 +150,7 @@ def run_all_tests():
     # Re-read from disk to confirm persistence into active profile
     loaded_profile = app.profile_manager.load_profile("machine_2_1_10ul")
     assert abs(float(loaded_profile["ehm_aspirate_z"]) - new_verified_z) < 1e-4
-    print(f"PASS: Tim's visual jog verification saved {new_verified_z}mm directly into Machine 2 heights.json.")
+    print(f"PASS: Visual jog verification saved {new_verified_z}mm directly into Machine 2 heights.json.")
 
     # Restore original 69.90 mm
     app.calibrated_heights["ehm_aspirate_z"] = 69.90

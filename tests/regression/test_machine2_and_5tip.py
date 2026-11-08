@@ -1,4 +1,4 @@
-"""Regression tests for Machine 2 isolation, 5-tip kinematics, and Tim's Z-check."""
+"""Regression tests for Machine 2 isolation, 5-tip kinematics, and slot Z-check."""
 
 from robolab_gui.configuration.machine_profiles import MachineProfileService
 from robolab_gui.geometry.nozzle_layout import NozzleLayout

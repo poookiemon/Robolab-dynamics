@@ -41,7 +41,7 @@ def run_all():
         test_machine_2_calibrated_heights_isolation(Path(tmp_dir))
         print("PASS: Machine 2 calibrated heights isolation verified")
         test_tims_z_verification_persistence(Path(tmp_dir))
-        print("PASS: Tim's Z-verification persistence verified")
+        print("PASS: Slot Z-verification persistence verified")
 
     test_5_tip_pickup_kinematics()
     print("PASS: 5-tip pickup kinematics centered at Y=84.52mm with 0 wall collisions")

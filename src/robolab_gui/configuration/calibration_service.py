@@ -10,7 +10,7 @@ logger = logging.getLogger("RoboLab.CalibrationService")
 
 
 class CalibrationService:
-    """Manages physical calibrations and Tim's slot-by-slot Z depth verification."""
+    """Manages physical calibrations and slot-by-slot Z depth verification."""
 
     def __init__(self, profile_service: MachineProfileService):
         self.profile_service = profile_service
@@ -29,7 +29,7 @@ class CalibrationService:
         return self.active_profile.get_height("plate_aspirate_z", 69.90)
 
     def save_verified_height(self, slot_name: str, well_id: str, verified_z: float) -> None:
-        """Persist a verified Z height from Tim's Z-check tool directly into active profile."""
+        """Persist a verified Z height from slot Z-check tool directly into active profile."""
         norm_slot = slot_name.lower().replace("-", "_")
         key = "plate_aspirate_z"
         if "slot_4" in norm_slot:

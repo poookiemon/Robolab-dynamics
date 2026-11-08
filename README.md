@@ -12,7 +12,7 @@ Modular automated liquid handling, protocol execution, and data analysis platfor
 
 - **Multi-Machine Architecture**: Independent station calibrations and profiles (`Machine 1: 8×1000 µL`, `Machine 2: 1-10 µL`, `Machine 3: 300 µL`).
 - **Kinematics Engine**: Symmetrical 8-channel centering ($Y=84.52\text{ mm}$) and partial-tip pickups (A-E 5 tips) with zero rack divider wall collisions.
-- **Tim's Z-Verification Tool**: Assisted visual jog workflow taking a tip from Slot 4 to verify and edit target Z depths per slot with direct profile persistence.
+- **Slot Z-Verification Tool**: Assisted visual jog workflow taking a tip from Slot 4 to verify and edit target Z depths per slot with direct profile persistence.
 - **Interactive Error Recovery**: User-directed clearance unjam targeting operator-selected slots/wells with step retry logic.
 - **Active Session Tip Memory**: Virtual tip remapping (`A1..H1 -> A2..H2 ...`) across runs without modifying protocol JSON files.
 - **Weighted Dynamic Time Estimation**: Live countdown timer in `HHh MMm SSs` format with speed factor scaling and pause compensation.

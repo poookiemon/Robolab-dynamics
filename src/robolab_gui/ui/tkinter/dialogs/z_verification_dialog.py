@@ -1,4 +1,4 @@
-"""Tim's slot-by-slot tip Z-depth verification and table editor dialog."""
+"""Slot-by-slot tip Z-depth verification and table editor dialog."""
 
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -13,7 +13,7 @@ class ZVerificationDialog(tk.Toplevel):
         super().__init__(parent)
         self.cal_service = calibration_service
         self.session = session
-        self.title("Tim's Tip Z-Verification & Depth Editor")
+        self.title("Slot-by-Slot Tip Z-Verification & Depth Editor")
         self.geometry("520x360")
         self.grab_set()
 
