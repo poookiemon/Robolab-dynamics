@@ -1,7 +1,7 @@
 """Data models for protocols, steps, and deck requirements."""
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Union
 import json
 
 
@@ -110,14 +110,18 @@ class Protocol:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Protocol":
-        name = data.get("name", "Untitled Protocol")
+    def from_dict(cls, data: Union[Dict[str, Any], List[Dict[str, Any]]], default_name: str = "Untitled Protocol") -> "Protocol":
+        if isinstance(data, list):
+            steps = [ProtocolStep.from_dict(s) for s in data if isinstance(s, dict)]
+            return cls(name=default_name, steps=steps)
+
+        name = data.get("name", default_name)
         desc = data.get("description", "")
         target_head = data.get("target_head") or data.get("machine_profile")
         meta = data.get("metadata", {})
         deck = data.get("deck_setup", {})
         raw_steps = data.get("steps") or data.get("sequence") or []
-        steps = [ProtocolStep.from_dict(s) for s in raw_steps]
+        steps = [ProtocolStep.from_dict(s) for s in raw_steps if isinstance(s, dict)]
 
         return cls(
             name=name,

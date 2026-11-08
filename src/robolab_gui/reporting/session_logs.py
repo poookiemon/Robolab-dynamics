@@ -22,8 +22,8 @@ class FlushingFileHandler(logging.FileHandler):
 class SessionLogService:
     """Manages real-time session logging and final outcome status renaming."""
 
-    def __init__(self, logs_dir: Optional[Path] = None):
-        self.logs_dir = logs_dir or PathService.get_logs_dir()
+    def __init__(self, logs_dir: Optional[Path] = None, machine_id: Optional[str] = None):
+        self.logs_dir = logs_dir or PathService.get_logs_dir(machine_id)
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         self.current_log_path: Optional[Path] = None
         self._handler: Optional[FlushingFileHandler] = None

@@ -27,7 +27,7 @@ def create_application_context():
     session = HardwareSession()
     session.connect(use_simulation=True)  # Safe default until operator clicks connect
     catalog = ProtocolCatalog()
-    session_logger = SessionLogService()
+    session_logger = SessionLogService(machine_id=profile_service.active_profile.profile_id)
     engine = ExecutionEngine(
         session=session,
         deck_manager=deck_manager,

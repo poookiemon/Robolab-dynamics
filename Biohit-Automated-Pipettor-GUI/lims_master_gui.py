@@ -400,11 +400,33 @@ class LIMSMasterApp:
     # =========================================================================
     # 1. AUTOMATED SESSION LOGGING SYSTEM (DDMMYYYY_HHMMSS_Session_<STATUS>.log)
     # =========================================================================
-    def get_logs_dir(self) -> str:
+    def get_logs_dir(self, machine_profile_id: str = None) -> str:
+        pid = machine_profile_id or getattr(self, "active_profile_id", "machine_2_1_10ul")
+        machine_folder_map = {
+            "machine_1_8x1000": "Machine 1 - 8x1000 uL",
+            "machine_2_1_10ul": "Machine 2 - 1-10 uL",
+            "machine_3_300ul": "Machine 3 - 300 uL",
+        }
+        folder_name = machine_folder_map.get(pid)
+        if not folder_name:
+            disp = self.profile_manager.get_display_name(pid) if getattr(self, "profile_manager", None) else str(pid)
+            folder_name = disp.replace(":", "-").replace("/", "-").replace("\\", "-").strip()
+
+        # Primary target: C:\labhub\import\Robolab Machine Logs\<Machine Folder>
+        primary_base = os.environ.get("ROBOLAB_LOGS_DIR", r"C:\labhub\import\Robolab Machine Logs")
+        if sys.platform.startswith("win") or os.name == "nt" or "ROBOLAB_LOGS_DIR" in os.environ or os.path.exists(primary_base):
+            try:
+                target_dir = os.path.join(primary_base, folder_name)
+                os.makedirs(target_dir, exist_ok=True)
+                return target_dir
+            except Exception as e:
+                self.logger.warning(f"Could not access primary log folder '{primary_base}': {e}")
+
+        # Fallback to local logs directory for macOS / Linux / CI environments
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        logs_dir = os.path.join(script_dir, "logs")
-        os.makedirs(logs_dir, exist_ok=True)
-        return logs_dir
+        fallback_dir = os.path.join(script_dir, "logs", folder_name)
+        os.makedirs(fallback_dir, exist_ok=True)
+        return fallback_dir
 
     def action_open_session_logs(self):
         logs_dir = self.get_logs_dir()
@@ -1006,7 +1028,13 @@ class LIMSMasterApp:
                             ch_counts.append(count)
                     tips_per_col = max(ch_counts) if ch_counts else 8
                     total_tips = len(wells) * tips_per_col
-                    col_str = f"Cols {cols[0]}..{cols[-1]}" if len(cols) > 4 else f"Cols {', '.join(str(c) for c in cols)}"
+                    if len(cols) > 4:
+                        col_str = f"Cols {cols[0]}..{cols[-1]}"
+                    elif len(cols) > 0:
+                        col_str = f"Cols {', '.join(str(c) for c in cols)}"
+                    else:
+                        col_str = "All cols"
+
                     if tips_per_col == 5:
                         tips_info.append(f"{ts_label}: {total_tips} fresh tips ({tips_per_col} tips per column: Rows A–E across {col_str})")
                     else:
@@ -1014,8 +1042,20 @@ class LIMSMasterApp:
                 else:
                     total_tips = len(wells)
                     cols = sorted(list(set(int(w[1:]) for w in wells if len(w) > 1 and w[1:].isdigit())))
-                    col_str = f"Columns {cols[0]}..{cols[-1]}" if len(cols) > 1 else f"Column {cols[0]}"
-                    w_str = f"{wells[0]}..{wells[-1]}" if len(wells) > 4 else f"{', '.join(wells)}"
+                    if len(cols) > 1:
+                        col_str = f"Columns {cols[0]}..{cols[-1]}"
+                    elif len(cols) == 1:
+                        col_str = f"Column {cols[0]}"
+                    else:
+                        col_str = "All columns"
+
+                    if len(wells) > 4:
+                        w_str = f"{wells[0]}..{wells[-1]}"
+                    elif len(wells) > 0:
+                        w_str = f"{', '.join(wells)}"
+                    else:
+                        w_str = "Standard layout"
+
                     tips_info.append(f"{ts_label}: {total_tips} fresh tips in {col_str} ({w_str})")
 
         # 2. Analyze active vs empty slots
@@ -7828,6 +7868,12 @@ class LIMSMasterApp:
             try:
                 with open(filepath, 'r') as f:
                     loaded_sequence = json.load(f)
+
+                if isinstance(loaded_sequence, dict):
+                    if "steps" in loaded_sequence and isinstance(loaded_sequence["steps"], list):
+                        loaded_sequence = loaded_sequence["steps"]
+                    elif "sequence" in loaded_sequence and isinstance(loaded_sequence["sequence"], list):
+                        loaded_sequence = loaded_sequence["sequence"]
 
                 if not isinstance(loaded_sequence, list):
                     messagebox.showerror("Format Exception",

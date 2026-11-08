@@ -63,9 +63,25 @@ class PathService:
         return app_dir
 
     @classmethod
-    def get_logs_dir(cls) -> Path:
-        """Return writable logs directory."""
-        logs = cls.get_user_data_dir() / "logs"
+    def get_logs_dir(cls, machine_profile_id: Optional[str] = None) -> Path:
+        r"""Return writable logs directory under C:\labhub\import\Robolab Machine Logs\<Machine> or fallback."""
+        folder_map = {
+            "machine_1_8x1000": "Machine 1 - 8x1000 uL",
+            "machine_2_1_10ul": "Machine 2 - 1-10 uL",
+            "machine_3_300ul": "Machine 3 - 300 uL",
+        }
+        folder_name = folder_map.get(machine_profile_id or "machine_2_1_10ul", "Machine 2 - 1-10 uL")
+
+        primary_base = Path(os.environ.get("ROBOLAB_LOGS_DIR", r"C:\labhub\import\Robolab Machine Logs"))
+        if sys.platform.startswith("win") or os.name == "nt" or primary_base.exists():
+            try:
+                target = primary_base / folder_name
+                target.mkdir(parents=True, exist_ok=True)
+                return target
+            except Exception:
+                pass
+
+        logs = cls.get_user_data_dir() / "logs" / folder_name
         logs.mkdir(parents=True, exist_ok=True)
         return logs
 

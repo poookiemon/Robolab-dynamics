@@ -12,7 +12,7 @@ if "--legacy" in sys.argv:
     sys.path.insert(0, legacy_dir)
     os.chdir(legacy_dir)
     import lims_master_gui
-    lims_master_gui.main()
+    lims_master_gui.launch()
 else:
     # Ensure src is on python path for direct checkout runs
     src_dir = os.path.join(os.path.dirname(__file__), "src")
