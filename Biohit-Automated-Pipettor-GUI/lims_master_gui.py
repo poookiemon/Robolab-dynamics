@@ -849,8 +849,8 @@ class LIMSMasterApp:
         if not is_auto_request and req in ordered and req not in consumed:
             return req, False
 
-        # If unspecified (auto) or already consumed: start from default start spot (A1) or current cursor
-        start = min(tracker.get("cursor", 0), len(ordered))
+        # If unspecified (auto) or already consumed: start from requested well or default cursor
+        start = ordered.index(req) if (not is_auto_request and req in ordered) else min(tracker.get("cursor", 0), len(ordered))
         for idx in list(range(start, len(ordered))) + list(range(0, start)):
             cand = ordered[idx]
             if cand not in consumed:
@@ -858,31 +858,9 @@ class LIMSMasterApp:
 
         return None, True
 
-    def resolve_8ch_session_tip_col(self, slot_name: str, requested_well: str = None) -> int:
-        """
-        8-Channel column resolution:
-        - If user specified a well/column (e.g. 'A3' -> col 3), returns that column.
-        - If unspecified (Auto / None / empty), starts from default start column (1) and finds next available column.
-        """
-        tracker = self._get_tip_tracker(slot_name)
-        consumed = tracker["consumed"]
-
-        req = (requested_well or "").strip().upper()
-        if req and req not in ("AUTO", "DEFAULT", "NEXT", "NONE"):
-            col_digits = "".join(ch for ch in req if ch.isdigit())
-            if col_digits and 1 <= int(col_digits) <= 12:
-                return int(col_digits)
-
-        # Unspecified or Auto: find first column with fresh tips starting from Column 1
-        for col in range(1, 13):
-            col_wells = [f"{r}{col}" for r in "ABCDEFGH"]
-            if not any(w in consumed for w in col_wells):
-                return col
-        return 1
-
     @staticmethod
     def _expand_8ch_tip_sockets(step: dict, well_id: str) -> list:
-        """Return exact physical tip sockets (e.g. ['F1', 'G1', 'H1']) touched by an 8-channel tip step."""
+        """Return exact physical tip sockets (e.g. ['A1', 'B1', ..., 'H1']) touched by an 8-channel tip step."""
         m = re.match(r"^[A-H](\d+)$", (well_id or "").strip().upper())
         if not m:
             return []
@@ -908,6 +886,52 @@ class LIMSMasterApp:
             if 0 <= r_idx < 8:
                 sockets.append(f"{rows[r_idx]}{col}")
         return sockets
+
+    def resolve_8ch_session_tip_col(self, slot_name: str, requested_well: str = None, step: dict = None) -> tuple:
+        """
+        8-Channel Column Resolution with Active Session Tip Memory:
+        - Determines which sockets are needed based on step mounted_channels (e.g. A-H for 8 tips, A-E for 5 tips).
+        - If user specified a well/column (e.g. 'A1' -> col 1):
+          Checks if that requested column is completely fresh (none of the required sockets consumed).
+          If fresh, returns (col, False).
+        - If that requested column has ANY consumed sockets (or if requested_well is Auto/empty/None):
+          Dynamically advances to the next column (searching col, col+1, ..., 12, then 1, ..., col-1)
+          where ALL required sockets are completely fresh.
+          Returns (found_col, True).
+        - If all 12 columns are exhausted, returns (None, True).
+        """
+        tracker = self._get_tip_tracker(slot_name)
+        consumed = tracker["consumed"]
+
+        req = (requested_well or "").strip().upper()
+        is_auto = not req or req in ("AUTO", "DEFAULT", "NEXT", "NONE", "")
+
+        req_col = 1
+        if not is_auto:
+            digits = "".join(ch for ch in req if ch.isdigit())
+            if digits and 1 <= int(digits) <= 12:
+                req_col = int(digits)
+
+        def _col_sockets(c: int) -> list:
+            s_list = self._expand_8ch_tip_sockets(step, f"A{c}")
+            if not s_list:
+                s_list = [f"{r}{c}" for r in "ABCDEFGH"]
+            return s_list
+
+        def _col_is_fresh(c: int) -> bool:
+            return not any(sock in consumed for sock in _col_sockets(c))
+
+        # 1. If explicitly requested and completely fresh, keep requested column
+        if not is_auto and _col_is_fresh(req_col):
+            return req_col, False
+
+        # 2. If requested column is already consumed (or auto): search for next fresh column
+        search_order = list(range(req_col, 13)) + list(range(1, req_col))
+        for cand_col in search_order:
+            if _col_is_fresh(cand_col):
+                return cand_col, True
+
+        return None, True
 
     def reset_tip_rack_memory(self, slot_name: str = None, announce: bool = True):
         if slot_name:
@@ -6932,14 +6956,27 @@ class LIMSMasterApp:
                                     break
                                 if was_remapped:
                                     self.logger.info(
-                                        f"[TIP MEMORY] Virtual Tip Remap on {slot_name}: Requested {well_id or 'Auto'} -> Remapped to {resolved_well}"
+                                        f"[TIP MEMORY] Virtual Tip Remap on {slot_name}: Requested {well_id or 'Auto'} (already consumed) -> Remapped to fresh tip {resolved_well}"
                                     )
                                 well_id = resolved_well
                             else:
-                                if not well_id or well_id.strip().upper() in ("AUTO", "DEFAULT", "NEXT", "NONE", ""):
-                                    col = self.resolve_8ch_session_tip_col(slot_name, well_id)
-                                    well_id = f"A{col}"
-                                    self.logger.info(f"[TIP MEMORY] 8-Channel tip pickup auto-resolved to default Column {col} ({well_id})")
+                                col, was_remapped = self.resolve_8ch_session_tip_col(slot_name, well_id, step)
+                                if col is None:
+                                    self.session_abort_status = "AUTO_ABORTED_EMPTY_TIPS"
+                                    self.logger.critical(
+                                        f"🛑 All 12 tip columns in {slot_name} are exhausted in this session! "
+                                        f"Load a fresh tip box and click '🔄 Reset Tip Rack'."
+                                    )
+                                    self.is_aborted = True
+                                    break
+                                orig_req = well_id or "Auto"
+                                well_id = f"A{col}"
+                                if was_remapped:
+                                    self.logger.info(
+                                        f"[TIP MEMORY] 8-Channel Virtual Tip Remap on {slot_name}: Requested {orig_req} (already consumed) -> Advanced to fresh Column {col} ({well_id})"
+                                    )
+                                else:
+                                    self.logger.info(f"[TIP MEMORY] 8-Channel tip pickup using fresh Column {col} ({well_id})")
                         # ---------------------------------------------------------
 
                         coords = self._resolve_step_xy(step, slot_name, well_id)

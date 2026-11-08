@@ -81,6 +81,18 @@ def main(ui_framework: str = "master"):
         lims_master_gui.launch()
         return
 
+    # Check packaged robolab_legacy from site-packages (for direct pip installs without repo clone)
+    try:
+        import robolab_legacy.lims_master_gui as legacy_gui
+        pkg_legacy_dir = os.path.dirname(legacy_gui.__file__)
+        if pkg_legacy_dir not in sys.path:
+            sys.path.insert(0, pkg_legacy_dir)
+        os.chdir(pkg_legacy_dir)
+        legacy_gui.launch()
+        return
+    except Exception:
+        pass
+
     # Graceful fallback to modular MainWindow if standalone legacy directory is absent
     setup_logging()
     ctx = create_application_context()

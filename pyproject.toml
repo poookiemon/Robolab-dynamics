@@ -53,12 +53,35 @@ all = [
 
 [project.scripts]
 robolab-gui = "robolab_gui.app:main"
+biohit-gui = "robolab_gui.app:main"
 
 [project.gui-scripts]
 robolab = "robolab_gui.app:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools]
+package-dir = {"" = "src", "robolab_legacy" = "Biohit-Automated-Pipettor-GUI"}
+packages = [
+    "robolab_gui",
+    "robolab_gui.ui",
+    "robolab_gui.ui.qt",
+    "robolab_gui.ui.tkinter",
+    "robolab_gui.ui.tkinter.tabs",
+    "robolab_gui.ui.tkinter.dialogs",
+    "robolab_gui.ui.tkinter.widgets",
+    "robolab_gui.reporting",
+    "robolab_gui.configuration",
+    "robolab_gui.hardware",
+    "robolab_gui.analysis",
+    "robolab_gui.integrations",
+    "robolab_gui.execution",
+    "robolab_gui.geometry",
+    "robolab_gui.domain",
+    "robolab_gui.domain.labware",
+    "robolab_gui.protocols",
+    "robolab_gui.protocols.builders",
+    "robolab_gui.protocols.importers",
+    "robolab_legacy",
+]
 
 [tool.setuptools.package-data]
 robolab_gui = [
@@ -67,4 +90,10 @@ robolab_gui = [
     "resources/protocols/**/*.json",
     "resources/default_workspaces/**/*.json",
     "resources/assets/**/*",
+]
+robolab_legacy = [
+    "*.json",
+    "labware/*.json",
+    "protocols/**/*.json",
+    "assets/*",
 ]
