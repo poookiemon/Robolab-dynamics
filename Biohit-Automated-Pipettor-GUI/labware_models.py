@@ -614,7 +614,7 @@ class TipRack96(LabwareBase):
                 defaults[k] = kwargs.pop(k)
         super().__init__(**defaults)
         self.calibrated_a1_x = kwargs.get("calibrated_a1_x", 105.66)
-        self.calibrated_a1_y = kwargs.get("calibrated_a1_y", 56.64)
+        self.calibrated_a1_y = kwargs.get("calibrated_a1_y", 52.64)
         self.pickup_approach_z = kwargs.get("pickup_approach_z", 50.0)
         self.pickup_limit_z = kwargs.get("pickup_limit_z", 75.0)
         self.pickup_force = kwargs.get("pickup_force", 26)
@@ -714,6 +714,7 @@ class DeckSlot:
     z_offset: float = 0.0
     adapter: HeightAdapter = field(default_factory=lambda: ADAPTER_NONE)
     labware: Optional[LabwareBase] = None
+    active_profile_id: str = "machine_2_1_10ul"
 
     @property
     def center_x(self) -> float:
@@ -730,14 +731,32 @@ class DeckSlot:
     @property
     def origin_a1_xy(self) -> Tuple[float, float]:
         """Physical calibrated A1 origin based on slot location and side."""
-        calibrated_origins = {
-            "Slot_1": (238.2, 13.0),
-            "Slot_2": (95.5, 13.0),
-            "Slot_3": (243.81, 56.64),
-            "Slot_4": (105.66, 56.64),
-            "Slot_5": (243.24, 150.81),
-            "Slot_6": (105.60, 150.81),
-        }
+        active_pid = getattr(self, "active_profile_id", None)
+        if not active_pid:
+            try:
+                from machine_profiles import MachineProfileManager
+                active_pid = MachineProfileManager.get_active_profile_id()
+            except Exception:
+                active_pid = "machine_2_1_10ul"
+
+        if active_pid == "machine_1_8x1000":
+            calibrated_origins = {
+                "Slot_1": (238.2, 13.0),
+                "Slot_2": (95.5, 13.0),
+                "Slot_3": (243.81, 53.02),
+                "Slot_4": (105.60, 53.02),
+                "Slot_5": (243.24, 147.19),
+                "Slot_6": (105.60, 147.19),
+            }
+        else:
+            calibrated_origins = {
+                "Slot_1": (238.2, 13.0),
+                "Slot_2": (95.5, 13.0),
+                "Slot_3": (243.81, 52.64),
+                "Slot_4": (105.66, 52.64),
+                "Slot_5": (243.24, 146.81),
+                "Slot_6": (105.60, 146.81),
+            }
         if self.name in calibrated_origins:
             return calibrated_origins[self.name]
         ox = 243.81 if self.x_abs >= 70.0 else 105.0

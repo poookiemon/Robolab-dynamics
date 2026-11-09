@@ -45,8 +45,8 @@ FACTORY_PROFILES: Dict[str, Dict] = {
         "calibrated_heights": {
             "tip_rack_collar_z": 64.49,
             "tip_rack_pickup_limit_z": 75.0,
-            "plate_aspirate_z": 69.90,
-            "plate_dispense_z": 65.0,
+            "plate_aspirate_z": 78.40,
+            "plate_dispense_z": 68.43,
             "reservoir_7_aspirate_z": 58.34,
             "reservoir_7_dispense_z": 20.0,
             "waste_discard_z": 15.0

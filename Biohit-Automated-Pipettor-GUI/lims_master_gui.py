@@ -151,8 +151,8 @@ class LIMSMasterApp:
             "tip_rack_pickup_limit_z": 75.0 if "10ul" in self.active_profile_id else 98.0,
             "tip_pickup_extra_press_mm": 2.50,
             "tip_rack_discard_z": 40.50,
-            "ehm_aspirate_z": 69.90 if "10ul" in self.active_profile_id else 24.17,
-            "ehm_dispense_z": 59.93 if "10ul" in self.active_profile_id else 14.17,
+            "ehm_aspirate_z": 78.40 if "10ul" in self.active_profile_id else 24.17,
+            "ehm_dispense_z": 68.43 if "10ul" in self.active_profile_id else 14.17,
             "plate96_aspirate_z": 78.40,
             "plate96_dispense_z": 68.43,
             "reservoir_aspirate_z": 58.34 if "10ul" in self.active_profile_id else 90.42,
@@ -4562,7 +4562,7 @@ class LIMSMasterApp:
             kind = self._lw_kind(lw)
             nom_z = 24.17
             if kind == "ehm48":
-                nom_z = float(self.calibrated_heights.get("ehm_aspirate_z", 69.90 if "10ul" in self.active_profile_id else 24.17))
+                nom_z = float(self.calibrated_heights.get("ehm_aspirate_z", 78.40 if "10ul" in self.active_profile_id else 24.17))
             elif kind == "plate96":
                 nom_z = float(self.calibrated_heights.get("plate96_aspirate_z", 78.40))
             elif "reservoir" in str(kind) or kind == "reservoir_7":
@@ -4589,7 +4589,7 @@ class LIMSMasterApp:
             kind = self._lw_kind(lw)
             nom_z = 24.17
             if kind == "ehm48":
-                nom_z = float(self.calibrated_heights.get("ehm_aspirate_z", 69.90 if "10ul" in self.active_profile_id else 24.17))
+                nom_z = float(self.calibrated_heights.get("ehm_aspirate_z", 78.40 if "10ul" in self.active_profile_id else 24.17))
             elif kind == "plate96":
                 nom_z = float(self.calibrated_heights.get("plate96_aspirate_z", 78.40))
             elif "reservoir" in str(kind) or kind == "reservoir_7":
@@ -5969,17 +5969,27 @@ class LIMSMasterApp:
         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
         if is_10ul:
             if slot_name == "Slot_4":
-                return 105.66, 56.64
+                return 105.66, 52.64
             if slot_name == "Slot_3":
-                return 243.81, 56.64
+                return 243.81, 52.64
             if slot_name == "Slot_5":
-                return 243.24, 150.81
+                return 243.24, 146.81
             if slot_name == "Slot_6":
-                return 105.60, 150.81
+                return 105.60, 146.81
             if slot_name == "Slot_1":
-                return 238.20, 16.62
+                return 238.20, 13.0
             if slot_name == "Slot_2":
-                return 95.50, 16.62
+                return 95.50, 13.0
+        m1_origins = {
+            "Slot_1": (238.2, 13.0),
+            "Slot_2": (95.5, 13.0),
+            "Slot_3": (243.81, 53.02),
+            "Slot_4": (105.60, 53.02),
+            "Slot_5": (243.24, 147.19),
+            "Slot_6": (105.60, 147.19),
+        }
+        if slot_name in m1_origins:
+            return m1_origins[slot_name]
         if slot_name in self.SLOT_A1_ORIGINS:
             return self.SLOT_A1_ORIGINS[slot_name]
         slot_obj = self.lims.deck_slots.get(slot_name)
@@ -6030,6 +6040,7 @@ class LIMSMasterApp:
         # 0. Object-Oriented DeckManager Kinematics
         if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
             slot_model = self.deck_manager.slots[slot_name]
+            slot_model.active_profile_id = getattr(self, 'active_profile_id', 'machine_2_1_10ul')
             if slot_model.labware:
                 cx, cy = slot_model.labware.get_well_xy(slot_model, well_id)
                 if cx != 0.0 or cy != 0.0:
@@ -6180,42 +6191,66 @@ class LIMSMasterApp:
         kind = self._lw_kind(lw_obj)
         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
 
-        # Machine 2 (1-10 µL ONLY): Tip rack operations (pickup / discard)
-        # Physically verified seating calibration:
-        # 8 tips: (X=105.66, Y=84.14, Z=63.96)
-        # 5 tips: (X=105.57, Y=56.96, Z=64.97)
-        # Arbitrary n tips: Y = 84.14 - (8 - n) * 9.06mm
-        is_tip_op = (kind == "tip_rack" or slot_name == "Slot_4" or (step or {}).get("action") == "Pick Up Tip")
-        if is_tip_op and is_10ul:
+        # Machine 2 (1-10 µL ONLY): 8-channel multi-head fixed-center kinematics across all plate/tip slots
+        # Prevents any wall collision by keeping the 8-channel manifold carriage centered over the slots.
+        # Verified seating / alignment calibrations:
+        # - Front Slots (Slot 3, Slot 4): Carriage Y = 84.14 mm (5-tip Y = 56.96 mm)
+        # - Rear Slots (Slot 5, Slot 6):  Carriage Y = 178.31 mm (5-tip Y = 151.13 mm)
+        # Carriage X is derived solely from the column index (9.0 mm pitch).
+        is_m2_reservoir_or_waste = (slot_name == "Slot_6" and kind in ("waste", "reservoir_3", "reservoir_6", "reservoir_7")) or (slot_name in ("Slot_1", "Slot_2"))
+        if is_10ul and slot_name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6") and not is_m2_reservoir_or_waste:
             w_str = str(well_id or "A1").strip().upper()
             col_digits = "".join(ch for ch in w_str if ch.isdigit()) or "1"
             col_i = max(0, min(11, int(col_digits) - 1))
-            tx = round(105.66 - (col_i * 9.0), 2)
-            offset_rows = int((step or {}).get('tip_offset_rows', 0) or 0)
 
-            if is_8ch_step:
-                m_ch = str((step or {}).get("mounted_channels", "A-H")).strip().upper()
-                num_tips = 8
-                if m_ch:
-                    if "-" in m_ch:
-                        parts = m_ch.split("-")
-                        if len(parts) == 2 and parts[0] in "ABCDEFGH" and parts[1] in "ABCDEFGH":
-                            num_tips = max(1, min(8, ord(parts[1]) - ord(parts[0]) + 1))
-                    elif len(m_ch) == 1 and m_ch in "ABCDEFGH":
-                        num_tips = 1
+            if slot_name == "Slot_4":
+                learned_dx, _ = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
+                tx = round(105.66 - (col_i * 9.0) + learned_dx, 2)
+            elif slot_name == "Slot_6":
+                tx = round(105.60 - (col_i * 9.0), 2)
+            elif slot_name == "Slot_3":
+                tx = round(243.81 - (col_i * 9.0), 2)
+            else:  # Slot_5
+                tx = round(243.24 - (col_i * 9.0), 2)
+
+            m_ch = str((step or {}).get("mounted_channels", "A-H")).strip().upper()
+            num_tips = 8
+            if m_ch:
+                if "-" in m_ch:
+                    parts = m_ch.split("-")
+                    if len(parts) == 2 and parts[0] in "ABCDEFGH" and parts[1] in "ABCDEFGH":
+                        num_tips = max(1, min(8, ord(parts[1]) - ord(parts[0]) + 1))
+                elif len(m_ch) == 1 and m_ch in "ABCDEFGH":
+                    num_tips = 1
+
+            if slot_name in ("Slot_3", "Slot_4"):
                 if num_tips == 5:
-                    ty = round(56.96 + (offset_rows * 9.0), 2)
+                    ty = 56.96
                 elif num_tips == 8:
-                    ty = round(84.14 + (offset_rows * 9.0), 2)
+                    ty = 84.14
                 else:
-                    ty = round(84.14 - (8 - num_tips) * 9.06 + (offset_rows * 9.0), 2)
+                    ty = round(84.14 - (8 - num_tips) * 9.06, 2)
             else:
-                row_char = w_str[0] if (w_str and w_str[0] in "ABCDEFGH") else "A"
-                r_idx = ord(row_char) - ord('A')
-                # Single tip with Nozzle 1 (Channel A):
-                # When carriage is at Y=84.14mm, Nozzle 1 is at Row A (52.64mm)
-                ty = round(84.14 + (r_idx + offset_rows) * 9.0, 2)
-            self.logger.info(f"🎯 [MACHINE 2: 1-10µL] Resolved Slot 4 tip pickup: X={tx:.2f}mm, Y={ty:.2f}mm (8-tip Y=84.14mm, 5-tip Y=56.96mm)")
+                if num_tips == 5:
+                    ty = 151.13
+                elif num_tips == 8:
+                    ty = 178.31
+                else:
+                    ty = round(178.31 - (8 - num_tips) * 9.06, 2)
+
+            offset_rows = int((step or {}).get('tip_offset_rows', 0) or 0)
+            ty += offset_rows * 9.0
+
+            cal = getattr(self, 'eight_ch_cal_offset', {"X": 0.0, "Y": 0.0, "Z": 0.0})
+            tx += float(cal.get("X", 0.0))
+            ty += float(cal.get("Y", 0.0))
+
+            max_x = float(self.lims.machine_config.get("max_x_mm", 300.0))
+            max_y = float(self.lims.machine_config.get("max_y_mm", 300.0))
+            tx = max(0.0, min(tx, max_x))
+            ty = max(0.0, min(ty, max_y))
+
+            self.logger.info(f"🎯 [MACHINE 2: 1-10µL] Resolved {slot_name} {well_id}: X={tx:.2f}mm, Y={ty:.2f}mm (Slot Center Y={'84.14' if slot_name in ('Slot_3', 'Slot_4') else '178.31'}mm)")
             return tx, ty
 
         if not is_8ch_step:
@@ -6233,36 +6268,7 @@ class LIMSMasterApp:
         w_str = str(well_id or "A1").strip().upper()
         col_digits = "".join(ch for ch in w_str if ch.isdigit()) or "1"
 
-        if is_10ul and slot_name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
-            # Machine 2 (1-10 µL): Preserve exact active nozzle alignment across all steps (Pickup, Aspirate, Dispense)
-            # For 5-tip pickup ("A-E"), tips are on Nozzles 4..8.
-            # Using Y=56.96mm aligns Nozzles 4..8 directly with Rows A..E.
-            m_ch = str((step or {}).get("mounted_channels", "A-H")).strip().upper()
-            num_tips = 8
-            if m_ch:
-                if "-" in m_ch:
-                    parts = m_ch.split("-")
-                    if len(parts) == 2 and parts[0] in "ABCDEFGH" and parts[1] in "ABCDEFGH":
-                        num_tips = max(1, min(8, ord(parts[1]) - ord(parts[0]) + 1))
-                elif len(m_ch) == 1 and m_ch in "ABCDEFGH":
-                    num_tips = 1
-            ca = self._calculate_xy(slot_name, f"A{col_digits}")
-            tx = ca[0] if ca else (105.66 if slot_name in ("Slot_4", "Slot_6") else 243.81)
-            if slot_name in ("Slot_3", "Slot_4"):
-                if num_tips == 5:
-                    ty = 56.96
-                elif num_tips == 8:
-                    ty = 84.14
-                else:
-                    ty = round(84.14 - (8 - num_tips) * 9.06, 2)
-            else:
-                if num_tips == 5:
-                    ty = round(56.96 + 94.17, 2)
-                elif num_tips == 8:
-                    ty = 178.31
-                else:
-                    ty = round(178.31 - (8 - num_tips) * 9.06, 2)
-        elif kind in ("ehm48", "plate96", "tip_rack"):
+        if kind in ("ehm48", "plate96", "tip_rack"):
             ca = self._calculate_xy(slot_name, f"A{col_digits}")
             ch = self._calculate_xy(slot_name, f"H{col_digits}")
             if ca and ch and (ca[0] != 0.0 or ca[1] != 0.0):
@@ -6379,18 +6385,20 @@ class LIMSMasterApp:
             is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
             is_triplicate = "triplicate" in str(getattr(self, "current_protocol_file", "")).lower() or "triplicate" in str(getattr(self, "loaded_protocol_name", "")).lower()
             is_96 = (kind in ("plate96", None)) or is_triplicate or "96" in str(getattr(labware_obj, "source_file", "")).lower() or "96" in str(getattr(labware_obj, "name", "")).lower()
-            if (is_10ul or is_8ch) and slot_name in ("Slot_3", "Slot_5") and is_96:
+            # Machine 2 (1-10 µL): Enforce unified plate / EHM depth across Slot 3, Slot 5, and Slot 6
+            # (as deep as 96-well: Aspirate/Mix = 78.40mm, Dispense = 68.43mm)
+            if is_10ul and slot_name in ("Slot_3", "Slot_5", "Slot_6") and (kind in ("ehm48", "plate96") or is_96):
                 if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
-                    return min(float(self.calibrated_heights.get("plate96_aspirate_z", 78.40)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("ehm_aspirate_z", self.calibrated_heights.get("plate96_aspirate_z", 78.40))) + slot_z_offset + extra_z, 103.5)
                 elif action == "Dispense Media":
-                    return min(float(self.calibrated_heights.get("plate96_dispense_z", 68.43)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("ehm_dispense_z", self.calibrated_heights.get("plate96_dispense_z", 68.43))) + slot_z_offset + extra_z, 103.5)
 
             if kind == "ehm48":
                 if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
-                    return min(float(self.calibrated_heights.get("ehm_aspirate_z", 24.17)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("ehm_aspirate_z", 78.40 if is_10ul else 24.17)) + slot_z_offset + extra_z, 103.5)
                 elif action == "Dispense Media":
-                    return min(float(self.calibrated_heights.get("ehm_dispense_z", 14.17)) + slot_z_offset + extra_z, 103.5)
-            elif kind == "plate96" or (is_8ch and slot_name in ("Slot_3", "Slot_5")):
+                    return min(float(self.calibrated_heights.get("ehm_dispense_z", 68.43 if is_10ul else 14.17)) + slot_z_offset + extra_z, 103.5)
+            elif kind == "plate96" or (is_8ch and slot_name in ("Slot_3", "Slot_5") and is_96):
                 if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
                     return min(float(self.calibrated_heights.get("plate96_aspirate_z", 78.40)) + slot_z_offset + extra_z, 103.5)
                 elif action == "Dispense Media":

@@ -51,10 +51,10 @@ def run_all_tests():
     assert abs(float(m2_heights.get("tip_10ul_limit_z", 0.0)) - 75.0) < 1e-4, "M2 limit Z must be 75.0mm"
     assert abs(float(m2_heights.get("tip_10ul_approach_z", 0.0)) - 50.0) < 1e-4, "M2 approach Z must be 50.0mm"
     assert abs(float(m2_heights.get("tip_10ul_extra_press_mm", 0.0)) - 2.5) < 1e-4, "M2 press must be 2.5mm"
-    assert abs(float(m2_heights.get("ehm_aspirate_z", 0.0)) - 69.90) < 1e-4, "M2 EHM aspirate Z must be 69.90mm (8.5mm raised)"
-    assert abs(float(m2_heights.get("ehm_dispense_z", 0.0)) - 59.93) < 1e-4, "M2 EHM dispense Z must be 59.93mm"
+    assert abs(float(m2_heights.get("ehm_aspirate_z", 0.0)) - 78.40) < 1e-4, "M2 EHM aspirate Z must be 78.40mm (deep as 96-well)"
+    assert abs(float(m2_heights.get("ehm_dispense_z", 0.0)) - 68.43) < 1e-4, "M2 EHM dispense Z must be 68.43mm"
     assert abs(float(m2_heights.get("reservoir_7_aspirate_z", 0.0)) - 58.34) < 1e-4, "M2 reservoir aspirate Z must be 58.34mm"
-    print(f"PASS: Machine 2 calibrated heights verified (Collar: {m2_heights.get('tip_10ul_collar_z')}mm, EHM Asp: 69.90mm, Res7 Asp: 58.34mm).")
+    print(f"PASS: Machine 2 calibrated heights verified (Collar: {m2_heights.get('tip_10ul_collar_z')}mm, EHM Asp: 78.40mm, Res7 Asp: 58.34mm).")
 
     # Switch to Machine 1 and verify complete isolation
     app.switch_machine_profile("machine_1_8x1000", save_to_disk=False)
@@ -66,7 +66,7 @@ def run_all_tests():
 
     # Switch back to Machine 2
     app.switch_machine_profile("machine_2_1_10ul", save_to_disk=False)
-    assert abs(float(app.calibrated_heights.get("ehm_aspirate_z", 0.0)) - 69.90) < 1e-4
+    assert abs(float(app.calibrated_heights.get("ehm_aspirate_z", 0.0)) - 78.40) < 1e-4
     print("PASS: Switched back to Machine 2 cleanly; calibrations intact.")
 
     # -------------------------------------------------------------------------
@@ -214,8 +214,8 @@ def run_all_tests():
     app.lims.deck_labware["Slot_5"] = ehm_lw
 
     # Machine 2 EHM nominal depth
-    nom_z = float(app.calibrated_heights.get("ehm_aspirate_z", 69.90))
-    assert abs(nom_z - 69.90) < 1e-4
+    nom_z = float(app.calibrated_heights.get("ehm_aspirate_z", 78.40))
+    assert abs(nom_z - 78.40) < 1e-4
 
     # Simulate jog delta adjustment (+0.5 mm)
     new_verified_z = round(nom_z + 0.5, 2)
@@ -228,9 +228,9 @@ def run_all_tests():
     assert abs(float(loaded_profile["ehm_aspirate_z"]) - new_verified_z) < 1e-4
     print(f"PASS: Visual jog verification saved {new_verified_z}mm directly into Machine 2 heights.json.")
 
-    # Restore original 69.90 mm
-    app.calibrated_heights["ehm_aspirate_z"] = 69.90
-    app.calibrated_heights["ehm_dispense_z"] = 59.93
+    # Restore original 78.40 mm
+    app.calibrated_heights["ehm_aspirate_z"] = 78.40
+    app.calibrated_heights["ehm_dispense_z"] = 68.43
     app.save_calibrated_heights()
 
     # -------------------------------------------------------------------------
@@ -278,7 +278,7 @@ def run_all_tests():
     app.session_step_audit_log = [
         {"step_idx": 1, "timestamp": "12:00:00", "action": "Pick Up Tip", "slot": "Slot_4", "well": "A1", "vol": 0.0, "z": 64.49, "status": "SUCCESS", "note": "Pick tips"},
         {"step_idx": 2, "timestamp": "12:00:15", "action": "Aspirate Media", "slot": "Slot_3", "well": "A1", "vol": 7.5, "z": 78.40, "status": "SUCCESS", "note": "Aspirate drug"},
-        {"step_idx": 3, "timestamp": "12:00:30", "action": "Dispense Media", "slot": "Slot_5", "well": "A1", "vol": 7.5, "z": 59.93, "status": "SUCCESS", "note": "Dispense drug"}
+        {"step_idx": 3, "timestamp": "12:00:30", "action": "Dispense Media", "slot": "Slot_5", "well": "A1", "vol": 7.5, "z": 68.43, "status": "SUCCESS", "note": "Dispense drug"}
     ]
 
     logs_dir = app.get_logs_dir()

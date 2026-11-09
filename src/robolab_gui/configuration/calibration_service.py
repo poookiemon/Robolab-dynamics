@@ -26,7 +26,7 @@ class CalibrationService:
             return self.active_profile.get_height("tip_rack_collar_z", 64.49)
         elif "res" in norm_slot or slot_name in ("Slot_6", "Slot 6"):
             return self.active_profile.get_height("reservoir_7_aspirate_z", 58.34)
-        return self.active_profile.get_height("plate_aspirate_z", 69.90)
+        return self.active_profile.get_height("plate_aspirate_z", 78.40)
 
     def save_verified_height(self, slot_name: str, well_id: str, verified_z: float) -> None:
         """Persist a verified Z height from slot Z-check tool directly into active profile."""
