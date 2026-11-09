@@ -72,14 +72,25 @@ class NozzleLayout:
 
         if multi:
             if is_10ul and slot_name in ("Slot_3", "Slot_4"):
-                # Physically calibrated 8-channel seating center for Machine 2 (1-10 µL) (+4.0mm fine calibration applied)
-                m_ch = str(mounted_channels or "A-H").strip().upper()
-                c_start = ord(m_ch[0]) - ord('A') if (m_ch and m_ch[0] in cls.ROW_LETTERS) else 0
-                base_y = round(88.14 - (c_start * cls.NOZZLE_PITCH_MM), 2)
+                # Machine 2 (1-10 µL): Physically verified seated coordinates
+                # 8 tips: Y=84.14mm | 5 tips (Rows A-E): Y=56.96mm
+                mask = cls.parse_channel_mask(mounted_channels)
+                num_tips = len(mask) if mask else 8
+                if num_tips == 5:
+                    base_y = 56.96
+                elif num_tips == 8:
+                    base_y = 84.14
+                else:
+                    base_y = round(84.14 - (8 - num_tips) * 9.06, 2)
             elif is_10ul and slot_name in ("Slot_5", "Slot_6"):
-                m_ch = str(mounted_channels or "A-H").strip().upper()
-                c_start = ord(m_ch[0]) - ord('A') if (m_ch and m_ch[0] in cls.ROW_LETTERS) else 0
-                base_y = round(182.31 - (c_start * cls.NOZZLE_PITCH_MM), 2)
+                mask = cls.parse_channel_mask(mounted_channels)
+                num_tips = len(mask) if mask else 8
+                if num_tips == 5:
+                    base_y = round(56.96 + 94.17, 2)
+                elif num_tips == 8:
+                    base_y = 178.31
+                else:
+                    base_y = round(178.31 - (8 - num_tips) * 9.06, 2)
             elif slot_name in ("Slot_3", "Slot_4"):
                 base_y = cls.DEFAULT_8CH_CENTER_Y
             elif slot_name in ("Slot_5", "Slot_6"):
@@ -90,9 +101,9 @@ class NozzleLayout:
             return base_y + (tip_offset_rows * cls.NOZZLE_PITCH_MM)
         else:
             if is_10ul and slot_name in ("Slot_3", "Slot_4"):
-                return round(88.14 + (tip_offset_rows * cls.NOZZLE_PITCH_MM), 2)
+                return round(84.14 + (tip_offset_rows * cls.NOZZLE_PITCH_MM), 2)
             elif is_10ul and slot_name in ("Slot_5", "Slot_6"):
-                return round(182.31 + (tip_offset_rows * cls.NOZZLE_PITCH_MM), 2)
+                return round(178.31 + (tip_offset_rows * cls.NOZZLE_PITCH_MM), 2)
             return target_a1_y + cls.MANIFOLD_HALF_SPAN_MM + (tip_offset_rows * cls.NOZZLE_PITCH_MM)
 
     @classmethod

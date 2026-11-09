@@ -111,23 +111,68 @@ def run_all_tests():
         "mounted_channels": "A-E",
     }
 
-    t_coords = app._resolve_step_xy(step_5tip, "Slot_4", "A1")
-    assert t_coords is not None
-    tx, ty = t_coords
+    t_coords_5 = app._resolve_step_xy(step_5tip, "Slot_4", "A1")
+    assert t_coords_5 is not None
+    tx5, ty5 = t_coords_5
 
-    print(f"Resolved Carriage Position for 5-Tip Pickup (Machine 2: 1-10 µL): X = {tx:.2f} mm, Y = {ty:.2f} mm")
-    assert abs(tx - 105.66) < 1e-2, f"Expected X=105.66, got {tx}"
-    assert abs(ty - 88.14) < 1e-2, f"Expected Y=88.14 (physically seated position), got {ty}"
+    print(f"Resolved Carriage Position for 5-Tip Pickup (Machine 2: 1-10 µL): X = {tx5:.2f} mm, Y = {ty5:.2f} mm")
+    assert abs(tx5 - 105.66) < 1e-2, f"Expected X=105.66, got {tx5}"
+    assert abs(ty5 - 56.96) < 1e-2, f"Expected Y=56.96 (physically seated position), got {ty5}"
 
-    # Verify column pitch progression across all 12 columns
+    # Step: Pick Up Tip with mounted_channels = "A-H" (8 tips)
+    step_8tip = {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A1",
+        "volume": 0.0,
+        "labware": "tip_rack_1000ul.json",
+        "eight_ch_symmetric": True,
+        "mounted_channels": "A-H",
+    }
+    t_coords_8 = app._resolve_step_xy(step_8tip, "Slot_4", "A1")
+    assert t_coords_8 is not None
+    tx8, ty8 = t_coords_8
+
+    print(f"Resolved Carriage Position for 8-Tip Pickup (Machine 2: 1-10 µL): X = {tx8:.2f} mm, Y = {ty8:.2f} mm")
+    assert abs(tx8 - 105.66) < 1e-2, f"Expected X=105.66, got {tx8}"
+    assert abs(ty8 - 84.14) < 1e-2, f"Expected Y=84.14 (physically seated position), got {ty8}"
+
+    # Verify column pitch progression across all 12 columns for 8 tips
+    for col_idx in range(1, 13):
+        col_coords = app._resolve_step_xy(step_8tip, "Slot_4", f"A{col_idx}")
+        expected_x = round(105.66 - ((col_idx - 1) * 9.0), 2)
+        assert abs(col_coords[0] - expected_x) < 1e-2, f"Col {col_idx} expected X={expected_x}, got {col_coords[0]}"
+        assert abs(col_coords[1] - 84.14) < 1e-2, f"Col {col_idx} expected Y=84.14, got {col_coords[1]}"
+
+    # Verify column pitch progression across all 12 columns for 5 tips
     for col_idx in range(1, 13):
         col_coords = app._resolve_step_xy(step_5tip, "Slot_4", f"A{col_idx}")
         expected_x = round(105.66 - ((col_idx - 1) * 9.0), 2)
         assert abs(col_coords[0] - expected_x) < 1e-2, f"Col {col_idx} expected X={expected_x}, got {col_coords[0]}"
-        assert abs(col_coords[1] - 88.14) < 1e-2, f"Col {col_idx} expected Y=88.14, got {col_coords[1]}"
+        assert abs(col_coords[1] - 56.96) < 1e-2, f"Col {col_idx} expected Y=56.96, got {col_coords[1]}"
 
-    print("PASS: Machine 2 (1-10 µL ONLY) tip pickup verified seated at X=105.66mm, Y=88.14mm.")
+    print("PASS: Machine 2 (1-10 µL ONLY) 8-tip pickup verified at X=105.66mm, Y=84.14mm.")
+    print("PASS: Machine 2 (1-10 µL ONLY) 5-tip pickup verified at X=105.66mm, Y=56.96mm.")
     print("PASS: All 12 columns progress cleanly at 9.0mm pitch without mid-wall collisions.")
+
+    # Verify Slot 3 and Slot 5 Z-depth for 96-well plate (unified at 78.40mm deep, 68.43mm brim)
+    p96_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "labware", "generic_96_well_plate.json")
+    p96_lw = Labware(p96_path)
+    p96_lw.source_file = "generic_96_well_plate.json"
+    app.lims.deck_labware["Slot_3"] = p96_lw
+    app.lims.deck_labware["Slot_5"] = p96_lw
+
+    s3_asp_z = app._calculate_z("Aspirate Media", p96_lw, "A1", "auto", 0.0, "Slot_3")
+    s3_disp_z = app._calculate_z("Dispense Media", p96_lw, "A1", "auto", 0.0, "Slot_3")
+    s5_asp_z = app._calculate_z("Aspirate Media", p96_lw, "A1", "auto", 0.0, "Slot_5")
+    s5_disp_z = app._calculate_z("Dispense Media", p96_lw, "A1", "auto", 0.0, "Slot_5")
+
+    assert s3_asp_z == 78.40, f"Expected Slot 3 aspirate Z=78.40, got {s3_asp_z}"
+    assert s3_disp_z == 68.43, f"Expected Slot 3 dispense Z=68.43, got {s3_disp_z}"
+    assert s5_asp_z == 78.40, f"Expected Slot 5 aspirate Z=78.40, got {s5_asp_z}"
+    assert s5_disp_z == 68.43, f"Expected Slot 5 dispense Z=68.43, got {s5_disp_z}"
+    print("PASS: Slot 3 and Slot 5 96-well plate Z depths are unified at 78.40mm (aspirate/mix) and 68.43mm (dispense).")
 
     # -------------------------------------------------------------------------
     # TEST 4: Slot-by-Slot Tip Z-Verification Tool

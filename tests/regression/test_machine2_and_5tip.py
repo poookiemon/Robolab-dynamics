@@ -21,39 +21,46 @@ def test_machine_2_calibrated_heights_isolation(tmp_path):
 
 
 def test_machine_2_8ch_and_5tip_kinematics():
-    """Verify Machine 2 (1-10 µL) 8-tip and 5-tip pickup aligns at verified seated Y=88.14mm."""
-    # 8-tip pickup
+    """Verify Machine 2 (1-10 µL) 8-tip and 5-tip pickup aligns at verified seated coordinates."""
+    # 8-tip pickup: Carriage Y=84.14mm (Col 1 at X=105.66mm, Row A=52.64mm)
     cy_8ch = NozzleLayout.get_carriage_y_for_manifold(
-        target_a1_y=56.64,
+        target_a1_y=52.64,
         mounted_channels="A-H",
         eight_ch_symmetric=True,
         is_8ch_head=True,
         slot_name="Slot_4",
         is_10ul=True,
     )
-    assert cy_8ch == 88.14
+    assert cy_8ch == 84.14
 
-    # 5-tip pickup (Channels A-E)
+    # 5-tip pickup: Carriage Y=56.96mm (Col 1 at X=105.57mm, Rows A-E)
     cy_5tip = NozzleLayout.get_carriage_y_for_manifold(
-        target_a1_y=56.64,
+        target_a1_y=52.64,
         mounted_channels="A-E",
-        eight_ch_symmetric=False,
+        eight_ch_symmetric=True,
         is_8ch_head=True,
         slot_name="Slot_4",
         is_10ul=True,
     )
-    assert cy_5tip == 88.14
+    assert cy_5tip == 56.96
 
-    # Calculate nozzle positions at Y=88.14
+    # Calculate nozzle positions at Y=84.14
     nozzles = NozzleLayout.get_nozzle_positions_y(cy_8ch)
-    assert nozzles[0] == 56.64  # Row A
-    assert nozzles[1] == 65.64  # Row B
-    assert nozzles[2] == 74.64  # Row C
-    assert nozzles[3] == 83.64  # Row D
-    assert nozzles[4] == 92.64  # Row E
-    assert nozzles[5] == 101.64 # Row F
-    assert nozzles[6] == 110.64 # Row G
-    assert nozzles[7] == 119.64 # Row H
+    assert nozzles[0] == 52.64  # Row A
+    assert nozzles[1] == 61.64  # Row B
+    assert nozzles[2] == 70.64  # Row C
+    assert nozzles[3] == 79.64  # Row D
+    assert nozzles[4] == 88.64  # Row E
+    assert nozzles[5] == 97.64  # Row F
+    assert nozzles[6] == 106.64 # Row G
+    assert nozzles[7] == 115.64 # Row H
+
+
+def test_machine_2_slot3_and_slot5_z_depth():
+    """Verify Machine 2 (1-10 µL) Slot 5 matches Slot 3 exact calibrated 96-well plate depths."""
+    from robolab_gui.geometry.coordinates import DEFAULT_SLOT_96_PLATE_Z
+    assert DEFAULT_SLOT_96_PLATE_Z["Slot_3"] == (78.40, 68.43)
+    assert DEFAULT_SLOT_96_PLATE_Z["Slot_5"] == (78.40, 68.43)
 
 
 def test_5_tip_pickup_kinematics():

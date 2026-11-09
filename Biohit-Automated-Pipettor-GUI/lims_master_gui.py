@@ -3465,16 +3465,16 @@ class LIMSMasterApp:
             "Slot_2": "(Empty / Clearance)",
             "Slot_3": "generic_96_well_plate.json",
             "Slot_4": "tip_rack_1000ul.json",
-            "Slot_5": "myriamed_48_well.json",
-            "Slot_6": "myriamed_48_well.json",
+            "Slot_5": "generic_96_well_plate.json",
+            "Slot_6": "generic_96_well_plate.json",
         }
         slot_descs = {
             "Slot_1": "Empty clearance zone",
             "Slot_2": "Empty clearance zone",
             "Slot_3": "Prepped DMSO-Drug Diluted Ready Plate (96-Well, Rows A..E: 5 Drugs x 6 Concs)",
             "Slot_4": "1-10 µL Tip Rack (36 Fresh Tips: Cols 1..5 [A1..D5]; Graveyard: Cols 7..11 [A7..D11] at Z=40.5mm)",
-            "Slot_5": "Plate 1 (Myriamed 48-Well EHM: Triplicates for Drug 1 [Rows A-C], Drug 2 [Rows D-F], Drug 3 Reps 1-2 [Rows G-H])",
-            "Slot_6": "Plate 2 (Myriamed 48-Well EHM: Triplicates for Drug 3 Rep 3 [Row A], Drug 4 [Rows B-D], Drug 5 [Rows E-G], Control [Row H])",
+            "Slot_5": "Destination 96-Well Assay Plate 1 (Triplicates for Drug 1 [Rows A-C], Drug 2 [Rows D-F], Drug 3 Reps 1-2 [Rows G-H])",
+            "Slot_6": "Destination 96-Well Assay Plate 2 (Triplicates for Drug 3 Rep 3 [Row A], Drug 4 [Rows B-D], Drug 5 [Rows E-G], Control [Row H])",
         }
         with open(target_path, "r") as f:
             seq = json.load(f)
@@ -5912,10 +5912,10 @@ class LIMSMasterApp:
     SLOT_A1_ORIGINS = {
         "Slot_1": (238.2, 13.0),   # calibrated (front right, height-block slot)
         "Slot_2": (95.5, 13.0),    # calibrated (front left, 3-well reservoir/waste trough A1)
-        "Slot_3": (243.81, 56.64), # calibrated (Machine 2 1-10µL: A1 X=243.81, A1 Y=56.64, 8-ch center Y=88.14)
-        "Slot_4": (105.66, 56.64), # calibrated (Machine 2 1-10µL: A1 X=105.66, A1 Y=56.64, 8-ch center Y=88.14)
-        "Slot_5": (243.24, 150.81), # calibrated (Machine 2: 8-ch center Y=182.31 -> A1 Y=150.81)
-        "Slot_6": (105.60, 150.81), # calibrated (Machine 2: 8-ch center Y=182.31 -> A1 Y=150.81; 7-col res uses Y=183.64)
+        "Slot_3": (243.81, 52.64), # calibrated (Machine 2 1-10µL: A1 X=243.81, A1 Y=52.64, 8-ch center Y=84.14)
+        "Slot_4": (105.66, 52.64), # calibrated (Machine 2 1-10µL: A1 X=105.66, A1 Y=52.64, 8-ch center Y=84.14)
+        "Slot_5": (243.24, 146.81), # calibrated (Machine 2: 8-ch center Y=178.31 -> A1 Y=146.81)
+        "Slot_6": (105.60, 146.81), # calibrated (Machine 2: 8-ch center Y=178.31 -> A1 Y=146.81)
     }
 
     # Calibrated per-slot column tables for 96-format labware (override pitch math)
@@ -6023,7 +6023,14 @@ class LIMSMasterApp:
             ri = r_idx if (r_idx is not None and 0 <= r_idx < 8) else 0
             base_x = 105.66 if slot_name == "Slot_4" else 243.81
             learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0)) if slot_name == "Slot_4" else (0.0, 0.0)
-            return round(base_x - (ci * 9.0) + learned_dx, 2), round(56.64 + (ri * 9.0) + learned_dy, 2)
+            return round(base_x - (ci * 9.0) + learned_dx, 2), round(52.64 + (ri * 9.0) + learned_dy, 2)
+
+        if slot_name in ("Slot_5", "Slot_6") and is_10ul and (getattr(self, "_lw_kind", lambda x: "")(self.lims.deck_labware.get(slot_name)) == "plate96" or "triplicate" in str(getattr(self, "current_protocol_file", "")).lower() or "triplicate" in str(getattr(self, "loaded_protocol_name", "")).lower()):
+            r_idx, c_idx = self._parse_well(well_id)
+            ci = c_idx if (c_idx is not None and 0 <= c_idx < 12) else 0
+            ri = r_idx if (r_idx is not None and 0 <= r_idx < 8) else 0
+            base_x = 243.24 if slot_name == "Slot_5" else 105.60
+            return round(base_x - (ci * 9.0), 2), round(146.81 + (ri * 9.0), 2)
 
         # 0. Object-Oriented DeckManager Kinematics
         if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
@@ -6066,16 +6073,16 @@ class LIMSMasterApp:
             if r_idx is not None and 0 <= r_idx < 8 and 0 <= c_idx < 12:
                 if kind == "tip_rack":
                     # Tip rack A1 physically calibrated:
-                    # Machine 2 (1-10 µL ONLY): physically seated reference at X=105.66, Y=55.64 (8-ch center Y=87.14)
+                    # Machine 2 (1-10 µL ONLY): physically seated reference at X=105.66, Y=52.64 (8-ch center Y=84.14)
                     # Machine 1 (8x1000 µL): standard A1 at X=105.60, Y=53.02 (8-ch center Y=84.52)
                     learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
                     is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
                     if slot_name == "Slot_4":
                         if is_10ul:
-                            return (105.66 - (c_idx * 9.0)) + learned_dx, (55.64 + (r_idx * 9.0)) + learned_dy
+                            return (105.66 - (c_idx * 9.0)) + learned_dx, (52.64 + (r_idx * 9.0)) + learned_dy
                         return (105.60 - (c_idx * 9.0)) + learned_dx, (53.02 + (r_idx * 9.0)) + learned_dy
                     if is_10ul:
-                        return (ox - (c_idx * 9.0)) + learned_dx, (55.64 + (r_idx * 9.0)) + learned_dy
+                        return (ox - (c_idx * 9.0)) + learned_dx, (52.64 + (r_idx * 9.0)) + learned_dy
                     return (ox - (c_idx * 9.0)) + learned_dx, (oy + (r_idx * 9.0)) + learned_dy
                 col_table = self.SLOT_96_COL_OVERRIDES.get(slot_name)
                 tx = col_table[c_idx] if col_table else ox - (c_idx * 9.0)
@@ -6178,7 +6185,11 @@ class LIMSMasterApp:
         kind = self._lw_kind(lw_obj)
         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
 
-        # Machine 2 (1-10 µL ONLY): Tip rack operations (pickup / discard) with +4.0mm fine calibration (Center Y=88.14mm, Row A=56.64mm)
+        # Machine 2 (1-10 µL ONLY): Tip rack operations (pickup / discard)
+        # Physically verified seating calibration:
+        # 8 tips: (X=105.66, Y=84.14, Z=63.96)
+        # 5 tips: (X=105.57, Y=56.96, Z=64.97)
+        # Arbitrary n tips: Y = 84.14 - (8 - n) * 9.06mm
         is_tip_op = (kind == "tip_rack" or slot_name == "Slot_4" or (step or {}).get("action") == "Pick Up Tip")
         if is_tip_op and is_10ul:
             w_str = str(well_id or "A1").strip().upper()
@@ -6187,22 +6198,29 @@ class LIMSMasterApp:
             tx = round(105.66 - (col_i * 9.0), 2)
             offset_rows = int((step or {}).get('tip_offset_rows', 0) or 0)
 
-            # Center for all 8 tips on Machine 2 is calibrated at Y=88.14mm (Col 1 at X=105.66mm, Row A at Y=56.64mm).
-            # For n-channel pickup (e.g. 8-tip "A-H", 5-tip "A-E", 4-tip "A-D"):
-            # Carriage aligns active nozzle 0 (Channel A) with target well row (default Row A):
             if is_8ch_step:
                 m_ch = str((step or {}).get("mounted_channels", "A-H")).strip().upper()
-                c_start = 0
-                if m_ch and m_ch[0] in "ABCDEFGH":
-                    c_start = ord(m_ch[0]) - ord('A')
-                row_char = w_str[0] if (w_str and w_str[0] in "ABCDEFGH") else "A"
-                r_start = ord(row_char) - ord('A')
-                ty = round(88.14 + (r_start - c_start + offset_rows) * 9.0, 2)
+                num_tips = 8
+                if m_ch:
+                    if "-" in m_ch:
+                        parts = m_ch.split("-")
+                        if len(parts) == 2 and parts[0] in "ABCDEFGH" and parts[1] in "ABCDEFGH":
+                            num_tips = max(1, min(8, ord(parts[1]) - ord(parts[0]) + 1))
+                    elif len(m_ch) == 1 and m_ch in "ABCDEFGH":
+                        num_tips = 1
+                if num_tips == 5:
+                    ty = round(56.96 + (offset_rows * 9.0), 2)
+                elif num_tips == 8:
+                    ty = round(84.14 + (offset_rows * 9.0), 2)
+                else:
+                    ty = round(84.14 - (8 - num_tips) * 9.06 + (offset_rows * 9.0), 2)
             else:
                 row_char = w_str[0] if (w_str and w_str[0] in "ABCDEFGH") else "A"
                 r_idx = ord(row_char) - ord('A')
-                ty = round(88.14 + (r_idx + offset_rows) * 9.0, 2)
-            self.logger.info(f"🎯 [MACHINE 2: 1-10µL] Resolved Slot 4 tip pickup: X={tx:.2f}mm, Y={ty:.2f}mm (Center Y=88.14mm, Row A=56.64mm)")
+                # Single tip with Nozzle 1 (Channel A):
+                # When carriage is at Y=84.14mm, Nozzle 1 is at Row A (52.64mm)
+                ty = round(84.14 + (r_idx + offset_rows) * 9.0, 2)
+            self.logger.info(f"🎯 [MACHINE 2: 1-10µL] Resolved Slot 4 tip pickup: X={tx:.2f}mm, Y={ty:.2f}mm (8-tip Y=84.14mm, 5-tip Y=56.96mm)")
             return tx, ty
 
         if not is_8ch_step:
@@ -6334,6 +6352,14 @@ class LIMSMasterApp:
 
         # Persistent 8-channel / calibrated heights memory lookup (GUI remembers operator depths)
         if hasattr(self, 'calibrated_heights'):
+            is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
+            is_triplicate = "triplicate" in str(getattr(self, "current_protocol_file", "")).lower() or "triplicate" in str(getattr(self, "loaded_protocol_name", "")).lower()
+            if (is_10ul or is_8ch) and slot_name in ("Slot_3", "Slot_5") and (kind == "plate96" or is_triplicate):
+                if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
+                    return min(float(self.calibrated_heights.get("plate96_aspirate_z", 78.40)) + slot_z_offset + extra_z, 103.5)
+                elif action == "Dispense Media":
+                    return min(float(self.calibrated_heights.get("plate96_dispense_z", 68.43)) + slot_z_offset + extra_z, 103.5)
+
             if kind == "ehm48":
                 if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
                     return min(float(self.calibrated_heights.get("ehm_aspirate_z", 24.17)) + slot_z_offset + extra_z, 103.5)
