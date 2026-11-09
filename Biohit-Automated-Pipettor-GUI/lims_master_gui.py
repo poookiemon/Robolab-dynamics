@@ -6354,7 +6354,8 @@ class LIMSMasterApp:
         if hasattr(self, 'calibrated_heights'):
             is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
             is_triplicate = "triplicate" in str(getattr(self, "current_protocol_file", "")).lower() or "triplicate" in str(getattr(self, "loaded_protocol_name", "")).lower()
-            if (is_10ul or is_8ch) and slot_name in ("Slot_3", "Slot_5") and (kind == "plate96" or is_triplicate):
+            is_96 = (kind in ("plate96", None)) or is_triplicate or "96" in str(getattr(labware_obj, "source_file", "")).lower() or "96" in str(getattr(labware_obj, "name", "")).lower()
+            if (is_10ul or is_8ch) and slot_name in ("Slot_3", "Slot_5") and is_96:
                 if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
                     return min(float(self.calibrated_heights.get("plate96_aspirate_z", 78.40)) + slot_z_offset + extra_z, 103.5)
                 elif action == "Dispense Media":
