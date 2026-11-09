@@ -6238,7 +6238,36 @@ class LIMSMasterApp:
         w_str = str(well_id or "A1").strip().upper()
         col_digits = "".join(ch for ch in w_str if ch.isdigit()) or "1"
 
-        if kind in ("ehm48", "plate96", "tip_rack"):
+        if is_10ul and slot_name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
+            # Machine 2 (1-10 µL): Preserve exact active nozzle alignment across all steps (Pickup, Aspirate, Dispense)
+            # For 5-tip pickup ("A-E"), tips are on Nozzles 4..8.
+            # Using Y=56.96mm aligns Nozzles 4..8 directly with Rows A..E.
+            m_ch = str((step or {}).get("mounted_channels", "A-H")).strip().upper()
+            num_tips = 8
+            if m_ch:
+                if "-" in m_ch:
+                    parts = m_ch.split("-")
+                    if len(parts) == 2 and parts[0] in "ABCDEFGH" and parts[1] in "ABCDEFGH":
+                        num_tips = max(1, min(8, ord(parts[1]) - ord(parts[0]) + 1))
+                elif len(m_ch) == 1 and m_ch in "ABCDEFGH":
+                    num_tips = 1
+            ca = self._calculate_xy(slot_name, f"A{col_digits}")
+            tx = ca[0] if ca else (105.66 if slot_name in ("Slot_4", "Slot_6") else 243.81)
+            if slot_name in ("Slot_3", "Slot_4"):
+                if num_tips == 5:
+                    ty = 56.96
+                elif num_tips == 8:
+                    ty = 84.14
+                else:
+                    ty = round(84.14 - (8 - num_tips) * 9.06, 2)
+            else:
+                if num_tips == 5:
+                    ty = round(56.96 + 94.17, 2)
+                elif num_tips == 8:
+                    ty = 178.31
+                else:
+                    ty = round(178.31 - (8 - num_tips) * 9.06, 2)
+        elif kind in ("ehm48", "plate96", "tip_rack"):
             ca = self._calculate_xy(slot_name, f"A{col_digits}")
             ch = self._calculate_xy(slot_name, f"H{col_digits}")
             if ca and ch and (ca[0] != 0.0 or ca[1] != 0.0):

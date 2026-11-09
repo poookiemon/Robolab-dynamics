@@ -156,6 +156,35 @@ def run_all_tests():
     print("PASS: Machine 2 (1-10 µL ONLY) 5-tip pickup verified at X=105.66mm, Y=56.96mm.")
     print("PASS: All 12 columns progress cleanly at 9.0mm pitch without mid-wall collisions.")
 
+    # Verify 5-tip Aspirate and Dispense maintain alignment with Rows A..E (never shifting to D..H)
+    step_5tip_asp = {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A1",
+        "volume": 5.0,
+        "labware": "generic_96_well_plate.json",
+        "eight_ch_symmetric": True,
+        "mounted_channels": "A-E",
+    }
+    coords_asp = app._resolve_step_xy(step_5tip_asp, "Slot_3", "A1")
+    assert abs(coords_asp[1] - 56.96) < 1e-2, f"Expected 5-tip aspirate Y=56.96, got {coords_asp[1]}"
+
+    step_5tip_disp = {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 5.0,
+        "labware": "generic_96_well_plate.json",
+        "eight_ch_symmetric": True,
+        "mounted_channels": "A-E",
+    }
+    coords_disp = app._resolve_step_xy(step_5tip_disp, "Slot_5", "A1")
+    expected_disp_y = round(56.96 + 94.17, 2)
+    assert abs(coords_disp[1] - expected_disp_y) < 1e-2, f"Expected 5-tip dispense Y={expected_disp_y}, got {coords_disp[1]}"
+    print(f"PASS: 5-tip Aspirate (Slot 3 Y={coords_asp[1]}mm) and Dispense (Slot 5 Y={coords_disp[1]}mm) align directly with Rows A..E (prevented D..H offset).")
+
     # Verify Slot 3 and Slot 5 Z-depth for 96-well plate (unified at 78.40mm deep, 68.43mm brim)
     p96_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "labware", "generic_96_well_plate.json")
     p96_lw = Labware(p96_path)
