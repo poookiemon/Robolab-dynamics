@@ -1183,12 +1183,6 @@ def save_all_unified_protocols():
         "ehm_8ch_1000ul_media_change_and_drug_5.0uL.json": build_8ch_media_change_and_drug_steps(5.0),
         "ehm_8ch_1000ul_dmso_drug_dilution.json": build_8ch_dmso_dilution_steps(),
 
-        # 1b. 8-Channel Multi (1-10 µL) Parallel 5-Tip Protocol (Rows A-E, Cols 1..6 -> Both Plates)
-        "ehm_8ch_10ul_parallel_drug_addition_7.5uL.json": build_8ch_10ul_parallel_drug_addition_steps(7.5),
-        "ehm_8ch_10ul_parallel_drug_addition_5.0uL.json": build_8ch_10ul_parallel_drug_addition_steps(5.0),
-        "ehm_8ch_10ul_drug_addition_to_ehm_7.5uL.json": build_8ch_10ul_parallel_drug_addition_steps(7.5),
-        "ehm_8ch_10ul_drug_addition_to_ehm_5.0uL.json": build_8ch_10ul_parallel_drug_addition_steps(5.0),
-
         # 1c. 1-10 µL Triplicate Dose-Response Protocol (36 conditions in triplicate)
         "ehm_1ch_10ul_triplicate_drug_addition_7.5uL.json": build_1ch_10ul_triplicate_drug_addition_steps(7.5),
         "ehm_1ch_10ul_triplicate_drug_addition_5.0uL.json": build_1ch_10ul_triplicate_drug_addition_steps(5.0),

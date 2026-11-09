@@ -307,9 +307,6 @@ class LIMSMasterApp:
 
         # Submenu 3: 8-Channel Multi (1-10 µL) [Drug Addition to EHM]
         m10ch = tk.Menu(protocolmenu, tearoff=0)
-        m10ch.add_command(label="🟢 [5-Tip Parallel] Drug Addition to EHM (7.5 µL) + Mix", command=lambda: self.action_load_10ul_parallel_drug_addition(7.5))
-        m10ch.add_command(label="🟢 [5-Tip Parallel] Drug Addition to EHM (5.0 µL) + Mix", command=lambda: self.action_load_10ul_parallel_drug_addition(5.0))
-        m10ch.add_separator()
         m10ch.add_command(label="🟢 [Triplicate Assay] Drug Addition to EHM (7.5 µL) + Mix", command=lambda: self.action_load_10ul_triplicate_drug_addition(7.5))
         m10ch.add_command(label="🟢 [Triplicate Assay] Drug Addition to EHM (5.0 µL) + Mix", command=lambda: self.action_load_10ul_triplicate_drug_addition(5.0))
         protocolmenu.add_cascade(label="8-Channel Multi (1-10 µL) [Drug Addition to EHM]", menu=m10ch)
@@ -3321,8 +3318,6 @@ class LIMSMasterApp:
             }
         elif "1-10" in p_name or "8×10" in p_name or "10 µl" in p_name or ("10" in p_name and "1000" not in p_name):
             return {
-                "[5-Tip Parallel] Drug Addition to EHM (7.5 µL) + Mix": lambda: self.action_load_10ul_parallel_drug_addition(7.5),
-                "[5-Tip Parallel] Drug Addition to EHM (5.0 µL) + Mix": lambda: self.action_load_10ul_parallel_drug_addition(5.0),
                 "[Triplicate Assay] Drug Addition to EHM (7.5 µL) + Mix": lambda: self.action_load_10ul_triplicate_drug_addition(7.5),
                 "[Triplicate Assay] Drug Addition to EHM (5.0 µL) + Mix": lambda: self.action_load_10ul_triplicate_drug_addition(5.0),
             }
@@ -3465,16 +3460,16 @@ class LIMSMasterApp:
             "Slot_2": "(Empty / Clearance)",
             "Slot_3": "generic_96_well_plate.json",
             "Slot_4": "tip_rack_1000ul.json",
-            "Slot_5": "generic_96_well_plate.json",
-            "Slot_6": "generic_96_well_plate.json",
+            "Slot_5": "myriamed_48_well.json",
+            "Slot_6": "myriamed_48_well.json",
         }
         slot_descs = {
             "Slot_1": "Empty clearance zone",
             "Slot_2": "Empty clearance zone",
             "Slot_3": "Prepped DMSO-Drug Diluted Ready Plate (96-Well, Rows A..E: 5 Drugs x 6 Concs)",
             "Slot_4": "1-10 µL Tip Rack (36 Fresh Tips: Cols 1..5 [A1..D5]; Graveyard: Cols 7..11 [A7..D11] at Z=40.5mm)",
-            "Slot_5": "Destination 96-Well Assay Plate 1 (Triplicates for Drug 1 [Rows A-C], Drug 2 [Rows D-F], Drug 3 Reps 1-2 [Rows G-H])",
-            "Slot_6": "Destination 96-Well Assay Plate 2 (Triplicates for Drug 3 Rep 3 [Row A], Drug 4 [Rows B-D], Drug 5 [Rows E-G], Control [Row H])",
+            "Slot_5": "Destination Plate 1 (Myriamed 48-Well EHM: Triplicates for Drug 1 [Rows A-C], Drug 2 [Rows D-F], Drug 3 Reps 1-2 [Rows G-H])",
+            "Slot_6": "Destination Plate 2 (Myriamed 48-Well EHM: Triplicates for Drug 3 Rep 3 [Row A], Drug 4 [Rows B-D], Drug 5 [Rows E-G], Control [Row H])",
         }
         with open(target_path, "r") as f:
             seq = json.load(f)
