@@ -150,7 +150,7 @@ class LIMSMasterApp:
         default_profile_heights = {
             "tip_rack_pickup_approach_z": 50.0 if ("10ul" in self.active_profile_id or "300" in self.active_profile_id) else 75.0,
             "tip_rack_collar_z": 64.97 if "10ul" in self.active_profile_id else 86.36,
-            "tip_rack_pickup_limit_z": 75.0 if "10ul" in self.active_profile_id else (87.0 if "300" in self.active_profile_id else 98.0),
+            "tip_rack_pickup_limit_z": 75.0 if "10ul" in self.active_profile_id else (92.0 if "300" in self.active_profile_id else 98.0),
             "tip_pickup_extra_press_mm": 1.50 if "300" in self.active_profile_id else 2.50,
             "tip_rack_discard_z": 40.50,
             "ehm_aspirate_z": 78.40 if "10ul" in self.active_profile_id else (86.0 if "300" in self.active_profile_id else 24.17),
@@ -174,6 +174,8 @@ class LIMSMasterApp:
                 self.calibrated_heights["plate96_aspirate_z"] = 97.52
             if float(self.calibrated_heights.get("plate96_dispense_z", 97.52)) in (68.43, 78.4, 78.40):
                 self.calibrated_heights["plate96_dispense_z"] = 97.52
+            if float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 92.0)) <= 88.0:
+                self.calibrated_heights["tip_rack_pickup_limit_z"] = 92.0
             self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 75.0)
         self.last_aspirate_slot = None
         self.last_aspirate_lw_kind = None
@@ -1691,6 +1693,9 @@ class LIMSMasterApp:
                         self.calibrated_heights["plate96_aspirate_z"] = 97.52
                     if float(self.calibrated_heights.get("plate96_dispense_z", 97.52)) in (68.43, 78.4, 78.40):
                         self.calibrated_heights["plate96_dispense_z"] = 97.52
+                    if float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 92.0)) <= 88.0:
+                        self.calibrated_heights["tip_rack_pickup_limit_z"] = 92.0
+                    self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 75.0)
                 if hasattr(self, 'apply_default_deck_for_profile'):
                     self.apply_default_deck_for_profile(matching_pid)
                 if hasattr(self, 'update_window_title'):
@@ -3302,22 +3307,22 @@ class LIMSMasterApp:
                                     if "R6" in step.get("label", ""):
                                         step["label"] = step["label"].replace("R6", "R7").replace("A6", "A7")
 
-            # 2. Update deck labware
+            # 2. Update deck labware while keeping all 6 slot squares visible on the deck canvas
             lw_dir = self.get_labware_dir()
             for s_num in range(1, 7):
                 s_name = f"Slot_{s_num}"
+                if s_name not in self.placed_slots:
+                    self.placed_slots.append(s_name)
+                if s_name in self.unplaced_slots:
+                    self.unplaced_slots.remove(s_name)
                 lw_file = deck_setup.get(s_name)
                 if lw_file and lw_file != "(Empty / Clearance)":
                     lp = os.path.join(lw_dir, lw_file)
                     if os.path.exists(lp):
                         self.lims.deck_labware[s_name] = Labware(lp)
                         self.lims.deck_labware[s_name].source_file = lw_file
-                    if s_name not in self.placed_slots:
-                        self.placed_slots.append(s_name)
                 else:
                     self.lims.deck_labware.pop(s_name, None)
-                    if s_name in self.placed_slots:
-                        self.placed_slots.remove(s_name)
             self.sync_deck_manager()
             if hasattr(self, 'draw_deck'):
                 self.draw_deck()
@@ -3764,22 +3769,34 @@ class LIMSMasterApp:
             messagebox.showerror("File Not Found", f"Could not locate {filename}")
             return
 
+        with open(target_path, "r") as f:
+            seq = json.load(f)
+
+        uses_slot2 = any(s.get("slot") == "Slot_2" or s.get("action") == "Discard Tip" for s in seq)
+        slot1_lw = getattr(self.lims.deck_labware.get("Slot_1"), "source_file", None) or "reservoir_3_well.json"
+        if slot1_lw == "tube_rack_2x6_2ml.json":
+            slot1_lw = "reservoir_3_well.json"
+        slot2_lw = getattr(self.lims.deck_labware.get("Slot_2"), "source_file", None) or ("waste_trough.json" if uses_slot2 else "(Empty / Clearance)")
+
         deck_setup = {
-            "Slot_1": "reservoir_3_well.json",
-            "Slot_2": "waste_trough.json",
+            "Slot_1": slot1_lw,
+            "Slot_2": slot2_lw,
             "Slot_3": "generic_96_well_plate.json",
             "Slot_4": "tip_rack_1000ul.json",
             "Slot_5": "generic_96_well_plate.json",
+            "Slot_6": "(Empty / Clearance)",
         }
         slot_descs = {
             "Slot_1": "3-Well Reservoir (Well A1 at X=235.05, Y=5.27: Pure DMSO Buffer)",
-            "Slot_2": "Waste Trough (Liquid Waste & Tip Graveyard)",
+            "Slot_2": "Waste Trough (Liquid Waste & Tip Graveyard)" if slot2_lw != "(Empty / Clearance)" else "Empty clearance slot",
             "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells, Z=97.52 mm)",
-            "Slot_4": "300 µL Tip Rack",
+            "Slot_4": "300 µL Tip Rack (A1 at X=105.63, Y=57.12)",
             "Slot_5": "96-Well Target Dilution Plate (Serial Mix, Z=97.52 mm)",
+            "Slot_6": "Empty clearance slot",
         }
-        with open(target_path, "r") as f:
-            seq = json.load(f)
+        for s in seq:
+            if s.get("slot") == "Slot_1" and s.get("labware") == "tube_rack_2x6_2ml.json":
+                s["labware"] = slot1_lw
 
         def on_deck_confirmed():
             self.prompt_drug_wells_and_load(
@@ -4059,8 +4076,9 @@ class LIMSMasterApp:
             with open(target_path, 'r') as f:
                 loaded_sequence = json.load(f)
 
+            slot1_lw = getattr(self.lims.deck_labware.get("Slot_1"), "source_file", None) or "reservoir_3_well.json"
             deck_setup = {
-                "Slot_1": "tube_rack_2x6_2ml.json",
+                "Slot_1": slot1_lw,
                 "Slot_2": "waste_trough.json",
                 "Slot_3": "generic_96_well_plate.json",
                 "Slot_4": "tip_rack_1000ul.json",
@@ -4105,6 +4123,10 @@ class LIMSMasterApp:
         elif eff_deck.get("Slot_6"):
             dmso_target_slot = "Slot_6"
             dmso_labware = eff_deck.get("Slot_6")
+        else:
+            dmso_target_slot = "Slot_1"
+            dmso_labware = getattr(self.lims.deck_labware.get("Slot_1"), "source_file", None) or "reservoir_3_well.json"
+            eff_deck["Slot_1"] = dmso_labware
 
         drug_steps_indices = [
             i for i, s in enumerate(loaded_sequence)
@@ -4136,19 +4158,21 @@ class LIMSMasterApp:
         self.wf_box.delete(0, tk.END)
         lw_dir = self.get_labware_dir()
 
-        for s_name, lw_file in eff_deck.items():
+        for s_num in range(1, 7):
+            s_name = f"Slot_{s_num}"
+            if s_name not in self.placed_slots:
+                self.placed_slots.append(s_name)
+            if s_name in self.unplaced_slots:
+                self.unplaced_slots.remove(s_name)
+            lw_file = eff_deck.get(s_name)
             if lw_file and lw_file != "(Empty / Clearance)":
                 lp = os.path.join(lw_dir, lw_file)
                 if os.path.exists(lp):
                     self.lims.deck_labware[s_name] = Labware(lp)
                     self.lims.deck_labware[s_name].source_file = lw_file
-                if s_name not in self.placed_slots:
-                    self.placed_slots.append(s_name)
-            else:
+            elif s_name in eff_deck and eff_deck.get(s_name) == "(Empty / Clearance)":
                 if s_name in self.lims.deck_labware:
                     del self.lims.deck_labware[s_name]
-                if s_name in self.placed_slots:
-                    self.placed_slots.remove(s_name)
 
         self.sync_deck_manager()
         if hasattr(self, "draw_deck"):
@@ -4400,6 +4424,8 @@ class LIMSMasterApp:
                     self.calibrated_heights["plate96_aspirate_z"] = 97.52
                 if float(self.calibrated_heights.get("plate96_dispense_z", 97.52)) in (68.43, 78.4, 78.40):
                     self.calibrated_heights["plate96_dispense_z"] = 97.52
+                if float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 92.0)) <= 88.0:
+                    self.calibrated_heights["tip_rack_pickup_limit_z"] = 92.0
                 self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 75.0)
 
         cfg = (PROFILE_CONFIGS or {}).get(profile_id, {})
@@ -6008,7 +6034,7 @@ class LIMSMasterApp:
         "Slot_1": (235.05, 5.27),  # calibrated (front right, 3-well reservoir A1: X=235.05, Y=5.27)
         "Slot_2": (95.5, 13.0),    # calibrated (front left, 3-well reservoir/waste trough A1)
         "Slot_3": (243.81, 52.64), # calibrated (Machine 2 1-10µL: A1 X=243.81, A1 Y=52.64, 8-ch center Y=84.14)
-        "Slot_4": (105.63, 52.64), # calibrated (Machine 2 1-10µL: A1 X=105.63, A1 Y=52.64, 5-tip Y=57.12, 8-ch center Y=84.14)
+        "Slot_4": (105.63, 57.12), # calibrated (Slot 4 Tip Rack: X=105.63, Y=57.12)
         "Slot_5": (243.24, 146.81), # calibrated (Machine 2: 8-ch center Y=178.31 -> A1 Y=146.81)
         "Slot_6": (105.60, 146.81), # calibrated (Machine 2: 8-ch center Y=178.31 -> A1 Y=146.81)
     }
@@ -6067,9 +6093,10 @@ class LIMSMasterApp:
 
     def _slot_a1_origin(self, slot_name):
         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
+        is_300ul = ("300" in getattr(self, "active_profile_id", "")) or (not getattr(getattr(self, "lims", None), "pipettor", None) or not getattr(self.lims.pipettor, "multichannel", False))
         if is_10ul:
             if slot_name == "Slot_4":
-                return 105.63, 52.64
+                return 105.63, 57.12
             if slot_name == "Slot_3":
                 return 243.81, 52.64
             if slot_name == "Slot_5":
@@ -6080,6 +6107,8 @@ class LIMSMasterApp:
                 return 235.05, 5.27
             if slot_name == "Slot_2":
                 return 95.50, 13.0
+        if is_300ul and slot_name == "Slot_4":
+            return 105.63, 57.12
         m1_origins = {
             "Slot_1": (235.05, 5.27),
             "Slot_2": (95.5, 13.0),
@@ -6127,8 +6156,9 @@ class LIMSMasterApp:
             ci = c_idx if (c_idx is not None and 0 <= c_idx < 12) else 0
             ri = r_idx if (r_idx is not None and 0 <= r_idx < 8) else 0
             base_x = 105.63 if slot_name == "Slot_4" else 243.81
+            base_y = 57.12 if slot_name == "Slot_4" else 52.64
             learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0)) if slot_name == "Slot_4" else (0.0, 0.0)
-            return round(base_x - (ci * 9.0) + learned_dx, 2), round(52.64 + (ri * 9.0) + learned_dy, 2)
+            return round(base_x - (ci * 9.0) + learned_dx, 2), round(base_y + (ri * 9.0) + learned_dy, 2)
 
         if slot_name in ("Slot_5", "Slot_6") and is_10ul and (getattr(self, "_lw_kind", lambda x: "")(self.lims.deck_labware.get(slot_name)) == "plate96" or "triplicate" in str(getattr(self, "current_protocol_file", "")).lower() or "triplicate" in str(getattr(self, "loaded_protocol_name", "")).lower()):
             r_idx, c_idx = self._parse_well(well_id)
@@ -6179,16 +6209,17 @@ class LIMSMasterApp:
             if r_idx is not None and 0 <= r_idx < 8 and 0 <= c_idx < 12:
                 if kind == "tip_rack":
                     # Tip rack A1 physically calibrated:
-                    # Machine 2 (1-10 µL ONLY): physically seated reference at X=105.66, Y=52.64 (8-ch center Y=84.14)
+                    # Machine 2 (1-10 µL) & Machine 3 (300 µL): A1 at X=105.63, Y=57.12
                     # Machine 1 (8x1000 µL): standard A1 at X=105.60, Y=53.02 (8-ch center Y=84.52)
                     learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
                     is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
+                    is_m1_8x1000 = ("1000" in getattr(self, "active_profile_id", "")) or ("machine_1" in getattr(self, "active_profile_id", ""))
                     if slot_name == "Slot_4":
-                        if is_10ul:
-                            return (105.63 - (c_idx * 9.0)) + learned_dx, (52.64 + (r_idx * 9.0)) + learned_dy
-                        return (105.60 - (c_idx * 9.0)) + learned_dx, (53.02 + (r_idx * 9.0)) + learned_dy
+                        if is_m1_8x1000 and not is_10ul:
+                            return (105.60 - (c_idx * 9.0)) + learned_dx, (53.02 + (r_idx * 9.0)) + learned_dy
+                        return (105.63 - (c_idx * 9.0)) + learned_dx, (57.12 + (r_idx * 9.0)) + learned_dy
                     if is_10ul:
-                        return (ox - (c_idx * 9.0)) + learned_dx, (52.64 + (r_idx * 9.0)) + learned_dy
+                        return (ox - (c_idx * 9.0)) + learned_dx, (57.12 + (r_idx * 9.0)) + learned_dy
                     return (ox - (c_idx * 9.0)) + learned_dx, (oy + (r_idx * 9.0)) + learned_dy
                 col_table = self.SLOT_96_COL_OVERRIDES.get(slot_name)
                 tx = col_table[c_idx] if col_table else ox - (c_idx * 9.0)
@@ -6315,8 +6346,9 @@ class LIMSMasterApp:
             else:  # Slot_5
                 tx = round(243.24 - (col_i * 9.0), 2)
 
-            m_ch = str((step or {}).get("mounted_channels", "A-H")).strip().upper()
-            num_tips = 8
+            raw_m_ch = str((step or {}).get("mounted_channels", "")).strip().upper()
+            m_ch = raw_m_ch or ("A-E" if slot_name in ("Slot_3", "Slot_4") else "A-H")
+            num_tips = 5 if slot_name in ("Slot_3", "Slot_4") else 8
             if m_ch:
                 if "-" in m_ch:
                     parts = m_ch.split("-")
@@ -6326,7 +6358,7 @@ class LIMSMasterApp:
                     num_tips = 1
 
             if slot_name in ("Slot_3", "Slot_4"):
-                if num_tips == 5:
+                if num_tips == 5 or not raw_m_ch:
                     ty = 57.12
                 elif num_tips == 8:
                     ty = 84.14
@@ -6953,51 +6985,76 @@ class LIMSMasterApp:
             self.logger.error(f"No labware assigned to {slot_name}.")
             return
 
-        wells = list(labware_obj.wells.keys())
+        wells = self._ordered_tip_wells(slot_name)
+        consumed_now = self._get_tip_tracker(slot_name)["consumed"]
         tip_found = False
+
+        is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(self.lims.pipettor, "tip_volume", 200.0) <= 50.0 and getattr(self.lims.pipettor, "multichannel", False))
+        is_8ch = bool(getattr(self.lims.pipettor, "multichannel", False))
+        if is_10ul:
+            collar_z = float(self.calibrated_heights.get("tip_10ul_collar_z", self.calibrated_heights.get("tip_rack_collar_z", 64.49)))
+            configured_limit = float(self.calibrated_heights.get("tip_10ul_limit_z", self.calibrated_heights.get("tip_rack_pickup_limit_z", 75.0)))
+            approach_z = float(self.calibrated_heights.get("tip_10ul_approach_z", self.calibrated_heights.get("tip_rack_pickup_approach_z", 50.0)))
+            pickup_limit = min(80.0, max(68.0, configured_limit))
+            valid_collar_min = 48.0
+            valid_collar_max = max(74.0, collar_z + 8.0)
+        elif is_8ch:
+            collar_z = float(self.calibrated_heights.get("tip_rack_collar_z", 86.36))
+            configured_limit = float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 98.0))
+            approach_z = float(self.calibrated_heights.get("tip_rack_pickup_approach_z", 75.0))
+            pickup_limit = min(99.5, max(88.0, configured_limit))
+            valid_collar_min = 84.0
+            valid_collar_max = min(98.5, configured_limit - 0.5)
+        else:
+            collar_z = float(self.calibrated_heights.get("tip_rack_collar_z", 86.36))
+            configured_limit = max(92.0, float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 92.0)))
+            approach_z = float(self.calibrated_heights.get("tip_rack_pickup_approach_z", 50.0))
+            pickup_limit = min(98.0, max(92.0, configured_limit, collar_z + 4.5))
+            valid_collar_min = 48.0
+            valid_collar_max = max(90.5, min(97.5, pickup_limit - 0.4))
 
         for current_well in wells:
             if self.is_aborted: break
+            if current_well in consumed_now:
+                continue
 
             # Safe tuple unpacking
-            coords = self._calculate_xy(slot_name, current_well)
+            coords = self._resolve_step_xy({"action": "Pick Up Tip"}, slot_name, current_well)
             tx, ty = coords if coords else (0, 0)
 
             if self.lims.pipettor.hardware: self.lims.pipettor.hardware.move_z(0)
             self.lims.hw.move_to(tx, ty, 0, speed=self.speed_var.get())
             time.sleep(0.05)
 
-            self.logger.info(f"Triggering native pick_tip(87.0) search algorithm at {current_well}.")
+            self.logger.info(f"Triggering native pick_tip({pickup_limit:.1f}) search algorithm at {current_well} (X={tx:.2f}, Y={ty:.2f}).")
             try:
                 hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
-                labware_obj = self.lims.deck_labware.get(slot_name)
-                z_height = getattr(labware_obj, 'z_height_mm', 78.18) if labware_obj else 78.18
-                approach_z = max(0.0, min(48.0, z_height - 25.0))
                 if self.lims.pipettor.hardware:
                     self.lims.pipettor.hardware.z_speed = hw_speed
                     self.lims.pipettor.hardware.move_z(approach_z)
                     self.lims.pipettor.hardware.z_speed = 3
-                    self.lims.pipettor.hardware.tip_pickup_force = 26
+                    self.lims.pipettor.hardware.tip_pickup_force = 26 if is_8ch else 20
                     pick_ok = False
                     try:
-                        self.lims.pipettor.hardware.pick_tip(87.0)
+                        self.lims.pipettor.hardware.pick_tip(pickup_limit)
                         pick_ok = True
                     except Exception as pe:
                         self.logger.warning(f"pick_tip hardware return/exception: {pe}")
                         pick_ok = False
 
                     curr_z = getattr(self.lims.pipettor.hardware, 'z_position', 0.0)
-                    is_1000 = "1000" in (getattr(labware_obj, 'name', '') + getattr(labware_obj, 'source_file', '')).lower()
-                    valid_collar = (curr_z <= 59.5) if is_1000 else (curr_z <= 78.0)
+                    valid_collar = (valid_collar_min <= curr_z <= valid_collar_max)
+                    is_seated = valid_collar or (pick_ok and curr_z >= valid_collar_min and curr_z <= max(valid_collar_max, pickup_limit - 0.1))
 
-                    if not (valid_collar and pick_ok):
+                    if not is_seated:
+                        self.mark_tip_consumed(slot_name, current_well)
                         raise Exception(f"No tip present in {current_well} (Z={curr_z:.2f}mm, pick_ok={pick_ok})")
 
                     # High-torque mechanical seating press to prevent tips falling off
-                    extra_press = float(self.calibrated_heights.get("tip_pickup_extra_press_mm", 2.50))
+                    extra_press = float(self.calibrated_heights.get("tip_pickup_extra_press_mm", 1.50))
                     if extra_press > 0:
                         try:
-                            press_target = min(87.0, curr_z + extra_press)
+                            press_target = min(pickup_limit + extra_press, curr_z + extra_press)
                             self.lims.pipettor.hardware.z_speed = 2
                             self.lims.pipettor.hardware.move_z(press_target)
                             time.sleep(0.25)
@@ -7005,11 +7062,12 @@ class LIMSMasterApp:
                             self.logger.warning(f"Single-channel seating press notice: {se}")
                     time.sleep(0.2)
                 else:
-                    curr_z = 55.09
+                    curr_z = collar_z
+                self.mark_tip_consumed(slot_name, current_well)
                 self.logger.info(f"🎯 Tip acquired at {current_well} (Z={curr_z:.2f}mm). HAS_TIP = True")
                 time.sleep(0.2)
                 tip_found = True
-                self.root.after(0, lambda: self.has_tip_var.set(True))
+                self._set_has_tip(True)
                 if self.lims.pipettor.hardware:
                     try:
                         self.lims.pipettor.hardware.z_speed = hw_speed
@@ -7282,13 +7340,13 @@ class LIMSMasterApp:
             self.logger.info("Protocol run cancelled by operator during Pre-Run Safety Check.")
             return
 
-        needs_8ch = any(s.get('eight_ch_symmetric') for s in self.workflow_sequence)
+        needs_8ch = any(s.get('eight_ch_symmetric') for s in self.workflow_sequence) or ("10ul" in getattr(self, "active_profile_id", ""))
         if needs_8ch and not self.lims.pipettor.multichannel:
-            self.switch_pipettor_head(True, quiet=True)
+            self.switch_pipettor_head("8-Channel Multi (1-10 µL)" if "10ul" in getattr(self, "active_profile_id", "") else True, quiet=True)
         elif not needs_8ch and self.lims.pipettor.multichannel:
             max_v = max((float(s.get('volume', 0.0) or 0.0) for s in self.workflow_sequence), default=7.5)
             if max_v <= 15.0:
-                self.switch_pipettor_head("1-10 µL Single-Channel", quiet=True)
+                self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
             elif max_v <= 50.0:
                 self.switch_pipettor_head("20 µL Single-Channel", quiet=True)
             else:
@@ -7436,6 +7494,8 @@ class LIMSMasterApp:
                     elif slot_name in self.lims.deck_slots:
                         if slot_name not in self.lims.deck_labware:
                             req_lw = step.get('labware', '')
+                            if slot_name == "Slot_1" and req_lw == "tube_rack_2x6_2ml.json":
+                                req_lw = "reservoir_3_well.json"
                             req_path = os.path.join(self.get_labware_dir(), req_lw) if req_lw else ''
                             if req_lw and os.path.exists(req_path):
                                 self.lims.deck_labware[slot_name] = Labware(req_path)
@@ -7522,12 +7582,12 @@ class LIMSMasterApp:
                         else:
                             # Single-Channel (e.g. 300 µL or 20 µL)
                             collar_z = float(self.calibrated_heights.get("tip_rack_collar_z", 86.36))
-                            configured_limit = 87.0
-                            approach_z = 50.0
-                            extra_press = 1.50
-                            pickup_limit = min(92.0, max(70.0, configured_limit + extra_z))
+                            configured_limit = max(92.0, float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 92.0)))
+                            approach_z = float(self.calibrated_heights.get("tip_rack_pickup_approach_z", 50.0))
+                            extra_press = float(self.calibrated_heights.get("tip_pickup_extra_press_mm", 1.50))
+                            pickup_limit = min(98.0, max(92.0, configured_limit + extra_z, collar_z + 4.5))
                             valid_collar_min = 48.0
-                            valid_collar_max = 86.0
+                            valid_collar_max = max(90.5, min(97.5, pickup_limit - 0.4))
 
                         hw_speed = max(1, min(9, int((self.speed_var.get() / 100.0) * 9)))
                         labware_obj = self.lims.deck_labware.get(slot_name)
@@ -7552,7 +7612,7 @@ class LIMSMasterApp:
                             hw.z_speed = hw_speed
                             hw.move_z(approach_z)
                             hw.z_speed = 3
-                            hw.tip_pickup_force = 26
+                            hw.tip_pickup_force = 26 if is_8ch else 20
                             
                             pick_ok = False
                             try:
@@ -7566,7 +7626,7 @@ class LIMSMasterApp:
 
                             # 1. VALID SEATED TIP:
                             valid_collar = (valid_collar_min <= curr_z <= valid_collar_max)
-                            is_seated = valid_collar or (pick_ok and curr_z >= valid_collar_min)
+                            is_seated = valid_collar or (pick_ok and curr_z >= valid_collar_min and curr_z <= max(valid_collar_max, pickup_limit - 0.1))
 
                             if is_seated:
                                 # Monday High-torque mechanical seating press & double-tap to wedge nozzles firmly into tip collars
@@ -7626,7 +7686,7 @@ class LIMSMasterApp:
                                 current_well = ordered_wells[idx]
                                 if current_well in consumed_now:
                                     continue
-                                coords = self._calculate_xy(slot_name, current_well)
+                                coords = self._resolve_step_xy(step, slot_name, current_well)
                                 tx, ty = coords if coords else (0, 0)
                                 self.logger.info(f"Checking tip at {slot_name} {current_well} ({tx:.2f}, {ty:.2f})...")
                                 seated, cz = _do_pick(tx, ty)
@@ -8771,6 +8831,10 @@ class LIMSMasterApp:
                 slot_descs = {}
                 for st in loaded_sequence:
                     s_name, lw_file = st.get('slot', ''), st.get('labware', '')
+                    if s_name == "Slot_1" and lw_file == "tube_rack_2x6_2ml.json":
+                        existing_s1 = getattr(self.lims.deck_labware.get("Slot_1"), "source_file", None)
+                        lw_file = existing_s1 if (existing_s1 and existing_s1 != "tube_rack_2x6_2ml.json") else "reservoir_3_well.json"
+                        st["labware"] = lw_file
                     if s_name and lw_file and s_name.startswith("Slot_") and s_name not in declared_deck:
                         declared_deck[s_name] = lw_file
                         slot_descs[s_name] = f"Protocol declared labware ({lw_file})"
@@ -8852,6 +8916,10 @@ class LIMSMasterApp:
         declared = {}
         for st in sequence:
             s_name, lw_file = st.get('slot', ''), st.get('labware', '')
+            if s_name == "Slot_1" and lw_file == "tube_rack_2x6_2ml.json":
+                existing_s1 = getattr(self.lims.deck_labware.get("Slot_1"), "source_file", None)
+                lw_file = existing_s1 if (existing_s1 and existing_s1 != "tube_rack_2x6_2ml.json") else "reservoir_3_well.json"
+                st["labware"] = lw_file
             if s_name and lw_file and s_name not in declared:
                 declared[s_name] = lw_file
 

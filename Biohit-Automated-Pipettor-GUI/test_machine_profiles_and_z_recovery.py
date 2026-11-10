@@ -481,8 +481,50 @@ def run_all_tests():
     app.switch_machine_profile("machine_2_1_10ul")
     print("PASS: Direct Operation 'Return Tip to Well' reads deck labware, ejects tip at selected well, and restores tip memory.")
 
+    # -------------------------------------------------------------------------
+    # TEST 10: Slot_4 A1 (105.63, 57.12) Consistency, Slot_1 Reservoir Preservation & Slot_6 Square Persistence
+    # -------------------------------------------------------------------------
+    print("\n--- 10. Testing Slot_4 A1 (105.63, 57.12), Slot_1 Reservoir Preservation & Slot_6 Square Persistence ---")
+    for prof_id in ("machine_2_1_10ul", "machine_3_300ul"):
+        app.switch_machine_profile(prof_id)
+        calc_xy = app._calculate_xy("Slot_4", "A1")
+        assert abs(calc_xy[0] - 105.63) < 1e-4 and abs(calc_xy[1] - 57.12) < 1e-4, (
+            f"[{prof_id}] Expected _calculate_xy('Slot_4', 'A1') == (105.63, 57.12), got {calc_xy}"
+        )
+        res_xy = app._resolve_step_xy({"action": "Pick Up Tip"}, "Slot_4", "A1")
+        assert abs(res_xy[0] - 105.63) < 1e-4 and abs(res_xy[1] - 57.12) < 1e-4, (
+            f"[{prof_id}] Expected _resolve_step_xy(no mounted_channels, 'Slot_4', 'A1') == (105.63, 57.12), got {res_xy}"
+        )
+    print("PASS: Both _calculate_xy('Slot_4', 'A1') and _resolve_step_xy('Slot_4', 'A1') resolve to X=105.63mm, Y=57.12mm.")
+
+    # Verify loading 1_Serial_Dilution_Plate.json on Machine 3 preserves Slot_1 = reservoir_3_well.json and all 6 slots in placed_slots
+    app.switch_machine_profile("machine_3_300ul")
+    serial_proto_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "protocols", "Machine 3 - 300 uL", "1_Serial_Dilution_Plate.json")
+    with open(serial_proto_path, "r", encoding="utf-8") as f:
+        serial_data = json.load(f)
+    serial_steps = serial_data if isinstance(serial_data, list) else serial_data.get("sequence", [])
+    app._sync_protocol_labware(serial_steps)
+    assert getattr(app.lims.deck_labware.get("Slot_1"), "source_file", "") == "reservoir_3_well.json", (
+        f"Expected Slot_1 to remain reservoir_3_well.json after _sync_protocol_labware, got {getattr(app.lims.deck_labware.get('Slot_1'), 'source_file', None)}"
+    )
+    app.apply_drug_well_mapping_and_load(
+        serial_steps,
+        protocol_name="1_Serial_Dilution_Plate.json",
+        deck_setup={} if isinstance(serial_data, list) else serial_data.get("deck_setup", {}),
+        chosen_wells=["A6", "E6"],
+        dmso_labware=None,
+    )
+    assert getattr(app.lims.deck_labware.get("Slot_1"), "source_file", "") == "reservoir_3_well.json", (
+        f"Expected Slot_1 to remain reservoir_3_well.json, got {getattr(app.lims.deck_labware.get('Slot_1'), 'source_file', None)}"
+    )
+    for idx in range(1, 7):
+        s_name = f"Slot_{idx}"
+        assert s_name in app.placed_slots, f"Expected {s_name} to remain in app.placed_slots so its deck square stays visible"
+    app.switch_machine_profile("machine_2_1_10ul")
+    print("PASS: Loading 1_Serial_Dilution_Plate.json preserves Slot_1 as reservoir_3_well.json and keeps all 6 slot squares visible.")
+
     print("\n======================================================================")
-    print("ALL 9 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
+    print("ALL 10 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
     print("======================================================================")
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@
   "tip_volume_ul": 300.0,
   "tip_rack_pickup_approach_z": 50.0,
   "tip_rack_collar_z": 86.36,
-  "tip_rack_pickup_limit_z": 87.0,
+  "tip_rack_pickup_limit_z": 92.0,
   "tip_pickup_extra_press_mm": 1.5,
   "tip_rack_discard_z": 40.5,
   "ehm_aspirate_z": 86.0,
