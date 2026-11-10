@@ -11,11 +11,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -39,11 +39,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -67,11 +67,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -95,11 +95,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 24.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -249,11 +249,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -277,11 +277,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -305,11 +305,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -333,11 +333,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 24.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -487,11 +487,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -515,11 +515,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -543,11 +543,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -571,11 +571,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 24.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -725,11 +725,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -753,11 +753,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -781,11 +781,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -809,11 +809,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 24.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -963,11 +963,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -991,11 +991,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -1019,11 +1019,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",
@@ -1047,11 +1047,11 @@
   {
     "action": "Aspirate Media",
     "mode": "auto",
-    "slot": "Slot_6",
+    "slot": "Slot_1",
     "well": "A1",
     "volume": 24.0,
     "extra_z": 0.0,
-    "labware": "reservoir_7_column.json"
+    "labware": "reservoir_3_well.json"
   },
   {
     "action": "Dispense Media",

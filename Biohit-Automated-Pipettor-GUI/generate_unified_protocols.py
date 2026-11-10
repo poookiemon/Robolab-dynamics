@@ -881,11 +881,11 @@ def build_1ch_300ul_media_change_and_drug_steps(drug_vol_ul: float = 7.5) -> Lis
     return steps
 
 
-def build_1ch_300ul_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.json") -> List[Dict[str, Any]]:
+def build_1ch_300ul_dmso_dilution_steps(dmso_labware: str = "reservoir_3_well.json") -> List[Dict[str, Any]]:
     """
     Builds Single-Channel 300 uL DMSO-Drug Serial Dilution protocol for Slot 5 dilution plate.
-    Transfers 100 uL DMSO, 22 uL drug from Slot 3 (user-selected wells), and serial mixes.
-    Supports either 7-column or 6-column reservoir on Slot 6.
+    Transfers 100 uL DMSO from Slot 1 (3-Well Reservoir), 22 uL drug from Slot 3 (user-selected wells), and serial mixes.
+    Slot 6 is left completely empty for clearance.
     """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     candidates = [
@@ -903,12 +903,12 @@ def build_1ch_300ul_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.
     if steps is None:
         steps = []
     for s in steps:
-        if s.get("slot") == "Slot_1" or "dmso" in s.get("label", "").lower():
-            s["slot"] = "Slot_6"
+        if s.get("slot") in ("Slot_1", "Slot_6") or "dmso" in s.get("label", "").lower():
+            s["slot"] = "Slot_1"
             s["labware"] = dmso_labware
             s["well"] = "A1"
             if "label" in s:
-                s["label"] = s["label"].replace("Slot_1", "Slot_6")
+                s["label"] = s["label"].replace("Slot_6", "Slot_1")
     return steps
 
 
