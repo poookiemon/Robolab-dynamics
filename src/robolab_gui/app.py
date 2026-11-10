@@ -52,7 +52,10 @@ def run_self_update(args: Optional[List[str]] = None) -> int:
             branch = arg
 
     target_spec = f"git+{REPO_GIT_URL}@{branch}"
-    print(f"🔄 Updating RoboLab (current: v{__version__}) from branch '{branch}'...")
+    print(
+        f"🔄 Updating RoboLab (current: v{__version__}) from branch '{branch}'...\n"
+        f"   • Update command:  robolab update   (or: python -m robolab_gui update)"
+    )
 
     renamed_wrappers = []
     if os.name == "nt":
@@ -96,7 +99,12 @@ def run_self_update(args: Optional[List[str]] = None) -> int:
             ]
             ver_res = subprocess.run(ver_cmd, capture_output=True, text=True)
             new_ver = ver_res.stdout.strip() if ver_res.returncode == 0 else "latest"
-            print(f"\n✅ RoboLab successfully updated to v{new_ver}! Run 'robolab' to launch.")
+            print(
+                f"\n✅ RoboLab successfully updated to v{new_ver}!\n"
+                f"   • Launch GUI (short command):   robolab\n"
+                f"   • Launch GUI (with python):     python -m robolab_gui\n"
+                f"   • Update again anytime:         robolab update   (or: python -m robolab_gui update)"
+            )
             return 0
         else:
             for exe_path, old_path in renamed_wrappers:

@@ -383,7 +383,35 @@ def run_all_tests():
     app.lims.pipettor.hardware = orig_hw
     print("PASS: Z-only physical homing ('Control.Initialize(\"Z\")') re-zeroed downward Z drift while preserving tips, liquid, and X/Y.")
 
-    print("\n--- 9. Testing Machine 3 (300uL) Slot_1 A1 (235.05, 5.27), 96-Plate Z=97.52mm, & Direct Return Tip to Well ---")
+    print("\n--- 9. Testing Machine 3 (300uL) Slot_1 A1 (235.05, 5.27), 96-Plate Z=97.52mm, Default Deck Layouts, & Direct Return Tip to Well ---")
+    app.switch_machine_profile("machine_3_300ul")
+    m3_deck = {s: getattr(lw, "source_file", "") for s, lw in app.lims.deck_labware.items()}
+    assert m3_deck == {
+        "Slot_1": "reservoir_3_well.json",
+        "Slot_3": "generic_96_well_plate.json",
+        "Slot_4": "tip_rack_1000ul.json",
+        "Slot_5": "generic_96_well_plate.json",
+    }, f"Expected Machine 3 default deck, got {m3_deck}"
+
+    app.switch_machine_profile("machine_1_8x1000")
+    m1_deck = {s: getattr(lw, "source_file", "") for s, lw in app.lims.deck_labware.items()}
+    assert m1_deck == {
+        "Slot_3": "myriamed_48_well.json",
+        "Slot_4": "tip_rack_1000ul.json",
+        "Slot_5": "myriamed_48_well.json",
+        "Slot_6": "reservoir_7_column.json",
+    }, f"Expected Machine 1 default deck, got {m1_deck}"
+
+    app.switch_machine_profile("machine_2_1_10ul")
+    m2_deck = {s: getattr(lw, "source_file", "") for s, lw in app.lims.deck_labware.items()}
+    assert m2_deck == {
+        "Slot_3": "generic_96_well_plate.json",
+        "Slot_4": "tip_rack_1000ul.json",
+        "Slot_5": "myriamed_48_well.json",
+        "Slot_6": "myriamed_48_well.json",
+    }, f"Expected Machine 2 default deck, got {m2_deck}"
+    print("PASS: Default deck layouts automatically update per machine profile (300uL, 8x1000uL, 1-10uL).")
+
     app.switch_machine_profile("machine_3_300ul")
     assert abs(app.calibrated_heights.get("plate96_aspirate_z", 0.0) - 97.52) < 1e-4, (
         f"Expected Machine 3 plate96_aspirate_z=97.52, got {app.calibrated_heights.get('plate96_aspirate_z')}"

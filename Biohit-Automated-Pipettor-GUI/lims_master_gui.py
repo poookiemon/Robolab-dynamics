@@ -1687,6 +1687,8 @@ class LIMSMasterApp:
                         self.calibrated_heights["plate96_aspirate_z"] = 97.52
                     if float(self.calibrated_heights.get("plate96_dispense_z", 97.52)) in (68.43, 78.4, 78.40):
                         self.calibrated_heights["plate96_dispense_z"] = 97.52
+                if hasattr(self, 'apply_default_deck_for_profile'):
+                    self.apply_default_deck_for_profile(matching_pid)
                 if hasattr(self, 'update_window_title'):
                     self.update_window_title()
 
@@ -4462,6 +4464,7 @@ class LIMSMasterApp:
         self.is_head_initialized = False
         self.initialized_head = None
 
+        self.apply_default_deck_for_profile(profile_id)
         self.update_window_title()
         self._update_protocol_dropdown()
         if hasattr(self, "draw_deck"):
@@ -8637,24 +8640,94 @@ class LIMSMasterApp:
         )
         if p: self._deserialize_workspace(p)
 
+    def apply_default_deck_for_profile(self, profile_id: str = None):
+        """
+        Automatically populates the default deck layout matching the active machine ID:
+        - Machine 3 (300 µL):
+            Slot_1: reservoir_3_well.json (3-Well Reservoir)
+            Slot_3: generic_96_well_plate.json (96-Well Drug Plate)
+            Slot_4: tip_rack_1000ul.json (Tips)
+            Slot_5: generic_96_well_plate.json (Target 96-Well Plate)
+        - Machine 1 (8×1000 µL):
+            Slot_3: myriamed_48_well.json (EHM Plate)
+            Slot_4: tip_rack_1000ul.json (Tips)
+            Slot_5: myriamed_48_well.json (EHM Plate)
+            Slot_6: reservoir_7_column.json (7-Well Reservoir)
+        - Machine 2 (1–10 µL):
+            Slot_3: generic_96_well_plate.json (96-Well Plate)
+            Slot_4: tip_rack_1000ul.json (Tips)
+            Slot_5: myriamed_48_well.json (EHM Plate)
+            Slot_6: myriamed_48_well.json (EHM Plate)
+        """
+        pid = str(profile_id or getattr(self, "active_profile_id", "machine_2_1_10ul")).lower()
+
+        grid_layout = [
+            ("Slot_1", 135.2, 0.0, 127.8, 26.0),
+            ("Slot_2", 0.0, 0.0, 127.8, 26.0),
+            ("Slot_3", 135.2, 45.0, 127.8, 85.5),
+            ("Slot_4", 0.0, 45.0, 127.8, 85.5),
+            ("Slot_5", 135.2, 144.0, 127.8, 85.5),
+            ("Slot_6", 0.0, 144.0, 127.8, 85.5),
+        ]
+        for name, x, y, w, h in grid_layout:
+            if name not in self.lims.deck_slots:
+                slot = DeckSlot(name, x, y, w, h)
+                slot.z_offset = 0.0
+                self.lims.deck_slots[name] = slot
+            if name not in self.placed_slots:
+                self.placed_slots.append(name)
+            if name in self.unplaced_slots:
+                self.unplaced_slots.remove(name)
+
+        if "300" in pid or "machine_3" in pid:
+            default_map = {
+                "Slot_1": "reservoir_3_well.json",
+                "Slot_3": "generic_96_well_plate.json",
+                "Slot_4": "tip_rack_1000ul.json",
+                "Slot_5": "generic_96_well_plate.json",
+            }
+        elif "1000" in pid or "machine_1" in pid:
+            default_map = {
+                "Slot_3": "myriamed_48_well.json",
+                "Slot_4": "tip_rack_1000ul.json",
+                "Slot_5": "myriamed_48_well.json",
+                "Slot_6": "reservoir_7_column.json",
+            }
+        else:
+            default_map = {
+                "Slot_3": "generic_96_well_plate.json",
+                "Slot_4": "tip_rack_1000ul.json",
+                "Slot_5": "myriamed_48_well.json",
+                "Slot_6": "myriamed_48_well.json",
+            }
+
+        self.lims.deck_labware.clear()
+        lw_dir = self.get_labware_dir()
+        for s_name, lw_file in default_map.items():
+            lw_path = os.path.join(lw_dir, lw_file)
+            if os.path.exists(lw_path):
+                self.lims.deck_labware[s_name] = Labware(lw_path)
+                self.lims.deck_labware[s_name].source_file = lw_file
+
+        self.sync_deck_manager()
+        try:
+            self.refresh_ui()
+        except Exception:
+            pass
+        if hasattr(self, "_update_deck_and_tip_preview"):
+            try:
+                self._update_deck_and_tip_preview()
+            except Exception:
+                pass
+        if hasattr(self, "logger"):
+            summary = ", ".join(f"{k}: {v}" for k, v in sorted(default_map.items()))
+            self.logger.info(f"[DEFAULT DECK] Loaded profile deck for '{pid}': {summary}")
+
     def emergency_reset(self):
         cal_path = self.get_calibration_path()
         if os.path.exists(cal_path):
             self._deserialize_workspace(cal_path)
-        if not self.lims.deck_slots:
-            self.lims.deck_labware.clear()
-            self.placed_slots.clear()
-            self.unplaced_slots.clear()
-            grid_layout = [("Slot_1", 135.2, 0.0, 127.8, 26.0), ("Slot_2", 0.0, 0.0, 127.8, 26.0),
-                           ("Slot_3", 135.2, 45.0, 127.8, 85.5), ("Slot_4", 0.0, 45.0, 127.8, 85.5),
-                           ("Slot_5", 135.2, 144.0, 127.8, 85.5), ("Slot_6", 0.0, 144.0, 127.8, 85.5)]
-            for name, x, y, w, h in grid_layout:
-                slot = DeckSlot(name, x, y, w, h)
-                slot.z_offset = 0.0
-                self.lims.deck_slots[name] = slot
-                self.placed_slots.append(name)
-            self.refresh_ui()
-            self.sync_deck_manager()
+        self.apply_default_deck_for_profile(getattr(self, "active_profile_id", "machine_2_1_10ul"))
 
     def action_save_workflow_as(self):
         if not self.workflow_sequence: return
