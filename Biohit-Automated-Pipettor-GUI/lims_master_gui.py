@@ -3849,7 +3849,7 @@ class LIMSMasterApp:
             "Slot_1": "3-Well Reservoir (Well A1 at X=235.05, Y=5.27: Pure DMSO Buffer)",
             "Slot_2": "Waste Trough (Liquid Waste & Tip Graveyard)" if slot2_lw != "(Empty / Clearance)" else "Empty clearance slot",
             "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells, Z=98.72 mm)",
-            "Slot_4": "300 µL Tip Rack (A1 at X=105.63, Y=57.12)",
+            "Slot_4": "300 µL Tip Rack (A1 at X=105.63, Y=52.64)",
             "Slot_5": "96-Well Target Dilution Plate (Serial Mix, Z=98.72 mm)",
             "Slot_6": "Empty clearance slot",
         }
@@ -6095,7 +6095,7 @@ class LIMSMasterApp:
         "Slot_1": (235.05, 5.27),  # calibrated (front right, 3-well reservoir A1: X=235.05, Y=5.27)
         "Slot_2": (95.5, 13.0),    # calibrated (front left, 3-well reservoir/waste trough A1)
         "Slot_3": (243.81, 52.64), # calibrated (Machine 2 1-10µL: A1 X=243.81, A1 Y=52.64, 8-ch center Y=84.14)
-        "Slot_4": (105.63, 57.12), # calibrated (Slot 4 Tip Rack: X=105.63, Y=57.12)
+        "Slot_4": (105.63, 52.64), # calibrated (Slot 4 Tip Rack: A1 X=105.63, A1 Y=52.64, 8-ch center Y=84.14)
         "Slot_5": (242.98, 147.64), # calibrated (96-well plate A1 center: X=242.98, Y=147.64)
         "Slot_6": (105.60, 146.81), # calibrated (Machine 2: 8-ch center Y=178.31 -> A1 Y=146.81)
     }
@@ -6157,7 +6157,7 @@ class LIMSMasterApp:
         is_300ul = ("300" in getattr(self, "active_profile_id", "")) or (not getattr(getattr(self, "lims", None), "pipettor", None) or not getattr(self.lims.pipettor, "multichannel", False))
         if is_10ul:
             if slot_name == "Slot_4":
-                return 105.63, 57.12
+                return 105.63, 52.64
             if slot_name == "Slot_3":
                 return 243.81, 52.64
             if slot_name == "Slot_5":
@@ -6169,7 +6169,7 @@ class LIMSMasterApp:
             if slot_name == "Slot_2":
                 return 95.50, 13.0
         if is_300ul and slot_name == "Slot_4":
-            return 105.63, 57.12
+            return 105.63, 52.64
         if is_300ul and slot_name == "Slot_5":
             return 242.98, 147.64
         m1_origins = {
@@ -6219,7 +6219,7 @@ class LIMSMasterApp:
             ci = c_idx if (c_idx is not None and 0 <= c_idx < 12) else 0
             ri = r_idx if (r_idx is not None and 0 <= r_idx < 8) else 0
             base_x = 105.63 if slot_name == "Slot_4" else 243.81
-            base_y = 57.12 if slot_name == "Slot_4" else 52.64
+            base_y = 52.64
             learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0)) if slot_name == "Slot_4" else (0.0, 0.0)
             return round(base_x - (ci * 9.0) + learned_dx, 2), round(base_y + (ri * 9.0) + learned_dy, 2)
 
@@ -6273,7 +6273,7 @@ class LIMSMasterApp:
             if r_idx is not None and 0 <= r_idx < 8 and 0 <= c_idx < 12:
                 if kind == "tip_rack":
                     # Tip rack A1 physically calibrated:
-                    # Machine 2 (1-10 µL) & Machine 3 (300 µL): A1 at X=105.63, Y=57.12
+                    # Machine 2 (1-10 µL) & Machine 3 (300 µL): A1 at X=105.63, Y=52.64
                     # Machine 1 (8x1000 µL): standard A1 at X=105.60, Y=53.02 (8-ch center Y=84.52)
                     learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
                     is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
@@ -6281,9 +6281,9 @@ class LIMSMasterApp:
                     if slot_name == "Slot_4":
                         if is_m1_8x1000 and not is_10ul:
                             return (105.60 - (c_idx * 9.0)) + learned_dx, (53.02 + (r_idx * 9.0)) + learned_dy
-                        return (105.63 - (c_idx * 9.0)) + learned_dx, (57.12 + (r_idx * 9.0)) + learned_dy
+                        return (105.63 - (c_idx * 9.0)) + learned_dx, (52.64 + (r_idx * 9.0)) + learned_dy
                     if is_10ul:
-                        return (ox - (c_idx * 9.0)) + learned_dx, (57.12 + (r_idx * 9.0)) + learned_dy
+                        return (ox - (c_idx * 9.0)) + learned_dx, (52.64 + (r_idx * 9.0)) + learned_dy
                     return (ox - (c_idx * 9.0)) + learned_dx, (oy + (r_idx * 9.0)) + learned_dy
                 col_table = self.SLOT_96_COL_OVERRIDES.get(slot_name)
                 tx = col_table[c_idx] if col_table else ox - (c_idx * 9.0)

@@ -12,7 +12,7 @@ DEFAULT_SLOT_A1_ORIGINS: Dict[str, Tuple[float, float]] = {
     "Slot_1": (238.2, 13.0),   # Front right (height-block slot, 2mL Falcon rack A1)
     "Slot_2": (95.5, 13.0),    # Front left (3-well reservoir / waste trough A1)
     "Slot_3": (243.81, 52.64), # Mid right (Machine 2 1-10µL: A1 X=243.81, A1 Y=52.64, Center Y=84.14)
-    "Slot_4": (105.63, 57.12), # Mid left (Machine 2 1-10µL calibrated: A1 X=105.63, A1 Y=57.12, Center Y=84.14)
+    "Slot_4": (105.63, 52.64), # Mid left (Machine 2 1-10µL calibrated: A1 X=105.63, A1 Y=52.64, Center Y=84.14)
     "Slot_5": (242.98, 147.64), # Rear right (Slot 5 96-well A1 center: X=242.98, Y=147.64)
     "Slot_6": (105.60, 146.81), # Rear left (Machine 2 1-10µL: Center Y=178.31 -> A1 Y=146.81)
 }

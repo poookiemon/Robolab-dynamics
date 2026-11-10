@@ -491,20 +491,26 @@ def run_all_tests():
     print("PASS: Direct Operation 'Return Tip to Well' reads deck labware, ejects tip at selected well, and restores tip memory.")
 
     # -------------------------------------------------------------------------
-    # TEST 10: Slot_4 A1 (105.63, 57.12) Consistency, Slot_1 Reservoir Preservation & Slot_6 Square Persistence
+    # TEST 10: Slot_4 A1 (105.63, 52.64) Well Center, Slot_1 Reservoir Preservation & Slot_6 Square Persistence
     # -------------------------------------------------------------------------
-    print("\n--- 10. Testing Slot_4 A1 (105.63, 57.12), Slot_1 Reservoir Preservation & Slot_6 Square Persistence ---")
+    print("\n--- 10. Testing Slot_4 A1 (105.63, 52.64), Slot_1 Reservoir Preservation & Slot_6 Square Persistence ---")
     for prof_id in ("machine_2_1_10ul", "machine_3_300ul"):
         app.switch_machine_profile(prof_id)
         calc_xy = app._calculate_xy("Slot_4", "A1")
-        assert abs(calc_xy[0] - 105.63) < 1e-4 and abs(calc_xy[1] - 57.12) < 1e-4, (
-            f"[{prof_id}] Expected _calculate_xy('Slot_4', 'A1') == (105.63, 57.12), got {calc_xy}"
+        assert abs(calc_xy[0] - 105.63) < 1e-4 and abs(calc_xy[1] - 52.64) < 1e-4, (
+            f"[{prof_id}] Expected _calculate_xy('Slot_4', 'A1') == (105.63, 52.64), got {calc_xy}"
         )
-        res_xy = app._resolve_step_xy({"action": "Pick Up Tip"}, "Slot_4", "A1")
-        assert abs(res_xy[0] - 105.63) < 1e-4 and abs(res_xy[1] - 57.12) < 1e-4, (
-            f"[{prof_id}] Expected _resolve_step_xy(no mounted_channels, 'Slot_4', 'A1') == (105.63, 57.12), got {res_xy}"
-        )
-    print("PASS: Both _calculate_xy('Slot_4', 'A1') and _resolve_step_xy('Slot_4', 'A1') resolve to X=105.63mm, Y=57.12mm.")
+        if prof_id == "machine_3_300ul":
+            res_xy = app._resolve_step_xy({"action": "Pick Up Tip"}, "Slot_4", "A1")
+            assert abs(res_xy[0] - 105.63) < 1e-4 and abs(res_xy[1] - 52.64) < 1e-4, (
+                f"[{prof_id}] Expected _resolve_step_xy(single-channel, 'Slot_4', 'A1') == (105.63, 52.64), got {res_xy}"
+            )
+        else:
+            res_5tip = app._resolve_step_xy({"action": "Pick Up Tip", "mounted_channels": "A-E"}, "Slot_4", "A1")
+            assert abs(res_5tip[0] - 105.63) < 1e-4 and abs(res_5tip[1] - 57.12) < 1e-4, (
+                f"[{prof_id}] Expected 5-tip manifold pickup Y=57.12, got {res_5tip}"
+            )
+    print("PASS: Both _calculate_xy('Slot_4', 'A1') resolves to (105.63, 52.64) and single-tip pickup resolves to A1 center.")
 
     # Verify loading 1_Serial_Dilution_Plate.json on Machine 3 preserves Slot_1 = reservoir_3_well.json and all 6 slots in placed_slots
     app.switch_machine_profile("machine_3_300ul")
