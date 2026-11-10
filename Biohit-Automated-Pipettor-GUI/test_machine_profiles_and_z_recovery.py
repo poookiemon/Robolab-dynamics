@@ -116,8 +116,8 @@ def run_all_tests():
     tx5, ty5 = t_coords_5
 
     print(f"Resolved Carriage Position for 5-Tip Pickup (Machine 2: 1-10 µL): X = {tx5:.2f} mm, Y = {ty5:.2f} mm")
-    assert abs(tx5 - 105.66) < 1e-2, f"Expected X=105.66, got {tx5}"
-    assert abs(ty5 - 56.96) < 1e-2, f"Expected Y=56.96 (physically seated position), got {ty5}"
+    assert abs(tx5 - 105.63) < 1e-2, f"Expected X=105.63, got {tx5}"
+    assert abs(ty5 - 57.12) < 1e-2, f"Expected Y=57.12 (physically seated position), got {ty5}"
 
     # Step: Pick Up Tip with mounted_channels = "A-H" (8 tips)
     step_8tip = {
@@ -135,25 +135,25 @@ def run_all_tests():
     tx8, ty8 = t_coords_8
 
     print(f"Resolved Carriage Position for 8-Tip Pickup (Machine 2: 1-10 µL): X = {tx8:.2f} mm, Y = {ty8:.2f} mm")
-    assert abs(tx8 - 105.66) < 1e-2, f"Expected X=105.66, got {tx8}"
+    assert abs(tx8 - 105.63) < 1e-2, f"Expected X=105.63, got {tx8}"
     assert abs(ty8 - 84.14) < 1e-2, f"Expected Y=84.14 (physically seated position), got {ty8}"
 
     # Verify column pitch progression across all 12 columns for 8 tips
     for col_idx in range(1, 13):
         col_coords = app._resolve_step_xy(step_8tip, "Slot_4", f"A{col_idx}")
-        expected_x = round(105.66 - ((col_idx - 1) * 9.0), 2)
+        expected_x = round(105.63 - ((col_idx - 1) * 9.0), 2)
         assert abs(col_coords[0] - expected_x) < 1e-2, f"Col {col_idx} expected X={expected_x}, got {col_coords[0]}"
         assert abs(col_coords[1] - 84.14) < 1e-2, f"Col {col_idx} expected Y=84.14, got {col_coords[1]}"
 
     # Verify column pitch progression across all 12 columns for 5 tips
     for col_idx in range(1, 13):
         col_coords = app._resolve_step_xy(step_5tip, "Slot_4", f"A{col_idx}")
-        expected_x = round(105.66 - ((col_idx - 1) * 9.0), 2)
+        expected_x = round(105.63 - ((col_idx - 1) * 9.0), 2)
         assert abs(col_coords[0] - expected_x) < 1e-2, f"Col {col_idx} expected X={expected_x}, got {col_coords[0]}"
-        assert abs(col_coords[1] - 56.96) < 1e-2, f"Col {col_idx} expected Y=56.96, got {col_coords[1]}"
+        assert abs(col_coords[1] - 57.12) < 1e-2, f"Col {col_idx} expected Y=57.12, got {col_coords[1]}"
 
-    print("PASS: Machine 2 (1-10 µL ONLY) 8-tip pickup verified at X=105.66mm, Y=84.14mm.")
-    print("PASS: Machine 2 (1-10 µL ONLY) 5-tip pickup verified at X=105.66mm, Y=56.96mm.")
+    print("PASS: Machine 2 (1-10 µL ONLY) 8-tip pickup verified at X=105.63mm, Y=84.14mm.")
+    print("PASS: Machine 2 (1-10 µL ONLY) 5-tip pickup verified at X=105.63mm, Y=57.12mm.")
     print("PASS: All 12 columns progress cleanly at 9.0mm pitch without mid-wall collisions.")
 
     # Verify 5-tip Aspirate and Dispense maintain alignment with Rows A..E (never shifting to D..H)
@@ -168,7 +168,7 @@ def run_all_tests():
         "mounted_channels": "A-E",
     }
     coords_asp = app._resolve_step_xy(step_5tip_asp, "Slot_3", "A1")
-    assert abs(coords_asp[1] - 56.96) < 1e-2, f"Expected 5-tip aspirate Y=56.96, got {coords_asp[1]}"
+    assert abs(coords_asp[1] - 57.12) < 1e-2, f"Expected 5-tip aspirate Y=57.12, got {coords_asp[1]}"
 
     step_5tip_disp = {
         "action": "Dispense Media",
@@ -443,6 +443,20 @@ def run_all_tests():
         z_val = app._calculate_z(act, app.lims.deck_labware["Slot_3"], "B2", "auto", 0.0, "Slot_3", 0.0, mix_cycles=3)
         assert abs(z_val - 97.52) < 1e-4, f"Expected Machine 3 {act} Z=97.52mm on 96-well plate, got {z_val}"
     print("PASS: Machine 3 96-well plate Z depth is 97.52mm across Aspirate, Dispense, and Serial-Dilution Mixing.")
+
+    # Verify Machine 3 DMSO air-dispense memory (75.0mm when aspirated from Slot_1 reservoir & mix_cycles=0, vs 97.52mm for drug/serial dilution)
+    app.last_aspirate_slot = "Slot_1"
+    app.last_aspirate_lw_kind = "reservoir_3"
+    dmso_disp_z = app._calculate_z("Dispense Media", app.lims.deck_labware["Slot_5"], "A1", "auto", 0.0, "Slot_5", 0.0, mix_cycles=0)
+    assert abs(dmso_disp_z - 75.0) < 1e-4, f"Expected Machine 3 DMSO air-dispense Z=75.0mm, got {dmso_disp_z}"
+
+    app.last_aspirate_slot = "Slot_3"
+    app.last_aspirate_lw_kind = "plate96"
+    drug_disp_z = app._calculate_z("Dispense Media", app.lims.deck_labware["Slot_5"], "A6", "auto", 0.0, "Slot_5", 0.0, mix_cycles=0)
+    assert abs(drug_disp_z - 97.52) < 1e-4, f"Expected Machine 3 Drug dispense Z=97.52mm, got {drug_disp_z}"
+    app.last_aspirate_slot = None
+    app.last_aspirate_lw_kind = None
+    print("PASS: Machine 3 remembers DMSO air-dispense (Z=75.0mm from air ONLY when adding DMSO from Slot_1, and Z=97.52mm for drug/serial dilutions).")
 
     # Verify Direct Operation 'Return Tip to Well' restores tip memory and sets HAS_TIP = False
     tip_path = os.path.join(app.get_labware_dir(), "tip_rack_96.json")

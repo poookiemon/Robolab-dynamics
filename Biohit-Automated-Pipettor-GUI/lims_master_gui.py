@@ -157,6 +157,7 @@ class LIMSMasterApp:
             "ehm_dispense_z": 68.43 if "10ul" in self.active_profile_id else (84.0 if "300" in self.active_profile_id else 14.17),
             "plate96_aspirate_z": 97.52 if "300" in self.active_profile_id else 78.40,
             "plate96_dispense_z": 97.52 if "300" in self.active_profile_id else 68.43,
+            "plate96_dmso_dispense_z": 75.0 if "300" in self.active_profile_id else 68.43,
             "reservoir_aspirate_z": 58.34 if "10ul" in self.active_profile_id else (86.0 if "300" in self.active_profile_id else 90.42),
             "waste_dispense_z": 8.37,
             "waste_tip_drop_z": 8.37,
@@ -173,6 +174,9 @@ class LIMSMasterApp:
                 self.calibrated_heights["plate96_aspirate_z"] = 97.52
             if float(self.calibrated_heights.get("plate96_dispense_z", 97.52)) in (68.43, 78.4, 78.40):
                 self.calibrated_heights["plate96_dispense_z"] = 97.52
+            self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 75.0)
+        self.last_aspirate_slot = None
+        self.last_aspirate_lw_kind = None
 
         if "10ul" in self.active_profile_id:
             self.calibrated_heights.setdefault("tip_10ul_collar_z", self.calibrated_heights.get("tip_rack_collar_z", 64.97))
@@ -2504,59 +2508,6 @@ class LIMSMasterApp:
         )
         self.btn_theme_toggle.pack(side=tk.RIGHT)
 
-        # 0b. Pipette Head & Initialization Safety Interlock Row
-        head_status_bar = ttk.Frame(pane_ctrl)
-        head_status_bar.pack(fill=tk.X, pady=(2, 2))
-        self.lbl_head_init_status = tk.Label(
-            head_status_bar,
-            text="⚠️ UNINITIALIZED" if not self.is_head_initialized else "● INITIALIZED",
-            bg="#dc3545" if not self.is_head_initialized else "#198754",
-            fg="white",
-            font=("Arial", 8, "bold"),
-            padx=6,
-            pady=2,
-        )
-        self.lbl_head_init_status.pack(side=tk.LEFT)
-
-        self.btn_init_pipettor = tk.Button(
-            head_status_bar,
-            text="🔌 Initialize Pipettor",
-            bg="#fd7e14",
-            fg="white",
-            font=("Arial", 8, "bold"),
-            command=self.action_initialize_pipettor,
-            padx=6,
-            pady=1,
-        )
-        self.btn_init_pipettor.pack(side=tk.LEFT, padx=(4, 0))
-
-        head_bar = ttk.Frame(pane_ctrl)
-        head_bar.pack(fill=tk.X, pady=(2, 4))
-        init_multi = self.lims.pipettor.multichannel
-        self.lbl_head_badge = tk.Label(
-            head_bar,
-            text="HEAD: 8-CH MULTI" if init_multi else "HEAD: SINGLE-CH",
-            bg="#6f42c1" if init_multi else "#0d6efd",
-            fg="white",
-            font=("Arial", 8, "bold"),
-            padx=5,
-            pady=2,
-        )
-        self.lbl_head_badge.pack(side=tk.LEFT)
-        wf_head_cb = ttk.Combobox(
-            head_bar,
-            textvariable=self.head_mode_var,
-            values=[
-                "8-Channel Multi (8×1000 µL) [Media Change]",
-                "300 µL Single-Channel [Prepping DMSO-Drug]",
-                "8-Channel Multi (1-10 µL) [Drug Addition to EHM]",
-            ],
-            state="readonly",
-            width=26,
-        )
-        wf_head_cb.pack(side=tk.RIGHT, padx=(4, 0))
-        wf_head_cb.bind("<<ComboboxSelected>>", self._on_head_mode_combo)
-
         # Clean 2-Step Protocol & Pipettor Selector Frame (Placed at TOP for square monitors)
         proto_frame = ttk.LabelFrame(pane_ctrl, text="⚡ Protocols & Workflows", padding=6)
         proto_frame.pack(fill=tk.X, pady=(2, 6))
@@ -4449,6 +4400,7 @@ class LIMSMasterApp:
                     self.calibrated_heights["plate96_aspirate_z"] = 97.52
                 if float(self.calibrated_heights.get("plate96_dispense_z", 97.52)) in (68.43, 78.4, 78.40):
                     self.calibrated_heights["plate96_dispense_z"] = 97.52
+                self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 75.0)
 
         cfg = (PROFILE_CONFIGS or {}).get(profile_id, {})
         prof_multi = cfg.get("is_multichannel", True if ("8x" in profile_id or "10ul" in profile_id) else False)
@@ -4460,9 +4412,10 @@ class LIMSMasterApp:
         if hasattr(self, "proto_pipettor_var"):
             self.proto_pipettor_var.set(head_label)
 
-        # Invalidate head initialization upon machine profile switch
-        self.is_head_initialized = False
-        self.initialized_head = None
+        # Synchronize head initialization state with hardware initialization state
+        hw_ready = bool(getattr(self.lims.hw, "is_initialized", False))
+        self.is_head_initialized = hw_ready
+        self.initialized_head = profile_id if hw_ready else None
 
         self.apply_default_deck_for_profile(profile_id)
         self.update_window_title()
@@ -4557,7 +4510,7 @@ class LIMSMasterApp:
             save_msg = "Remembered in .machine_id on this computer." if do_persist else "Active for this session only."
             messagebox.showinfo(
                 "Station Profile Activated",
-                f"Workstation assigned to:\n{disp}\n\n{save_msg}\n\nCalibrated heights loaded. Please click '🔌 Initialize Pipettor' before starting runs."
+                f"Workstation assigned to:\n{disp}\n\n{save_msg}\n\nCalibrated heights & default deck loaded."
             )
 
         btn_box = ttk.Frame(top)
@@ -4944,7 +4897,10 @@ class LIMSMasterApp:
         fields = [
             ("ehm_aspirate_z", "EHM Old Media Removal (Inside Well):", "24.17"),
             ("ehm_dispense_z", "EHM Fresh Media Addition (1cm Above Bottom):", "14.17"),
-            ("reservoir_aspirate_z", "Slot 6 Fresh Media Reservoir (Deep to Take Media):", "90.42"),
+            ("plate96_aspirate_z", "96-Well Plate Deep Aspirate / Mix Height:", "97.52"),
+            ("plate96_dispense_z", "96-Well Plate Standard Dispense Height:", "97.52"),
+            ("plate96_dmso_dispense_z", "96-Well DMSO Air-Dispense Height (300µL From Air):", "75.00"),
+            ("reservoir_aspirate_z", "Reservoir Deep Aspirate Height (Slot 1 / Slot 6):", "90.42"),
             ("waste_dispense_z", "Slot 6 Waste Dispense (Up / 3cm Above Bottom):", "59.32"),
             ("tip_rack_discard_z", "Slot 4 Tip Rack Return / Discard Height:", "42.00"),
             ("tip_rack_collar_z", "Slot 4 Tip Collar / Rim (Photo Alignment):", "86.36"),
@@ -6052,14 +6008,14 @@ class LIMSMasterApp:
         "Slot_1": (235.05, 5.27),  # calibrated (front right, 3-well reservoir A1: X=235.05, Y=5.27)
         "Slot_2": (95.5, 13.0),    # calibrated (front left, 3-well reservoir/waste trough A1)
         "Slot_3": (243.81, 52.64), # calibrated (Machine 2 1-10µL: A1 X=243.81, A1 Y=52.64, 8-ch center Y=84.14)
-        "Slot_4": (105.66, 52.64), # calibrated (Machine 2 1-10µL: A1 X=105.66, A1 Y=52.64, 8-ch center Y=84.14)
+        "Slot_4": (105.63, 52.64), # calibrated (Machine 2 1-10µL: A1 X=105.63, A1 Y=52.64, 5-tip Y=57.12, 8-ch center Y=84.14)
         "Slot_5": (243.24, 146.81), # calibrated (Machine 2: 8-ch center Y=178.31 -> A1 Y=146.81)
         "Slot_6": (105.60, 146.81), # calibrated (Machine 2: 8-ch center Y=178.31 -> A1 Y=146.81)
     }
 
     # Calibrated per-slot column tables for 96-format labware (override pitch math)
     SLOT_96_COL_OVERRIDES = {
-        "Slot_4": [round(105.66 - (c * 9.0), 2) for c in range(12)],
+        "Slot_4": [round(105.63 - (c * 9.0), 2) for c in range(12)],
         "Slot_5": [round(243.24 - (c * 9.0), 2) for c in range(12)],
     }
 
@@ -6113,7 +6069,7 @@ class LIMSMasterApp:
         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
         if is_10ul:
             if slot_name == "Slot_4":
-                return 105.66, 52.64
+                return 105.63, 52.64
             if slot_name == "Slot_3":
                 return 243.81, 52.64
             if slot_name == "Slot_5":
@@ -6170,7 +6126,7 @@ class LIMSMasterApp:
             r_idx, c_idx = self._parse_well(well_id)
             ci = c_idx if (c_idx is not None and 0 <= c_idx < 12) else 0
             ri = r_idx if (r_idx is not None and 0 <= r_idx < 8) else 0
-            base_x = 105.66 if slot_name == "Slot_4" else 243.81
+            base_x = 105.63 if slot_name == "Slot_4" else 243.81
             learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0)) if slot_name == "Slot_4" else (0.0, 0.0)
             return round(base_x - (ci * 9.0) + learned_dx, 2), round(52.64 + (ri * 9.0) + learned_dy, 2)
 
@@ -6229,7 +6185,7 @@ class LIMSMasterApp:
                     is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
                     if slot_name == "Slot_4":
                         if is_10ul:
-                            return (105.66 - (c_idx * 9.0)) + learned_dx, (52.64 + (r_idx * 9.0)) + learned_dy
+                            return (105.63 - (c_idx * 9.0)) + learned_dx, (52.64 + (r_idx * 9.0)) + learned_dy
                         return (105.60 - (c_idx * 9.0)) + learned_dx, (53.02 + (r_idx * 9.0)) + learned_dy
                     if is_10ul:
                         return (ox - (c_idx * 9.0)) + learned_dx, (52.64 + (r_idx * 9.0)) + learned_dy
@@ -6351,7 +6307,7 @@ class LIMSMasterApp:
 
             if slot_name == "Slot_4":
                 learned_dx, _ = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
-                tx = round(105.66 - (col_i * 9.0) + learned_dx, 2)
+                tx = round(105.63 - (col_i * 9.0) + learned_dx, 2)
             elif slot_name == "Slot_6":
                 tx = round(105.60 - (col_i * 9.0), 2)
             elif slot_name == "Slot_3":
@@ -6371,7 +6327,7 @@ class LIMSMasterApp:
 
             if slot_name in ("Slot_3", "Slot_4"):
                 if num_tips == 5:
-                    ty = 56.96
+                    ty = 57.12
                 elif num_tips == 8:
                     ty = 84.14
                 else:
@@ -6557,6 +6513,13 @@ class LIMSMasterApp:
                 if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
                     return min(raw_asp + slot_z_offset + extra_z, 103.5)
                 elif action == "Dispense Media":
+                    is_dmso_dispense = is_300ul and (
+                        getattr(self, "last_aspirate_slot", None) in ("Slot_1", "Slot_6")
+                        or getattr(self, "last_aspirate_lw_kind", None) in ("reservoir_3", "reservoir_7", "reservoir_6", "tube_rack_2x6")
+                    )
+                    if is_dmso_dispense:
+                        dmso_air_z = float(self.calibrated_heights.get("plate96_dmso_dispense_z", 75.0))
+                        return min(dmso_air_z + slot_z_offset + extra_z, 103.5)
                     return min(raw_disp + slot_z_offset + extra_z, 103.5)
             elif (slot_name in ("Slot_6", "Slot_1", "Slot_2") and ("reservoir" in str(kind) or "waste" in str(kind) or (is_300ul and slot_name == "Slot_1"))) or kind in ("reservoir_7", "reservoir_6", "reservoir_3", "waste"):
                 if action == "Dispense Media":
@@ -7290,21 +7253,9 @@ class LIMSMasterApp:
                                  "Hardware must be homed via 'Connect & Initialize' before executing automated workflows.")
             return
         if not getattr(self, 'is_head_initialized', False):
-            disp = self.profile_manager.get_display_name(self.active_profile_id) if getattr(self, "profile_manager", None) else self.active_profile_id
-            ans = messagebox.askyesno(
-                "Pipettor Head Initialization Required",
-                f"Pipettor Head for '{disp}' is currently uninitialized.\n\n"
-                f"Protocol execution is interlocked for hardware safety.\n"
-                f"Would you like to initialize the pipettor head now?"
-            )
-            if ans:
-                self.action_initialize_pipettor()
-                if not getattr(self, 'is_head_initialized', False):
-                    self.logger.warning("Protocol run aborted: Pipettor head initialization was not completed.")
-                    return
-            else:
-                self.logger.warning("Protocol run aborted: Operator declined pipettor head initialization.")
-                return
+            self.is_head_initialized = True
+            self.initialized_head = self.active_profile_id
+            self.update_window_title()
         if not self.workflow_sequence:
             messagebox.showinfo("No Protocol", "No protocol steps loaded in the Protocol Runner.")
             return
@@ -7378,6 +7329,8 @@ class LIMSMasterApp:
             self.has_air_cushion = False
             self.air_cushion_ul = 0.0
             self.tip_liquid_ul = 0.0
+            self.last_aspirate_slot = None
+            self.last_aspirate_lw_kind = None
             self.z_home_step_counter = 0
             self.pause_event.set()
             self.root.after(0, lambda: self.update_ui_state(True))
@@ -7542,6 +7495,8 @@ class LIMSMasterApp:
                         continue
 
                     if action == "Pick Up Tip":
+                        self.last_aspirate_slot = None
+                        self.last_aspirate_lw_kind = None
                         cal_dz = float(self.eight_ch_cal_offset.get("Z", 0.0)) if is_8ch else 0.0
                         tip_vol = getattr(self.lims.pipettor, 'tip_volume', 1000.0)
                         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (is_8ch and tip_vol <= 50.0) or ("10ul" in str(getattr(self, 'initialized_head', '')).lower())
@@ -7810,23 +7765,29 @@ class LIMSMasterApp:
 
                         if self.lims.pipettor.hardware:
                             if action == "Aspirate Media":
+                                self.last_aspirate_slot = slot_name
+                                self.last_aspirate_lw_kind = self._lw_kind(self.lims.deck_labware.get(slot_name))
                                 tip_vol = float(getattr(self.lims.pipettor, 'tip_volume', 300.0))
+                                hw_plunger_max = 1000.0 if is_8ch else float(getattr(self.lims.pipettor.hardware, 'tip_volume', None) or min(tip_vol, 200.0))
                                 req_vol_f = float(vol)
+                                avail_air = max(0.0, hw_plunger_max - req_vol_f)
                                 # Draw air cushion in open air (Z=0) BEFORE tip enters media, only when tip is empty
+                                # and when cumulative stroke (air_vol + req_vol_f) stays within hw_plunger_max (200uL on single-channel).
                                 if (
                                     req_vol_f > 0.0
+                                    and avail_air >= 0.5
                                     and not step.get('no_air_cushion', False)
                                     and getattr(self, 'air_cushion_ul', 0.0) <= 0.0
                                     and getattr(self, 'tip_liquid_ul', 0.0) <= 0.0
                                 ):
                                     if tip_vol <= 10.0:
-                                        air_vol = min(1.5, max(0.5, tip_vol - req_vol_f))
+                                        air_vol = min(1.5, avail_air, max(0.5, tip_vol - req_vol_f))
                                     elif tip_vol <= 20.0:
-                                        air_vol = min(2.0, max(1.0, tip_vol - req_vol_f))
+                                        air_vol = min(2.0, avail_air, max(1.0, tip_vol - req_vol_f))
                                     elif tip_vol <= 300.0:
-                                        air_vol = 15.0 if req_vol_f < 190.0 else 10.0
+                                        air_vol = min(15.0 if req_vol_f < 185.0 else 10.0, avail_air)
                                     else:
-                                        air_vol = min(30.0, max(0.0, tip_vol - req_vol_f))
+                                        air_vol = min(30.0, avail_air, max(0.0, tip_vol - req_vol_f))
 
                                     if air_vol > 0.0:
                                         try:
@@ -7987,7 +7948,7 @@ class LIMSMasterApp:
                                     if self.is_aborted:
                                         break
 
-                                elif mode != "manual" and (not is_8ch) and (lw_kind != "reservoir_6") and (is_reservoir or is_2ml_falcon) and step.get('track_liquid', True):
+                                elif mode != "manual" and (not is_8ch) and (lw_kind != "reservoir_6") and (not is_300ul_slot1_res) and (is_reservoir or is_2ml_falcon) and step.get('track_liquid', True):
                                     if not hasattr(self, 'liquid_ledger'):
                                         self.liquid_ledger = {}
                                     ledger_key = f"{slot_name}_{well_id}"
@@ -8084,17 +8045,19 @@ class LIMSMasterApp:
                                 requested_vol = float(vol)
                                 if requested_vol > 0:
                                     tip_cap = float(getattr(self.lims.pipettor, 'tip_volume', 300.0))
-                                    actual_vol = min(requested_vol, tip_cap)
+                                    hw_plunger_max = 1000.0 if is_8ch else float(getattr(self.lims.pipettor.hardware, 'tip_volume', None) or min(tip_cap, 200.0))
+                                    max_allowed = min(tip_cap, max(0.0, hw_plunger_max - getattr(self, 'air_cushion_ul', 0.0)))
+                                    actual_vol = min(requested_vol, max_allowed)
 
-                                    if requested_vol > tip_cap:
+                                    if requested_vol > max_allowed:
                                         self.logger.warning(
-                                            f"MANIFOLD FLOOD PREVENTED: {requested_vol}uL requested, but tip limit is {tip_cap}uL. Automatically capped to {actual_vol}uL."
+                                            f"MANIFOLD FLOOD PREVENTED: {requested_vol}uL requested, but plunger/tip limit is {max_allowed}uL. Automatically capped to {actual_vol}uL."
                                         )
 
                                     try:
                                         self.lims.pipettor.hardware.aspirate(actual_vol)
                                     except Exception as asp_err:
-                                        fallback_vol = max(0.0, tip_cap - getattr(self, 'air_cushion_ul', 0.0))
+                                        fallback_vol = max(0.0, hw_plunger_max - getattr(self, 'air_cushion_ul', 0.0))
                                         if fallback_vol > 0 and fallback_vol < actual_vol:
                                             actual_vol = fallback_vol
                                             self.lims.pipettor.hardware.aspirate(actual_vol)
@@ -8199,6 +8162,8 @@ class LIMSMasterApp:
                                     self.air_cushion_ul = 0.0
                                     self.has_air_cushion = False
                                     self.tip_liquid_ul = 0.0
+                                    self.last_aspirate_slot = None
+                                    self.last_aspirate_lw_kind = None
                                     self._set_has_tip(False)
                                     self.logger.info("System state updated: Tip successfully ejected -> HAS_TIP = False")
                                 except Exception as e_err:
@@ -8213,11 +8178,16 @@ class LIMSMasterApp:
                                 self.lims.pipettor.hardware.move_z(0)
                             except Exception:
                                 self.lims.pipettor.hardware.move_z(0)
+                        elif action == "Aspirate Media":
+                            self.last_aspirate_slot = slot_name
+                            self.last_aspirate_lw_kind = self._lw_kind(self.lims.deck_labware.get(slot_name))
                         elif action == "Discard Tip":
                             if is_8ch and step.get("is_shovel_place"):
                                 for sock in self._expand_8ch_tip_sockets(step, well_id):
                                     self.mark_tip_restored(slot_name, sock, redraw=False)
                                 self._schedule_deck_redraw()
+                            self.last_aspirate_slot = None
+                            self.last_aspirate_lw_kind = None
                             self._set_has_tip(False)
                             self.logger.info("Simulation: Tip ejected -> HAS_TIP = False")
 
@@ -8383,6 +8353,9 @@ class LIMSMasterApp:
         if ok2:
             self.hw_stat_can.itemconfig(self.hw_led, fill="green")
             self.lbl_hw_stat.config(text=f"ONLINE ({clean_port})", foreground="green")
+            self.is_head_initialized = True
+            self.initialized_head = self.active_profile_id
+            self.update_window_title()
             self.logger.info(f"✅ {m2}")
 
             # --- STARTUP INTERLOCK: Speed and Force Integration ---
