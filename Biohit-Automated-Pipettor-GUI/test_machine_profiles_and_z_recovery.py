@@ -500,12 +500,11 @@ def run_all_tests():
         assert abs(calc_xy[0] - 105.63) < 1e-4 and abs(calc_xy[1] - 52.64) < 1e-4, (
             f"[{prof_id}] Expected _calculate_xy('Slot_4', 'A1') == (105.63, 52.64), got {calc_xy}"
         )
-        if prof_id == "machine_3_300ul":
-            res_xy = app._resolve_step_xy({"action": "Pick Up Tip"}, "Slot_4", "A1")
-            assert abs(res_xy[0] - 105.63) < 1e-4 and abs(res_xy[1] - 52.64) < 1e-4, (
-                f"[{prof_id}] Expected _resolve_step_xy(single-channel, 'Slot_4', 'A1') == (105.63, 52.64), got {res_xy}"
-            )
-        else:
+        res_xy = app._resolve_step_xy({"action": "Pick Up Tip"}, "Slot_4", "A1")
+        assert abs(res_xy[0] - 105.63) < 1e-4 and abs(res_xy[1] - 52.64) < 1e-4, (
+            f"[{prof_id}] Expected _resolve_step_xy(single-channel, 'Slot_4', 'A1') == (105.63, 52.64), got {res_xy}"
+        )
+        if prof_id == "machine_2_1_10ul":
             res_5tip = app._resolve_step_xy({"action": "Pick Up Tip", "mounted_channels": "A-E"}, "Slot_4", "A1")
             assert abs(res_5tip[0] - 105.63) < 1e-4 and abs(res_5tip[1] - 57.12) < 1e-4, (
                 f"[{prof_id}] Expected 5-tip manifold pickup Y=57.12, got {res_5tip}"

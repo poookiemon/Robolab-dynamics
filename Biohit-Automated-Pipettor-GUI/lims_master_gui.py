@@ -6377,25 +6377,20 @@ class LIMSMasterApp:
         - Applies `tip_offset_rows * 9.0` mm Y shift for offset partial tip-picking / tip-shoveling.
         - Applies `self.eight_ch_cal_offset['X']` and `self.eight_ch_cal_offset['Y']` fine calibration trims.
         """
+        # multi-channel action (mounted_channels with range or eight_ch_symmetric)
         m_channels = str((step or {}).get("mounted_channels", "")).strip().upper()
         is_multi_channel_action = bool(m_channels and len(m_channels) > 1 and m_channels not in ("1", "CH1", "A"))
         is_8ch_step = bool(step and step.get('eight_ch_symmetric')) or is_multi_channel_action
-        if not is_8ch_step and getattr(self.lims.pipettor, 'multichannel', False):
-            # Treat as 8-ch step if workflow contains 8-ch symmetric steps or multi-channel actions
-            is_8ch_step = any(s.get('eight_ch_symmetric') or bool((s.get('mounted_channels') or '').count('-') > 0) for s in getattr(self, 'workflow_sequence', []))
 
         lw_obj = self.lims.deck_labware.get(slot_name)
         kind = self._lw_kind(lw_obj)
         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
 
         # Machine 2 (1-10 µL ONLY): 8-channel multi-head fixed-center kinematics across all plate/tip slots
-        # Prevents any wall collision by keeping the 8-channel manifold carriage centered over the slots.
-        # Verified seating / alignment calibrations:
-        # - Front Slots (Slot 3, Slot 4): Carriage Y = 84.14 mm (5-tip Y = 56.96 mm)
-        # - Rear Slots (Slot 5, Slot 6):  Carriage Y = 178.31 mm (5-tip Y = 151.13 mm)
-        # Carriage X is derived solely from the column index (9.0 mm pitch).
+        # ONLY applies when executing an actual multi-channel action (e.g. 5-tip A-E or 8-tip symmetric).
+        # Single-tip / single-channel operations must resolve strictly to the exact well coordinate.
         is_m2_reservoir_or_waste = (slot_name == "Slot_6" and kind in ("waste", "reservoir_3", "reservoir_6", "reservoir_7")) or (slot_name in ("Slot_1", "Slot_2"))
-        if is_10ul and slot_name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6") and not is_m2_reservoir_or_waste:
+        if is_10ul and is_8ch_step and slot_name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6") and not is_m2_reservoir_or_waste:
             w_str = str(well_id or "A1").strip().upper()
             col_digits = "".join(ch for ch in w_str if ch.isdigit()) or "1"
             col_i = max(0, min(11, int(col_digits) - 1))
@@ -6411,8 +6406,7 @@ class LIMSMasterApp:
                 tx = round(242.98 - (col_i * 9.0), 2)
 
             raw_m_ch = str((step or {}).get("mounted_channels", "")).strip().upper()
-            m_ch = raw_m_ch or "A-E"
-            num_tips = 5 if not raw_m_ch else 8
+            num_tips = 8
             if raw_m_ch:
                 if "-" in raw_m_ch:
                     parts = raw_m_ch.split("-")
@@ -6420,16 +6414,18 @@ class LIMSMasterApp:
                         num_tips = max(1, min(8, ord(parts[1]) - ord(parts[0]) + 1))
                 elif len(raw_m_ch) == 1 and raw_m_ch in "ABCDEFGH":
                     num_tips = 1
+            elif not step.get('eight_ch_symmetric'):
+                num_tips = 5
 
             if slot_name in ("Slot_3", "Slot_4"):
-                if num_tips == 5 or not raw_m_ch:
+                if num_tips == 5:
                     ty = 57.12
                 elif num_tips == 8:
                     ty = 84.14
                 else:
                     ty = round(84.14 - (8 - num_tips) * 9.06, 2)
             else:
-                if num_tips == 5 or not raw_m_ch:
+                if num_tips == 5:
                     ty = 147.64 if slot_name == "Slot_5" else 146.81
                 elif num_tips == 8:
                     ty = 179.14 if slot_name == "Slot_5" else 178.31
@@ -6448,7 +6444,7 @@ class LIMSMasterApp:
             tx = max(0.0, min(tx, max_x))
             ty = max(0.0, min(ty, max_y))
 
-            self.logger.info(f"🎯 [MACHINE 2: 1-10µL] Resolved {slot_name} {well_id}: X={tx:.2f}mm, Y={ty:.2f}mm (Slot Center Y={'84.14' if slot_name in ('Slot_3', 'Slot_4') else '178.31'}mm)")
+            self.logger.info(f"🎯 [MACHINE 2: 1-10µL] Resolved multi-channel {slot_name} {well_id}: X={tx:.2f}mm, Y={ty:.2f}mm (Slot Center Y={'84.14' if slot_name in ('Slot_3', 'Slot_4') else '178.31'}mm)")
             return tx, ty
 
         if not is_8ch_step:
@@ -6456,10 +6452,10 @@ class LIMSMasterApp:
             if not coords:
                 return None
             tx, ty = coords
-            # When an 8-channel head is mounted on the carriage, Nozzle 1 is physically at (ty - 31.50mm).
-            # When executing a single-well step with Channel 1 (Nozzle 1), shift carriage by +31.50mm in Y
-            # so Nozzle 1 lands centered at ty, and Nozzles 2..8 land centered over subsequent rows (never on walls).
-            if self.lims.pipettor.multichannel and kind in ("ehm48", "plate96", "tip_rack"):
+            # Only shift +31.50mm for Machine 1 (8×1000 µL) where the 8-channel manifold is permanently fixed
+            # and a single-well operation uses Nozzle 1 (Row A). Never shift for Machine 2 or Machine 3.
+            is_m1_8ch = ("1000" in getattr(self, "active_profile_id", "")) or ("machine_1" in getattr(self, "active_profile_id", ""))
+            if is_m1_8ch and getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "multichannel", False) and kind in ("ehm48", "plate96", "tip_rack"):
                 ty += 31.50
             return tx, ty
 

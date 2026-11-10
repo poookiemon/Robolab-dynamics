@@ -33,7 +33,7 @@ def test_machine_2_8ch_and_5tip_kinematics():
     )
     assert cy_8ch == 84.14
 
-    # 5-tip pickup: Carriage Y=56.96mm (Col 1 at X=105.57mm, Rows A-E)
+    # 5-tip pickup: Carriage Y=56.96mm (Col 1 at X=105.63mm, Rows A-E)
     cy_5tip = NozzleLayout.get_carriage_y_for_manifold(
         target_a1_y=52.64,
         mounted_channels="A-E",
