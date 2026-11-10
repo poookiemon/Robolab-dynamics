@@ -1187,20 +1187,20 @@ class LIMSMasterApp:
 
     def setup_ui(self):
         con_f = ttk.LabelFrame(self.root, text="Diagnostic Output")
-        con_f.pack(fill=tk.X, padx=10, pady=10, side=tk.BOTTOM)
-        self.console_text = tk.Text(con_f, height=8, state='disabled', bg="white", fg="black", font=("Consolas", 10))
+        con_f.pack(fill=tk.X, padx=10, pady=(2, 6), side=tk.BOTTOM)
+        self.console_text = tk.Text(con_f, height=5, state='disabled', bg="white", fg="black", font=("Consolas", 9))
         self.console_text.pack(fill=tk.X)
 
         self.nb = ttk.Notebook(self.root)
-        self.nb.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        self.nb.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
 
-        self.tab_jog = ttk.Frame(self.nb, padding=10)
-        self.tab_deck = ttk.Frame(self.nb, padding=10)
-        self.tab_direct = ttk.Frame(self.nb, padding=15)
-        self.tab_workflow = ttk.Frame(self.nb, padding=10)
-        self.tab_analysis = ttk.Frame(self.nb, padding=10)  # NEW
-        self.tab_ops = ttk.Frame(self.nb, padding=10)
-        self.tab_dilution = ttk.Frame(self.nb, padding=10)
+        self.tab_jog = ttk.Frame(self.nb, padding=8)
+        self.tab_deck = ttk.Frame(self.nb, padding=8)
+        self.tab_direct = ttk.Frame(self.nb, padding=10)
+        self.tab_workflow = ttk.Frame(self.nb, padding=6)
+        self.tab_analysis = ttk.Frame(self.nb, padding=8)  # NEW
+        self.tab_ops = ttk.Frame(self.nb, padding=8)
+        self.tab_dilution = ttk.Frame(self.nb, padding=8)
 
         self.nb.add(self.tab_jog, text="1. Jog & Hardware")
         self.nb.add(self.tab_deck, text="2. Deck Setup")
@@ -2402,14 +2402,56 @@ class LIMSMasterApp:
                       command=lambda c=code: self.run_direct_op(c)).pack(side=tk.RIGHT, padx=10)
 
     def build_workflow_tab(self):
-        pane_ctrl = ttk.Frame(self.tab_workflow, width=330)
-        pane_ctrl.pack(side=tk.LEFT, fill=tk.Y, padx=(10, 8), pady=4)
+        # Scrollable left control column so square/compact monitors never clip buttons
+        left_container = ttk.Frame(self.tab_workflow, width=345)
+        left_container.pack(side=tk.LEFT, fill=tk.Y, padx=(6, 6), pady=2)
+        left_container.pack_propagate(False)
+
+        ctrl_canvas = tk.Canvas(left_container, width=325, highlightthickness=0, bd=0)
+        ctrl_sb = ttk.Scrollbar(left_container, orient=tk.VERTICAL, command=ctrl_canvas.yview)
+        pane_ctrl = ttk.Frame(ctrl_canvas, width=325)
+
+        ctrl_window = ctrl_canvas.create_window((0, 0), window=pane_ctrl, anchor="nw")
+
+        def _on_ctrl_frame_configure(event=None):
+            ctrl_canvas.configure(scrollregion=ctrl_canvas.bbox("all"))
+
+        def _on_ctrl_canvas_configure(event):
+            ctrl_canvas.itemconfig(ctrl_window, width=event.width)
+
+        pane_ctrl.bind("<Configure>", _on_ctrl_frame_configure)
+        ctrl_canvas.bind("<Configure>", _on_ctrl_canvas_configure)
+        ctrl_canvas.configure(yscrollcommand=ctrl_sb.set)
+
+        ctrl_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        ctrl_sb.pack(side=tk.RIGHT, fill=tk.Y)
+
+        def _on_ctrl_mousewheel(event):
+            try:
+                if event.num == 4 or event.delta > 0:
+                    ctrl_canvas.yview_scroll(-1, "units")
+                elif event.num == 5 or event.delta < 0:
+                    ctrl_canvas.yview_scroll(1, "units")
+            except Exception:
+                pass
+
+        ctrl_canvas.bind("<Enter>", lambda _: (
+            ctrl_canvas.bind_all("<MouseWheel>", _on_ctrl_mousewheel),
+            ctrl_canvas.bind_all("<Button-4>", _on_ctrl_mousewheel),
+            ctrl_canvas.bind_all("<Button-5>", _on_ctrl_mousewheel),
+        ))
+        ctrl_canvas.bind("<Leave>", lambda _: (
+            ctrl_canvas.unbind_all("<MouseWheel>"),
+            ctrl_canvas.unbind_all("<Button-4>"),
+            ctrl_canvas.unbind_all("<Button-5>"),
+        ))
+
         pane_list = ttk.Frame(self.tab_workflow)
-        pane_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(4, 10), pady=4)
+        pane_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(4, 6), pady=2)
 
         # 0. Active Physical Station & Cleanroom Bar
         station_bar = ttk.Frame(pane_ctrl)
-        station_bar.pack(fill=tk.X, pady=(4, 2))
+        station_bar.pack(fill=tk.X, pady=(2, 2))
         station_name = self.profile_manager.get_display_name(self.active_profile_id) if getattr(self, "profile_manager", None) else self.active_profile_id
         self.lbl_station_badge = tk.Label(
             station_bar,
@@ -2448,7 +2490,7 @@ class LIMSMasterApp:
 
         # 0b. Pipette Head & Initialization Safety Interlock Row
         head_status_bar = ttk.Frame(pane_ctrl)
-        head_status_bar.pack(fill=tk.X, pady=(2, 4))
+        head_status_bar.pack(fill=tk.X, pady=(2, 2))
         self.lbl_head_init_status = tk.Label(
             head_status_bar,
             text="⚠️ UNINITIALIZED" if not self.is_head_initialized else "● INITIALIZED",
@@ -2473,7 +2515,7 @@ class LIMSMasterApp:
         self.btn_init_pipettor.pack(side=tk.LEFT, padx=(4, 0))
 
         head_bar = ttk.Frame(pane_ctrl)
-        head_bar.pack(fill=tk.X, pady=(4, 4))
+        head_bar.pack(fill=tk.X, pady=(2, 4))
         init_multi = self.lims.pipettor.multichannel
         self.lbl_head_badge = tk.Label(
             head_bar,
@@ -2482,7 +2524,7 @@ class LIMSMasterApp:
             fg="white",
             font=("Arial", 8, "bold"),
             padx=5,
-            pady=3,
+            pady=2,
         )
         self.lbl_head_badge.pack(side=tk.LEFT)
         wf_head_cb = ttk.Combobox(
@@ -2499,81 +2541,8 @@ class LIMSMasterApp:
         wf_head_cb.pack(side=tk.RIGHT, padx=(4, 0))
         wf_head_cb.bind("<<ComboboxSelected>>", self._on_head_mode_combo)
 
-        ttk.Label(pane_ctrl, text="Protocol Builder", font=("Arial", 11, "bold")).pack(pady=(4, 5))
-        ttk.Label(pane_ctrl, text="Action Type:").pack(anchor="w")
-
-        self.wf_action = ttk.Combobox(pane_ctrl, state="readonly",
-                                      values=["Pick Up Tip", "Aspirate Media", "Dispense Media", "Discard Tip",
-                                              "Detect Liquid Level",
-                                              "System: Incubate (Wait)", "System: FOC48 Measurement", "System: Calcium Curve", "System: Data Analysis", "System: DB Upload"])
-        self.wf_action.current(0)
-        self.wf_action.pack(fill=tk.X, pady=(0, 5))
-
-        self.auto_tip_search_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(pane_ctrl, text="Auto-Search Tips (Skip empty wells)", variable=self.auto_tip_search_var).pack(
-            fill=tk.X, pady=(5, 2))
-
-        self.adaptive_tip_centering_var = tk.BooleanVar(value=False)
-
-        self.dynamic_z_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(pane_ctrl, text="Auto-Height Detection (Liquids ONLY)", variable=self.dynamic_z_var).pack(
-            fill=tk.X, pady=(0, 2))
-
-        self.lld_tracking_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(pane_ctrl, text="Sensor Liquid Level Detection (LLD)", variable=self.lld_tracking_var).pack(
-            fill=tk.X, pady=(0, 2))
-
-        ttk.Checkbutton(pane_ctrl, text="Pipette Currently Has Tip", variable=self.has_tip_var).pack(fill=tk.X,
-                                                                                                     pady=(0, 2))
-
-        self.manual_mode_var = tk.BooleanVar(value=False)
-        self.chk_manual_mode = ttk.Checkbutton(pane_ctrl, text="Enable Manual Coordinates",
-                                               variable=self.manual_mode_var, command=self._toggle_wf_inputs)
-        self.chk_manual_mode.pack(fill=tk.X, pady=(0, 6))
-
-        foc_frame = ttk.LabelFrame(pane_ctrl, text="🔬 FOC48 Experiment Selection", padding=6)
-        foc_frame.pack(fill=tk.X, pady=(0, 8))
-        ttk.Label(foc_frame, text="Target Experiment (Plate 1 = 17a, Plate 2 = 17b):", font=("Arial", 8, "bold")).pack(anchor="w")
-        foc_presets = [
-            "17b (Plate 2 - 1st in list)",
-            "17a (Plate 1 - 2nd in list)",
-            "Row 1 (1st Experiment)",
-            "Row 2 (2nd Experiment)",
-            "Row 3 (3rd Experiment)"
-        ]
-        try:
-            import foc_automation
-            for exp_dir in foc_automation.get_available_experiments():
-                if exp_dir not in foc_presets:
-                    foc_presets.append(exp_dir)
-        except Exception:
-            pass
-        self.foc_exp_var = tk.StringVar(value=foc_presets[0])
-        self.cbx_foc_exp = ttk.Combobox(foc_frame, textvariable=self.foc_exp_var, values=foc_presets, state="normal")
-        self.cbx_foc_exp.pack(fill=tk.X, pady=(2, 0))
-
-        self.input_frame = ttk.Frame(pane_ctrl)
-        self.input_frame.pack(fill=tk.X, expand=True)
-        self.lbl_1 = ttk.Label(self.input_frame, text="")
-        self.cbx_slot = ttk.Combobox(self.input_frame, state="readonly")
-        self.cbx_slot.bind("<<ComboboxSelected>>", self.update_safe_z_hint)
-        self.ent_x = ttk.Entry(self.input_frame)
-        self.lbl_2 = ttk.Label(self.input_frame, text="")
-        self.ent_well = ttk.Entry(self.input_frame)
-        self.ent_y = ttk.Entry(self.input_frame)
-        self.lbl_3 = ttk.Label(self.input_frame, text="")
-        self.ent_z = ttk.Entry(self.input_frame)
-        self.lbl_safe_z = ttk.Label(self.input_frame, text="", font=("Arial", 9, "italic"), foreground="#0d6efd", wraplength=200)
-        self.lbl_4 = ttk.Label(self.input_frame, text="")
-        self.ent_vol = ttk.Entry(self.input_frame)
-
-        ttk.Button(pane_ctrl, text="+ Add Step to Protocol", command=self.add_wf_step).pack(fill=tk.X, pady=10)
-        ttk.Button(pane_ctrl, text="Clear Protocol",
-                   command=lambda: [self.wf_box.delete(0, tk.END), self.workflow_sequence.clear(), self._update_estimated_timer_preview()]).pack(fill=tk.X)
-        ttk.Separator(pane_ctrl, orient="horizontal").pack(fill=tk.X, pady=8)
-
-        # Clean 2-Step Protocol & Pipettor Selector Frame
-        proto_frame = ttk.LabelFrame(pane_ctrl, text="⚡ Protocols & Workflows", padding=8)
+        # Clean 2-Step Protocol & Pipettor Selector Frame (Placed at TOP for square monitors)
+        proto_frame = ttk.LabelFrame(pane_ctrl, text="⚡ Protocols & Workflows", padding=6)
         proto_frame.pack(fill=tk.X, pady=(2, 6))
 
         # 1. Pipettor Selection
@@ -2589,7 +2558,7 @@ class LIMSMasterApp:
             ],
             state="readonly",
         )
-        self.proto_pipettor_cb.pack(fill=tk.X, pady=(0, 6))
+        self.proto_pipettor_cb.pack(fill=tk.X, pady=(0, 4))
         self.proto_pipettor_cb.bind("<<ComboboxSelected>>", self._on_proto_pipettor_selected)
 
         # 2. Protocol Selection
@@ -2600,7 +2569,7 @@ class LIMSMasterApp:
             textvariable=self.proto_workflow_var,
             state="readonly",
         )
-        self.proto_workflow_cb.pack(fill=tk.X, pady=(0, 6))
+        self.proto_workflow_cb.pack(fill=tk.X, pady=(0, 5))
 
         # Action Button to Load Protocol
         self.btn_load_proto = tk.Button(
@@ -2615,12 +2584,12 @@ class LIMSMasterApp:
             bd=2,
             command=self._execute_selected_protocol_load,
         )
-        self.btn_load_proto.pack(fill=tk.X, pady=(2, 8))
+        self.btn_load_proto.pack(fill=tk.X, pady=(2, 6))
 
         # Quick Tools & Homing Row
         ttk.Label(proto_frame, text="Quick Tools & Homing:", font=("Arial", 8, "bold"), foreground="#495057").pack(anchor="w", pady=(0, 2))
         tools_row = ttk.Frame(proto_frame)
-        tools_row.pack(fill=tk.X, pady=(0, 6))
+        tools_row.pack(fill=tk.X, pady=(0, 5))
 
         btn_home = tk.Button(
             tools_row,
@@ -2670,12 +2639,174 @@ class LIMSMasterApp:
         ttk.Button(file_row, text="💾 Save JSON", command=self.action_save_workflow_as).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(2, 2))
         ttk.Button(file_row, text="📥 Import .py", command=self.action_import_python_protocol).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(2, 0))
 
+        ttk.Separator(pane_ctrl, orient="horizontal").pack(fill=tk.X, pady=4)
+
+        ttk.Label(pane_ctrl, text="Protocol Builder", font=("Arial", 10, "bold")).pack(pady=(2, 3))
+        ttk.Label(pane_ctrl, text="Action Type:").pack(anchor="w")
+
+        self.wf_action = ttk.Combobox(pane_ctrl, state="readonly",
+                                      values=["Pick Up Tip", "Aspirate Media", "Dispense Media", "Discard Tip",
+                                              "Detect Liquid Level",
+                                              "System: Incubate (Wait)", "System: FOC48 Measurement", "System: Calcium Curve", "System: Data Analysis", "System: DB Upload"])
+        self.wf_action.current(0)
+        self.wf_action.pack(fill=tk.X, pady=(0, 4))
+
+        self.auto_tip_search_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(pane_ctrl, text="Auto-Search Tips (Skip empty wells)", variable=self.auto_tip_search_var).pack(
+            fill=tk.X, pady=(2, 1))
+
+        self.adaptive_tip_centering_var = tk.BooleanVar(value=False)
+
+        self.dynamic_z_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(pane_ctrl, text="Auto-Height Detection (Liquids ONLY)", variable=self.dynamic_z_var).pack(
+            fill=tk.X, pady=(0, 1))
+
+        self.lld_tracking_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(pane_ctrl, text="Sensor Liquid Level Detection (LLD)", variable=self.lld_tracking_var).pack(
+            fill=tk.X, pady=(0, 1))
+
+        ttk.Checkbutton(pane_ctrl, text="Pipette Currently Has Tip", variable=self.has_tip_var).pack(fill=tk.X,
+                                                                                                     pady=(0, 1))
+
+        self.manual_mode_var = tk.BooleanVar(value=False)
+        self.chk_manual_mode = ttk.Checkbutton(pane_ctrl, text="Enable Manual Coordinates",
+                                               variable=self.manual_mode_var, command=self._toggle_wf_inputs)
+        self.chk_manual_mode.pack(fill=tk.X, pady=(0, 4))
+
+        foc_frame = ttk.LabelFrame(pane_ctrl, text="🔬 FOC48 Experiment Selection", padding=4)
+        foc_frame.pack(fill=tk.X, pady=(0, 4))
+        ttk.Label(foc_frame, text="Target Experiment (Plate 1 = 17a, Plate 2 = 17b):", font=("Arial", 8, "bold")).pack(anchor="w")
+        foc_presets = [
+            "17b (Plate 2 - 1st in list)",
+            "17a (Plate 1 - 2nd in list)",
+            "Row 1 (1st Experiment)",
+            "Row 2 (2nd Experiment)",
+            "Row 3 (3rd Experiment)"
+        ]
+        try:
+            import foc_automation
+            for exp_dir in foc_automation.get_available_experiments():
+                if exp_dir not in foc_presets:
+                    foc_presets.append(exp_dir)
+        except Exception:
+            pass
+        self.foc_exp_var = tk.StringVar(value=foc_presets[0])
+        self.cbx_foc_exp = ttk.Combobox(foc_frame, textvariable=self.foc_exp_var, values=foc_presets, state="normal")
+        self.cbx_foc_exp.pack(fill=tk.X, pady=(2, 0))
+
+        self.input_frame = ttk.Frame(pane_ctrl)
+        self.input_frame.pack(fill=tk.X, expand=True)
+        self.lbl_1 = ttk.Label(self.input_frame, text="")
+        self.cbx_slot = ttk.Combobox(self.input_frame, state="readonly")
+        self.cbx_slot.bind("<<ComboboxSelected>>", self.update_safe_z_hint)
+        self.ent_x = ttk.Entry(self.input_frame)
+        self.lbl_2 = ttk.Label(self.input_frame, text="")
+        self.ent_well = ttk.Entry(self.input_frame)
+        self.ent_y = ttk.Entry(self.input_frame)
+        self.lbl_3 = ttk.Label(self.input_frame, text="")
+        self.ent_z = ttk.Entry(self.input_frame)
+        self.lbl_safe_z = ttk.Label(self.input_frame, text="", font=("Arial", 9, "italic"), foreground="#0d6efd", wraplength=200)
+        self.lbl_4 = ttk.Label(self.input_frame, text="")
+        self.ent_vol = ttk.Entry(self.input_frame)
+
+        ttk.Button(pane_ctrl, text="+ Add Step to Protocol", command=self.add_wf_step).pack(fill=tk.X, pady=(6, 3))
+        ttk.Button(pane_ctrl, text="Clear Protocol",
+                   command=lambda: [self.wf_box.delete(0, tk.END), self.workflow_sequence.clear(), self._update_estimated_timer_preview()]).pack(fill=tk.X, pady=(0, 6))
+
         # Initialize protocol dropdown options based on initial pipettor selection
         self._update_protocol_dropdown()
 
+        # Pack bottom Run Dashboard & Edit toolbar FIRST so square monitors never clip them
+        run_frame = ttk.LabelFrame(pane_list, text="Opentrons-Style Run Dashboard", padding=6)
+        run_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=(4, 2))
+        self.progress_var = tk.DoubleVar()
+        self.progress_bar = ttk.Progressbar(run_frame, variable=self.progress_var, maximum=100)
+        self.progress_bar.pack(fill=tk.X, pady=(0, 3))
+
+        self.lbl_timer = ttk.Label(run_frame, text="Time Remaining: --h --m --s", font=("Consolas", 10, "bold"),
+                                   foreground="blue")
+        self.lbl_timer.pack(pady=(0, 3))
+
+        self.lbl_deck_summary = tk.Label(
+            run_frame,
+            text="📋 Deck: No protocol loaded | Tips: None",
+            font=("Arial", 9, "bold"),
+            bg="#f8f9fa",
+            fg="#495057",
+            relief="groove",
+            padx=6,
+            pady=3,
+            anchor="w",
+            justify=tk.LEFT
+        )
+        self.lbl_deck_summary.pack(fill=tk.X, pady=(0, 4))
+
+        util_bar = ttk.Frame(run_frame)
+        util_bar.pack(fill=tk.X, pady=(0, 4))
+        self.lbl_tip_memory = ttk.Label(
+            util_bar,
+            text="Tip Memory (Slot_4): Next A1 (96/96 free)",
+            font=("Consolas", 9, "bold"),
+            foreground="#0d6efd",
+        )
+        self.lbl_tip_memory.pack(side=tk.LEFT, padx=(2, 6))
+        self.btn_view_report = ttk.Button(util_bar, text="📊 View Run Report", command=self.action_open_run_report)
+        self.btn_view_report.pack(side=tk.RIGHT, padx=2)
+        self.btn_view_logs = ttk.Button(util_bar, text="📁 View Session Logs", command=self.action_open_session_logs)
+        self.btn_view_logs.pack(side=tk.RIGHT, padx=2)
+        self.btn_reset_tips = ttk.Button(util_bar, text="🔄 Reset Tip Rack", command=lambda: self.reset_tip_rack_memory(None))
+        self.btn_reset_tips.pack(side=tk.RIGHT, padx=2)
+
+        z_home_bar = ttk.Frame(run_frame)
+        z_home_bar.pack(fill=tk.X, pady=(0, 4))
+        self.chk_mid_z_home = ttk.Checkbutton(
+            z_home_bar,
+            text="🔄 Mid-Protocol Z-Home (Compensate Downward Z-Drift) Every",
+            variable=self.mid_protocol_z_home_var,
+        )
+        self.chk_mid_z_home.pack(side=tk.LEFT, padx=(2, 4))
+        self.spn_mid_z_home_interval = ttk.Spinbox(
+            z_home_bar,
+            from_=1,
+            to=50,
+            width=3,
+            textvariable=self.mid_protocol_z_home_interval_var,
+        )
+        self.spn_mid_z_home_interval.pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(z_home_bar, text="Step(s)", font=("Arial", 9, "bold")).pack(side=tk.LEFT)
+
+        ctrl_frame = ttk.Frame(run_frame)
+        ctrl_frame.pack(fill=tk.X)
+        self.btn_play = tk.Button(ctrl_frame, text="▶ START PROTOCOL", bg="#28a745", fg="white",
+                                  font=("Arial", 10, "bold"), command=self.execute_protocol)
+        self.btn_play.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
+
+        self.btn_pause = tk.Button(ctrl_frame, text="⏸ PAUSE", bg="#ffc107", font=("Arial", 10, "bold"),
+                                   state=tk.DISABLED, command=self.pause_resume_run)
+        self.btn_pause.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
+
+        self.btn_stop = tk.Button(ctrl_frame, text="⏹ CANCEL", bg="#dc3545", fg="white", font=("Arial", 10, "bold"),
+                                  state=tk.DISABLED, command=self.stop_run)
+        self.btn_stop.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
+
+        # Mid-Run & Offline Protocol Modification Toolbar
+        bar_edit = ttk.Frame(pane_list)
+        bar_edit.pack(side=tk.BOTTOM, fill=tk.X, pady=(2, 4))
+        self.btn_wf_insert = ttk.Button(bar_edit, text="➕ Insert", width=8, command=self.action_insert_step)
+        self.btn_wf_insert.pack(side=tk.LEFT, padx=1)
+        self.btn_wf_delete = ttk.Button(bar_edit, text="🗑️ Delete", width=8, command=self.action_delete_step)
+        self.btn_wf_delete.pack(side=tk.LEFT, padx=1)
+        self.btn_wf_edit = ttk.Button(bar_edit, text="✏️ Edit", width=7, command=self.edit_wf_step)
+        self.btn_wf_edit.pack(side=tk.LEFT, padx=1)
+        self.btn_wf_up = ttk.Button(bar_edit, text="⬆️ Up", width=6, command=self.action_move_step_up)
+        self.btn_wf_up.pack(side=tk.LEFT, padx=1)
+        self.btn_wf_down = ttk.Button(bar_edit, text="⬇️ Down", width=6, command=self.action_move_step_down)
+        self.btn_wf_down.pack(side=tk.LEFT, padx=1)
+        self.protocol_edit_buttons = [self.btn_wf_insert, self.btn_wf_delete, self.btn_wf_edit, self.btn_wf_up, self.btn_wf_down]
+
         # Protocol Viewer Frame with Dual Scrollbars (Vertical & Horizontal)
         box_frame = ttk.Frame(pane_list)
-        box_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 4))
+        box_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 2))
         box_frame.grid_rowconfigure(0, weight=1)
         box_frame.grid_columnconfigure(0, weight=1)
 
@@ -2702,93 +2833,6 @@ class LIMSMasterApp:
         sb_x.config(command=self.wf_box.xview)
         sb_x.grid(row=1, column=0, sticky="ew")
         self.wf_box.bind("<Double-Button-1>", self.edit_wf_step)
-
-        # Mid-Run & Offline Protocol Modification Toolbar
-        bar_edit = ttk.Frame(pane_list)
-        bar_edit.pack(fill=tk.X, pady=(3, 6))
-        self.btn_wf_insert = ttk.Button(bar_edit, text="➕ Insert", width=8, command=self.action_insert_step)
-        self.btn_wf_insert.pack(side=tk.LEFT, padx=1)
-        self.btn_wf_delete = ttk.Button(bar_edit, text="🗑️ Delete", width=8, command=self.action_delete_step)
-        self.btn_wf_delete.pack(side=tk.LEFT, padx=1)
-        self.btn_wf_edit = ttk.Button(bar_edit, text="✏️ Edit", width=7, command=self.edit_wf_step)
-        self.btn_wf_edit.pack(side=tk.LEFT, padx=1)
-        self.btn_wf_up = ttk.Button(bar_edit, text="⬆️ Up", width=6, command=self.action_move_step_up)
-        self.btn_wf_up.pack(side=tk.LEFT, padx=1)
-        self.btn_wf_down = ttk.Button(bar_edit, text="⬇️ Down", width=6, command=self.action_move_step_down)
-        self.btn_wf_down.pack(side=tk.LEFT, padx=1)
-        self.protocol_edit_buttons = [self.btn_wf_insert, self.btn_wf_delete, self.btn_wf_edit, self.btn_wf_up, self.btn_wf_down]
-
-        run_frame = ttk.LabelFrame(pane_list, text="Opentrons-Style Run Dashboard", padding=10)
-        run_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=10)
-        self.progress_var = tk.DoubleVar()
-        self.progress_bar = ttk.Progressbar(run_frame, variable=self.progress_var, maximum=100)
-        self.progress_bar.pack(fill=tk.X, pady=(0, 5))
-
-        self.lbl_timer = ttk.Label(run_frame, text="Time Remaining: --h --m --s", font=("Consolas", 11, "bold"),
-                                   foreground="blue")
-        self.lbl_timer.pack(pady=(0, 6))
-
-        self.lbl_deck_summary = tk.Label(
-            run_frame,
-            text="📋 Deck: No protocol loaded | Tips: None",
-            font=("Arial", 9, "bold"),
-            bg="#f8f9fa",
-            fg="#495057",
-            relief="groove",
-            padx=8,
-            pady=4,
-            anchor="w",
-            justify=tk.LEFT
-        )
-        self.lbl_deck_summary.pack(fill=tk.X, pady=(0, 6))
-
-        util_bar = ttk.Frame(run_frame)
-        util_bar.pack(fill=tk.X, pady=(0, 8))
-        self.lbl_tip_memory = ttk.Label(
-            util_bar,
-            text="Tip Memory (Slot_4): Next A1 (96/96 free)",
-            font=("Consolas", 9, "bold"),
-            foreground="#0d6efd",
-        )
-        self.lbl_tip_memory.pack(side=tk.LEFT, padx=(2, 6))
-        self.btn_view_report = ttk.Button(util_bar, text="📊 View Run Report", command=self.action_open_run_report)
-        self.btn_view_report.pack(side=tk.RIGHT, padx=2)
-        self.btn_view_logs = ttk.Button(util_bar, text="📁 View Session Logs", command=self.action_open_session_logs)
-        self.btn_view_logs.pack(side=tk.RIGHT, padx=2)
-        self.btn_reset_tips = ttk.Button(util_bar, text="🔄 Reset Tip Rack", command=lambda: self.reset_tip_rack_memory(None))
-        self.btn_reset_tips.pack(side=tk.RIGHT, padx=2)
-
-        z_home_bar = ttk.Frame(run_frame)
-        z_home_bar.pack(fill=tk.X, pady=(0, 6))
-        self.chk_mid_z_home = ttk.Checkbutton(
-            z_home_bar,
-            text="🔄 Mid-Protocol Z-Home (Compensate Downward Z-Drift) Every",
-            variable=self.mid_protocol_z_home_var,
-        )
-        self.chk_mid_z_home.pack(side=tk.LEFT, padx=(2, 4))
-        self.spn_mid_z_home_interval = ttk.Spinbox(
-            z_home_bar,
-            from_=1,
-            to=50,
-            width=3,
-            textvariable=self.mid_protocol_z_home_interval_var,
-        )
-        self.spn_mid_z_home_interval.pack(side=tk.LEFT, padx=(0, 4))
-        ttk.Label(z_home_bar, text="Step(s)", font=("Arial", 9, "bold")).pack(side=tk.LEFT)
-
-        ctrl_frame = ttk.Frame(run_frame)
-        ctrl_frame.pack(fill=tk.X)
-        self.btn_play = tk.Button(ctrl_frame, text="▶ START PROTOCOL", bg="#28a745", fg="white",
-                                  font=("Arial", 11, "bold"), command=self.execute_protocol)
-        self.btn_play.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
-
-        self.btn_pause = tk.Button(ctrl_frame, text="⏸ PAUSE", bg="#ffc107", font=("Arial", 11, "bold"),
-                                   state=tk.DISABLED, command=self.pause_resume_run)
-        self.btn_pause.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
-
-        self.btn_stop = tk.Button(ctrl_frame, text="⏹ CANCEL", bg="#dc3545", fg="white", font=("Arial", 11, "bold"),
-                                  state=tk.DISABLED, command=self.stop_run)
-        self.btn_stop.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
 
         self.wf_action.bind("<<ComboboxSelected>>", self._toggle_wf_inputs)
         self._toggle_wf_inputs()
