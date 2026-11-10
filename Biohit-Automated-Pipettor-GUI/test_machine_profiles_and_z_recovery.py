@@ -314,8 +314,77 @@ def run_all_tests():
 
     print("PASS: Automated HTML dashboard & CSV audit reports generated and validated in logs/.")
 
+    # -------------------------------------------------------------------------
+    # TEST 8: Mid-Protocol Z-Axis Physical Homing (Compensate Downward Z-Drift)
+    # -------------------------------------------------------------------------
+    print("\n--- 8. Testing Mid-Protocol Z-Axis Physical Homing (Every 1 Step) ---")
+    assert app.mid_protocol_z_home_var.get() is True, "Mid-protocol Z-homing should default to True"
+    assert app.mid_protocol_z_home_interval_var.get() == 1, "Mid-protocol Z-homing interval should default to 1 step"
+    print("PASS: Mid-protocol Z-axis homing defaults to ENABLED every 1 step.")
+
+    class MockControl:
+        def __init__(self, parent_hw):
+            self.parent_hw = parent_hw
+            self.initialized_modules = []
+            self.waited_modules = []
+
+        def Initialize(self, module_name):
+            self.initialized_modules.append(module_name)
+            if module_name == "Z":
+                # Simulate physical optical Z-home switch re-zeroing downward drift
+                self.parent_hw.z_position = 0.0
+
+        def WaitArmToStop(self, module_name):
+            self.waited_modules.append(module_name)
+
+    class MockInstrument:
+        def __init__(self, parent_hw):
+            self.Control = MockControl(parent_hw)
+
+    class MockDriftingPipettor:
+        def __init__(self):
+            # Simulate 1.35 mm downward Z-stepper drift even when software thinks it's at 0
+            self.z_position = 68.43
+            self.x_position = 135.42
+            self.y_position = 84.14
+            self.tip_ejected = False
+            self.full_initialized = False
+            self._Pipettor__instrument = MockInstrument(self)
+
+        def move_z(self, z, wait=True):
+            # Simulate downward stepper slippage: moving to 0 leaves 1.35 mm physical downward drift
+            self.z_position = float(z) + 1.35
+
+        def initialize(self):
+            self.full_initialized = True
+            self.tip_ejected = True
+
+        def eject_tip(self):
+            self.tip_ejected = True
+
+    mock_hw = MockDriftingPipettor()
+    orig_hw = getattr(app.lims.pipettor, "hardware", None)
+    app.lims.pipettor.hardware = mock_hw
+    app.has_tip_var.set(True)
+
+    # Trigger mid-protocol Z-only home
+    ok = app._home_z_axis_only(reason="Dispense Media", step_idx=1, total_steps=10)
+    assert ok is True, "Z-only physical homing must succeed"
+    assert mock_hw.z_position == 0.0, f"Expected physical Z drift to be re-zeroed to 0.0, got {mock_hw.z_position}"
+    assert mock_hw._Pipettor__instrument.Control.initialized_modules == ["Z"], (
+        f"Expected ONLY 'Z' module to be initialized, got {mock_hw._Pipettor__instrument.Control.initialized_modules}"
+    )
+    assert not mock_hw.full_initialized, "Full initialize() must NEVER be called during mid-protocol Z homing"
+    assert not mock_hw.tip_ejected, "Tips must NEVER be ejected during mid-protocol Z homing"
+    assert app.has_tip_var.get() is True, "GUI mounted tip state must remain True after Z-only homing"
+    assert mock_hw.x_position == 135.42 and mock_hw.y_position == 84.14, "X and Y positions must remain untouched"
+
+    # Reset back to simulation mode
+    app.lims.pipettor.hardware = orig_hw
+    print("PASS: Z-only physical homing ('Control.Initialize(\"Z\")') re-zeroed downward Z drift while preserving tips, liquid, and X/Y.")
+
     print("\n======================================================================")
-    print("ALL 7 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
+    print("ALL 8 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
     print("======================================================================")
 
 if __name__ == "__main__":

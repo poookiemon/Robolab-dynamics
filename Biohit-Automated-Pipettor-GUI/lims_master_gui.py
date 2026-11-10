@@ -205,6 +205,11 @@ class LIMSMasterApp:
         self.jog_nudge_btns = []
         self._jogging_in_progress = False
 
+        # Mid-Protocol Z-Axis Homing State (Compensates for cumulative downward Z drift every 1 step)
+        self.mid_protocol_z_home_var = tk.BooleanVar(value=True)
+        self.mid_protocol_z_home_interval_var = tk.IntVar(value=1)
+        self.z_home_step_counter = 0
+
         # 1. Automated Session Logging State
         self.session_abort_status = None
         self.active_session_log_handler = None
@@ -324,7 +329,7 @@ class LIMSMasterApp:
         hwmenu.add_command(label="Switch to 8-Channel Multi (1-10 µL) [Drug Addition to EHM]", command=lambda: self.switch_pipettor_head("8-Channel Multi (1-10 µL)"))
         hwmenu.add_separator()
         hwmenu.add_command(label="Reset / Home Pipette Head", command=self.quick_home_head)
-        hwmenu.add_command(label="Retract to Safe Z (0 mm)", command=self.quick_safe_z)
+        hwmenu.add_command(label="Retract & Home Z-Axis Only (0 mm, Preserve Tip)", command=self.quick_safe_z)
         hwmenu.add_separator()
         hwmenu.add_command(label="📐 Slot Z-Verification Tool...", command=self.action_open_slot_z_verification)
         hwmenu.add_command(label="8-Channel Calibrated Heights & Depths...", command=self.action_open_8ch_height_settings)
@@ -2753,6 +2758,24 @@ class LIMSMasterApp:
         self.btn_reset_tips = ttk.Button(util_bar, text="🔄 Reset Tip Rack", command=lambda: self.reset_tip_rack_memory(None))
         self.btn_reset_tips.pack(side=tk.RIGHT, padx=2)
 
+        z_home_bar = ttk.Frame(run_frame)
+        z_home_bar.pack(fill=tk.X, pady=(0, 6))
+        self.chk_mid_z_home = ttk.Checkbutton(
+            z_home_bar,
+            text="🔄 Mid-Protocol Z-Home (Compensate Downward Z-Drift) Every",
+            variable=self.mid_protocol_z_home_var,
+        )
+        self.chk_mid_z_home.pack(side=tk.LEFT, padx=(2, 4))
+        self.spn_mid_z_home_interval = ttk.Spinbox(
+            z_home_bar,
+            from_=1,
+            to=50,
+            width=3,
+            textvariable=self.mid_protocol_z_home_interval_var,
+        )
+        self.spn_mid_z_home_interval.pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(z_home_bar, text="Step(s)", font=("Arial", 9, "bold")).pack(side=tk.LEFT)
+
         ctrl_frame = ttk.Frame(run_frame)
         ctrl_frame.pack(fill=tk.X)
         self.btn_play = tk.Button(ctrl_frame, text="▶ START PROTOCOL", bg="#28a745", fg="white",
@@ -3385,15 +3408,59 @@ class LIMSMasterApp:
                 self.logger.error(f"[HOME ERROR] Failed to home head: {e}")
             messagebox.showerror("Homing Error", f"Error during head reset: {e}")
 
+    def _home_z_axis_only(self, reason: str = "", step_idx: int = None, total_steps: int = None) -> bool:
+        """
+        Physically homes ONLY the Z-axis against the top home switch (Z=0.00mm)
+        without touching X, Y, mounted tips, or the pipette plunger ('P').
+        Compensates for cumulative downward stepper drift (e.g., on the 300 µL head).
+        """
+        try:
+            ok = True
+            msg = "Z=0.00mm"
+            if hasattr(self, "lims") and hasattr(self.lims, "hw") and hasattr(self.lims.hw, "home_z_only"):
+                ok, msg = self.lims.hw.home_z_only(logger=getattr(self, "logger", None), reason=reason)
+            elif hasattr(self, "lims") and getattr(self.lims.pipettor, "hardware", None):
+                self.lims.pipettor.hardware.move_z(0)
+
+            self.current_pos["Z"] = 0.0
+            self.z_home_step_counter = getattr(self, "z_home_step_counter", 0) + 1
+
+            def _sync_z_ui():
+                if hasattr(self, "jog_vars") and "Z" in self.jog_vars:
+                    try:
+                        self.jog_vars["Z"].set(0.0)
+                    except Exception:
+                        pass
+
+            if threading.current_thread() is threading.main_thread():
+                _sync_z_ui()
+            else:
+                try:
+                    self.root.after(0, _sync_z_ui)
+                except Exception:
+                    pass
+
+            if hasattr(self, "logger"):
+                step_tag = f" (Step {step_idx}/{total_steps}: {reason})" if step_idx is not None else (f" ({reason})" if reason else "")
+                self.logger.info(
+                    f"[Z-HOME] Physical Z-axis re-homed at top sensor{step_tag} -> Z=0.00mm (Tip & plunger preserved)"
+                )
+            return ok
+        except Exception as e:
+            if hasattr(self, "logger"):
+                self.logger.warning(f"[Z-HOME] Failed to re-home Z-axis: {e}")
+            return False
+
     def quick_safe_z(self):
-        """Immediately moves Z-axis up to safety clearance (Z = 0.0 mm)."""
+        """Immediately moves Z-axis up to safety clearance (Z = 0.0 mm) and physically re-homes Z."""
         if getattr(self, 'is_running', False):
             messagebox.showwarning("Protocol Running", "Cannot move Z while a protocol is actively running.")
             return
         try:
             self._quick_move_z(0.0)
+            self._home_z_axis_only(reason="Quick Safe Z")
             if hasattr(self, 'logger'):
-                self.logger.info("[SAFE Z] Retracted Z-axis to clearance origin (Z=0.0 mm)")
+                self.logger.info("[SAFE Z] Retracted & physically re-homed Z-axis to clearance origin (Z=0.0 mm)")
         except Exception as e:
             if hasattr(self, 'logger'):
                 self.logger.error(f"[SAFE Z ERROR] Failed to retract Z: {e}")
@@ -6961,6 +7028,7 @@ class LIMSMasterApp:
             # Fresh liquid-level ledger for every run (tubes assumed refilled to start level)
             self.liquid_ledger = {}
             self.has_air_cushion = False
+            self.z_home_step_counter = 0
             self.pause_event.set()
             self.root.after(0, lambda: self.update_ui_state(True))
             total_steps = len(self.workflow_sequence)
@@ -7226,6 +7294,8 @@ class LIMSMasterApp:
                             try:
                                 hw.z_speed = hw_speed
                                 hw.move_z(0)
+                                if getattr(self, "mid_protocol_z_home_var", None) and self.mid_protocol_z_home_var.get():
+                                    self.lims.hw.home_z_only(logger=self.logger, reason="Empty tip socket retry")
                             except Exception:
                                 hw.move_z(0)
                             return False, curr_z
@@ -7737,6 +7807,22 @@ class LIMSMasterApp:
                                 self._schedule_deck_redraw()
                             self._set_has_tip(False)
                             self.logger.info("Simulation: Tip ejected -> HAS_TIP = False")
+
+                    # Mid-Protocol Z-Axis Physical Homing (Default: Every 1 Step)
+                    # Re-zeros the Z actuator against the top optical sensor after step retraction
+                    # to eliminate cumulative downward Z-stepper drift while preserving tip & plunger state.
+                    z_home_enabled = True
+                    z_home_interval = 1
+                    try:
+                        if hasattr(self, "mid_protocol_z_home_var"):
+                            z_home_enabled = bool(self.mid_protocol_z_home_var.get())
+                        if hasattr(self, "mid_protocol_z_home_interval_var"):
+                            z_home_interval = max(1, int(self.mid_protocol_z_home_interval_var.get()))
+                    except Exception:
+                        z_home_interval = 1
+
+                    if z_home_enabled and not step_skipped_fast and (i % z_home_interval == 0):
+                        self._home_z_axis_only(reason=action, step_idx=i, total_steps=total_steps)
 
                     # Record step telemetry into audit log
                     self.session_step_audit_log.append({

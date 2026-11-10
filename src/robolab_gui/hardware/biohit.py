@@ -58,6 +58,25 @@ class BiohitHardware(HardwareInterface):
     def home(self, axis: Optional[str] = None) -> None:
         if not self._connected:
             raise ConnectionError("Cannot home: pipettor is not connected.")
+        if axis and axis.upper() == "Z":
+            if self._native_hardware:
+                try:
+                    if hasattr(self._native_hardware, "move_z"):
+                        self._native_hardware.move_z(0.0)
+                    inst = (
+                        getattr(self._native_hardware, "_Pipettor__instrument", None)
+                        or getattr(self._native_hardware, "_instrument", None)
+                    )
+                    ctrl = getattr(inst, "Control", None) if inst else None
+                    if ctrl and hasattr(ctrl, "Initialize"):
+                        ctrl.Initialize("Z")
+                    elif ctrl and hasattr(ctrl, "DriveHome"):
+                        ctrl.DriveHome("Z", True)
+                except Exception as e:
+                    raise ConnectionError(f"Z-axis homing failed: {e}") from e
+            self._current_z = 0.0
+            return
+
         if self._native_hardware and hasattr(self._native_hardware, "initialize"):
             try:
                 self._native_hardware.initialize()

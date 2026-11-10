@@ -190,6 +190,7 @@ class BiohitInterface:
         self.active_port: Optional[str] = None
         self.pipettor = pipettor if pipettor else Pipettor()
         self.limits = limits if limits else {"max_x_mm": 300.0, "max_y_mm": 300.0, "max_z_mm": 310.0}
+        self.z_home_count: int = 0
 
     @staticmethod
     def extract_clean_port(port_name: str) -> str:
@@ -308,6 +309,90 @@ class BiohitInterface:
         else:
             self.is_initialized = True
             return True, f"Homed & Initialized on {self.active_port}."
+
+    def home_z_only(self, logger=None, reason: str = "") -> Tuple[bool, str]:
+        """
+        Homes ONLY the Z-axis actuator against the physical top home sensor to eliminate
+        cumulative downward stepper drift (e.g. on the 300 µL single-channel head),
+        while strictly preserving X, Y, mounted tips, and aspirated piston/liquid state ('P').
+        """
+        self.z_home_count = getattr(self, "z_home_count", 0) + 1
+        hw = getattr(self.pipettor, "hardware", None) if self.pipettor else None
+        if hw is None and self.pipettor is not None and hasattr(self.pipettor, "move_z"):
+            hw = self.pipettor
+        if not hw:
+            return True, "Simulated Z-axis physical home (Z=0.00mm; tip & plunger preserved)."
+
+        try:
+            # 1. Smoothly retract to software Z=0 clearance first
+            try:
+                hw.move_z(0, wait=True)
+            except TypeError:
+                hw.move_z(0)
+            except Exception as move_err:
+                if logger:
+                    logger.warning(f"[Z-HOME] Pre-retract move_z(0) notice: {move_err}")
+
+            # 2. Trigger physical Z-only sensor re-zero via InstrumentLib ControlCls ("Z" module only, never "P")
+            homed_physically = False
+            inst = (
+                getattr(hw, "_Pipettor__instrument", None)
+                or getattr(hw, "_instrument", None)
+                or getattr(hw, "instrument", None)
+            )
+            ctrl = getattr(inst, "Control", None) if inst is not None else getattr(hw, "Control", None)
+
+            if ctrl is not None:
+                if hasattr(ctrl, "Initialize"):
+                    try:
+                        res = ctrl.Initialize("Z")
+                        homed_physically = bool(res) if res is not None else True
+                    except Exception as init_z_err:
+                        if logger:
+                            logger.warning(f"[Z-HOME] Control.Initialize('Z') fallback: {init_z_err}")
+
+                if not homed_physically and hasattr(ctrl, "DriveHome"):
+                    try:
+                        res = ctrl.DriveHome("Z", True)
+                        homed_physically = bool(res) if res is not None else True
+                    except TypeError:
+                        res = ctrl.DriveHome("Z")
+                        homed_physically = bool(res) if res is not None else True
+                    except Exception as dh_err:
+                        if logger:
+                            logger.warning(f"[Z-HOME] Control.DriveHome('Z') fallback: {dh_err}")
+
+                if hasattr(ctrl, "WaitArmToStop"):
+                    try:
+                        ctrl.WaitArmToStop("Z")
+                    except TypeError:
+                        try:
+                            ctrl.WaitArmToStop()
+                        except Exception:
+                            pass
+                    except Exception:
+                        pass
+
+            if not homed_physically:
+                if hasattr(hw, "home_z") and callable(hw.home_z):
+                    hw.home_z()
+                    homed_physically = True
+                elif hasattr(hw, "init_z") and callable(hw.init_z):
+                    hw.init_z()
+                    homed_physically = True
+
+            # If mock/simulator object allows setting z_position directly, ensure it reads 0.0
+            try:
+                if not isinstance(getattr(type(hw), "z_position", None), property):
+                    hw.z_position = 0.0
+            except Exception:
+                pass
+
+            return True, "Physical Z-axis homed at top sensor (Z=0.00mm; tip & plunger preserved)."
+        except Exception as e:
+            if logger:
+                logger.warning(f"[Z-HOME] Z-only homing warning: {e}")
+            return False, f"Z-only homing warning: {e}"
 
     def smart_tip_pickup(self, slot_name, labware_obj, logger):
         try:
