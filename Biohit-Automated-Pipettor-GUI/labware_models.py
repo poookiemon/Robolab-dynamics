@@ -171,7 +171,7 @@ class Plate96(LabwareBase):
             return self.aspirate_depth_override
         active_pid = str(getattr(slot, "active_profile_id", "") or "")
         if "300" in active_pid and slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
-            return 97.52
+            return 98.72
         # Calibrated 96-well plate deep aspirate / mix is 78.40mm
         if slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
             return 78.40
@@ -182,7 +182,7 @@ class Plate96(LabwareBase):
             return self.dispense_depth_override
         active_pid = str(getattr(slot, "active_profile_id", "") or "")
         if "300" in active_pid and slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
-            return 97.52
+            return 98.72
         if slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6") and not in_liquid:
             return 68.43
         return super().get_dispense_z(slot, well_id, in_liquid)
@@ -190,7 +190,7 @@ class Plate96(LabwareBase):
     def get_mix_z(self, slot: 'DeckSlot', well_id: str) -> float:
         active_pid = str(getattr(slot, "active_profile_id", "") or "")
         if "300" in active_pid and slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
-            return 97.52
+            return 98.72
         if slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
             return 78.40
         return super().get_mix_z(slot, well_id)
@@ -757,7 +757,7 @@ class DeckSlot:
                 "Slot_2": (95.5, 13.0),
                 "Slot_3": (243.81, 53.02),
                 "Slot_4": (105.60, 53.02),
-                "Slot_5": (243.24, 147.19),
+                "Slot_5": (242.98, 147.64),
                 "Slot_6": (105.60, 147.19),
             }
         else:
@@ -766,7 +766,7 @@ class DeckSlot:
                 "Slot_2": (95.5, 13.0),
                 "Slot_3": (243.81, 52.64),
                 "Slot_4": (105.63, 57.12),
-                "Slot_5": (243.24, 146.81),
+                "Slot_5": (242.98, 147.64),
                 "Slot_6": (105.60, 146.81),
             }
         if self.name in calibrated_origins:

@@ -62,7 +62,7 @@ def test_deck_stacking_kinematics():
     p96_deep_z = dm.calculate_z("Aspirate Media", "Slot_5", "A1")
     p96_mix_z = dm.calculate_z("Mix Well", "Slot_5", "A1")
     print(f"Slot 5 96-well A1: ({p96_a1_x}, {p96_a1_y}), Brim Z: {p96_brim_z}, Deep Z: {p96_deep_z}, Mix Z: {p96_mix_z}")
-    assert (p96_a1_x, p96_a1_y) in ((243.24, 147.19), (243.24, 146.81)), f"Slot 5 A1 xy mismatch: ({p96_a1_x}, {p96_a1_y})"
+    assert (p96_a1_x, p96_a1_y) in ((242.98, 147.64), (243.24, 147.19), (243.24, 146.81)), f"Slot 5 A1 xy mismatch: ({p96_a1_x}, {p96_a1_y})"
     assert p96_brim_z == 68.43, f"Expected brim Z=68.43mm, got {p96_brim_z}"
     assert p96_deep_z == 78.4, f"Expected deep Z=78.4mm, got {p96_deep_z}"
     assert p96_mix_z == 78.4, f"Expected mix Z=78.4mm, got {p96_mix_z}"

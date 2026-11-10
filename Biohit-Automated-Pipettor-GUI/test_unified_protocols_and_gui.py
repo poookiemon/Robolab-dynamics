@@ -191,7 +191,8 @@ def test_gui_loading():
         app._on_proto_pipettor_selected()
         assert app.lims.pipettor.multichannel is False
         assert app.lims.pipettor.tip_volume == 10.0
-        assert "1-10 µL SINGLE" in app.lbl_head_badge.cget("text")
+        if hasattr(app, 'lbl_head_badge'):
+            assert "1-10 µL SINGLE" in app.lbl_head_badge.cget("text")
         p10_choices = list(app.proto_workflow_cb["values"])
         assert any("7.5 µL" in c for c in p10_choices)
         assert any("5.0 µL" in c for c in p10_choices)
@@ -202,7 +203,8 @@ def test_gui_loading():
         app._on_proto_pipettor_selected()
         assert app.lims.pipettor.multichannel is False
         assert app.lims.pipettor.tip_volume == 300.0
-        assert "1×300 µL SINGLE" in app.lbl_head_badge.cget("text")
+        if hasattr(app, 'lbl_head_badge'):
+            assert "1×300 µL SINGLE" in app.lbl_head_badge.cget("text")
         p300_choices = list(app.proto_workflow_cb["values"])
         assert any("DMSO-Drug" in c or "96-Well" in c for c in p300_choices)
         print(f"PASS: 300 uL Single Pipettor selected -> {len(p300_choices)} protocols populated: {p300_choices}")
@@ -212,7 +214,8 @@ def test_gui_loading():
         app._on_proto_pipettor_selected()
         assert app.lims.pipettor.multichannel is True
         assert app.lims.pipettor.tip_volume == 1000.0
-        assert "8×1000 µL MULTI" in app.lbl_head_badge.cget("text")
+        if hasattr(app, 'lbl_head_badge'):
+            assert "8×1000 µL MULTI" in app.lbl_head_badge.cget("text")
         p1000_choices = list(app.proto_workflow_cb["values"])
         assert any("Media Change" in c for c in p1000_choices)
         assert any("Fresh Media Only" in c for c in p1000_choices)

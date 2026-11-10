@@ -24,8 +24,8 @@
         "discard_tip": 80.0
     },
     "z_limits": {
-        "recommended_aspirate_z": 97.52,
-        "recommended_dispense_z": 97.52,
+        "recommended_aspirate_z": 98.72,
+        "recommended_dispense_z": 98.72,
         "max_safe_bottom_z": 99.0
     }
 }

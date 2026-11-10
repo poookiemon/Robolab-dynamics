@@ -155,9 +155,9 @@ class LIMSMasterApp:
             "tip_rack_discard_z": 40.50,
             "ehm_aspirate_z": 72.35 if ("10ul" in self.active_profile_id or "300" in self.active_profile_id) else 24.17,
             "ehm_dispense_z": 62.35 if ("10ul" in self.active_profile_id or "300" in self.active_profile_id) else 14.17,
-            "plate96_aspirate_z": 97.52 if "300" in self.active_profile_id else 78.40,
-            "plate96_dispense_z": 97.52 if "300" in self.active_profile_id else 68.43,
-            "plate96_dmso_dispense_z": 97.52 if "300" in self.active_profile_id else 68.43,
+            "plate96_aspirate_z": 98.72 if "300" in self.active_profile_id else 78.40,
+            "plate96_dispense_z": 98.72 if "300" in self.active_profile_id else 68.43,
+            "plate96_dmso_dispense_z": 98.72 if "300" in self.active_profile_id else 68.43,
             "reservoir_aspirate_z": 58.34 if "10ul" in self.active_profile_id else (86.0 if "300" in self.active_profile_id else 90.42),
             "waste_dispense_z": 8.37,
             "waste_tip_drop_z": 8.37,
@@ -170,15 +170,15 @@ class LIMSMasterApp:
                 self.calibrated_heights[k] = v
 
         if "300" in self.active_profile_id:
-            if float(self.calibrated_heights.get("plate96_aspirate_z", 97.52)) in (78.4, 78.40):
-                self.calibrated_heights["plate96_aspirate_z"] = 97.52
-            if float(self.calibrated_heights.get("plate96_dispense_z", 97.52)) in (68.43, 78.4, 78.40):
-                self.calibrated_heights["plate96_dispense_z"] = 97.52
+            if float(self.calibrated_heights.get("plate96_aspirate_z", 98.72)) in (78.4, 78.40, 97.52):
+                self.calibrated_heights["plate96_aspirate_z"] = 98.72
+            if float(self.calibrated_heights.get("plate96_dispense_z", 98.72)) in (68.43, 78.4, 78.40, 97.52):
+                self.calibrated_heights["plate96_dispense_z"] = 98.72
             if float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 92.0)) <= 88.0:
                 self.calibrated_heights["tip_rack_pickup_limit_z"] = 92.0
-            if float(self.calibrated_heights.get("plate96_dmso_dispense_z", 97.52)) in (75.0, 75.00, 68.43):
-                self.calibrated_heights["plate96_dmso_dispense_z"] = 97.52
-            self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 97.52)
+            if float(self.calibrated_heights.get("plate96_dmso_dispense_z", 98.72)) in (75.0, 75.00, 68.43, 97.52):
+                self.calibrated_heights["plate96_dmso_dispense_z"] = 98.72
+            self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 98.72)
         self.last_aspirate_slot = None
         self.last_aspirate_lw_kind = None
 
@@ -1697,15 +1697,15 @@ class LIMSMasterApp:
                 self.active_profile_id = matching_pid
                 self.calibrated_heights = self.profile_manager.load_profile(matching_pid)
                 if "300" in matching_pid:
-                    if float(self.calibrated_heights.get("plate96_aspirate_z", 97.52)) in (78.4, 78.40):
-                        self.calibrated_heights["plate96_aspirate_z"] = 97.52
-                    if float(self.calibrated_heights.get("plate96_dispense_z", 97.52)) in (68.43, 78.4, 78.40):
-                        self.calibrated_heights["plate96_dispense_z"] = 97.52
+                    if float(self.calibrated_heights.get("plate96_aspirate_z", 98.72)) in (78.4, 78.40, 97.52):
+                        self.calibrated_heights["plate96_aspirate_z"] = 98.72
+                    if float(self.calibrated_heights.get("plate96_dispense_z", 98.72)) in (68.43, 78.4, 78.40, 97.52):
+                        self.calibrated_heights["plate96_dispense_z"] = 98.72
                     if float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 92.0)) <= 88.0:
                         self.calibrated_heights["tip_rack_pickup_limit_z"] = 92.0
-                    if float(self.calibrated_heights.get("plate96_dmso_dispense_z", 97.52)) in (75.0, 75.00, 68.43):
-                        self.calibrated_heights["plate96_dmso_dispense_z"] = 97.52
-                    self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 97.52)
+                    if float(self.calibrated_heights.get("plate96_dmso_dispense_z", 98.72)) in (75.0, 75.00, 68.43, 97.52):
+                        self.calibrated_heights["plate96_dmso_dispense_z"] = 98.72
+                    self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 98.72)
                 if hasattr(self, 'apply_default_deck_for_profile'):
                     self.apply_default_deck_for_profile(matching_pid)
                 if hasattr(self, 'update_window_title'):
@@ -3797,7 +3797,7 @@ class LIMSMasterApp:
         slot_descs = {
             "Slot_1": "Empty clearance zone (or 3-Well Reservoir parked safely)",
             "Slot_2": "Waste Trough / Discard Rack (Liquid Waste & Tip Discard)",
-            "Slot_3": "Prepped 96-Well Drug Plate (Stock Drug Conditions, Z=97.52 mm)",
+            "Slot_3": "Prepped 96-Well Drug Plate (Stock Drug Conditions, Z=98.72 mm)",
             "Slot_4": "300 µL Tip Rack (Single-Channel Tips A1..D5, pickup Z=86.36 mm)",
             "Slot_5": "Destination Plate 1 (Myriamed 48-Well EHM: Rows A-C Drug 1, D-F Drug 2, G-H Drug 3, Z=72.35 mm)",
             "Slot_6": "Destination Plate 2 (Myriamed 48-Well EHM: Row A Drug 3, B-D Drug 4, E-G Drug 5, Row H Control, Z=72.35 mm)",
@@ -3848,9 +3848,9 @@ class LIMSMasterApp:
         slot_descs = {
             "Slot_1": "3-Well Reservoir (Well A1 at X=235.05, Y=5.27: Pure DMSO Buffer)",
             "Slot_2": "Waste Trough (Liquid Waste & Tip Graveyard)" if slot2_lw != "(Empty / Clearance)" else "Empty clearance slot",
-            "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells, Z=97.52 mm)",
+            "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells, Z=98.72 mm)",
             "Slot_4": "300 µL Tip Rack (A1 at X=105.63, Y=57.12)",
-            "Slot_5": "96-Well Target Dilution Plate (Serial Mix, Z=97.52 mm)",
+            "Slot_5": "96-Well Target Dilution Plate (Serial Mix, Z=98.72 mm)",
             "Slot_6": "Empty clearance slot",
         }
         for s in seq:
@@ -4479,15 +4479,15 @@ class LIMSMasterApp:
                 self.profile_manager.set_active_profile_id(profile_id)
             self.calibrated_heights = self.profile_manager.load_profile(profile_id)
             if "300" in profile_id:
-                if float(self.calibrated_heights.get("plate96_aspirate_z", 97.52)) in (78.4, 78.40):
-                    self.calibrated_heights["plate96_aspirate_z"] = 97.52
-                if float(self.calibrated_heights.get("plate96_dispense_z", 97.52)) in (68.43, 78.4, 78.40):
-                    self.calibrated_heights["plate96_dispense_z"] = 97.52
+                if float(self.calibrated_heights.get("plate96_aspirate_z", 98.72)) in (78.4, 78.40, 97.52):
+                    self.calibrated_heights["plate96_aspirate_z"] = 98.72
+                if float(self.calibrated_heights.get("plate96_dispense_z", 98.72)) in (68.43, 78.4, 78.40, 97.52):
+                    self.calibrated_heights["plate96_dispense_z"] = 98.72
                 if float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 92.0)) <= 88.0:
                     self.calibrated_heights["tip_rack_pickup_limit_z"] = 92.0
-                if float(self.calibrated_heights.get("plate96_dmso_dispense_z", 97.52)) in (75.0, 75.00, 68.43):
-                    self.calibrated_heights["plate96_dmso_dispense_z"] = 97.52
-                self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 97.52)
+                if float(self.calibrated_heights.get("plate96_dmso_dispense_z", 98.72)) in (75.0, 75.00, 68.43, 97.52):
+                    self.calibrated_heights["plate96_dmso_dispense_z"] = 98.72
+                self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 98.72)
 
         cfg = (PROFILE_CONFIGS or {}).get(profile_id, {})
         prof_multi = cfg.get("is_multichannel", True if ("8x" in profile_id or "10ul" in profile_id) else False)
@@ -4984,9 +4984,9 @@ class LIMSMasterApp:
         fields = [
             ("ehm_aspirate_z", "EHM Old Media Removal (Inside Well):", "24.17"),
             ("ehm_dispense_z", "EHM Fresh Media Addition (1cm Above Bottom):", "14.17"),
-            ("plate96_aspirate_z", "96-Well Plate Deep Aspirate / Mix Height:", "97.52"),
-            ("plate96_dispense_z", "96-Well Plate Standard Dispense Height:", "97.52"),
-            ("plate96_dmso_dispense_z", "96-Well DMSO Dispense Height (300µL Base / Mix Depth):", "97.52"),
+            ("plate96_aspirate_z", "96-Well Plate Deep Aspirate / Mix Height:", "98.72"),
+            ("plate96_dispense_z", "96-Well Plate Standard Dispense Height:", "98.72"),
+            ("plate96_dmso_dispense_z", "96-Well DMSO Dispense Height (300µL Base / Mix Depth):", "98.72"),
             ("reservoir_aspirate_z", "Reservoir Deep Aspirate Height (Slot 1 / Slot 6):", "90.42"),
             ("waste_dispense_z", "Slot 6 Waste Dispense (Up / 3cm Above Bottom):", "59.32"),
             ("tip_rack_discard_z", "Slot 4 Tip Rack Return / Discard Height:", "42.00"),
@@ -6096,14 +6096,14 @@ class LIMSMasterApp:
         "Slot_2": (95.5, 13.0),    # calibrated (front left, 3-well reservoir/waste trough A1)
         "Slot_3": (243.81, 52.64), # calibrated (Machine 2 1-10µL: A1 X=243.81, A1 Y=52.64, 8-ch center Y=84.14)
         "Slot_4": (105.63, 57.12), # calibrated (Slot 4 Tip Rack: X=105.63, Y=57.12)
-        "Slot_5": (243.24, 146.81), # calibrated (Machine 2: 8-ch center Y=178.31 -> A1 Y=146.81)
+        "Slot_5": (242.98, 147.64), # calibrated (96-well plate A1 center: X=242.98, Y=147.64)
         "Slot_6": (105.60, 146.81), # calibrated (Machine 2: 8-ch center Y=178.31 -> A1 Y=146.81)
     }
 
     # Calibrated per-slot column tables for 96-format labware (override pitch math)
     SLOT_96_COL_OVERRIDES = {
         "Slot_4": [round(105.63 - (c * 9.0), 2) for c in range(12)],
-        "Slot_5": [round(243.24 - (c * 9.0), 2) for c in range(12)],
+        "Slot_5": [round(242.98 - (c * 9.0), 2) for c in range(12)],
     }
 
     # Calibrated per-slot Z for 96-well microplates: (deep / aspirate / mix, brim / dispense)
@@ -6161,7 +6161,7 @@ class LIMSMasterApp:
             if slot_name == "Slot_3":
                 return 243.81, 52.64
             if slot_name == "Slot_5":
-                return 243.24, 146.81
+                return 242.98, 147.64
             if slot_name == "Slot_6":
                 return 105.60, 146.81
             if slot_name == "Slot_1":
@@ -6170,12 +6170,14 @@ class LIMSMasterApp:
                 return 95.50, 13.0
         if is_300ul and slot_name == "Slot_4":
             return 105.63, 57.12
+        if is_300ul and slot_name == "Slot_5":
+            return 242.98, 147.64
         m1_origins = {
             "Slot_1": (235.05, 5.27),
             "Slot_2": (95.5, 13.0),
             "Slot_3": (243.81, 53.02),
             "Slot_4": (105.60, 53.02),
-            "Slot_5": (243.24, 147.19),
+            "Slot_5": (242.98, 147.64),
             "Slot_6": (105.60, 147.19),
         }
         if slot_name in m1_origins:
@@ -6225,8 +6227,9 @@ class LIMSMasterApp:
             r_idx, c_idx = self._parse_well(well_id)
             ci = c_idx if (c_idx is not None and 0 <= c_idx < 12) else 0
             ri = r_idx if (r_idx is not None and 0 <= r_idx < 8) else 0
-            base_x = 243.24 if slot_name == "Slot_5" else 105.60
-            return round(base_x - (ci * 9.0), 2), round(146.81 + (ri * 9.0), 2)
+            base_x = 242.98 if slot_name == "Slot_5" else 105.60
+            base_y = 147.64 if slot_name == "Slot_5" else 146.81
+            return round(base_x - (ci * 9.0), 2), round(base_y + (ri * 9.0), 2)
 
         # 0. Object-Oriented DeckManager Kinematics
         if hasattr(self, 'deck_manager') and slot_name in self.deck_manager.slots:
@@ -6405,7 +6408,7 @@ class LIMSMasterApp:
             elif slot_name == "Slot_3":
                 tx = round(243.81 - (col_i * 9.0), 2)
             else:  # Slot_5
-                tx = round(243.24 - (col_i * 9.0), 2)
+                tx = round(242.98 - (col_i * 9.0), 2)
 
             raw_m_ch = str((step or {}).get("mounted_channels", "")).strip().upper()
             m_ch = raw_m_ch or "A-E"
@@ -6427,11 +6430,11 @@ class LIMSMasterApp:
                     ty = round(84.14 - (8 - num_tips) * 9.06, 2)
             else:
                 if num_tips == 5 or not raw_m_ch:
-                    ty = 146.81
+                    ty = 147.64 if slot_name == "Slot_5" else 146.81
                 elif num_tips == 8:
-                    ty = 178.31
+                    ty = 179.14 if slot_name == "Slot_5" else 178.31
                 else:
-                    ty = round(178.31 - (8 - num_tips) * 9.06, 2)
+                    ty = round((179.14 if slot_name == "Slot_5" else 178.31) - (8 - num_tips) * 9.06, 2)
 
             offset_rows = int((step or {}).get('tip_offset_rows', 0) or 0)
             ty += offset_rows * 9.0
@@ -6582,7 +6585,7 @@ class LIMSMasterApp:
             is_triplicate = "triplicate" in str(getattr(self, "current_protocol_file", "")).lower() or "triplicate" in str(getattr(self, "loaded_protocol_name", "")).lower()
             is_96 = (kind in ("plate96", None)) or is_triplicate or "96" in str(getattr(labware_obj, "source_file", "")).lower() or "96" in str(getattr(labware_obj, "name", "")).lower()
             # EHM 48-Well Plates (Slot 5 & Slot 6) calibrated depth: 72.35mm (safe, prevents tip bending)
-            if kind == "ehm48" or (slot_name in ("Slot_5", "Slot_6") and "96" not in str(getattr(labware_obj, "source_file", "")).lower()):
+            if kind == "ehm48" or (slot_name in ("Slot_5", "Slot_6") and "reservoir" not in str(kind) and "waste" not in str(kind) and "96" not in str(getattr(labware_obj, "source_file", "")).lower()):
                 def_ehm_asp = 72.35 if (is_10ul or is_300ul) else 24.17
                 def_ehm_disp = 62.35 if (is_10ul or is_300ul) else 14.17
                 if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
@@ -6590,14 +6593,14 @@ class LIMSMasterApp:
                 elif action == "Dispense Media":
                     return min(float(self.calibrated_heights.get("ehm_dispense_z", def_ehm_disp)) + slot_z_offset + extra_z, 103.5)
             elif kind == "plate96" or (is_8ch and slot_name in ("Slot_3", "Slot_5") and is_96):
-                def_p96_asp = 97.52 if is_300ul else 78.40
-                def_p96_disp = 97.52 if is_300ul else 68.43
+                def_p96_asp = 98.72 if is_300ul else 78.40
+                def_p96_disp = 98.72 if is_300ul else 68.43
                 raw_asp = float(self.calibrated_heights.get("plate96_aspirate_z", def_p96_asp))
                 raw_disp = float(self.calibrated_heights.get("plate96_dispense_z", def_p96_disp))
-                if is_300ul and raw_asp in (78.4, 78.40):
-                    raw_asp = 97.52
-                if is_300ul and raw_disp in (68.43, 78.4, 78.40):
-                    raw_disp = 97.52
+                if is_300ul and raw_asp in (78.4, 78.40, 97.52):
+                    raw_asp = 98.72
+                if is_300ul and raw_disp in (68.43, 78.4, 78.40, 97.52):
+                    raw_disp = 98.72
                 if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
                     return min(raw_asp + slot_z_offset + extra_z, 103.5)
                 elif action == "Dispense Media":
@@ -6606,7 +6609,9 @@ class LIMSMasterApp:
                         or getattr(self, "last_aspirate_lw_kind", None) in ("reservoir_3", "reservoir_7", "reservoir_6", "tube_rack_2x6")
                     )
                     if is_dmso_dispense:
-                        dmso_z = float(self.calibrated_heights.get("plate96_dmso_dispense_z", 97.52))
+                        dmso_z = float(self.calibrated_heights.get("plate96_dmso_dispense_z", 98.72))
+                        if is_300ul and dmso_z in (75.0, 75.00, 68.43, 97.52):
+                            dmso_z = 98.72
                         return min(dmso_z + slot_z_offset + extra_z, 103.5)
                     return min(raw_disp + slot_z_offset + extra_z, 103.5)
             elif (slot_name in ("Slot_6", "Slot_1", "Slot_2") and ("reservoir" in str(kind) or "waste" in str(kind) or (is_300ul and slot_name == "Slot_1"))) or kind in ("reservoir_7", "reservoir_6", "reservoir_3", "waste"):

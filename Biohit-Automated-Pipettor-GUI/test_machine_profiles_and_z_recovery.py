@@ -181,8 +181,10 @@ def run_all_tests():
         "mounted_channels": "A-E",
     }
     coords_disp = app._resolve_step_xy(step_5tip_disp, "Slot_5", "A1")
-    expected_disp_y = 146.81  # Aligns Channel 1 with Row A1 (preventing D..H offset)
-    assert abs(coords_disp[1] - expected_disp_y) < 1e-2, f"Expected 5-tip dispense Y={expected_disp_y}, got {coords_disp[1]}"
+    expected_disp_y = 147.64  # Aligns Channel 1 with Row A1 (calibrated Slot 5 A1: X=242.98, Y=147.64)
+    assert abs(coords_disp[0] - 242.98) < 1e-2 and abs(coords_disp[1] - expected_disp_y) < 1e-2, (
+        f"Expected 5-tip dispense XY=(242.98, {expected_disp_y}), got {coords_disp}"
+    )
     print(f"PASS: 5-tip Aspirate (Slot 3 Y={coords_asp[1]}mm) and Dispense (Slot 5 Y={coords_disp[1]}mm) align directly with Rows A..E (prevented D..H offset).")
 
     # Verify Slot 3 and Slot 5 Z-depth for 96-well plate (unified at 78.40mm deep, 68.43mm brim)
@@ -413,11 +415,11 @@ def run_all_tests():
     print("PASS: Default deck layouts automatically update per machine profile (300uL, 8x1000uL, 1-10uL).")
 
     app.switch_machine_profile("machine_3_300ul")
-    assert abs(app.calibrated_heights.get("plate96_aspirate_z", 0.0) - 97.52) < 1e-4, (
-        f"Expected Machine 3 plate96_aspirate_z=97.52, got {app.calibrated_heights.get('plate96_aspirate_z')}"
+    assert abs(app.calibrated_heights.get("plate96_aspirate_z", 0.0) - 98.72) < 1e-4, (
+        f"Expected Machine 3 plate96_aspirate_z=98.72, got {app.calibrated_heights.get('plate96_aspirate_z')}"
     )
-    assert abs(app.calibrated_heights.get("plate96_dispense_z", 0.0) - 97.52) < 1e-4, (
-        f"Expected Machine 3 plate96_dispense_z=97.52, got {app.calibrated_heights.get('plate96_dispense_z')}"
+    assert abs(app.calibrated_heights.get("plate96_dispense_z", 0.0) - 98.72) < 1e-4, (
+        f"Expected Machine 3 plate96_dispense_z=98.72, got {app.calibrated_heights.get('plate96_dispense_z')}"
     )
 
     # Verify Slot_1 A1 resolves to (235.05, 5.27) for both Reservoir3Well and 1_Serial_Dilution_Plate.json
@@ -431,7 +433,14 @@ def run_all_tests():
     assert s1_xy == (235.05, 5.27), f"Expected Slot_1 A1 = (235.05, 5.27), got {s1_xy}"
     print(f"PASS: Machine 3 Slot_1 Well A1 resolves to X={s1_xy[0]:.2f}mm, Y={s1_xy[1]:.2f}mm.")
 
-    # Verify 96-well plate Z depth on Machine 3 is 97.52mm for Aspirate, Dispense, and Mix
+    # Verify Slot 5 96-well plate A1 center resolves to (242.98, 147.64)
+    s5_xy = app._calculate_xy("Slot_5", "A1")
+    assert abs(s5_xy[0] - 242.98) < 1e-4 and abs(s5_xy[1] - 147.64) < 1e-4, (
+        f"Expected Slot 5 96-well A1 = (242.98, 147.64), got {s5_xy}"
+    )
+    print(f"PASS: Machine 3 Slot_5 Well A1 resolves to X={s5_xy[0]:.2f}mm, Y={s5_xy[1]:.2f}mm.")
+
+    # Verify 96-well plate Z depth on Machine 3 is 98.72mm for Aspirate, Dispense, and Mix
     plate_path = os.path.join(app.get_labware_dir(), "generic_96_well_plate.json")
     app.lims.deck_labware["Slot_3"] = Labware(plate_path)
     app.lims.deck_labware["Slot_3"].source_file = "generic_96_well_plate.json"
@@ -441,22 +450,22 @@ def run_all_tests():
 
     for act in ("Aspirate Media", "Dispense Media", "Mix Well"):
         z_val = app._calculate_z(act, app.lims.deck_labware["Slot_3"], "B2", "auto", 0.0, "Slot_3", 0.0, mix_cycles=3)
-        assert abs(z_val - 97.52) < 1e-4, f"Expected Machine 3 {act} Z=97.52mm on 96-well plate, got {z_val}"
-    print("PASS: Machine 3 96-well plate Z depth is 97.52mm across Aspirate, Dispense, and Serial-Dilution Mixing.")
+        assert abs(z_val - 98.72) < 1e-4, f"Expected Machine 3 {act} Z=98.72mm on 96-well plate, got {z_val}"
+    print("PASS: Machine 3 96-well plate Z depth is 98.72mm across Aspirate, Dispense, and Serial-Dilution Mixing.")
 
-    # Verify Machine 3 DMSO dispense depth matches mix/base depth (97.52mm so small volumes like 10µL stay at the base)
+    # Verify Machine 3 DMSO dispense depth matches mix/base depth (98.72mm so small volumes like 10µL stay at the base)
     app.last_aspirate_slot = "Slot_1"
     app.last_aspirate_lw_kind = "reservoir_3"
     dmso_disp_z = app._calculate_z("Dispense Media", app.lims.deck_labware["Slot_5"], "A1", "auto", 0.0, "Slot_5", 0.0, mix_cycles=0)
-    assert abs(dmso_disp_z - 97.52) < 1e-4, f"Expected Machine 3 DMSO dispense Z=97.52mm (base/mix depth), got {dmso_disp_z}"
+    assert abs(dmso_disp_z - 98.72) < 1e-4, f"Expected Machine 3 DMSO dispense Z=98.72mm (base/mix depth), got {dmso_disp_z}"
 
     app.last_aspirate_slot = "Slot_3"
     app.last_aspirate_lw_kind = "plate96"
     drug_disp_z = app._calculate_z("Dispense Media", app.lims.deck_labware["Slot_5"], "A6", "auto", 0.0, "Slot_5", 0.0, mix_cycles=0)
-    assert abs(drug_disp_z - 97.52) < 1e-4, f"Expected Machine 3 Drug dispense Z=97.52mm, got {drug_disp_z}"
+    assert abs(drug_disp_z - 98.72) < 1e-4, f"Expected Machine 3 Drug dispense Z=98.72mm, got {drug_disp_z}"
     app.last_aspirate_slot = None
     app.last_aspirate_lw_kind = None
-    print("PASS: Machine 3 DMSO dispense depth verified at 97.52mm (identical to mix/base depth so 10µL DMSO stays at well base).")
+    print("PASS: Machine 3 DMSO dispense depth verified at 98.72mm (identical to mix/base depth so 10µL DMSO stays at well base).")
 
     # Verify Direct Operation 'Return Tip to Well' restores tip memory and sets HAS_TIP = False
     tip_path = os.path.join(app.get_labware_dir(), "tip_rack_96.json")
