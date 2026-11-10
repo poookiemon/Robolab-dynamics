@@ -143,7 +143,7 @@ class Plate96(LabwareBase):
             "z_height_mm": 14.35,
             "well_depth_mm": 10.8,
             "well_radius_mm": 3.4,
-            "max_safe_bottom_z": 94.0,
+            "max_safe_bottom_z": 99.0,
             "dead_volume_ul": 20.0,
             "max_volume_ul": 360.0,
             "pitch_x_mm": 9.0,
@@ -169,6 +169,9 @@ class Plate96(LabwareBase):
     def get_aspirate_z(self, slot: 'DeckSlot', well_id: str, current_vol_ul: float = 0.0, submerge_mm: float = 2.0) -> float:
         if self.aspirate_depth_override is not None:
             return self.aspirate_depth_override
+        active_pid = str(getattr(slot, "active_profile_id", "") or "")
+        if "300" in active_pid and slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
+            return 97.52
         # Calibrated 96-well plate deep aspirate / mix is 78.40mm
         if slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
             return 78.40
@@ -177,11 +180,17 @@ class Plate96(LabwareBase):
     def get_dispense_z(self, slot: 'DeckSlot', well_id: str, in_liquid: bool = False) -> float:
         if self.dispense_depth_override is not None and not in_liquid:
             return self.dispense_depth_override
+        active_pid = str(getattr(slot, "active_profile_id", "") or "")
+        if "300" in active_pid and slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
+            return 97.52
         if slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6") and not in_liquid:
             return 68.43
         return super().get_dispense_z(slot, well_id, in_liquid)
 
     def get_mix_z(self, slot: 'DeckSlot', well_id: str) -> float:
+        active_pid = str(getattr(slot, "active_profile_id", "") or "")
+        if "300" in active_pid and slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
+            return 97.52
         if slot.name in ("Slot_3", "Slot_4", "Slot_5", "Slot_6"):
             return 78.40
         return super().get_mix_z(slot, well_id)
@@ -278,6 +287,9 @@ class Reservoir3Well(LabwareBase):
         if slot.name == "Slot_2":
             col_x = [95.5, 57.0, 12.0]
             return col_x[ci], oy + (0.0 if front else 31.5)
+        if slot.name == "Slot_1":
+            col_dx = [0.0, -42.6, -85.2]
+            return round(235.05 + col_dx[ci], 2), 5.27
         col_dx = [0.0, -42.6, -85.2]
         return ox + col_dx[ci], oy + (0.0 if front else 31.5)
 
@@ -485,9 +497,9 @@ class TubeRack2x6_2mL(LabwareBase):
         r_idx, c_idx = self.parse_well(well_id)
         if r_idx is None or c_idx is None:
             return slot.center_x, slot.center_y
-        orig_x = 245.0 if slot.x_abs >= 70.0 else (245.0 - 135.2)
-        orig_y = 0.0 if slot.is_front_slot else slot.origin_a1_xy[1]
-        return orig_x - (c_idx * self.pitch_x_mm), orig_y + (r_idx * self.pitch_y_mm)
+        orig_x = 235.05 if slot.x_abs >= 70.0 else (245.0 - 135.2)
+        orig_y = 5.27 if slot.is_front_slot else slot.origin_a1_xy[1]
+        return round(orig_x - (c_idx * self.pitch_x_mm), 2), round(orig_y + (r_idx * self.pitch_y_mm), 2)
 
     def record_consumption(self, well_id: str, volume_ul: float) -> Tuple[str, bool]:
         """
@@ -741,7 +753,7 @@ class DeckSlot:
 
         if active_pid == "machine_1_8x1000":
             calibrated_origins = {
-                "Slot_1": (238.2, 13.0),
+                "Slot_1": (235.05, 5.27),
                 "Slot_2": (95.5, 13.0),
                 "Slot_3": (243.81, 53.02),
                 "Slot_4": (105.60, 53.02),
@@ -750,7 +762,7 @@ class DeckSlot:
             }
         else:
             calibrated_origins = {
-                "Slot_1": (238.2, 13.0),
+                "Slot_1": (235.05, 5.27),
                 "Slot_2": (95.5, 13.0),
                 "Slot_3": (243.81, 52.64),
                 "Slot_4": (105.66, 52.64),

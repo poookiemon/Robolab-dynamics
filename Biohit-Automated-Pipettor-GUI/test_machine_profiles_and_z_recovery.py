@@ -383,8 +383,64 @@ def run_all_tests():
     app.lims.pipettor.hardware = orig_hw
     print("PASS: Z-only physical homing ('Control.Initialize(\"Z\")') re-zeroed downward Z drift while preserving tips, liquid, and X/Y.")
 
+    print("\n--- 9. Testing Machine 3 (300uL) Slot_1 A1 (235.05, 5.27), 96-Plate Z=97.52mm, & Direct Return Tip to Well ---")
+    app.switch_machine_profile("machine_3_300ul")
+    assert abs(app.calibrated_heights.get("plate96_aspirate_z", 0.0) - 97.52) < 1e-4, (
+        f"Expected Machine 3 plate96_aspirate_z=97.52, got {app.calibrated_heights.get('plate96_aspirate_z')}"
+    )
+    assert abs(app.calibrated_heights.get("plate96_dispense_z", 0.0) - 97.52) < 1e-4, (
+        f"Expected Machine 3 plate96_dispense_z=97.52, got {app.calibrated_heights.get('plate96_dispense_z')}"
+    )
+
+    # Verify Slot_1 A1 resolves to (235.05, 5.27) for both Reservoir3Well and 1_Serial_Dilution_Plate.json
+    res_path = os.path.join(app.get_labware_dir(), "reservoir_3_well.json")
+    app.lims.deck_labware["Slot_1"] = Labware(res_path)
+    app.lims.deck_labware["Slot_1"].source_file = "reservoir_3_well.json"
+    if "Slot_1" not in app.placed_slots:
+        app.placed_slots.append("Slot_1")
+    app.sync_deck_manager()
+    s1_xy = app._calculate_xy("Slot_1", "A1")
+    assert s1_xy == (235.05, 5.27), f"Expected Slot_1 A1 = (235.05, 5.27), got {s1_xy}"
+    print(f"PASS: Machine 3 Slot_1 Well A1 resolves to X={s1_xy[0]:.2f}mm, Y={s1_xy[1]:.2f}mm.")
+
+    # Verify 96-well plate Z depth on Machine 3 is 97.52mm for Aspirate, Dispense, and Mix
+    plate_path = os.path.join(app.get_labware_dir(), "generic_96_well_plate.json")
+    app.lims.deck_labware["Slot_3"] = Labware(plate_path)
+    app.lims.deck_labware["Slot_3"].source_file = "generic_96_well_plate.json"
+    if "Slot_3" not in app.placed_slots:
+        app.placed_slots.append("Slot_3")
+    app.sync_deck_manager()
+
+    for act in ("Aspirate Media", "Dispense Media", "Mix Well"):
+        z_val = app._calculate_z(act, app.lims.deck_labware["Slot_3"], "B2", "auto", 0.0, "Slot_3", 0.0, mix_cycles=3)
+        assert abs(z_val - 97.52) < 1e-4, f"Expected Machine 3 {act} Z=97.52mm on 96-well plate, got {z_val}"
+    print("PASS: Machine 3 96-well plate Z depth is 97.52mm across Aspirate, Dispense, and Serial-Dilution Mixing.")
+
+    # Verify Direct Operation 'Return Tip to Well' restores tip memory and sets HAS_TIP = False
+    tip_path = os.path.join(app.get_labware_dir(), "tip_rack_96.json")
+    app.lims.deck_labware["Slot_4"] = Labware(tip_path)
+    app.lims.deck_labware["Slot_4"].source_file = "tip_rack_96.json"
+    if "Slot_4" not in app.placed_slots:
+        app.placed_slots.append("Slot_4")
+    app.sync_deck_manager()
+
+    app.mark_tip_consumed("Slot_4", "B3")
+    assert "B3" in app._get_tip_tracker("Slot_4")["consumed"], "B3 should be marked consumed before return"
+    app._set_has_tip(True)
+    app.run_direct_return_tip_routine("Slot_4", "B3", 68.43)
+    # Wait briefly for daemon thread to finish in simulation mode
+    import time as _t
+    for _ in range(30):
+        if not app.is_running:
+            break
+        _t.sleep(0.05)
+    assert "B3" not in app._get_tip_tracker("Slot_4")["consumed"], "B3 should be restored in session tip memory after Return Tip to Well"
+    assert app._worker_has_tip is False, "HAS_TIP must be False after Return Tip to Well"
+    app.switch_machine_profile("machine_2_1_10ul")
+    print("PASS: Direct Operation 'Return Tip to Well' reads deck labware, ejects tip at selected well, and restores tip memory.")
+
     print("\n======================================================================")
-    print("ALL 8 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
+    print("ALL 9 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
     print("======================================================================")
 
 if __name__ == "__main__":

@@ -125,6 +125,8 @@ class LIMSMasterApp:
         self.is_running = False
         self.is_aborted = False
         self.has_air_cushion = False
+        self.air_cushion_ul = 0.0
+        self.tip_liquid_ul = 0.0
         self.pause_event = threading.Event()
         self.pause_event.set()
 
@@ -146,16 +148,16 @@ class LIMSMasterApp:
 
         # Default profile heights ensuring no missing keys
         default_profile_heights = {
-            "tip_rack_pickup_approach_z": 50.0 if "10ul" in self.active_profile_id else 75.0,
+            "tip_rack_pickup_approach_z": 50.0 if ("10ul" in self.active_profile_id or "300" in self.active_profile_id) else 75.0,
             "tip_rack_collar_z": 64.97 if "10ul" in self.active_profile_id else 86.36,
-            "tip_rack_pickup_limit_z": 75.0 if "10ul" in self.active_profile_id else 98.0,
-            "tip_pickup_extra_press_mm": 2.50,
+            "tip_rack_pickup_limit_z": 75.0 if "10ul" in self.active_profile_id else (87.0 if "300" in self.active_profile_id else 98.0),
+            "tip_pickup_extra_press_mm": 1.50 if "300" in self.active_profile_id else 2.50,
             "tip_rack_discard_z": 40.50,
-            "ehm_aspirate_z": 78.40 if "10ul" in self.active_profile_id else 24.17,
-            "ehm_dispense_z": 68.43 if "10ul" in self.active_profile_id else 14.17,
-            "plate96_aspirate_z": 78.40,
-            "plate96_dispense_z": 68.43,
-            "reservoir_aspirate_z": 58.34 if "10ul" in self.active_profile_id else 90.42,
+            "ehm_aspirate_z": 78.40 if "10ul" in self.active_profile_id else (86.0 if "300" in self.active_profile_id else 24.17),
+            "ehm_dispense_z": 68.43 if "10ul" in self.active_profile_id else (84.0 if "300" in self.active_profile_id else 14.17),
+            "plate96_aspirate_z": 97.52 if "300" in self.active_profile_id else 78.40,
+            "plate96_dispense_z": 97.52 if "300" in self.active_profile_id else 68.43,
+            "reservoir_aspirate_z": 58.34 if "10ul" in self.active_profile_id else (86.0 if "300" in self.active_profile_id else 90.42),
             "waste_dispense_z": 8.37,
             "waste_tip_drop_z": 8.37,
             "eight_ch_x_offset": 0.0,
@@ -165,6 +167,12 @@ class LIMSMasterApp:
         for k, v in default_profile_heights.items():
             if k not in self.calibrated_heights:
                 self.calibrated_heights[k] = v
+
+        if "300" in self.active_profile_id:
+            if float(self.calibrated_heights.get("plate96_aspirate_z", 97.52)) in (78.4, 78.40):
+                self.calibrated_heights["plate96_aspirate_z"] = 97.52
+            if float(self.calibrated_heights.get("plate96_dispense_z", 97.52)) in (68.43, 78.4, 78.40):
+                self.calibrated_heights["plate96_dispense_z"] = 97.52
 
         if "10ul" in self.active_profile_id:
             self.calibrated_heights.setdefault("tip_10ul_collar_z", self.calibrated_heights.get("tip_rack_collar_z", 64.97))
@@ -1674,6 +1682,11 @@ class LIMSMasterApp:
             if matching_pid != getattr(self, 'active_profile_id', None):
                 self.active_profile_id = matching_pid
                 self.calibrated_heights = self.profile_manager.load_profile(matching_pid)
+                if "300" in matching_pid:
+                    if float(self.calibrated_heights.get("plate96_aspirate_z", 97.52)) in (78.4, 78.40):
+                        self.calibrated_heights["plate96_aspirate_z"] = 97.52
+                    if float(self.calibrated_heights.get("plate96_dispense_z", 97.52)) in (68.43, 78.4, 78.40):
+                        self.calibrated_heights["plate96_dispense_z"] = 97.52
                 if hasattr(self, 'update_window_title'):
                     self.update_window_title()
 
@@ -2388,6 +2401,7 @@ class LIMSMasterApp:
         ops = [
             ("Home Head", "Resets pipette head to safety origin.", "HOME"),
             ("Find Tip", "Auto-searches a designated slot using NATIVE API.", "FIND_TIP"),
+            ("Return Tip to Well", "Returns/ejects mounted tip(s) to a specific slot & well using the labware from Deck Setup.", "RETURN_TIP"),
             ("Discard Tips", "Moves head to designated Waste slot and triggers ejection mechanism.", "DISCARD"),
             ("Check Liquid Level", "Detects liquid surface in selected slot/well and calculates remaining volume.", "CHECK_LIQUID"),
             ("Check Alignment", "Compares visual mouse grid to hardware jog coordinates.", "CHECK")
@@ -3790,28 +3804,26 @@ class LIMSMasterApp:
     def action_load_300ul_dmso_dilution(self):
         filename = "ehm_1ch_300ul_dmso_drug_dilution.json"
         target_path = self.resolve_protocol_path(
-            filename,
-            "1_Serial_Dilution_Plate.json"
+            "1_Serial_Dilution_Plate.json",
+            filename
         )
         if not target_path:
             messagebox.showerror("File Not Found", f"Could not locate {filename}")
             return
 
         deck_setup = {
-            "Slot_1": "(Empty / Clearance)",
+            "Slot_1": "reservoir_3_well.json",
             "Slot_2": "waste_trough.json",
             "Slot_3": "generic_96_well_plate.json",
             "Slot_4": "tip_rack_1000ul.json",
             "Slot_5": "generic_96_well_plate.json",
-            "Slot_6": "reservoir_7_column.json",
         }
         slot_descs = {
-            "Slot_1": "Empty clearance zone (Parked / Safe Y axis clearance)",
+            "Slot_1": "3-Well Reservoir (Well A1 at X=235.05, Y=5.27: Pure DMSO Buffer)",
             "Slot_2": "Waste Trough (Liquid Waste & Tip Graveyard)",
-            "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells)",
+            "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells, Z=97.52 mm)",
             "Slot_4": "300 µL Tip Rack",
-            "Slot_5": "96-Well Target Dilution Plate (Serial Mix)",
-            "Slot_6": "7-Col / 6-Col Reservoir or Rack (A1: Pure DMSO Buffer)",
+            "Slot_5": "96-Well Target Dilution Plate (Serial Mix, Z=97.52 mm)",
         }
         with open(target_path, "r") as f:
             seq = json.load(f)
@@ -4126,8 +4138,20 @@ class LIMSMasterApp:
         self.switch_pipettor_head(is_8ch, quiet=True)
 
         eff_deck = dict(deck_setup or {})
+        dmso_target_slot = "Slot_1"
         if dmso_labware:
-            eff_deck["Slot_6"] = dmso_labware
+            if dmso_labware in ("reservoir_7_column.json", "reservoir_6_column.json") or (eff_deck.get("Slot_1") == "(Empty / Clearance)" and "Slot_6" in eff_deck):
+                dmso_target_slot = "Slot_6"
+                eff_deck["Slot_6"] = dmso_labware
+            else:
+                dmso_target_slot = "Slot_1"
+                eff_deck["Slot_1"] = dmso_labware
+        elif eff_deck.get("Slot_1") and eff_deck.get("Slot_1") != "(Empty / Clearance)":
+            dmso_target_slot = "Slot_1"
+            dmso_labware = eff_deck.get("Slot_1")
+        elif eff_deck.get("Slot_6"):
+            dmso_target_slot = "Slot_6"
+            dmso_labware = eff_deck.get("Slot_6")
 
         drug_steps_indices = [
             i for i, s in enumerate(loaded_sequence)
@@ -4137,19 +4161,18 @@ class LIMSMasterApp:
             if k < len(cleaned_wells):
                 loaded_sequence[step_idx]["well"] = cleaned_wells[k]
 
-        slot6_lw = eff_deck.get("Slot_6")
         route_waste_slot2 = (eff_deck.get("Slot_2") == "waste_trough.json")
         for s in loaded_sequence:
-            # Map DMSO aspiration steps to Slot 6
+            # Map DMSO aspiration steps to target DMSO slot (Slot_1 A1 at X=235.05, Y=5.27 by default)
             if (s.get("slot") in ("Slot_1", "Slot_6")) and ("dmso" in s.get("label", "").lower() or (s.get("slot") == "Slot_1" and "Aspirate" in s.get("action", ""))):
-                s["slot"] = "Slot_6"
-                if slot6_lw:
-                    s["labware"] = slot6_lw
-                if "reservoir" in str(slot6_lw).lower():
+                s["slot"] = dmso_target_slot
+                if dmso_labware:
+                    s["labware"] = dmso_labware
+                if "reservoir" in str(dmso_labware).lower() or dmso_target_slot == "Slot_1":
                     s["well"] = "A1"
-            elif slot6_lw and s.get("slot") == "Slot_6":
-                s["labware"] = slot6_lw
-                if "reservoir" in str(slot6_lw).lower() and s.get("well") not in ("A6", "A7", "R6", "R7"):
+            elif dmso_labware and s.get("slot") == dmso_target_slot:
+                s["labware"] = dmso_labware
+                if "reservoir" in str(dmso_labware).lower() and s.get("well") not in ("A6", "A7", "R6", "R7"):
                     s["well"] = "A1"
             if route_waste_slot2 and (s.get("action") == "Discard Tip" or s.get("slot") == "Slot_2"):
                 s["slot"] = "Slot_2"
@@ -4236,16 +4259,18 @@ class LIMSMasterApp:
             justify=tk.CENTER,
         ).pack(pady=(0, 8))
 
-        dmso_frame = ttk.LabelFrame(top, text="Slot 6 DMSO Source Labware", padding=8)
+        dmso_frame = ttk.LabelFrame(top, text="DMSO Source Labware (Slot 1 Well A1 / Slot 6)", padding=8)
         dmso_frame.pack(fill=tk.X, padx=22, pady=(0, 8))
         dmso_options = {
-            "7-Column Reservoir (reservoir_7_column.json)": "reservoir_7_column.json",
-            "6-Column Reservoir (reservoir_6_column.json)": "reservoir_6_column.json",
-            "3-Well Reservoir (reservoir_3_well.json)": "reservoir_3_well.json",
-            "12-Tube 2 mL Falcon Rack (tube_rack_2x6_2ml.json)": "tube_rack_2x6_2ml.json",
+            "Slot 1: 3-Well Reservoir A1 (reservoir_3_well.json)": "reservoir_3_well.json",
+            "Slot 1: 12-Tube 2 mL Falcon Rack (tube_rack_2x6_2ml.json)": "tube_rack_2x6_2ml.json",
+            "Slot 6: 7-Column Reservoir (reservoir_7_column.json)": "reservoir_7_column.json",
+            "Slot 6: 6-Column Reservoir (reservoir_6_column.json)": "reservoir_6_column.json",
         }
-        init_s6 = (deck_setup or {}).get("Slot_6", "reservoir_7_column.json")
-        init_disp = next((k for k, v in dmso_options.items() if v == init_s6), list(dmso_options.keys())[0])
+        init_dmso = (deck_setup or {}).get("Slot_1")
+        if not init_dmso or init_dmso == "(Empty / Clearance)":
+            init_dmso = (deck_setup or {}).get("Slot_6", "reservoir_3_well.json")
+        init_disp = next((k for k, v in dmso_options.items() if v == init_dmso), list(dmso_options.keys())[0])
         dmso_var = tk.StringVar(value=init_disp)
         cb_dmso = ttk.Combobox(dmso_frame, textvariable=dmso_var, values=list(dmso_options.keys()), state="readonly")
         cb_dmso.pack(fill=tk.X)
@@ -4276,7 +4301,7 @@ class LIMSMasterApp:
 
         def on_apply():
             chosen_wells = [v.get().strip().upper() for v in well_vars]
-            chosen_dmso_lw = dmso_options.get(dmso_var.get(), init_s6)
+            chosen_dmso_lw = dmso_options.get(dmso_var.get(), init_dmso)
             try:
                 self.apply_drug_well_mapping_and_load(
                     loaded_sequence,
@@ -4417,6 +4442,11 @@ class LIMSMasterApp:
             if save_to_disk:
                 self.profile_manager.set_active_profile_id(profile_id)
             self.calibrated_heights = self.profile_manager.load_profile(profile_id)
+            if "300" in profile_id:
+                if float(self.calibrated_heights.get("plate96_aspirate_z", 97.52)) in (78.4, 78.40):
+                    self.calibrated_heights["plate96_aspirate_z"] = 97.52
+                if float(self.calibrated_heights.get("plate96_dispense_z", 97.52)) in (68.43, 78.4, 78.40):
+                    self.calibrated_heights["plate96_dispense_z"] = 97.52
 
         cfg = (PROFILE_CONFIGS or {}).get(profile_id, {})
         prof_multi = cfg.get("is_multichannel", True if ("8x" in profile_id or "10ul" in profile_id) else False)
@@ -6016,7 +6046,7 @@ class LIMSMasterApp:
 
     # Machine XY of "well A1" for each slot (physically jog-calibrated where noted)
     SLOT_A1_ORIGINS = {
-        "Slot_1": (238.2, 13.0),   # calibrated (front right, height-block slot)
+        "Slot_1": (235.05, 5.27),  # calibrated (front right, 3-well reservoir A1: X=235.05, Y=5.27)
         "Slot_2": (95.5, 13.0),    # calibrated (front left, 3-well reservoir/waste trough A1)
         "Slot_3": (243.81, 52.64), # calibrated (Machine 2 1-10µL: A1 X=243.81, A1 Y=52.64, 8-ch center Y=84.14)
         "Slot_4": (105.66, 52.64), # calibrated (Machine 2 1-10µL: A1 X=105.66, A1 Y=52.64, 8-ch center Y=84.14)
@@ -6088,11 +6118,11 @@ class LIMSMasterApp:
             if slot_name == "Slot_6":
                 return 105.60, 146.81
             if slot_name == "Slot_1":
-                return 238.20, 13.0
+                return 235.05, 5.27
             if slot_name == "Slot_2":
                 return 95.50, 13.0
         m1_origins = {
-            "Slot_1": (238.2, 13.0),
+            "Slot_1": (235.05, 5.27),
             "Slot_2": (95.5, 13.0),
             "Slot_3": (243.81, 53.02),
             "Slot_4": (105.60, 53.02),
@@ -6214,7 +6244,7 @@ class LIMSMasterApp:
                 return ox + col_dx[c_idx] + 1.0, oy + row_dy[r_idx] - 2.0
             return cx, cy
 
-        # 4. 3-WELL RESERVOIR (calibrated on Slot_1: pitch 42.6mm; Slot_2: A1=95.5, A2=57.0, A3=12.0)
+        # 4. 3-WELL RESERVOIR (calibrated on Slot_1: A1=(235.05, 5.27), pitch 42.6mm; Slot_2: A1=95.5, A2=57.0, A3=12.0)
         if kind == "reservoir_3" or (kind is None and front):
             if slot_name == "Slot_2":
                 col_x = [95.5, 57.0, 12.0]
@@ -6226,7 +6256,9 @@ class LIMSMasterApp:
             ci = c_idx if (c_idx is not None and 0 <= c_idx < 3) else 0
             if c_idx is None and well_id in ("1", "2", "3"):
                 ci = int(well_id) - 1
-            return ox + col_dx[ci], oy + (0.0 if front else 31.5)
+            if slot_name == "Slot_1":
+                return round(235.05 + col_dx[ci], 2), 5.27
+            return round(ox + col_dx[ci], 2), oy + (0.0 if front else 31.5)
 
         # 5. 6-COLUMN RESERVOIR
         if kind == "reservoir_6":
@@ -6252,13 +6284,13 @@ class LIMSMasterApp:
                 return ox + 7.15 - (c_idx * 19.3), oy + (0.0 if front else 24.3) + (r_idx * 19.3)
             return cx, cy
 
-        # 7. 2x6 TUBE RACK (2 mL Falcon / Microcentrifuge Tubes on 90mm Height Block)
-        # User calibrated: Slot 1 A1 is at X = 245.0, Y = 0.0, rim Z = 75.0mm
+        # 7. 2x6 TUBE RACK / 3-WELL RESERVOIR ON SLOT 1
+        # User calibrated: Slot 1 A1 is at X = 235.05, Y = 5.27
         if kind == "tube_rack_2x6":
-            orig_x = 245.0 if slot_obj.x_abs >= 70.0 else (245.0 - 135.2)
-            orig_y = 0.0 if front else oy
+            orig_x = 235.05 if slot_obj.x_abs >= 70.0 else (245.0 - 135.2)
+            orig_y = 5.27 if front else oy
             if r_idx is not None and 0 <= r_idx < 2 and c_idx is not None and 0 <= c_idx < 6:
-                return orig_x - (c_idx * 18.0), orig_y + (r_idx * 18.0)
+                return round(orig_x - (c_idx * 18.0), 2), round(orig_y + (r_idx * 18.0), 2)
             return cx, cy
 
         # 8. DATA-DRIVEN LABWARE: geometry read from its JSON "kinematics" block
@@ -6494,6 +6526,7 @@ class LIMSMasterApp:
         # Persistent 8-channel / calibrated heights memory lookup (GUI remembers operator depths)
         if hasattr(self, 'calibrated_heights'):
             is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
+            is_300ul = ("300" in getattr(self, "active_profile_id", "")) or (not is_8ch and not is_10ul and getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) >= 200.0)
             is_triplicate = "triplicate" in str(getattr(self, "current_protocol_file", "")).lower() or "triplicate" in str(getattr(self, "loaded_protocol_name", "")).lower()
             is_96 = (kind in ("plate96", None)) or is_triplicate or "96" in str(getattr(labware_obj, "source_file", "")).lower() or "96" in str(getattr(labware_obj, "name", "")).lower()
             # Machine 2 (1-10 µL): Enforce unified plate / EHM depth across Slot 3, Slot 5, and Slot 6
@@ -6510,15 +6543,24 @@ class LIMSMasterApp:
                 elif action == "Dispense Media":
                     return min(float(self.calibrated_heights.get("ehm_dispense_z", 68.43 if is_10ul else 14.17)) + slot_z_offset + extra_z, 103.5)
             elif kind == "plate96" or (is_8ch and slot_name in ("Slot_3", "Slot_5") and is_96):
+                def_p96_asp = 97.52 if is_300ul else 78.40
+                def_p96_disp = 97.52 if is_300ul else 68.43
+                raw_asp = float(self.calibrated_heights.get("plate96_aspirate_z", def_p96_asp))
+                raw_disp = float(self.calibrated_heights.get("plate96_dispense_z", def_p96_disp))
+                if is_300ul and raw_asp in (78.4, 78.40):
+                    raw_asp = 97.52
+                if is_300ul and raw_disp in (68.43, 78.4, 78.40):
+                    raw_disp = 97.52
                 if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
-                    return min(float(self.calibrated_heights.get("plate96_aspirate_z", 78.40)) + slot_z_offset + extra_z, 103.5)
+                    return min(raw_asp + slot_z_offset + extra_z, 103.5)
                 elif action == "Dispense Media":
-                    return min(float(self.calibrated_heights.get("plate96_dispense_z", 68.43)) + slot_z_offset + extra_z, 103.5)
-            elif (slot_name in ("Slot_6", "Slot_1", "Slot_2") and ("reservoir" in str(kind) or "waste" in str(kind))) or kind in ("reservoir_7", "reservoir_6", "reservoir_3", "waste"):
+                    return min(raw_disp + slot_z_offset + extra_z, 103.5)
+            elif (slot_name in ("Slot_6", "Slot_1", "Slot_2") and ("reservoir" in str(kind) or "waste" in str(kind) or (is_300ul and slot_name == "Slot_1"))) or kind in ("reservoir_7", "reservoir_6", "reservoir_3", "waste"):
                 if action == "Dispense Media":
                     return min(float(self.calibrated_heights.get("waste_dispense_z", 8.37)) + slot_z_offset + extra_z, 103.5)
                 elif action in ("Aspirate Media", "Mix Well"):
-                    return min(float(self.calibrated_heights.get("reservoir_aspirate_z", 90.42)) + slot_z_offset + extra_z, 103.5)
+                    res_key = "reservoir_3_aspirate_z" if (slot_name in ("Slot_1", "Slot_2") and "reservoir_3_aspirate_z" in self.calibrated_heights) else "reservoir_aspirate_z"
+                    return min(float(self.calibrated_heights.get(res_key, 86.0 if is_300ul else 90.42)) + slot_z_offset + extra_z, 103.5)
                 elif action == "Discard Tip":
                     return min(float(self.calibrated_heights.get("waste_tip_drop_z", 8.37)) + slot_z_offset + extra_z, 103.5)
             elif slot_name == "Slot_4" and action == "Discard Tip":
@@ -6574,6 +6616,265 @@ class LIMSMasterApp:
             return min(base_z + slot_z_offset + extra_z, 103.5)
 
         return 0.0
+
+    def prompt_for_return_tip_well(self):
+        """
+        Direct Operation: Returns/ejects mounted tip(s) to a specific slot and well,
+        dynamically reading the assigned labware and valid wells from Deck Setup.
+        """
+        if not self.lims.hw.is_initialized:
+            messagebox.showerror("Safety Interlock", "Hardware must be initialized first.")
+            return
+
+        top = tk.Toplevel(self.root)
+        top.title("Return Tip to Specific Well")
+        top.geometry("460x340")
+        top.resizable(False, False)
+        top.transient(self.root)
+        top.grab_set()
+
+        f = ttk.Frame(top, padding=15)
+        f.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(
+            f,
+            text="Return Tip(s) to Specific Slot & Well",
+            font=("Arial", 11, "bold"),
+            foreground="#0d6efd",
+        ).pack(anchor="w", pady=(0, 4))
+        ttk.Label(
+            f,
+            text="Reads assigned labware and well grid directly from Deck Setup (Tab 2):",
+            font=("Arial", 9),
+            foreground="#555",
+        ).pack(anchor="w", pady=(0, 10))
+
+        # Slot Selection (prioritize slots with assigned labware in Deck Setup)
+        slot_choices = [s for s in self.placed_slots if s in self.lims.deck_labware]
+        for s in self.placed_slots:
+            if s and s not in slot_choices:
+                slot_choices.append(s)
+        for s in [f"Slot_{i}" for i in range(1, 7)]:
+            if s not in slot_choices:
+                slot_choices.append(s)
+
+        default_slot = self.get_default_tip_slot()
+        if default_slot not in slot_choices and slot_choices:
+            default_slot = slot_choices[0]
+
+        f_slot = ttk.Frame(f)
+        f_slot.pack(fill=tk.X, pady=4)
+        ttk.Label(f_slot, text="Deck Slot:", width=15, anchor="w", font=("Arial", 9, "bold")).pack(side=tk.LEFT)
+        slot_var = tk.StringVar(value=default_slot)
+        cb_slot = ttk.Combobox(f_slot, textvariable=slot_var, values=slot_choices, state="readonly", width=24)
+        cb_slot.pack(side=tk.LEFT)
+
+        f_lw = ttk.Frame(f)
+        f_lw.pack(fill=tk.X, pady=4)
+        ttk.Label(f_lw, text="Deck Labware:", width=15, anchor="w", font=("Arial", 9, "bold")).pack(side=tk.LEFT)
+        lbl_lw_val = ttk.Label(f_lw, text="", font=("Arial", 9), foreground="#0056b3")
+        lbl_lw_val.pack(side=tk.LEFT, anchor="w")
+
+        f_well = ttk.Frame(f)
+        f_well.pack(fill=tk.X, pady=4)
+        ttk.Label(f_well, text="Target Well:", width=15, anchor="w", font=("Arial", 9, "bold")).pack(side=tk.LEFT)
+        well_var = tk.StringVar(value="A1")
+        cb_well = ttk.Combobox(f_well, textvariable=well_var, width=24)
+        cb_well.pack(side=tk.LEFT)
+
+        f_z = ttk.Frame(f)
+        f_z.pack(fill=tk.X, pady=4)
+        ttk.Label(f_z, text="Drop Z Height (mm):", width=15, anchor="w", font=("Arial", 9, "bold")).pack(side=tk.LEFT)
+        z_var = tk.StringVar(value=f"{float(self.calibrated_heights.get('tip_rack_discard_z', 40.50)):.2f}")
+        ent_z = ttk.Entry(f_z, textvariable=z_var, width=12, justify="center")
+        ent_z.pack(side=tk.LEFT)
+
+        lbl_coords_preview = ttk.Label(f, text="", font=("Consolas", 9), foreground="#333333", justify="left")
+        lbl_coords_preview.pack(fill=tk.X, pady=(8, 6))
+
+        def _get_wells_for_slot(s_name: str) -> list:
+            lw = self.lims.deck_labware.get(s_name)
+            kind = self._lw_kind(lw)
+            if lw and getattr(lw, "wells", None):
+                raw_wells = [str(w).upper() for w in lw.wells.keys()]
+                if kind in ("tip_rack", "plate96"):
+                    ordered = [w for w in TIP_ORDER_96 if w in set(raw_wells)]
+                    if ordered:
+                        return ordered
+                return raw_wells
+            if kind in ("tip_rack", "plate96"):
+                return list(TIP_ORDER_96)
+            if kind == "ehm48":
+                return [f"{r}{c}" for c in range(1, 7) for r in "ABCDEFGH"]
+            if kind == "reservoir_7":
+                return [f"A{c}" for c in range(1, 8)]
+            if kind == "reservoir_6":
+                return [f"A{c}" for c in range(1, 7)]
+            if kind == "reservoir_3":
+                return ["A1", "A2", "A3"]
+            if kind == "tube_rack_2x6":
+                return [f"{r}{c}" for r in "AB" for c in range(1, 7)]
+            return list(TIP_ORDER_96)
+
+        def _update_preview(*args):
+            s = slot_var.get()
+            w = (well_var.get() or "A1").strip().upper()
+            lw = self.lims.deck_labware.get(s)
+            kind = self._lw_kind(lw)
+            step_ctx = {"action": "Discard Tip", "eight_ch_symmetric": bool(self.lims.pipettor.multichannel)}
+            coords = self._resolve_step_xy(step_ctx, s, w) or self._calculate_xy(s, w)
+            tx, ty = coords if coords else (0.0, 0.0)
+            try:
+                dz = float(z_var.get())
+            except Exception:
+                dz = 40.50
+            mode_note = "8-Channel Column Return" if self.lims.pipettor.multichannel else "Single-Channel Well Return"
+            lbl_coords_preview.config(
+                text=f"Target: {s} -> Well {w} ({kind or 'unassigned'})\n"
+                     f"Resolved Coordinates: X={tx:.2f} mm, Y={ty:.2f} mm, Z={dz:.2f} mm [{mode_note}]"
+            )
+
+        def _on_slot_changed(*args):
+            s = slot_var.get()
+            lw = self.lims.deck_labware.get(s)
+            kind = self._lw_kind(lw)
+            if lw:
+                lw_name = getattr(lw, "name", "Labware")
+                lw_src = getattr(lw, "source_file", "")
+                lbl_lw_val.config(text=f"{lw_name} ({lw_src})" if lw_src else lw_name)
+            else:
+                lbl_lw_val.config(text="(No labware assigned in Deck Setup)")
+
+            wells = _get_wells_for_slot(s)
+            cb_well["values"] = wells
+
+            # Default well: if returning to tip rack with consumed tips, suggest the most recently consumed or A1
+            consumed = list(self._get_tip_tracker(s).get("consumed", ())) if s in getattr(self, "session_tip_tracker", {}) else []
+            if consumed:
+                ordered_consumed = [w for w in wells if w in set(consumed)]
+                if ordered_consumed:
+                    well_var.set(ordered_consumed[-1])
+                elif well_var.get() not in wells and wells:
+                    well_var.set(wells[0])
+            elif well_var.get() not in wells and wells:
+                well_var.set(wells[0])
+
+            # Pre-fill calibrated drop Z for the selected slot/labware
+            if kind == "tip_rack" or s == "Slot_4":
+                calc_z = float(self.calibrated_heights.get("tip_rack_discard_z", 40.50))
+            else:
+                calc_z = self._calculate_z("Discard Tip", lw, well_var.get() or "A1", "auto", 40.50, s)
+                if calc_z <= 0.0:
+                    calc_z = 40.50
+            z_var.set(f"{calc_z:.2f}")
+            _update_preview()
+
+        slot_var.trace_add("write", _on_slot_changed)
+        well_var.trace_add("write", _update_preview)
+        z_var.trace_add("write", _update_preview)
+        _on_slot_changed()
+
+        def on_confirm():
+            s = slot_var.get()
+            w = (well_var.get() or "A1").strip().upper()
+            if not s or not w:
+                messagebox.showwarning("Input Missing", "Please select both a Deck Slot and a Target Well.", parent=top)
+                return
+            try:
+                drop_z = float(z_var.get())
+            except ValueError:
+                drop_z = float(self.calibrated_heights.get("tip_rack_discard_z", 40.50))
+            top.destroy()
+            threading.Thread(
+                target=self.run_direct_return_tip_routine,
+                args=(s, w, drop_z),
+                daemon=True,
+            ).start()
+
+        btn_frame = ttk.Frame(f)
+        btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(8, 0))
+        tk.Button(
+            btn_frame,
+            text="↩ Return Tip to Well Now",
+            bg="#0d6efd",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            command=on_confirm,
+        ).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
+        ttk.Button(btn_frame, text="Cancel", command=top.destroy).pack(side=tk.RIGHT)
+
+    def run_direct_return_tip_routine(self, slot_name: str, well_id: str, drop_z: float = None):
+        """
+        Moves to the exact (X, Y, Z) of `slot_name` / `well_id` based on the labware assigned in Deck Setup,
+        ejects the tip(s), restores session tip memory for that well/column, sets HAS_TIP = False, and homes Z to 0.0 mm.
+        """
+        hw_instance = self.lims.pipettor.hardware
+        well_clean = (well_id or "A1").strip().upper()
+        labware_obj = self.lims.deck_labware.get(slot_name)
+        lw_name = getattr(labware_obj, "name", getattr(labware_obj, "source_file", "Unassigned Labware"))
+        lw_kind = self._lw_kind(labware_obj)
+        is_8ch = bool(getattr(self.lims.pipettor, "multichannel", False))
+
+        step_ctx = {"action": "Discard Tip", "eight_ch_symmetric": is_8ch}
+        coords = self._resolve_step_xy(step_ctx, slot_name, well_clean) or self._calculate_xy(slot_name, well_clean)
+        tx, ty = coords if coords else (0.0, 0.0)
+
+        if drop_z is None:
+            if lw_kind == "tip_rack" or slot_name == "Slot_4":
+                tz = float(self.calibrated_heights.get("tip_rack_discard_z", 40.50))
+            else:
+                tz = self._calculate_z("Discard Tip", labware_obj, well_clean, "auto", 40.50, slot_name)
+                if tz <= 0.0:
+                    tz = 40.50
+        else:
+            tz = float(drop_z)
+        tz = max(0.0, min(tz, 102.0))
+
+        self.logger.info(
+            f"--- Direct Op: Returning Tip to {slot_name} Well {well_clean} "
+            f"[Labware: {lw_name} | X={tx:.2f}mm, Y={ty:.2f}mm, Z={tz:.2f}mm] ---"
+        )
+        try:
+            if hw_instance:
+                hw_instance.move_z(0.0)
+            self.lims.hw.move_to(tx, ty, 0.0, speed=self.speed_var.get())
+            if hw_instance:
+                hw_instance.move_z(tz)
+                hw_instance.eject_tip()
+                time.sleep(0.25)
+                try:
+                    hw_instance.eject_tip()
+                except Exception:
+                    pass
+                hw_instance.move_z(0.0)
+                self._home_z_axis_only(reason=f"Return Tip ({slot_name} {well_clean})")
+
+            # Restore session tip memory if returned into a tip rack
+            if lw_kind == "tip_rack" or slot_name in getattr(self, "session_tip_tracker", {}) or slot_name == "Slot_4":
+                if is_8ch:
+                    for sock in self._expand_8ch_tip_sockets(step_ctx, well_clean):
+                        self.mark_tip_restored(slot_name, sock, redraw=False)
+                    self._schedule_deck_redraw()
+                else:
+                    self.mark_tip_restored(slot_name, well_clean)
+
+            self.has_air_cushion = False
+            self.air_cushion_ul = 0.0
+            self.tip_liquid_ul = 0.0
+            self._set_has_tip(False)
+            self.logger.info(
+                f"Direct Op: Tip successfully returned to {slot_name} Well {well_clean} ({lw_name}). HAS_TIP = False"
+            )
+        except Exception as e:
+            self.logger.critical(
+                f"Error returning tip to {slot_name} Well {well_clean}: {e}. Tip may still be mounted!"
+            )
+            self._set_has_tip(True)
+            if hw_instance:
+                try:
+                    hw_instance.move_z(0.0)
+                except Exception:
+                    pass
 
     def prompt_for_discard_slot(self):
         if not self.lims.hw.is_initialized:
@@ -7072,6 +7373,8 @@ class LIMSMasterApp:
             # Fresh liquid-level ledger for every run (tubes assumed refilled to start level)
             self.liquid_ledger = {}
             self.has_air_cushion = False
+            self.air_cushion_ul = 0.0
+            self.tip_liquid_ul = 0.0
             self.z_home_step_counter = 0
             self.pause_event.set()
             self.root.after(0, lambda: self.update_ui_state(True))
@@ -7504,23 +7807,38 @@ class LIMSMasterApp:
 
                         if self.lims.pipettor.hardware:
                             if action == "Aspirate Media":
-                                next_step = self.workflow_sequence[i] if i < len(self.workflow_sequence) else {}
-                                next_has_mix = int(next_step.get('mix_cycles', 0)) > 0 and getattr(self, 'enable_mixing_for_run', True)
-                                use_air_cushion = (
-                                    (0 < float(vol) <= (self.lims.pipettor.tip_volume - 50.0))
-                                    if is_8ch
-                                    else (0 < float(vol) <= 50.0)
-                                ) and not step.get('no_air_cushion', False)
-                                if use_air_cushion and not next_has_mix:
-                                    try:
-                                        self.lims.pipettor.hardware.aspirate(50.0)
-                                        self.has_air_cushion = True
-                                        self.logger.info(f"Air Cushion: Pre-aspirated 50.0uL air push cushion at Z=0 for clean detachment of {vol}uL ({slot_name} {well_id}).")
-                                        time.sleep(0.3)
-                                    except Exception as air_err:
-                                        self.logger.warning(f"Air cushion draw skipped: {air_err}")
-                                else:
-                                    self.has_air_cushion = False
+                                tip_vol = float(getattr(self.lims.pipettor, 'tip_volume', 300.0))
+                                req_vol_f = float(vol)
+                                # Draw air cushion in open air (Z=0) BEFORE tip enters media, only when tip is empty
+                                if (
+                                    req_vol_f > 0.0
+                                    and not step.get('no_air_cushion', False)
+                                    and getattr(self, 'air_cushion_ul', 0.0) <= 0.0
+                                    and getattr(self, 'tip_liquid_ul', 0.0) <= 0.0
+                                ):
+                                    if tip_vol <= 10.0:
+                                        air_vol = min(1.5, max(0.5, tip_vol - req_vol_f))
+                                    elif tip_vol <= 20.0:
+                                        air_vol = min(2.0, max(1.0, tip_vol - req_vol_f))
+                                    elif tip_vol <= 300.0:
+                                        air_vol = 15.0 if req_vol_f < 190.0 else 10.0
+                                    else:
+                                        air_vol = min(30.0, max(0.0, tip_vol - req_vol_f))
+
+                                    if air_vol > 0.0:
+                                        try:
+                                            self.lims.pipettor.hardware.aspirate(air_vol)
+                                            self.air_cushion_ul = air_vol
+                                            self.has_air_cushion = True
+                                            self.logger.info(
+                                                f"Air Cushion: Pre-aspirated {air_vol:.1f}uL air cushion in open air (Z=0.0mm) "
+                                                f"before entering media for {req_vol_f:.1f}uL ({slot_name} {well_id})."
+                                            )
+                                            time.sleep(0.25)
+                                        except Exception as air_err:
+                                            self.air_cushion_ul = 0.0
+                                            self.has_air_cushion = False
+                                            self.logger.warning(f"Air cushion draw skipped: {air_err}")
 
                                 # --- Liquid Level Tracking (Software Meniscus Tracking + Sensor LLD) ---
                                 slot_model = self.deck_manager.slots.get(slot_name) if hasattr(self, 'deck_manager') else None
@@ -7540,16 +7858,28 @@ class LIMSMasterApp:
                                     or "assay" in lw_src_lower
                                 )
 
+                                is_300ul_slot1_res = (
+                                    slot_name == "Slot_1"
+                                    and ("300" in str(getattr(self, "active_profile_id", "")) or tip_vol == 300.0)
+                                    and not is_plate
+                                    and "50ml" not in lw_src_lower
+                                    and "3x50ml" not in lw_src_lower
+                                )
+
                                 is_2ml_falcon = (
-                                    isinstance(lw_model, TubeRack2x6_2mL) or (
-                                        (lw_kind == "tube_rack_2x6" or (self._is_front_slot(slot_name) and "2x6" in lw_src_lower))
-                                        and not isinstance(lw_model, (FalconRack50mL, Reservoir3Well))
-                                        and "50ml" not in lw_src_lower and "3x50ml" not in lw_src_lower and "30ml" not in lw_src_lower
+                                    not is_300ul_slot1_res
+                                    and (
+                                        isinstance(lw_model, TubeRack2x6_2mL) or (
+                                            (lw_kind == "tube_rack_2x6" or (self._is_front_slot(slot_name) and "2x6" in lw_src_lower))
+                                            and not isinstance(lw_model, (FalconRack50mL, Reservoir3Well))
+                                            and "50ml" not in lw_src_lower and "3x50ml" not in lw_src_lower and "30ml" not in lw_src_lower
+                                        )
                                     )
                                 ) and not is_plate
 
                                 is_reservoir = (
-                                    isinstance(lw_model, Reservoir3Well) or (
+                                    is_300ul_slot1_res
+                                    or isinstance(lw_model, Reservoir3Well) or (
                                         ((self._is_front_slot(slot_name) and lw_kind in ("reservoir_3", None))
                                         or "reservoir" in lw_src_lower
                                         or "3_well" in lw_src_lower
@@ -7750,39 +8080,43 @@ class LIMSMasterApp:
                                 # --- GUI SAFETY MANIFOLD CAP & EQUILIBRATION ---
                                 requested_vol = float(vol)
                                 if requested_vol > 0:
-                                    air_headroom = 50.0 if getattr(self, 'has_air_cushion', False) else 0.0
-                                    max_liq_vol = max(0.0, self.lims.pipettor.tip_volume - air_headroom)
-                                    actual_vol = min(requested_vol, max_liq_vol)
+                                    tip_cap = float(getattr(self.lims.pipettor, 'tip_volume', 300.0))
+                                    actual_vol = min(requested_vol, tip_cap)
 
-                                    if requested_vol > max_liq_vol:
+                                    if requested_vol > tip_cap:
                                         self.logger.warning(
-                                            f"MANIFOLD FLOOD PREVENTED: {requested_vol}uL requested, but tip limit is {max_liq_vol}uL (tip={self.lims.pipettor.tip_volume}uL, air={air_headroom}uL). Automatically capped to {actual_vol}uL.")
+                                            f"MANIFOLD FLOOD PREVENTED: {requested_vol}uL requested, but tip limit is {tip_cap}uL. Automatically capped to {actual_vol}uL."
+                                        )
 
-                                    self.lims.pipettor.hardware.aspirate(actual_vol)
+                                    try:
+                                        self.lims.pipettor.hardware.aspirate(actual_vol)
+                                    except Exception as asp_err:
+                                        fallback_vol = max(0.0, tip_cap - getattr(self, 'air_cushion_ul', 0.0))
+                                        if fallback_vol > 0 and fallback_vol < actual_vol:
+                                            actual_vol = fallback_vol
+                                            self.lims.pipettor.hardware.aspirate(actual_vol)
+                                        else:
+                                            raise asp_err
+                                    self.tip_liquid_ul = getattr(self, 'tip_liquid_ul', 0.0) + actual_vol
                                     time.sleep(1.5)
                                 else:
                                     time.sleep(0.3)
                             elif action == "Dispense Media":
-                                actual_dispense = min(float(vol), self.lims.pipettor.tip_volume)
+                                actual_dispense = min(float(vol), float(getattr(self.lims.pipettor, 'tip_volume', 300.0)))
                                 mix_cycles = effective_mix
-                                had_air = getattr(self, 'has_air_cushion', False)
-                                self.has_air_cushion = False
                                 if actual_dispense > 0:
                                     try:
                                         self.lims.pipettor.hardware.dispense(actual_dispense)
+                                        self.tip_liquid_ul = max(0.0, getattr(self, 'tip_liquid_ul', 0.0) - actual_dispense)
                                         time.sleep(0.4 if mix_cycles > 0 else 0.05)
-                                        if had_air and not step.get('no_blowout', False):
-                                            self.lims.pipettor.hardware.dispense(50)
-                                            self.logger.info(f"Air Push: Dispensed 50.0uL air push blowout to detach {actual_dispense}uL droplet cleanly.")
-                                            time.sleep(0.2)
                                     except Exception as d_err:
-                                        self.logger.warning(f"Dispense blowout exception ignored: {d_err}")
+                                        self.logger.warning(f"Dispense exception ignored: {d_err}")
                                 else:
                                     time.sleep(0.3)
 
                                 if mix_cycles > 0:
-                                    mix_vol = min(float(step.get('mix_volume', 100.0)), self.lims.pipettor.tip_volume)
-                                    self.logger.info(f"In-place mixing at {well_id}: {mix_cycles}x {mix_vol}uL (submerged at Z={tz:.1f}mm)")
+                                    mix_vol = min(float(step.get('mix_volume', 100.0)), float(getattr(self.lims.pipettor, 'tip_volume', 300.0)))
+                                    self.logger.info(f"In-place mixing at {well_id}: {mix_cycles}x {mix_vol}uL (submerged at Z={tz:.1f}mm, air cushion held above media)")
                                     for c_idx in range(mix_cycles):
                                         if self.is_aborted: break
                                         try:
@@ -7792,15 +8126,35 @@ class LIMSMasterApp:
                                             time.sleep(0.8)
                                         except Exception as m_err:
                                             self.logger.warning(f"Mix stroke {c_idx + 1}/{mix_cycles} warning: {m_err}")
-                                    if not step.get('no_blowout', False):
-                                        try:
-                                            self.lims.pipettor.hardware.dispense(50)
-                                        except Exception:
-                                            pass
+
+                                # Preserve air cushion across multi-dispense (no_blowout=True or liquid remaining in tip).
+                                # When final dispense finishes, lift tip ABOVE the media first before blowing out the air cushion
+                                # so the last drop is expelled cleanly without creating bubbles in the liquid!
+                                is_partial_dispense = bool(step.get('no_blowout', False)) or (getattr(self, 'tip_liquid_ul', 0.0) > 0.1)
+                                air_to_blow = float(getattr(self, 'air_cushion_ul', 0.0))
+                                if is_partial_dispense:
+                                    self.has_air_cushion = (air_to_blow > 0.0)
+                                elif air_to_blow > 0.0:
+                                    try:
+                                        blowout_z = max(0.0, safe_tz - 12.0)
+                                        self.lims.pipettor.hardware.move_z(blowout_z)
+                                        time.sleep(0.1)
+                                        self.lims.pipettor.hardware.dispense(air_to_blow)
+                                        self.logger.info(
+                                            f"Air Cushion Blowout (Bubble-Free): Lifted tip out of media to Z={blowout_z:.2f}mm "
+                                            f"and expelled {air_to_blow:.1f}uL air cushion to clear residual drop."
+                                        )
+                                        time.sleep(0.2)
+                                    except Exception as blow_err:
+                                        self.logger.warning(f"Air cushion blowout notice: {blow_err}")
+                                    finally:
+                                        self.air_cushion_ul = 0.0
+                                        self.has_air_cushion = False
+                                        self.tip_liquid_ul = 0.0
 
                             elif action == "Mix Well":
                                 mix_cycles = int(step.get('mix_cycles', 5))
-                                mix_vol = min(float(vol if vol > 0 else step.get('mix_volume', 100.0)), self.lims.pipettor.tip_volume)
+                                mix_vol = min(float(vol if vol > 0 else step.get('mix_volume', 100.0)), float(getattr(self.lims.pipettor, 'tip_volume', 300.0)))
                                 self.logger.info(f"In-place mixing at {well_id}: {mix_cycles}x {mix_vol}uL (submerged at Z={tz:.1f}mm)")
                                 for c_idx in range(mix_cycles):
                                     if self.is_aborted: break
@@ -7811,10 +8165,19 @@ class LIMSMasterApp:
                                         time.sleep(0.8)
                                     except Exception as m_err:
                                         self.logger.warning(f"Mix stroke {c_idx + 1}/{mix_cycles} warning: {m_err}")
-                                try:
-                                    self.lims.pipettor.hardware.dispense(50)
-                                except Exception:
-                                    pass
+                                air_to_blow = float(getattr(self, 'air_cushion_ul', 0.0))
+                                if air_to_blow > 0.0 and not step.get('no_blowout', False):
+                                    try:
+                                        blowout_z = max(0.0, safe_tz - 12.0)
+                                        self.lims.pipettor.hardware.move_z(blowout_z)
+                                        time.sleep(0.1)
+                                        self.lims.pipettor.hardware.dispense(air_to_blow)
+                                    except Exception:
+                                        pass
+                                    finally:
+                                        self.air_cushion_ul = 0.0
+                                        self.has_air_cushion = False
+                                        self.tip_liquid_ul = 0.0
 
                             elif action == "Discard Tip":
                                 try:
@@ -7830,6 +8193,9 @@ class LIMSMasterApp:
                                         for sock in self._expand_8ch_tip_sockets(step, well_id):
                                             self.mark_tip_restored(slot_name, sock, redraw=False)
                                         self._schedule_deck_redraw()
+                                    self.air_cushion_ul = 0.0
+                                    self.has_air_cushion = False
+                                    self.tip_liquid_ul = 0.0
                                     self._set_has_tip(False)
                                     self.logger.info("System state updated: Tip successfully ejected -> HAS_TIP = False")
                                 except Exception as e_err:
@@ -8066,6 +8432,8 @@ class LIMSMasterApp:
         hw_instance = self.lims.pipettor.hardware
         if c == "HOME":
             if hw_instance: hw_instance.initialize()
+        elif c == "RETURN_TIP":
+            self.prompt_for_return_tip_well()
         elif c == "DISCARD":
             self.prompt_for_discard_slot()
         elif c == "FIND_TIP":
