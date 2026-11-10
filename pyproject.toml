@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robolab-gui"
-version = "3.0.10"
+version = "3.0.11"
 description = "Automated Liquid Handling & Laboratory Automation Platform"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -53,6 +53,7 @@ all = [
 
 [project.scripts]
 robolab = "robolab_gui.app:main"
+robolab-update = "robolab_gui.app:update_cli"
 robolab-gui = "robolab_gui.app:main"
 biohit-gui = "robolab_gui.app:main"
 robolab-dynamics = "robolab_gui.app:main"

@@ -7,6 +7,10 @@ NOTE: Importing this package NEVER initiates hardware connections or DLL binding
 Hardware connections must be explicitly initiated through `HardwareSession.connect()`.
 """
 
-__version__ = "3.0.0"
+try:
+    from importlib.metadata import version as _pkg_version
+    __version__ = _pkg_version("robolab-gui")
+except Exception:
+    __version__ = "3.0.11"
 __author__ = "RoboLab Dynamics Team"
 __license__ = "MIT"
