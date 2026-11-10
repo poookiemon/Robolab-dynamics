@@ -3081,6 +3081,11 @@ class LIMSMasterApp:
             messagebox.showerror("File Not Found", "Could not locate Test_Liquid_Level_Detection.json")
 
     def _populate_workflow_from_sequence(self, loaded_sequence, protocol_name=""):
+        self.loaded_protocol_name = protocol_name
+        if "300" in protocol_name.lower() or any("300" in str(s.get("label", "")).lower() or "300" in str(s.get("labware", "")).lower() for s in (loaded_sequence or [])):
+            if getattr(self, "active_profile_id", "") != "machine_3_300ul":
+                self.switch_machine_profile("machine_3_300ul", save_to_disk=True)
+            self.switch_pipettor_head("300 µL Single-Channel", quiet=True)
         self.workflow_sequence.clear()
         self.wf_box.delete(0, tk.END)
         for step in loaded_sequence:
@@ -3774,6 +3779,8 @@ class LIMSMasterApp:
         )
 
     def action_load_300ul_drug_addition(self, volume: float = 7.5):
+        if getattr(self, "active_profile_id", "") != "machine_3_300ul":
+            self.switch_machine_profile("machine_3_300ul", save_to_disk=True)
         self.switch_pipettor_head("300 µL Single-Channel", quiet=True)
         vol_str = f"{volume:.1f}uL" if volume in (5.0, 7.5) else f"{volume:g}uL"
         filename = f"ehm_1ch_300ul_drug_addition_{vol_str}.json"
@@ -3819,6 +3826,9 @@ class LIMSMasterApp:
         )
 
     def action_load_300ul_dmso_dilution(self):
+        if getattr(self, "active_profile_id", "") != "machine_3_300ul":
+            self.switch_machine_profile("machine_3_300ul", save_to_disk=True)
+        self.switch_pipettor_head("300 µL Single-Channel", quiet=True)
         filename = "ehm_1ch_300ul_dmso_drug_dilution.json"
         target_path = self.resolve_protocol_path(
             "1_Serial_Dilution_Plate.json",
@@ -6153,8 +6163,27 @@ class LIMSMasterApp:
         return slot_name in ("Slot_1", "Slot_2")
 
     def _slot_a1_origin(self, slot_name):
+        is_300ul = (
+            ("300" in getattr(self, "active_profile_id", ""))
+            or ("300" in str(getattr(self, "current_protocol_file", "")).lower())
+            or ("300" in str(getattr(self, "loaded_protocol_name", "")).lower())
+            or ("300" in str(getattr(self, "proto_workflow_var", tk.StringVar()).get()).lower())
+            or ("300" in str(getattr(self, "proto_pipettor_var", tk.StringVar()).get()).lower())
+            or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 0) == 300.0)
+        )
+        if is_300ul:
+            origins_300 = {
+                "Slot_1": (235.05, 5.27),
+                "Slot_2": (95.50, 13.0),
+                "Slot_3": (243.81, 52.64),
+                "Slot_4": (105.63, 52.64),
+                "Slot_5": (242.98, 147.64),
+                "Slot_6": (105.60, 146.81),
+            }
+            if slot_name in origins_300:
+                return origins_300[slot_name]
+
         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
-        is_300ul = ("300" in getattr(self, "active_profile_id", "")) or (not getattr(getattr(self, "lims", None), "pipettor", None) or not getattr(self.lims.pipettor, "multichannel", False))
         if is_10ul:
             if slot_name == "Slot_4":
                 return 105.63, 52.64
@@ -6168,10 +6197,6 @@ class LIMSMasterApp:
                 return 235.05, 5.27
             if slot_name == "Slot_2":
                 return 95.50, 13.0
-        if is_300ul and slot_name == "Slot_4":
-            return 105.63, 52.64
-        if is_300ul and slot_name == "Slot_5":
-            return 242.98, 147.64
         m1_origins = {
             "Slot_1": (235.05, 5.27),
             "Slot_2": (95.5, 13.0),
@@ -6212,8 +6237,43 @@ class LIMSMasterApp:
         return r_idx, c_idx
 
     def _calculate_xy(self, slot_name, well_id):
+        is_300ul = (
+            ("300" in getattr(self, "active_profile_id", ""))
+            or ("300" in str(getattr(self, "current_protocol_file", "")).lower())
+            or ("300" in str(getattr(self, "loaded_protocol_name", "")).lower())
+            or ("300" in str(getattr(self, "proto_workflow_var", tk.StringVar()).get()).lower())
+            or ("300" in str(getattr(self, "proto_pipettor_var", tk.StringVar()).get()).lower())
+            or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 0) == 300.0)
+        )
+        is_10ul = not is_300ul and (
+            ("10ul" in getattr(self, "active_profile_id", ""))
+            or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0 and getattr(self.lims.pipettor, "multichannel", False))
+        )
+
+        # Direct Machine 3 (300 µL Single-Channel) Kinematics:
+        # Slot 4 Tip Rack: A1 strictly at X=105.63, Y=52.64
+        # Slot 5 96-Well Plate: A1 strictly at X=242.98, Y=147.64
+        # Slot 3 96-Well Plate: A1 strictly at X=243.81, Y=52.64
+        if is_300ul:
+            r_idx, c_idx = self._parse_well(well_id)
+            ci = c_idx if (c_idx is not None and 0 <= c_idx < 12) else 0
+            ri = r_idx if (r_idx is not None and 0 <= r_idx < 8) else 0
+            if slot_name == "Slot_4":
+                return round(105.63 - (ci * 9.0), 2), round(52.64 + (ri * 9.0), 2)
+            if slot_name == "Slot_5":
+                return round(242.98 - (ci * 9.0), 2), round(147.64 + (ri * 9.0), 2)
+            if slot_name == "Slot_3":
+                return round(243.81 - (ci * 9.0), 2), round(52.64 + (ri * 9.0), 2)
+            if slot_name == "Slot_1":
+                return round(235.05 - (ci * 42.6), 2), 5.27
+            if slot_name == "Slot_2":
+                col_x = [95.5, 57.0, 12.0]
+                return col_x[ci if ci < 3 else 2], 13.0
+            if slot_name == "Slot_6":
+                col_x_s6 = [108.81, 93.81, 75.06, 56.31, 37.56, 18.81, 5.91]
+                return col_x_s6[ci if ci < len(col_x_s6) else 0], 183.64
+
         # Immediate Machine 2 (1-10 µL ONLY) Slot 3 & Slot 4 override (prevents any hidden fallback or deck model bypass)
-        is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
         if slot_name in ("Slot_3", "Slot_4") and is_10ul:
             r_idx, c_idx = self._parse_well(well_id)
             ci = c_idx if (c_idx is not None and 0 <= c_idx < 12) else 0
@@ -6384,6 +6444,20 @@ class LIMSMasterApp:
 
         lw_obj = self.lims.deck_labware.get(slot_name)
         kind = self._lw_kind(lw_obj)
+        is_300ul = (
+            ("300" in getattr(self, "active_profile_id", ""))
+            or ("300" in str(getattr(self, "current_protocol_file", "")).lower())
+            or ("300" in str(getattr(self, "loaded_protocol_name", "")).lower())
+            or ("300" in str(getattr(self, "proto_workflow_var", tk.StringVar()).get()).lower())
+            or ("300" in str(getattr(self, "proto_pipettor_var", tk.StringVar()).get()).lower())
+            or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 0) == 300.0)
+        )
+
+        # Direct Machine 3 (300 µL Single-Channel) Resolution:
+        # Strictly dispatch to exact well coordinates with zero 8-channel or manifold offset
+        if is_300ul:
+            return self._calculate_xy(slot_name, well_id)
+
         is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
 
         # Machine 2 (1-10 µL ONLY): 8-channel multi-head fixed-center kinematics across all plate/tip slots
@@ -6576,8 +6650,18 @@ class LIMSMasterApp:
 
         # Persistent 8-channel / calibrated heights memory lookup (GUI remembers operator depths)
         if hasattr(self, 'calibrated_heights'):
-            is_10ul = ("10ul" in getattr(self, "active_profile_id", "")) or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
-            is_300ul = ("300" in getattr(self, "active_profile_id", "")) or (not is_8ch and not is_10ul and getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) >= 200.0)
+            is_300ul = (
+                ("300" in getattr(self, "active_profile_id", ""))
+                or ("300" in str(getattr(self, "current_protocol_file", "")).lower())
+                or ("300" in str(getattr(self, "loaded_protocol_name", "")).lower())
+                or ("300" in str(getattr(self, "proto_workflow_var", tk.StringVar()).get()).lower())
+                or ("300" in str(getattr(self, "proto_pipettor_var", tk.StringVar()).get()).lower())
+                or (not is_8ch and getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) >= 200.0)
+            )
+            is_10ul = not is_300ul and (
+                ("10ul" in getattr(self, "active_profile_id", ""))
+                or (getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) <= 10.0)
+            )
             is_triplicate = "triplicate" in str(getattr(self, "current_protocol_file", "")).lower() or "triplicate" in str(getattr(self, "loaded_protocol_name", "")).lower()
             is_96 = (kind in ("plate96", None)) or is_triplicate or "96" in str(getattr(labware_obj, "source_file", "")).lower() or "96" in str(getattr(labware_obj, "name", "")).lower()
             # EHM 48-Well Plates (Slot 5 & Slot 6) calibrated depth: 72.35mm (safe, prevents tip bending)
@@ -6588,15 +6672,11 @@ class LIMSMasterApp:
                     return min(float(self.calibrated_heights.get("ehm_aspirate_z", def_ehm_asp)) + slot_z_offset + extra_z, 103.5)
                 elif action == "Dispense Media":
                     return min(float(self.calibrated_heights.get("ehm_dispense_z", def_ehm_disp)) + slot_z_offset + extra_z, 103.5)
-            elif kind == "plate96" or (is_8ch and slot_name in ("Slot_3", "Slot_5") and is_96):
+            elif kind == "plate96" or (is_8ch and slot_name in ("Slot_3", "Slot_5") and is_96) or (is_300ul and slot_name in ("Slot_3", "Slot_5")):
                 def_p96_asp = 98.72 if is_300ul else 78.40
                 def_p96_disp = 98.72 if is_300ul else 68.43
-                raw_asp = float(self.calibrated_heights.get("plate96_aspirate_z", def_p96_asp))
-                raw_disp = float(self.calibrated_heights.get("plate96_dispense_z", def_p96_disp))
-                if is_300ul and raw_asp in (78.4, 78.40, 97.52):
-                    raw_asp = 98.72
-                if is_300ul and raw_disp in (68.43, 78.4, 78.40, 97.52):
-                    raw_disp = 98.72
+                raw_asp = 98.72 if is_300ul else float(self.calibrated_heights.get("plate96_aspirate_z", def_p96_asp))
+                raw_disp = 98.72 if is_300ul else float(self.calibrated_heights.get("plate96_dispense_z", def_p96_disp))
                 if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
                     return min(raw_asp + slot_z_offset + extra_z, 103.5)
                 elif action == "Dispense Media":
@@ -6605,10 +6685,7 @@ class LIMSMasterApp:
                         or getattr(self, "last_aspirate_lw_kind", None) in ("reservoir_3", "reservoir_7", "reservoir_6", "tube_rack_2x6")
                     )
                     if is_dmso_dispense:
-                        dmso_z = float(self.calibrated_heights.get("plate96_dmso_dispense_z", 98.72))
-                        if is_300ul and dmso_z in (75.0, 75.00, 68.43, 97.52):
-                            dmso_z = 98.72
-                        return min(dmso_z + slot_z_offset + extra_z, 103.5)
+                        return min(98.72 + slot_z_offset + extra_z, 103.5)
                     return min(raw_disp + slot_z_offset + extra_z, 103.5)
             elif (slot_name in ("Slot_6", "Slot_1", "Slot_2") and ("reservoir" in str(kind) or "waste" in str(kind) or (is_300ul and slot_name == "Slot_1"))) or kind in ("reservoir_7", "reservoir_6", "reservoir_3", "waste"):
                 if action == "Dispense Media":
@@ -7397,17 +7474,30 @@ class LIMSMasterApp:
             self.logger.info("Protocol run cancelled by operator during Pre-Run Safety Check.")
             return
 
-        needs_8ch = any(s.get('eight_ch_symmetric') for s in self.workflow_sequence) or ("10ul" in getattr(self, "active_profile_id", ""))
-        if needs_8ch and not self.lims.pipettor.multichannel:
-            self.switch_pipettor_head("8-Channel Multi (1-10 µL)" if "10ul" in getattr(self, "active_profile_id", "") else True, quiet=True)
-        elif not needs_8ch and self.lims.pipettor.multichannel:
-            max_v = max((float(s.get('volume', 0.0) or 0.0) for s in self.workflow_sequence), default=7.5)
-            if max_v <= 15.0:
-                self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
-            elif max_v <= 50.0:
-                self.switch_pipettor_head("20 µL Single-Channel", quiet=True)
-            else:
-                self.switch_pipettor_head("300 µL Single-Channel", quiet=True)
+        is_300_run = (
+            ("300" in getattr(self, "active_profile_id", ""))
+            or ("300" in str(getattr(self, "current_protocol_file", "")).lower())
+            or ("300" in str(getattr(self, "loaded_protocol_name", "")).lower())
+            or ("300" in str(getattr(self, "proto_workflow_var", tk.StringVar()).get()).lower())
+            or ("300" in str(getattr(self, "proto_pipettor_var", tk.StringVar()).get()).lower())
+            or any("300" in str(s.get("label", "")).lower() or "300" in str(s.get("labware", "")).lower() for s in self.workflow_sequence)
+        )
+        if is_300_run:
+            if getattr(self, "active_profile_id", "") != "machine_3_300ul":
+                self.switch_machine_profile("machine_3_300ul", save_to_disk=True)
+            self.switch_pipettor_head("300 µL Single-Channel", quiet=True)
+        else:
+            needs_8ch = any(s.get('eight_ch_symmetric') for s in self.workflow_sequence) or ("10ul" in getattr(self, "active_profile_id", ""))
+            if needs_8ch and not self.lims.pipettor.multichannel:
+                self.switch_pipettor_head("8-Channel Multi (1-10 µL)" if "10ul" in getattr(self, "active_profile_id", "") else True, quiet=True)
+            elif not needs_8ch and self.lims.pipettor.multichannel:
+                max_v = max((float(s.get('volume', 0.0) or 0.0) for s in self.workflow_sequence), default=7.5)
+                if max_v <= 15.0:
+                    self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
+                elif max_v <= 50.0:
+                    self.switch_pipettor_head("20 µL Single-Channel", quiet=True)
+                else:
+                    self.switch_pipettor_head("300 µL Single-Channel", quiet=True)
         has_mix_steps = any(int(s.get('mix_cycles', 0)) > 0 or s.get('action') == "Mix Well" for s in self.workflow_sequence)
         if has_mix_steps:
             self.enable_mixing_for_run = messagebox.askyesno(

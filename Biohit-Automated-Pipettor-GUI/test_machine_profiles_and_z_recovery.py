@@ -26,6 +26,14 @@ def run_all_tests():
     root = tk.Tk()
     root.withdraw()
 
+    # Clean up local station identity to ensure test starts in clean state
+    for p in MachineProfileManager.get_id_file_paths():
+        if os.path.isfile(p):
+            try:
+                os.remove(p)
+            except Exception:
+                pass
+
     # Non-interactive messagebox patch for automated test suite
     messagebox.showinfo = lambda *a, **k: None
     messagebox.showwarning = lambda *a, **k: None
@@ -432,6 +440,24 @@ def run_all_tests():
     s1_xy = app._calculate_xy("Slot_1", "A1")
     assert s1_xy == (235.05, 5.27), f"Expected Slot_1 A1 = (235.05, 5.27), got {s1_xy}"
     print(f"PASS: Machine 3 Slot_1 Well A1 resolves to X={s1_xy[0]:.2f}mm, Y={s1_xy[1]:.2f}mm.")
+
+    # Verify Slot 4 Tip Rack A1 resolves strictly to X=105.63, Y=52.64
+    s4_xy = app._calculate_xy("Slot_4", "A1")
+    assert abs(s4_xy[0] - 105.63) < 1e-4 and abs(s4_xy[1] - 52.64) < 1e-4, (
+        f"Expected Slot 4 tip rack A1 = (105.63, 52.64), got {s4_xy}"
+    )
+    pick_step_xy = app._resolve_step_xy({"action": "Pick Up Tip"}, "Slot_4", "A1")
+    assert abs(pick_step_xy[0] - 105.63) < 1e-4 and abs(pick_step_xy[1] - 52.64) < 1e-4, (
+        f"Expected Machine 3 Pick Up Tip Slot_4 A1 = (105.63, 52.64), got {pick_step_xy}"
+    )
+    print(f"PASS: Machine 3 Slot_4 Tip Rack A1 resolves to X={s4_xy[0]:.2f}mm, Y={s4_xy[1]:.2f}mm (Pick Up Tip step={pick_step_xy}).")
+
+    # Verify Slot 3 96-well plate A1 center resolves to (243.81, 52.64)
+    s3_xy = app._calculate_xy("Slot_3", "A1")
+    assert abs(s3_xy[0] - 243.81) < 1e-4 and abs(s3_xy[1] - 52.64) < 1e-4, (
+        f"Expected Slot 3 96-well A1 = (243.81, 52.64), got {s3_xy}"
+    )
+    print(f"PASS: Machine 3 Slot_3 Well A1 resolves to X={s3_xy[0]:.2f}mm, Y={s3_xy[1]:.2f}mm.")
 
     # Verify Slot 5 96-well plate A1 center resolves to (242.98, 147.64)
     s5_xy = app._calculate_xy("Slot_5", "A1")
