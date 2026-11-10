@@ -153,8 +153,8 @@ class LIMSMasterApp:
             "tip_rack_pickup_limit_z": 75.0 if "10ul" in self.active_profile_id else (92.0 if "300" in self.active_profile_id else 98.0),
             "tip_pickup_extra_press_mm": 1.50 if "300" in self.active_profile_id else 2.50,
             "tip_rack_discard_z": 40.50,
-            "ehm_aspirate_z": 78.40 if "10ul" in self.active_profile_id else (86.0 if "300" in self.active_profile_id else 24.17),
-            "ehm_dispense_z": 68.43 if "10ul" in self.active_profile_id else (84.0 if "300" in self.active_profile_id else 14.17),
+            "ehm_aspirate_z": 72.35 if ("10ul" in self.active_profile_id or "300" in self.active_profile_id) else 24.17,
+            "ehm_dispense_z": 62.35 if ("10ul" in self.active_profile_id or "300" in self.active_profile_id) else 14.17,
             "plate96_aspirate_z": 97.52 if "300" in self.active_profile_id else 78.40,
             "plate96_dispense_z": 97.52 if "300" in self.active_profile_id else 68.43,
             "plate96_dmso_dispense_z": 75.0 if "300" in self.active_profile_id else 68.43,
@@ -322,10 +322,16 @@ class LIMSMasterApp:
         # Submenu 2: 300 µL Single-Channel [Prepping DMSO-Drug]
         m300 = tk.Menu(protocolmenu, tearoff=0)
         m300.add_command(label="🟢 Prepping DMSO-Drug Serial Dilution (96-Well Plate)...", command=self.action_load_300ul_dmso_dilution)
+        m300.add_separator()
+        m300.add_command(label="🟢 Drug Addition to EHM Plates (7.5 µL) + Mix", command=lambda: self.action_load_300ul_drug_addition(7.5))
+        m300.add_command(label="🟢 Drug Addition to EHM Plates (5.0 µL) + Mix", command=lambda: self.action_load_300ul_drug_addition(5.0))
         protocolmenu.add_cascade(label="300 µL Single-Channel [Prepping DMSO-Drug]", menu=m300)
 
         # Submenu 3: 8-Channel Multi (1-10 µL) [Drug Addition to EHM]
         m10ch = tk.Menu(protocolmenu, tearoff=0)
+        m10ch.add_command(label="🟢 [5-Tip Parallel] Drug Addition to EHM (7.5 µL) + Mix (~8 mins)", command=lambda: self.action_load_10ul_parallel_drug_addition(7.5))
+        m10ch.add_command(label="🟢 [5-Tip Parallel] Drug Addition to EHM (5.0 µL) + Mix (~8 mins)", command=lambda: self.action_load_10ul_parallel_drug_addition(5.0))
+        m10ch.add_separator()
         m10ch.add_command(label="🟢 [Triplicate Assay] Drug Addition to EHM (7.5 µL) + Mix", command=lambda: self.action_load_10ul_triplicate_drug_addition(7.5))
         m10ch.add_command(label="🟢 [Triplicate Assay] Drug Addition to EHM (5.0 µL) + Mix", command=lambda: self.action_load_10ul_triplicate_drug_addition(5.0))
         protocolmenu.add_cascade(label="8-Channel Multi (1-10 µL) [Drug Addition to EHM]", menu=m10ch)
@@ -3357,11 +3363,15 @@ class LIMSMasterApp:
             }
         elif "1-10" in p_name or "8×10" in p_name or "10 µl" in p_name or ("10" in p_name and "1000" not in p_name):
             return {
+                "[5-Tip Parallel] Drug Addition to EHM (7.5 µL) + Mix (~8 mins)": lambda: self.action_load_10ul_parallel_drug_addition(7.5),
+                "[5-Tip Parallel] Drug Addition to EHM (5.0 µL) + Mix (~8 mins)": lambda: self.action_load_10ul_parallel_drug_addition(5.0),
                 "[Triplicate Assay] Drug Addition to EHM (7.5 µL) + Mix": lambda: self.action_load_10ul_triplicate_drug_addition(7.5),
                 "[Triplicate Assay] Drug Addition to EHM (5.0 µL) + Mix": lambda: self.action_load_10ul_triplicate_drug_addition(5.0),
             }
         elif "300" in p_name:
             return {
+                "Drug Addition to EHM Plates (7.5 µL) + Mix": lambda: self.action_load_300ul_drug_addition(7.5),
+                "Drug Addition to EHM Plates (5.0 µL) + Mix": lambda: self.action_load_300ul_drug_addition(5.0),
                 "Prepping DMSO-Drug Dilution (96-Well Plate)": self.action_load_300ul_dmso_dilution,
             }
         else:  # Fallback: 8-Channel Multi (8×1000 µL) [Media Change]
@@ -3751,6 +3761,51 @@ class LIMSMasterApp:
 
         self.show_protocol_deck_setup_modal(
             protocol_name=f"[300 µL Single] Media Change + {volume:g} µL Drug Addition (2 Plates)",
+            pipettor_mode="1×300 µL (Single-Channel)",
+            is_multichannel=False,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descs,
+            sequence=seq,
+            on_confirm_callback=do_load
+        )
+
+    def action_load_300ul_drug_addition(self, volume: float = 7.5):
+        self.switch_pipettor_head("300 µL Single-Channel", quiet=True)
+        vol_str = f"{volume:.1f}uL" if volume in (5.0, 7.5) else f"{volume:g}uL"
+        filename = f"ehm_1ch_300ul_drug_addition_{vol_str}.json"
+        target_path = self.resolve_protocol_path(
+            filename,
+            f"drug_addition_only_2_ehm_plates_{vol_str}.json",
+            "drug_addition_only_2_ehm_plates.json",
+        )
+        if not target_path:
+            messagebox.showerror("File Not Found", f"Could not locate {filename}")
+            return
+
+        deck_setup = {
+            "Slot_1": "(Empty / Clearance)",
+            "Slot_2": "waste_trough.json",
+            "Slot_3": "generic_96_well_plate.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "myriamed_48_well.json",
+            "Slot_6": "myriamed_48_well.json",
+        }
+        slot_descs = {
+            "Slot_1": "Empty clearance zone (or 3-Well Reservoir parked safely)",
+            "Slot_2": "Waste Trough / Discard Rack (Liquid Waste & Tip Discard)",
+            "Slot_3": "Prepped 96-Well Drug Plate (Stock Drug Conditions, Z=97.52 mm)",
+            "Slot_4": "300 µL Tip Rack (Single-Channel Tips A1..D5, pickup Z=86.36 mm)",
+            "Slot_5": "Destination Plate 1 (Myriamed 48-Well EHM: Rows A-C Drug 1, D-F Drug 2, G-H Drug 3, Z=72.35 mm)",
+            "Slot_6": "Destination Plate 2 (Myriamed 48-Well EHM: Row A Drug 3, B-D Drug 4, E-G Drug 5, Row H Control, Z=72.35 mm)",
+        }
+        with open(target_path, "r") as f:
+            seq = json.load(f)
+
+        def do_load():
+            self._populate_workflow_from_sequence(seq, f"[300 µL Single] Drug Addition ({volume:g} µL) to EHM Plates")
+
+        self.show_protocol_deck_setup_modal(
+            protocol_name=f"[300 µL Single] Drug Addition to EHM ({volume:g} µL) + Mix",
             pipettor_mode="1×300 µL (Single-Channel)",
             is_multichannel=False,
             deck_setup=deck_setup,
@@ -4685,7 +4740,7 @@ class LIMSMasterApp:
             kind = self._lw_kind(lw)
             nom_z = 24.17
             if kind == "ehm48":
-                nom_z = float(self.calibrated_heights.get("ehm_aspirate_z", 78.40 if "10ul" in self.active_profile_id else 24.17))
+                nom_z = float(self.calibrated_heights.get("ehm_aspirate_z", 72.35 if ("10ul" in self.active_profile_id or "300" in self.active_profile_id) else 24.17))
             elif kind == "plate96":
                 nom_z = float(self.calibrated_heights.get("plate96_aspirate_z", 78.40))
             elif "reservoir" in str(kind) or kind == "reservoir_7":
@@ -4712,7 +4767,7 @@ class LIMSMasterApp:
             kind = self._lw_kind(lw)
             nom_z = 24.17
             if kind == "ehm48":
-                nom_z = float(self.calibrated_heights.get("ehm_aspirate_z", 78.40 if "10ul" in self.active_profile_id else 24.17))
+                nom_z = float(self.calibrated_heights.get("ehm_aspirate_z", 72.35 if ("10ul" in self.active_profile_id or "300" in self.active_profile_id) else 24.17))
             elif kind == "plate96":
                 nom_z = float(self.calibrated_heights.get("plate96_aspirate_z", 78.40))
             elif "reservoir" in str(kind) or kind == "reservoir_7":
@@ -6347,14 +6402,14 @@ class LIMSMasterApp:
                 tx = round(243.24 - (col_i * 9.0), 2)
 
             raw_m_ch = str((step or {}).get("mounted_channels", "")).strip().upper()
-            m_ch = raw_m_ch or ("A-E" if slot_name in ("Slot_3", "Slot_4") else "A-H")
-            num_tips = 5 if slot_name in ("Slot_3", "Slot_4") else 8
-            if m_ch:
-                if "-" in m_ch:
-                    parts = m_ch.split("-")
+            m_ch = raw_m_ch or "A-E"
+            num_tips = 5 if not raw_m_ch else 8
+            if raw_m_ch:
+                if "-" in raw_m_ch:
+                    parts = raw_m_ch.split("-")
                     if len(parts) == 2 and parts[0] in "ABCDEFGH" and parts[1] in "ABCDEFGH":
                         num_tips = max(1, min(8, ord(parts[1]) - ord(parts[0]) + 1))
-                elif len(m_ch) == 1 and m_ch in "ABCDEFGH":
+                elif len(raw_m_ch) == 1 and raw_m_ch in "ABCDEFGH":
                     num_tips = 1
 
             if slot_name in ("Slot_3", "Slot_4"):
@@ -6365,8 +6420,8 @@ class LIMSMasterApp:
                 else:
                     ty = round(84.14 - (8 - num_tips) * 9.06, 2)
             else:
-                if num_tips == 5:
-                    ty = 151.13
+                if num_tips == 5 or not raw_m_ch:
+                    ty = 146.81
                 elif num_tips == 8:
                     ty = 178.31
                 else:
@@ -6520,19 +6575,14 @@ class LIMSMasterApp:
             is_300ul = ("300" in getattr(self, "active_profile_id", "")) or (not is_8ch and not is_10ul and getattr(getattr(self, "lims", None), "pipettor", None) and getattr(self.lims.pipettor, "tip_volume", 200) >= 200.0)
             is_triplicate = "triplicate" in str(getattr(self, "current_protocol_file", "")).lower() or "triplicate" in str(getattr(self, "loaded_protocol_name", "")).lower()
             is_96 = (kind in ("plate96", None)) or is_triplicate or "96" in str(getattr(labware_obj, "source_file", "")).lower() or "96" in str(getattr(labware_obj, "name", "")).lower()
-            # Machine 2 (1-10 µL): Enforce unified plate / EHM depth across Slot 3, Slot 5, and Slot 6
-            # (as deep as 96-well: Aspirate/Mix = 78.40mm, Dispense = 68.43mm)
-            if is_10ul and slot_name in ("Slot_3", "Slot_5", "Slot_6") and (kind in ("ehm48", "plate96") or is_96):
+            # EHM 48-Well Plates (Slot 5 & Slot 6) calibrated depth: 72.35mm (safe, prevents tip bending)
+            if kind == "ehm48" or (slot_name in ("Slot_5", "Slot_6") and "96" not in str(getattr(labware_obj, "source_file", "")).lower()):
+                def_ehm_asp = 72.35 if (is_10ul or is_300ul) else 24.17
+                def_ehm_disp = 62.35 if (is_10ul or is_300ul) else 14.17
                 if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
-                    return min(float(self.calibrated_heights.get("ehm_aspirate_z", self.calibrated_heights.get("plate96_aspirate_z", 78.40))) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("ehm_aspirate_z", def_ehm_asp)) + slot_z_offset + extra_z, 103.5)
                 elif action == "Dispense Media":
-                    return min(float(self.calibrated_heights.get("ehm_dispense_z", self.calibrated_heights.get("plate96_dispense_z", 68.43))) + slot_z_offset + extra_z, 103.5)
-
-            if kind == "ehm48":
-                if action in ("Aspirate Media", "Mix Well") or int(mix_cycles or 0) > 0:
-                    return min(float(self.calibrated_heights.get("ehm_aspirate_z", 78.40 if is_10ul else 24.17)) + slot_z_offset + extra_z, 103.5)
-                elif action == "Dispense Media":
-                    return min(float(self.calibrated_heights.get("ehm_dispense_z", 68.43 if is_10ul else 14.17)) + slot_z_offset + extra_z, 103.5)
+                    return min(float(self.calibrated_heights.get("ehm_dispense_z", def_ehm_disp)) + slot_z_offset + extra_z, 103.5)
             elif kind == "plate96" or (is_8ch and slot_name in ("Slot_3", "Slot_5") and is_96):
                 def_p96_asp = 97.52 if is_300ul else 78.40
                 def_p96_disp = 97.52 if is_300ul else 68.43

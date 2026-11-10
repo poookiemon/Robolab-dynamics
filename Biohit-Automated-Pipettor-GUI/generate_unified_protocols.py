@@ -888,14 +888,20 @@ def build_1ch_300ul_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.
     Supports either 7-column or 6-column reservoir on Slot 6.
     """
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    source_p = os.path.join(script_dir, "protocols", "1_Serial_Dilution_Plate.json")
-    if os.path.exists(source_p):
-        with open(source_p, "r") as f:
-            steps = json.load(f)
-    else:
-        source_b = os.path.join(script_dir, "protocols", "bakar_v2_drug_dmso_initial_loading.json")
-        with open(source_b, "r") as f:
-            steps = json.load(f)
+    candidates = [
+        os.path.join(script_dir, "protocols", "Machine 3 - 300 uL", "1_Serial_Dilution_Plate.json"),
+        os.path.join(script_dir, "protocols", "1_Serial_Dilution_Plate.json"),
+        os.path.join(script_dir, "protocols", "Machine 3 - 300 uL", "bakar_v2_drug_dmso_initial_loading.json"),
+        os.path.join(script_dir, "protocols", "bakar_v2_drug_dmso_initial_loading.json"),
+    ]
+    steps = None
+    for cand in candidates:
+        if os.path.exists(cand):
+            with open(cand, "r") as f:
+                steps = json.load(f)
+            break
+    if steps is None:
+        steps = []
     for s in steps:
         if s.get("slot") == "Slot_1" or "dmso" in s.get("label", "").lower():
             s["slot"] = "Slot_6"
@@ -903,6 +909,158 @@ def build_1ch_300ul_dmso_dilution_steps(dmso_labware: str = "reservoir_7_column.
             s["well"] = "A1"
             if "label" in s:
                 s["label"] = s["label"].replace("Slot_1", "Slot_6")
+    return steps
+
+
+def build_1ch_300ul_drug_addition_steps(
+    drug_vol_ul: float = 7.5,
+    drug_source_slot: str = "Slot_3",
+    drug_source_labware: str = "generic_96_well_plate.json",
+    ehm_plate1_slot: str = "Slot_5",
+    ehm_plate2_slot: str = "Slot_6",
+    ehm_labware: str = "myriamed_48_well.json",
+    tip_rack_slot: str = "Slot_4",
+    tip_labware: str = "tip_rack_1000ul.json",
+    waste_slot: str = "Slot_2",
+    waste_well: str = "A3",
+    mix_cycles: int = 2,
+    mix_vol_ul: float = 150.0,
+) -> List[Dict[str, Any]]:
+    """
+    Builds dedicated 300 uL Single-Channel Drug Addition protocol for BOTH EHM Plates.
+    Replicate layout matches Dr. Bakar's triplicate dose-response protocol layout:
+    - Drug 1 (Ready Plate Row A: A1..A6) -> Plate 1 Rows A, B, C (Triplicates for conc 1..6)
+    - Drug 2 (Ready Plate Row B: B1..B6) -> Plate 1 Rows D, E, F (Triplicates for conc 1..6)
+    - Drug 3 (Ready Plate Row C: C1..C6) -> Plate 1 Rows G, H (Reps 1, 2) & Plate 2 Row A (Rep 3)
+    - Drug 4 (Ready Plate Row D: D1..D6) -> Plate 2 Rows B, C, D (Triplicates for conc 1..6)
+    - Drug 5 (Ready Plate Row E: E1..E6) -> Plate 2 Rows E, F, G (Triplicates for conc 1..6)
+    - Plate 2 Row H: Control (untouched)
+
+    Tips:
+    - 36 clean 300 µL tips picked sequentially from Slot 4 Columns 1..5 (A1 to D5).
+    - Single aspiration of total volume (e.g. 3 x 7.5 = 22.5 µL or 3 x 5.0 = 15.0 µL) from Slot 3.
+    - Multi-dispense into destination wells with in-well mixing.
+    - Discard tip to Slot 2 waste (A3).
+    """
+    operations = []
+
+    # Drug 1 (Row A on Slot 3): 6 concentrations -> Plate 1 Rows A, B, C
+    for c in range(1, 7):
+        operations.append((
+            f"Drug 1 (Conc {c})",
+            f"A{c}",
+            ehm_plate1_slot,
+            [f"A{c}", f"B{c}", f"C{c}"],
+            "Plate 1"
+        ))
+
+    # Drug 2 (Row B on Slot 3): 6 concentrations -> Plate 1 Rows D, E, F
+    for c in range(1, 7):
+        operations.append((
+            f"Drug 2 (Conc {c})",
+            f"B{c}",
+            ehm_plate1_slot,
+            [f"D{c}", f"E{c}", f"F{c}"],
+            "Plate 1"
+        ))
+
+    # Drug 3 (Row C on Slot 3): 6 concentrations split across Plate 1 (G, H) and Plate 2 (A)
+    for c in range(1, 7):
+        operations.append((
+            f"Drug 3 (Conc {c}, Reps 1-2)",
+            f"C{c}",
+            ehm_plate1_slot,
+            [f"G{c}", f"H{c}"],
+            "Plate 1"
+        ))
+    for c in range(1, 7):
+        operations.append((
+            f"Drug 3 (Conc {c}, Rep 3)",
+            f"C{c}",
+            ehm_plate2_slot,
+            [f"A{c}"],
+            "Plate 2"
+        ))
+
+    # Drug 4 (Row D on Slot 3): 6 concentrations -> Plate 2 Rows B, C, D
+    for c in range(1, 7):
+        operations.append((
+            f"Drug 4 (Conc {c})",
+            f"D{c}",
+            ehm_plate2_slot,
+            [f"B{c}", f"C{c}", f"D{c}"],
+            "Plate 2"
+        ))
+
+    # Drug 5 (Row E on Slot 3): 6 concentrations -> Plate 2 Rows E, F, G
+    for c in range(1, 7):
+        operations.append((
+            f"Drug 5 (Conc {c})",
+            f"E{c}",
+            ehm_plate2_slot,
+            [f"E{c}", f"F{c}", f"G{c}"],
+            "Plate 2"
+        ))
+
+    assert len(operations) == 36, f"Expected 36 operations, got {len(operations)}"
+
+    steps: List[Dict[str, Any]] = []
+
+    for idx, (drug_desc, src_well, tgt_slot, dest_wells, plate_name) in enumerate(operations):
+        fresh_row = ROWS[idx % 8]
+        fresh_col = (idx // 8) + 1
+        fresh_tip_well = f"{fresh_row}{fresh_col}"
+        total_vol = round(float(drug_vol_ul) * len(dest_wells), 2)
+
+        # 1. Pick clean tip
+        steps.append({
+            "action": "Pick Up Tip",
+            "mode": "auto",
+            "slot": tip_rack_slot,
+            "well": fresh_tip_well,
+            "volume": 0.0,
+            "labware": tip_labware,
+            "label": f"[PICK 300µL TIP] Slot_4 {fresh_tip_well} | {drug_desc} ({plate_name})",
+        })
+
+        # 2. Aspirate total drug volume in one draw
+        steps.append({
+            "action": "Aspirate Media",
+            "mode": "auto",
+            "slot": drug_source_slot,
+            "well": src_well,
+            "volume": float(total_vol),
+            "labware": drug_source_labware,
+            "track_liquid": False,
+            "label": f"[ASPIRATE DRUG] {total_vol:g} µL {drug_desc} from Slot_3 {src_well}",
+        })
+
+        # 3. Dispense into each destination well with in-well mix
+        for dw in dest_wells:
+            steps.append({
+                "action": "Dispense Media",
+                "mode": "auto",
+                "slot": tgt_slot,
+                "well": dw,
+                "volume": float(drug_vol_ul),
+                "labware": ehm_labware,
+                "mix_cycles": mix_cycles,
+                "mix_volume": float(mix_vol_ul),
+                "track_liquid": False,
+                "label": f"[DISPENSE+MIX] {drug_vol_ul:g} µL -> {plate_name} {dw} ({mix_cycles}x {mix_vol_ul:g} µL Mix)",
+            })
+
+        # 4. Discard tip to Slot 2 waste
+        steps.append({
+            "action": "Discard Tip",
+            "mode": "auto",
+            "slot": waste_slot,
+            "well": waste_well,
+            "volume": 0.0,
+            "labware": "waste_trough.json",
+            "label": f"[DISCARD TIP] Discard {drug_desc} Tip -> Slot_2 Waste ({waste_well})",
+        })
+
     return steps
 
 
@@ -1190,6 +1348,8 @@ def save_all_unified_protocols():
         "ehm_1ch_10ul_drug_addition_to_ehm_5.0uL.json": build_1ch_10ul_triplicate_drug_addition_steps(5.0),
 
         # 2. 300 uL Single-Channel
+        "ehm_1ch_300ul_drug_addition_7.5uL.json": build_1ch_300ul_drug_addition_steps(7.5),
+        "ehm_1ch_300ul_drug_addition_5.0uL.json": build_1ch_300ul_drug_addition_steps(5.0),
         "ehm_1ch_300ul_media_change_and_drug_7.5uL.json": build_1ch_300ul_media_change_and_drug_steps(7.5),
         "ehm_1ch_300ul_media_change_and_drug_5.0uL.json": build_1ch_300ul_media_change_and_drug_steps(5.0),
         "ehm_1ch_300ul_dmso_drug_dilution.json": build_1ch_300ul_dmso_dilution_steps(),
@@ -1200,13 +1360,38 @@ def save_all_unified_protocols():
         "ehm_1ch_20ul_dmso_drug_dilution.json": build_1ch_20ul_dmso_dilution_steps(),
     }
 
-    for d in out_dirs:
-        os.makedirs(d, exist_ok=True)
+    machine_subfolders = {
+        "1000ul": "Machine 1 - 8x1000 uL",
+        "10ul": "Machine 2 - 1-10 uL",
+        "20ul": "Machine 2 - 1-10 uL",
+        "300ul": "Machine 3 - 300 uL",
+    }
+
+    all_roots = [
+        os.path.join(script_dir, "protocols"),
+        os.path.join(repo_root, "protocols"),
+        os.path.join(repo_root, "src", "robolab_gui", "resources", "protocols"),
+    ]
+
+    for root in all_roots:
+        os.makedirs(root, exist_ok=True)
         for name, steps in protocols.items():
-            out_p = os.path.join(d, name)
+            # Root copy
+            out_p = os.path.join(root, name)
             with open(out_p, "w") as f:
                 json.dump(steps, f, indent=2)
             print(f"Saved {len(steps)} steps -> {out_p}")
+
+            # Machine subfolder copy
+            for key, subf in machine_subfolders.items():
+                if key in name:
+                    sub_dir = os.path.join(root, subf)
+                    os.makedirs(sub_dir, exist_ok=True)
+                    sub_p = os.path.join(sub_dir, name)
+                    with open(sub_p, "w") as f:
+                        json.dump(steps, f, indent=2)
+                    print(f"Saved {len(steps)} steps -> {sub_p}")
+                    break
 
 
 if __name__ == "__main__":
