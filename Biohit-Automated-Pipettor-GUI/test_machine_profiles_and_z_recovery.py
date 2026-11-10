@@ -444,11 +444,11 @@ def run_all_tests():
         assert abs(z_val - 97.52) < 1e-4, f"Expected Machine 3 {act} Z=97.52mm on 96-well plate, got {z_val}"
     print("PASS: Machine 3 96-well plate Z depth is 97.52mm across Aspirate, Dispense, and Serial-Dilution Mixing.")
 
-    # Verify Machine 3 DMSO air-dispense memory (75.0mm when aspirated from Slot_1 reservoir & mix_cycles=0, vs 97.52mm for drug/serial dilution)
+    # Verify Machine 3 DMSO dispense depth matches mix/base depth (97.52mm so small volumes like 10µL stay at the base)
     app.last_aspirate_slot = "Slot_1"
     app.last_aspirate_lw_kind = "reservoir_3"
     dmso_disp_z = app._calculate_z("Dispense Media", app.lims.deck_labware["Slot_5"], "A1", "auto", 0.0, "Slot_5", 0.0, mix_cycles=0)
-    assert abs(dmso_disp_z - 75.0) < 1e-4, f"Expected Machine 3 DMSO air-dispense Z=75.0mm, got {dmso_disp_z}"
+    assert abs(dmso_disp_z - 97.52) < 1e-4, f"Expected Machine 3 DMSO dispense Z=97.52mm (base/mix depth), got {dmso_disp_z}"
 
     app.last_aspirate_slot = "Slot_3"
     app.last_aspirate_lw_kind = "plate96"
@@ -456,7 +456,7 @@ def run_all_tests():
     assert abs(drug_disp_z - 97.52) < 1e-4, f"Expected Machine 3 Drug dispense Z=97.52mm, got {drug_disp_z}"
     app.last_aspirate_slot = None
     app.last_aspirate_lw_kind = None
-    print("PASS: Machine 3 remembers DMSO air-dispense (Z=75.0mm from air ONLY when adding DMSO from Slot_1, and Z=97.52mm for drug/serial dilutions).")
+    print("PASS: Machine 3 DMSO dispense depth verified at 97.52mm (identical to mix/base depth so 10µL DMSO stays at well base).")
 
     # Verify Direct Operation 'Return Tip to Well' restores tip memory and sets HAS_TIP = False
     tip_path = os.path.join(app.get_labware_dir(), "tip_rack_96.json")

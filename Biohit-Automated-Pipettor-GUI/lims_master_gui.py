@@ -157,7 +157,7 @@ class LIMSMasterApp:
             "ehm_dispense_z": 62.35 if ("10ul" in self.active_profile_id or "300" in self.active_profile_id) else 14.17,
             "plate96_aspirate_z": 97.52 if "300" in self.active_profile_id else 78.40,
             "plate96_dispense_z": 97.52 if "300" in self.active_profile_id else 68.43,
-            "plate96_dmso_dispense_z": 75.0 if "300" in self.active_profile_id else 68.43,
+            "plate96_dmso_dispense_z": 97.52 if "300" in self.active_profile_id else 68.43,
             "reservoir_aspirate_z": 58.34 if "10ul" in self.active_profile_id else (86.0 if "300" in self.active_profile_id else 90.42),
             "waste_dispense_z": 8.37,
             "waste_tip_drop_z": 8.37,
@@ -176,7 +176,9 @@ class LIMSMasterApp:
                 self.calibrated_heights["plate96_dispense_z"] = 97.52
             if float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 92.0)) <= 88.0:
                 self.calibrated_heights["tip_rack_pickup_limit_z"] = 92.0
-            self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 75.0)
+            if float(self.calibrated_heights.get("plate96_dmso_dispense_z", 97.52)) in (75.0, 75.00, 68.43):
+                self.calibrated_heights["plate96_dmso_dispense_z"] = 97.52
+            self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 97.52)
         self.last_aspirate_slot = None
         self.last_aspirate_lw_kind = None
 
@@ -1701,7 +1703,9 @@ class LIMSMasterApp:
                         self.calibrated_heights["plate96_dispense_z"] = 97.52
                     if float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 92.0)) <= 88.0:
                         self.calibrated_heights["tip_rack_pickup_limit_z"] = 92.0
-                    self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 75.0)
+                    if float(self.calibrated_heights.get("plate96_dmso_dispense_z", 97.52)) in (75.0, 75.00, 68.43):
+                        self.calibrated_heights["plate96_dmso_dispense_z"] = 97.52
+                    self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 97.52)
                 if hasattr(self, 'apply_default_deck_for_profile'):
                     self.apply_default_deck_for_profile(matching_pid)
                 if hasattr(self, 'update_window_title'):
@@ -4481,7 +4485,9 @@ class LIMSMasterApp:
                     self.calibrated_heights["plate96_dispense_z"] = 97.52
                 if float(self.calibrated_heights.get("tip_rack_pickup_limit_z", 92.0)) <= 88.0:
                     self.calibrated_heights["tip_rack_pickup_limit_z"] = 92.0
-                self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 75.0)
+                if float(self.calibrated_heights.get("plate96_dmso_dispense_z", 97.52)) in (75.0, 75.00, 68.43):
+                    self.calibrated_heights["plate96_dmso_dispense_z"] = 97.52
+                self.calibrated_heights.setdefault("plate96_dmso_dispense_z", 97.52)
 
         cfg = (PROFILE_CONFIGS or {}).get(profile_id, {})
         prof_multi = cfg.get("is_multichannel", True if ("8x" in profile_id or "10ul" in profile_id) else False)
@@ -4980,7 +4986,7 @@ class LIMSMasterApp:
             ("ehm_dispense_z", "EHM Fresh Media Addition (1cm Above Bottom):", "14.17"),
             ("plate96_aspirate_z", "96-Well Plate Deep Aspirate / Mix Height:", "97.52"),
             ("plate96_dispense_z", "96-Well Plate Standard Dispense Height:", "97.52"),
-            ("plate96_dmso_dispense_z", "96-Well DMSO Air-Dispense Height (300µL From Air):", "75.00"),
+            ("plate96_dmso_dispense_z", "96-Well DMSO Dispense Height (300µL Base / Mix Depth):", "97.52"),
             ("reservoir_aspirate_z", "Reservoir Deep Aspirate Height (Slot 1 / Slot 6):", "90.42"),
             ("waste_dispense_z", "Slot 6 Waste Dispense (Up / 3cm Above Bottom):", "59.32"),
             ("tip_rack_discard_z", "Slot 4 Tip Rack Return / Discard Height:", "42.00"),
@@ -6600,8 +6606,8 @@ class LIMSMasterApp:
                         or getattr(self, "last_aspirate_lw_kind", None) in ("reservoir_3", "reservoir_7", "reservoir_6", "tube_rack_2x6")
                     )
                     if is_dmso_dispense:
-                        dmso_air_z = float(self.calibrated_heights.get("plate96_dmso_dispense_z", 75.0))
-                        return min(dmso_air_z + slot_z_offset + extra_z, 103.5)
+                        dmso_z = float(self.calibrated_heights.get("plate96_dmso_dispense_z", 97.52))
+                        return min(dmso_z + slot_z_offset + extra_z, 103.5)
                     return min(raw_disp + slot_z_offset + extra_z, 103.5)
             elif (slot_name in ("Slot_6", "Slot_1", "Slot_2") and ("reservoir" in str(kind) or "waste" in str(kind) or (is_300ul and slot_name == "Slot_1"))) or kind in ("reservoir_7", "reservoir_6", "reservoir_3", "waste"):
                 if action == "Dispense Media":
