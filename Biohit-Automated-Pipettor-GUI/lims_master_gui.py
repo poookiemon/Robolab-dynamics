@@ -3866,6 +3866,13 @@ class LIMSMasterApp:
         for s in seq:
             if s.get("slot") == "Slot_1" and s.get("labware") == "tube_rack_2x6_2ml.json":
                 s["labware"] = slot1_lw
+            if (
+                s.get("action") == "Aspirate Media"
+                and s.get("slot") == "Slot_1"
+                and s.get("well") == "A1"
+                and float(s.get("volume", 0.0)) == 200.0
+            ):
+                s["no_air_cushion"] = True
 
         def on_deck_confirmed():
             self.prompt_drug_wells_and_load(
@@ -4222,6 +4229,13 @@ class LIMSMasterApp:
                 s["slot"] = "Slot_2"
                 s["well"] = "A1"
                 s["labware"] = "waste_trough.json"
+            if (
+                s.get("action") == "Aspirate Media"
+                and s.get("slot") == dmso_target_slot
+                and s.get("well") == "A1"
+                and float(s.get("volume", 0.0)) == 200.0
+            ):
+                s["no_air_cushion"] = True
 
         self.workflow_sequence.clear()
         self.wf_box.delete(0, tk.END)

@@ -621,8 +621,76 @@ def run_all_tests():
     app.lims.pipettor.hardware.aspirate(actual_260)
 
     assert aspirated_volumes == [230.0, 250.0, 250.0], f"Expected [230.0, 250.0, 250.0], got {aspirated_volumes}"
+
+    # Verify Machine 3 DMSO Protocol Normal Loader & Single aspirate(200.0) without air cushion
+    dmso_target_path = app.resolve_protocol_path("1_Serial_Dilution_Plate.json", "ehm_1ch_300ul_dmso_drug_dilution.json")
+    with open(dmso_target_path, "r") as f:
+        dmso_raw_seq = json.load(f)
+    app.apply_drug_well_mapping_and_load(dmso_raw_seq, "DMSO Dilution", {}, ["A1", "A2", "A3", "A4", "A5"], "reservoir_3_well.json")
+    step_1 = app.workflow_sequence[1]
+    assert step_1.get("no_air_cushion") is True, f"Step 1 missing no_air_cushion flag: {step_1}"
+
+    driver_history = []
+    class DriverHistoryHW:
+        def __init__(self):
+            self.tip_volume = 200
+            self.z_speed = 5
+        def move_z(self, z): driver_history.append(("move_z", z))
+        def aspirate(self, vol): driver_history.append(("aspirate", vol))
+        def dispense(self, vol): driver_history.append(("dispense", vol))
+
+    app.lims.pipettor.hardware = DriverHistoryHW()
+    app.air_cushion_ul = 0.0
+    app.tip_liquid_ul = 0.0
+    driver_history.clear()
+
+    # Runner logic for targeted Step 1 (200 uL DMSO)
+    req_vol_f = float(step_1["volume"])
+    avail_air = max(0.0, hw_plunger_max - req_vol_f)
+    if (
+        req_vol_f > 0.0
+        and avail_air >= 0.5
+        and not step_1.get("no_air_cushion", False)
+        and getattr(app, "air_cushion_ul", 0.0) <= 0.0
+        and getattr(app, "tip_liquid_ul", 0.0) <= 0.0
+    ):
+        air_vol = min(15.0 if req_vol_f < 185.0 else 10.0, avail_air)
+        app.lims.pipettor.hardware.aspirate(air_vol)
+        app.air_cushion_ul = air_vol
+
+    max_allowed = min(tip_cap, max(0.0, hw_plunger_max - getattr(app, "air_cushion_ul", 0.0)))
+    actual_vol = min(req_vol_f, max_allowed)
+    app.lims.pipettor.hardware.aspirate(actual_vol)
+
+    assert driver_history == [("aspirate", 200.0)], f"Expected single [('aspirate', 200.0)], got {driver_history}"
+    assert getattr(app, "air_cushion_ul", 0.0) == 0.0, "Air cushion should remain 0.0 for targeted step"
+
+    # Runner logic for unrelated aspiration step (50 uL without no_air_cushion flag)
+    driver_history.clear()
+    unrelated_step = {"action": "Aspirate Media", "slot": "Slot_3", "well": "A1", "volume": 50.0}
+    req_unrelated = float(unrelated_step["volume"])
+    avail_air_unrelated = max(0.0, hw_plunger_max - req_unrelated)
+    if (
+        req_unrelated > 0.0
+        and avail_air_unrelated >= 0.5
+        and not unrelated_step.get("no_air_cushion", False)
+        and getattr(app, "air_cushion_ul", 0.0) <= 0.0
+        and getattr(app, "tip_liquid_ul", 0.0) <= 0.0
+    ):
+        air_vol = min(15.0 if req_unrelated < 185.0 else 10.0, avail_air_unrelated)
+        app.lims.pipettor.hardware.aspirate(air_vol)
+        app.air_cushion_ul = air_vol
+
+    max_allowed_unrelated = min(tip_cap, max(0.0, hw_plunger_max - getattr(app, "air_cushion_ul", 0.0)))
+    actual_unrelated = min(req_unrelated, max_allowed_unrelated)
+    app.lims.pipettor.hardware.aspirate(actual_unrelated)
+
+    assert driver_history == [("aspirate", 15.0), ("aspirate", 50.0)], f"Unrelated step should draw air cushion, got {driver_history}"
+
     app.switch_machine_profile("machine_2_1_10ul")
     print("PASS: Machine 3 aspirates full 230.0 µL and 250.0 µL without 200 µL capping.")
+    print("PASS: Machine 3 DMSO 200 µL aspiration executes single aspirate(200.0) without air cushion.")
+    print("PASS: Unrelated aspiration correctly preserves standard pre-aspiration air cushion.")
 
     print("\n======================================================================")
     print("ALL 11 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")

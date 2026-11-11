@@ -15,7 +15,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -43,7 +44,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -71,7 +73,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -253,7 +256,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -281,7 +285,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -309,7 +314,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -491,7 +497,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -519,7 +526,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -547,7 +555,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -729,7 +738,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -757,7 +767,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -785,7 +796,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -967,7 +979,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -995,7 +1008,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",
@@ -1023,7 +1037,8 @@
     "well": "A1",
     "volume": 200.0,
     "extra_z": 0.0,
-    "labware": "reservoir_3_well.json"
+    "labware": "reservoir_3_well.json",
+    "no_air_cushion": true
   },
   {
     "action": "Dispense Media",

@@ -909,6 +909,13 @@ def build_1ch_300ul_dmso_dilution_steps(dmso_labware: str = "reservoir_3_well.js
             s["well"] = "A1"
             if "label" in s:
                 s["label"] = s["label"].replace("Slot_6", "Slot_1")
+        if (
+            s.get("action") == "Aspirate Media"
+            and s.get("slot") == "Slot_1"
+            and s.get("well") == "A1"
+            and float(s.get("volume", 0.0)) == 200.0
+        ):
+            s["no_air_cushion"] = True
     return steps
 
 
