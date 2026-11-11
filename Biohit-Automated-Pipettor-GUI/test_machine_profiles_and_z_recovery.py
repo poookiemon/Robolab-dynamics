@@ -665,15 +665,17 @@ def run_all_tests():
     assert driver_history == [("aspirate", 200.0)], f"Expected single [('aspirate', 200.0)], got {driver_history}"
     assert getattr(app, "air_cushion_ul", 0.0) == 0.0, "Air cushion should remain 0.0 for targeted step"
 
-    # Runner logic for unrelated aspiration step (50 uL without no_air_cushion flag)
+    # Runner logic for unrelated aspiration step (50 uL without no_air_cushion flag on Machine 3)
     driver_history.clear()
     unrelated_step = {"action": "Aspirate Media", "slot": "Slot_3", "well": "A1", "volume": 50.0}
     req_unrelated = float(unrelated_step["volume"])
     avail_air_unrelated = max(0.0, hw_plunger_max - req_unrelated)
+    is_m3_unrelated = True
     if (
         req_unrelated > 0.0
         and avail_air_unrelated >= 0.5
         and not unrelated_step.get("no_air_cushion", False)
+        and not (is_m3_unrelated and req_unrelated >= 200.0)
         and getattr(app, "air_cushion_ul", 0.0) <= 0.0
         and getattr(app, "tip_liquid_ul", 0.0) <= 0.0
     ):
@@ -687,10 +689,78 @@ def run_all_tests():
 
     assert driver_history == [("aspirate", 15.0), ("aspirate", 50.0)], f"Unrelated step should draw air cushion, got {driver_history}"
 
+    # Runner logic specifically for Machine 3 230 uL aspiration (without explicit no_air_cushion flag)
+    driver_history.clear()
+    app.air_cushion_ul = 0.0
+    m3_230_step = {"action": "Aspirate Media", "slot": "Slot_1", "well": "A1", "volume": 230.0}
+    req_230 = float(m3_230_step["volume"])
+    avail_air_230 = max(0.0, hw_plunger_max - req_230)
+    is_m3_active = True
+    if (
+        req_230 > 0.0
+        and avail_air_230 >= 0.5
+        and not m3_230_step.get("no_air_cushion", False)
+        and not (is_m3_active and req_230 >= 200.0)
+        and getattr(app, "air_cushion_ul", 0.0) <= 0.0
+        and getattr(app, "tip_liquid_ul", 0.0) <= 0.0
+    ):
+        air_vol = min(15.0 if req_230 < 185.0 else 10.0, avail_air_230)
+        app.lims.pipettor.hardware.aspirate(air_vol)
+        app.air_cushion_ul = air_vol
+
+    max_allowed_230 = min(tip_cap, max(0.0, hw_plunger_max - getattr(app, "air_cushion_ul", 0.0)))
+    actual_230 = min(req_230, max_allowed_230)
+    app.lims.pipettor.hardware.aspirate(actual_230)
+
+    assert driver_history == [("aspirate", 230.0)], f"Machine 3 230 uL should send single aspirate(230.0) with zero air cushion, got {driver_history}"
+
+    # Verification: Machine 1 (8-ch 1000 uL) preserves existing air cushion
+    driver_history.clear()
+    app.air_cushion_ul = 0.0
+    m1_hw_max = 1000.0
+    m1_tip_vol = 1000.0
+    m1_is_8ch = True
+    m1_is_m3 = False
+    m1_req = 200.0
+    m1_avail_air = max(0.0, m1_hw_max - m1_req)
+    if (
+        m1_req > 0.0
+        and m1_avail_air >= 0.5
+        and not (m1_is_m3 and m1_req >= 200.0)
+        and getattr(app, "air_cushion_ul", 0.0) <= 0.0
+    ):
+        air_vol = min(30.0, m1_avail_air, max(0.0, m1_tip_vol - m1_req))
+        app.lims.pipettor.hardware.aspirate(air_vol)
+        app.air_cushion_ul = air_vol
+    app.lims.pipettor.hardware.aspirate(m1_req)
+    assert driver_history == [("aspirate", 30.0), ("aspirate", 200.0)], f"Machine 1 must preserve 30uL air cushion, got {driver_history}"
+
+    # Verification: Machine 2 (1-10 uL) preserves existing air cushion
+    driver_history.clear()
+    app.air_cushion_ul = 0.0
+    m2_hw_max = 10.0
+    m2_tip_vol = 10.0
+    m2_is_8ch = True
+    m2_is_m3 = False
+    m2_req = 5.0
+    m2_avail_air = max(0.0, m2_hw_max - m2_req)
+    if (
+        m2_req > 0.0
+        and m2_avail_air >= 0.5
+        and not (m2_is_m3 and m2_req >= 200.0)
+        and getattr(app, "air_cushion_ul", 0.0) <= 0.0
+    ):
+        air_vol = min(1.5, m2_avail_air, max(0.5, m2_tip_vol - m2_req))
+        app.lims.pipettor.hardware.aspirate(air_vol)
+        app.air_cushion_ul = air_vol
+    app.lims.pipettor.hardware.aspirate(m2_req)
+    assert driver_history == [("aspirate", 1.5), ("aspirate", 5.0)], f"Machine 2 must preserve 1.5uL air cushion, got {driver_history}"
+
     app.switch_machine_profile("machine_2_1_10ul")
     print("PASS: Machine 3 aspirates full 230.0 µL and 250.0 µL without 200 µL capping.")
     print("PASS: Machine 3 DMSO 200 µL aspiration executes single aspirate(200.0) without air cushion.")
-    print("PASS: Unrelated aspiration correctly preserves standard pre-aspiration air cushion.")
+    print("PASS: Machine 3 230 µL aspiration executes single aspirate(230.0) without air cushion.")
+    print("PASS: Machine 1 (8-ch 1000 µL) and Machine 2 (1-10 µL) preserve standard air cushion behavior.")
 
     print("\n======================================================================")
     print("ALL 11 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")

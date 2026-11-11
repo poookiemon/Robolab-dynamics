@@ -7989,13 +7989,13 @@ class LIMSMasterApp:
                                 self.last_aspirate_slot = slot_name
                                 self.last_aspirate_lw_kind = self._lw_kind(self.lims.deck_labware.get(slot_name))
                                 tip_vol = float(getattr(self.lims.pipettor, 'tip_volume', 300.0))
-                                is_300 = (
+                                is_machine_3 = (not is_8ch) and (
                                     "300" in getattr(self, "active_profile_id", "")
                                     or "300" in str(getattr(self, "current_protocol_file", "")).lower()
                                     or "300" in str(getattr(self, "loaded_protocol_name", "")).lower()
                                     or "300" in str(getattr(self, "proto_pipettor_var", tk.StringVar()).get()).lower()
-                                    or tip_vol >= 250.0
                                 )
+                                is_300 = is_machine_3 or ((not is_8ch) and tip_vol >= 250.0)
                                 if is_8ch:
                                     hw_plunger_max = 10.0 if "10ul" in getattr(self, "active_profile_id", "") else 1000.0
                                 elif is_300:
@@ -8006,10 +8006,14 @@ class LIMSMasterApp:
                                 avail_air = max(0.0, hw_plunger_max - req_vol_f)
                                 # Draw air cushion in open air (Z=0) BEFORE tip enters media, only when tip is empty
                                 # and when cumulative stroke (air_vol + req_vol_f) stays within hw_plunger_max (200uL on single-channel).
+                                # Specifically for Machine 3 (300 µL Single Channel): aspirations >= 200 µL (e.g. 200 µL or 230 µL)
+                                # bypass the pre-aspiration air cushion entirely so the single liquid stroke aspirates cleanly without
+                                # stalling the motor or exceeding the physical plunger limit. Machines 1 and 2 preserve existing behavior.
                                 if (
                                     req_vol_f > 0.0
                                     and avail_air >= 0.5
                                     and not step.get('no_air_cushion', False)
+                                    and not (is_machine_3 and req_vol_f >= 200.0)
                                     and getattr(self, 'air_cushion_ul', 0.0) <= 0.0
                                     and getattr(self, 'tip_liquid_ul', 0.0) <= 0.0
                                 ):
@@ -8278,13 +8282,13 @@ class LIMSMasterApp:
                                 requested_vol = float(vol)
                                 if requested_vol > 0:
                                     tip_cap = float(getattr(self.lims.pipettor, 'tip_volume', 300.0))
-                                    is_300 = (
+                                    is_machine_3 = (not is_8ch) and (
                                         "300" in getattr(self, "active_profile_id", "")
                                         or "300" in str(getattr(self, "current_protocol_file", "")).lower()
                                         or "300" in str(getattr(self, "loaded_protocol_name", "")).lower()
                                         or "300" in str(getattr(self, "proto_pipettor_var", tk.StringVar()).get()).lower()
-                                        or tip_cap >= 250.0
                                     )
+                                    is_300 = is_machine_3 or ((not is_8ch) and tip_cap >= 250.0)
                                     if is_8ch:
                                         hw_plunger_max = 10.0 if "10ul" in getattr(self, "active_profile_id", "") else 1000.0
                                     elif is_300:
