@@ -61,7 +61,7 @@ class MockLabware:
         pass
 
 class MockPipette:
-    def __init__(self, name, mount, protocol, max_volume=200.0):
+    def __init__(self, name, mount, protocol, max_volume=250.0):
         self.name = name
         self.mount = mount
         self.protocol = protocol
@@ -305,7 +305,7 @@ class MockPipette:
             self.drop_tip()
 
 class MockProtocolContext:
-    def __init__(self, slot_map=None, labware_map=None, well_map=None, max_volume=200.0):
+    def __init__(self, slot_map=None, labware_map=None, well_map=None, max_volume=250.0):
         self.slot_map = slot_map or {}
         self.labware_map = labware_map or {}
         self.well_map = well_map or {}
@@ -505,7 +505,7 @@ def detect_opentrons_labware(py_filepath):
 
     return detected
 
-def convert_opentrons_py_to_biohit(py_filepath, slot_mapping=None, labware_mapping=None, well_mapping=None, max_volume=200.0):
+def convert_opentrons_py_to_biohit(py_filepath, slot_mapping=None, labware_mapping=None, well_mapping=None, max_volume=250.0):
     """
     Executes an Opentrons Python protocol against our mock environment,
     translating it into native Biohit JSON protocol steps.

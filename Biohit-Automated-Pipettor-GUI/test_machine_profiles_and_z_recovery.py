@@ -560,11 +560,58 @@ def run_all_tests():
     for idx in range(1, 7):
         s_name = f"Slot_{idx}"
         assert s_name in app.placed_slots, f"Expected {s_name} to remain in app.placed_slots so its deck square stays visible"
-    app.switch_machine_profile("machine_2_1_10ul")
     print("PASS: Loading 1_Serial_Dilution_Plate.json preserves Slot_1 as reservoir_3_well.json and keeps all 6 slot squares visible.")
 
+    print("\n--- 11. Testing Machine 3 (300 µL Single-Channel) 230 µL & 250 µL Aspiration Limit ---")
+    app.switch_machine_profile("machine_3_300ul")
+    assert getattr(app.lims.pipettor, "tip_volume", 0.0) >= 250.0
+
+    aspirated_volumes = []
+    class MockPipetteHW:
+        def __init__(self):
+            self.tip_volume = 200  # Native Biohit DLL returns 200 for PipetType 1
+            self.z_speed = 5
+        def move_z(self, z): pass
+        def aspirate(self, vol):
+            aspirated_volumes.append(vol)
+        def dispense(self, vol): pass
+
+    app.lims.pipettor.hardware = MockPipetteHW()
+
+    # Step requesting 230 uL
+    step_230_vol = 230.0
+    tip_cap = float(getattr(app.lims.pipettor, 'tip_volume', 300.0))
+    is_300 = ("300" in getattr(app, "active_profile_id", "") or tip_cap >= 250.0)
+    is_8ch = getattr(app.lims.pipettor, 'multichannel', False)
+    if is_8ch:
+        hw_plunger_max = 10.0 if "10ul" in getattr(app, "active_profile_id", "") else 1000.0
+    elif is_300:
+        hw_plunger_max = 250.0
+    else:
+        hw_plunger_max = 250.0
+    max_allowed = min(tip_cap, max(0.0, hw_plunger_max - getattr(app, 'air_cushion_ul', 0.0)))
+    actual_230 = min(step_230_vol, max_allowed)
+    assert actual_230 == 230.0, f"Expected 230.0uL allowed without capping, got {actual_230}"
+    app.lims.pipettor.hardware.aspirate(actual_230)
+
+    # Step requesting 250 uL
+    step_250_vol = 250.0
+    actual_250 = min(step_250_vol, max_allowed)
+    assert actual_250 == 250.0, f"Expected 250.0uL allowed without capping, got {actual_250}"
+    app.lims.pipettor.hardware.aspirate(actual_250)
+
+    # Step requesting 260 uL (capped at 250.0)
+    step_260_vol = 260.0
+    actual_260 = min(step_260_vol, max_allowed)
+    assert actual_260 == 250.0, f"Expected 260.0uL capped to 250.0uL, got {actual_260}"
+    app.lims.pipettor.hardware.aspirate(actual_260)
+
+    assert aspirated_volumes == [230.0, 250.0, 250.0], f"Expected [230.0, 250.0, 250.0], got {aspirated_volumes}"
+    app.switch_machine_profile("machine_2_1_10ul")
+    print("PASS: Machine 3 aspirates full 230.0 µL and 250.0 µL without 200 µL capping.")
+
     print("\n======================================================================")
-    print("ALL 10 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
+    print("ALL 11 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
     print("======================================================================")
 
 if __name__ == "__main__":

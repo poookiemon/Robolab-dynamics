@@ -105,7 +105,7 @@ class LIMSMasterApp:
 
         prof_cfg = (PROFILE_CONFIGS or {}).get(self.active_profile_id, {})
         is_multi = prof_cfg.get("is_multichannel", True if ("8x" in self.active_profile_id or "10ul" in self.active_profile_id) else False)
-        prof_tip_vol = float(prof_cfg.get("tip_volume", 10.0 if "10ul" in self.active_profile_id else (1000.0 if "1000" in self.active_profile_id else 200.0)))
+        prof_tip_vol = float(prof_cfg.get("tip_volume", 10.0 if "10ul" in self.active_profile_id else (1000.0 if "1000" in self.active_profile_id else (300.0 if "300" in self.active_profile_id else 250.0))))
 
         # Hardware Initialization & Calibration Setup
         self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=prof_tip_vol, multichannel=is_multi))
@@ -1641,9 +1641,9 @@ class LIMSMasterApp:
                 badge_bg = "#6f42c1"
             else:
                 is_multi = False
-                target_vol = 200.0
-                label = "1×200 µL (Single-Channel)"
-                badge_txt = "HEAD: 1×200 µL SINGLE"
+                target_vol = 250.0
+                label = "1×250 µL (Single-Channel)"
+                badge_txt = "HEAD: 1×250 µL SINGLE"
                 badge_bg = "#0d6efd"
         else:
             is_multi = bool(multichannel)
@@ -1666,13 +1666,13 @@ class LIMSMasterApp:
                     badge_txt = "HEAD: 8×1000 µL MULTI"
                     badge_bg = "#6f42c1"
                 else:
-                    label = "1×200 µL (Single-Channel)"
-                    badge_txt = "HEAD: 1×200 µL SINGLE"
+                    label = "1×250 µL (Single-Channel)"
+                    badge_txt = "HEAD: 1×250 µL SINGLE"
                     badge_bg = "#0d6efd"
             else:
-                target_vol = 1000.0 if is_multi else 200.0
-                label = "8-Channel Multi (8×1000 µL)" if is_multi else "1×200 µL (Single-Channel)"
-                badge_txt = "HEAD: 8×1000 µL MULTI" if is_multi else "HEAD: 1×200 µL SINGLE"
+                target_vol = 1000.0 if is_multi else 250.0
+                label = "8-Channel Multi (8×1000 µL)" if is_multi else "1×250 µL (Single-Channel)"
+                badge_txt = "HEAD: 8×1000 µL MULTI" if is_multi else "HEAD: 1×250 µL SINGLE"
                 badge_bg = "#6f42c1" if is_multi else "#0d6efd"
 
         self.head_mode_var.set(label)
@@ -8252,7 +8252,20 @@ class LIMSMasterApp:
                                 requested_vol = float(vol)
                                 if requested_vol > 0:
                                     tip_cap = float(getattr(self.lims.pipettor, 'tip_volume', 300.0))
-                                    hw_plunger_max = 1000.0 if is_8ch else float(getattr(self.lims.pipettor.hardware, 'tip_volume', None) or min(tip_cap, 200.0))
+                                    is_300 = (
+                                        "300" in getattr(self, "active_profile_id", "")
+                                        or "300" in str(getattr(self, "current_protocol_file", "")).lower()
+                                        or "300" in str(getattr(self, "loaded_protocol_name", "")).lower()
+                                        or "300" in str(getattr(self, "proto_pipettor_var", tk.StringVar()).get()).lower()
+                                        or tip_cap >= 250.0
+                                    )
+                                    if is_8ch:
+                                        hw_plunger_max = 10.0 if "10ul" in getattr(self, "active_profile_id", "") else 1000.0
+                                    elif is_300:
+                                        hw_plunger_max = 250.0
+                                    else:
+                                        hw_plunger_max = 250.0
+
                                     max_allowed = min(tip_cap, max(0.0, hw_plunger_max - getattr(self, 'air_cushion_ul', 0.0)))
                                     actual_vol = min(requested_vol, max_allowed)
 
@@ -9257,7 +9270,7 @@ class LIMSMasterApp:
                     try:
                         max_vol = float(ent_stroke.get())
                     except ValueError:
-                        max_vol = 200.0
+                        max_vol = 250.0
 
                     converted_steps = convert_opentrons_py_to_biohit(
                         filepath,

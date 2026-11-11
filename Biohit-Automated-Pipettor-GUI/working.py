@@ -115,12 +115,12 @@ class Labware:
 
 
 class Pipettor:
-    def __init__(self, tip_volume: float = 200.0, multichannel: bool = False):
+    def __init__(self, tip_volume: float = 250.0, multichannel: bool = False):
         self.multichannel = bool(multichannel)
         if tip_volume is not None:
             self.tip_volume = float(tip_volume)
         else:
-            self.tip_volume = 1000.0 if self.multichannel else 200.0
+            self.tip_volume = 1000.0 if self.multichannel else 250.0
         self.channels = 8 if self.multichannel else 1
         self.hardware_context = None
         self.hardware = None
@@ -131,6 +131,7 @@ class Pipettor:
             try:
                 # Biohit hardware driver strictly accepts 200 or 1000 uL (PipetType: 1=200uL, 2=1000uL).
                 # Multi-channel manifold strictly requires 1000 uL (PipetType=2, 0.2 steps/uL).
+                # Single-channel heads (200uL/250uL/300uL) configure PipetType=1 (2.0 steps/uL), enabling strokes up to 250uL+.
                 vol_literal = 1000 if (self.multichannel or self.tip_volume >= 1000.0) else 200
                 self.hardware_context = RealBiohitPipettor(
                     tip_volume=vol_literal,
@@ -145,12 +146,12 @@ class Pipettor:
         return True, f"Simulation mode configured ({self.channels}x{int(self.tip_volume)}uL {'Multi' if self.multichannel else 'Single'})."
 
     def reconfigure(self, tip_volume: float, multichannel: bool) -> Tuple[bool, str]:
-        """Safely switches between Single-Channel (20uL, 200uL, 300uL) and Multi-Channel (10uL, 1000uL) driver configurations."""
+        """Safely switches between Single-Channel (20uL, 200uL, 250uL, 300uL) and Multi-Channel (10uL, 1000uL) driver configurations."""
         self.multichannel = bool(multichannel)
         if tip_volume is not None:
             self.tip_volume = float(tip_volume)
         else:
-            self.tip_volume = 1000.0 if self.multichannel else 200.0
+            self.tip_volume = 1000.0 if self.multichannel else 250.0
         self.channels = 8 if self.multichannel else 1
         vol_literal = 1000 if (self.multichannel or self.tip_volume >= 1000.0) else 200
 
