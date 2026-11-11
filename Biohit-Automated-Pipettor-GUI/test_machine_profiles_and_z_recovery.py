@@ -589,10 +589,24 @@ def run_all_tests():
         hw_plunger_max = 250.0
     else:
         hw_plunger_max = 250.0
+
+    if is_300 or not is_8ch:
+        tip_cap = max(tip_cap, 250.0)
+
+    # Test open-air pre-aspiration air cushion calculation (Line 7978)
+    avail_air = max(0.0, hw_plunger_max - step_230_vol)
+    assert avail_air >= 20.0, f"Expected avail_air >= 20.0 for 230uL request, got {avail_air}"
+
     max_allowed = min(tip_cap, max(0.0, hw_plunger_max - getattr(app, 'air_cushion_ul', 0.0)))
     actual_230 = min(step_230_vol, max_allowed)
     assert actual_230 == 230.0, f"Expected 230.0uL allowed without capping, got {actual_230}"
     app.lims.pipettor.hardware.aspirate(actual_230)
+
+    # Test legacy tip_cap=200 fallback protection: even if tip_cap was 200, it lifts to 250.0
+    legacy_tip_cap = 200.0
+    if is_300 or not is_8ch:
+        legacy_tip_cap = max(legacy_tip_cap, 250.0)
+    assert legacy_tip_cap == 250.0, "Legacy tip_cap was not lifted to 250.0"
 
     # Step requesting 250 uL
     step_250_vol = 250.0

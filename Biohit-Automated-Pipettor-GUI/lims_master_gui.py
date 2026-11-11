@@ -4501,7 +4501,7 @@ class LIMSMasterApp:
 
         cfg = (PROFILE_CONFIGS or {}).get(profile_id, {})
         prof_multi = cfg.get("is_multichannel", True if ("8x" in profile_id or "10ul" in profile_id) else False)
-        prof_tip_vol = float(cfg.get("tip_volume", 10.0 if "10ul" in profile_id else (1000.0 if "1000" in profile_id else 200.0)))
+        prof_tip_vol = float(cfg.get("tip_volume", 10.0 if "10ul" in profile_id else (1000.0 if "1000" in profile_id else 250.0)))
 
         self.lims.pipettor.reconfigure(tip_volume=prof_tip_vol, multichannel=prof_multi)
         head_label = cfg.get("head_name", "8-Channel Multi (1-10 µL)" if "10ul" in profile_id else "8-Channel Multi (8×1000 µL)")
@@ -7975,7 +7975,19 @@ class LIMSMasterApp:
                                 self.last_aspirate_slot = slot_name
                                 self.last_aspirate_lw_kind = self._lw_kind(self.lims.deck_labware.get(slot_name))
                                 tip_vol = float(getattr(self.lims.pipettor, 'tip_volume', 300.0))
-                                hw_plunger_max = 1000.0 if is_8ch else float(getattr(self.lims.pipettor.hardware, 'tip_volume', None) or min(tip_vol, 200.0))
+                                is_300 = (
+                                    "300" in getattr(self, "active_profile_id", "")
+                                    or "300" in str(getattr(self, "current_protocol_file", "")).lower()
+                                    or "300" in str(getattr(self, "loaded_protocol_name", "")).lower()
+                                    or "300" in str(getattr(self, "proto_pipettor_var", tk.StringVar()).get()).lower()
+                                    or tip_vol >= 250.0
+                                )
+                                if is_8ch:
+                                    hw_plunger_max = 10.0 if "10ul" in getattr(self, "active_profile_id", "") else 1000.0
+                                elif is_300:
+                                    hw_plunger_max = 250.0
+                                else:
+                                    hw_plunger_max = 250.0
                                 req_vol_f = float(vol)
                                 avail_air = max(0.0, hw_plunger_max - req_vol_f)
                                 # Draw air cushion in open air (Z=0) BEFORE tip enters media, only when tip is empty
@@ -8265,6 +8277,9 @@ class LIMSMasterApp:
                                         hw_plunger_max = 250.0
                                     else:
                                         hw_plunger_max = 250.0
+
+                                    if is_300 or not is_8ch:
+                                        tip_cap = max(tip_cap, 250.0)
 
                                     max_allowed = min(tip_cap, max(0.0, hw_plunger_max - getattr(self, 'air_cushion_ul', 0.0)))
                                     actual_vol = min(requested_vol, max_allowed)
@@ -9246,7 +9261,7 @@ class LIMSMasterApp:
             frame_stroke.pack(fill=tk.X, padx=15, pady=8)
             ttk.Label(frame_stroke, text="Max Pipette Stroke (µL):").pack(side=tk.LEFT)
             ent_stroke = ttk.Entry(frame_stroke, width=8)
-            current_tip_vol = getattr(getattr(self.lims, 'pipettor', None), 'tip_volume', 200.0)
+            current_tip_vol = getattr(getattr(self.lims, 'pipettor', None), 'tip_volume', 250.0)
             ent_stroke.insert(0, str(float(current_tip_vol)))
             ent_stroke.pack(side=tk.LEFT, padx=5)
 

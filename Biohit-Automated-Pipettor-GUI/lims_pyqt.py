@@ -186,7 +186,7 @@ class LIMSPyQtApp(QMainWindow):
         self.setWindowTitle("ROBOLAB DYNAMICS // 3D LIMS")
         self.resize(1200, 800)
         
-        self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=200.0, multichannel=is_multi))
+        self.lims = LIMSOrchestrator(hardware=Pipettor(tip_volume=250.0, multichannel=is_multi))
         self.workflow_sequence = []
         self.speed_var = 1500
         self.has_tip = False
