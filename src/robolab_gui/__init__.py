@@ -11,6 +11,6 @@ try:
     from importlib.metadata import version as _pkg_version
     __version__ = _pkg_version("robolab-gui")
 except Exception:
-    __version__ = "3.0.24"
+    __version__ = "3.0.25"
 __author__ = "RoboLab Dynamics Team"
 __license__ = "MIT"
