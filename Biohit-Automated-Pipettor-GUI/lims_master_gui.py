@@ -1,7 +1,7 @@
 from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-import json, logging, threading, time, os, subprocess, math, sys, traceback, webbrowser, csv, socket
+import json, logging, threading, time, os, subprocess, math, sys, traceback, webbrowser, csv, socket, shutil
 from typing import Optional, Dict, List, Any
 from datetime import datetime, timedelta
 import ctypes  # Native Windows library for ghost mouse
@@ -323,6 +323,8 @@ class LIMSMasterApp:
 
         # Submenu 2: 300 µL Single-Channel [Prepping DMSO-Drug]
         m300 = tk.Menu(protocolmenu, tearoff=0)
+        m300.add_command(label="🟢 Prepping DMSO-Drug Serial Dilution (3x Plate - 200 µL Limit)...", command=self.action_load_300ul_dmso_dilution_3x_plate)
+        m300.add_command(label="🟢 Prepping DMSO-Drug Serial Dilution (1x Plate - 200 µL Limit)...", command=self.action_load_300ul_dmso_dilution_1x_plate)
         m300.add_command(label="🟢 Prepping DMSO-Drug Serial Dilution (96-Well Plate)...", command=self.action_load_300ul_dmso_dilution)
         m300.add_separator()
         m300.add_command(label="🟢 Drug Addition to EHM Plates (7.5 µL) + Mix", command=lambda: self.action_load_300ul_drug_addition(7.5))
@@ -443,15 +445,27 @@ class LIMSMasterApp:
             disp = self.profile_manager.get_display_name(pid) if getattr(self, "profile_manager", None) else str(pid)
             folder_name = disp.replace(":", "-").replace("/", "-").replace("\\", "-").strip()
 
-        # Primary target: C:\labhub\import\Robolab Machine Logs\<Machine Folder>
-        primary_base = os.environ.get("ROBOLAB_LOGS_DIR", r"C:\labhub\import\Robolab Machine Logs")
-        if sys.platform.startswith("win") or os.name == "nt" or "ROBOLAB_LOGS_DIR" in os.environ or os.path.exists(primary_base):
-            try:
-                target_dir = os.path.join(primary_base, folder_name)
-                os.makedirs(target_dir, exist_ok=True)
-                return target_dir
-            except Exception as e:
-                self.logger.warning(f"Could not access primary log folder '{primary_base}': {e}")
+        # Priority targets for Windows / lab machine:
+        # User requested directory: C:\Users\labhub.Hzphw-foc4815\Documents\temp logs
+        win_temp_logs_explicit = r"C:\Users\labhub.Hzphw-foc4815\Documents\temp logs"
+        win_temp_logs_user = os.path.join(os.path.expanduser("~"), "Documents", "temp logs") if sys.platform.startswith("win") else None
+
+        candidates = [
+            os.environ.get("ROBOLAB_LOGS_DIR"),
+            win_temp_logs_explicit,
+            win_temp_logs_user,
+            r"C:\labhub\import\Robolab Machine Logs",
+        ]
+        for base in candidates:
+            if not base:
+                continue
+            if sys.platform.startswith("win") or os.name == "nt" or "ROBOLAB_LOGS_DIR" in os.environ or os.path.exists(base):
+                try:
+                    target_dir = base if "temp logs" in base.lower() else os.path.join(base, folder_name)
+                    os.makedirs(target_dir, exist_ok=True)
+                    return target_dir
+                except Exception as e:
+                    self.logger.warning(f"Could not access log folder '{base}': {e}")
 
         # Fallback to local logs directory for macOS / Linux / CI environments
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -570,6 +584,20 @@ class LIMSMasterApp:
             final_path = running_path
 
         self.last_session_log_path = final_path
+
+        # Mirror session log to user-requested temp logs folder
+        for mirror_dir in [
+            r"C:\Users\labhub.Hzphw-foc4815\Documents\temp logs",
+            os.path.join(os.path.expanduser("~"), "Documents", "temp logs") if sys.platform.startswith("win") else None,
+        ]:
+            if mirror_dir and (os.path.exists(mirror_dir) or sys.platform.startswith("win")):
+                try:
+                    os.makedirs(mirror_dir, exist_ok=True)
+                    dest_file = os.path.join(mirror_dir, os.path.basename(final_path))
+                    if os.path.abspath(final_path) != os.path.abspath(dest_file):
+                        shutil.copy2(final_path, dest_file)
+                except Exception:
+                    pass
 
         # 6. Automated Run Report Generation (HTML & CSV Bundled in logs/)
         self._generate_run_reports(final_path, status, done_steps, total_steps, active_elapsed)
@@ -750,6 +778,23 @@ class LIMSMasterApp:
 
             self.last_run_report_path = html_path
             self.logger.info(f"📊 Run Reports generated: {os.path.basename(html_path)} & {os.path.basename(csv_path)}")
+
+            # Mirror run reports to user-requested temp logs folder
+            for mirror_dir in [
+                r"C:\Users\labhub.Hzphw-foc4815\Documents\temp logs",
+                os.path.join(os.path.expanduser("~"), "Documents", "temp logs") if sys.platform.startswith("win") else None,
+            ]:
+                if mirror_dir and (os.path.exists(mirror_dir) or sys.platform.startswith("win")):
+                    try:
+                        os.makedirs(mirror_dir, exist_ok=True)
+                        dest_html = os.path.join(mirror_dir, os.path.basename(html_path))
+                        dest_csv = os.path.join(mirror_dir, os.path.basename(csv_path))
+                        if os.path.abspath(html_path) != os.path.abspath(dest_html):
+                            shutil.copy2(html_path, dest_html)
+                        if os.path.abspath(csv_path) != os.path.abspath(dest_csv):
+                            shutil.copy2(csv_path, dest_csv)
+                    except Exception:
+                        pass
         except Exception as rep_err:
             self.logger.warning(f"Could not generate run report: {rep_err}")
 
@@ -2916,6 +2961,8 @@ class LIMSMasterApp:
             os.path.join(repo_root, "protocols"),
             os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "protocols"),
             os.path.join(os.getcwd(), "protocols"),
+            os.path.join(os.path.expanduser("~"), "protocols"),
+            r"C:\Users\labhub.Hzphw-foc4815\protocols",
         ]
         subfolders = [
             "",
@@ -3379,9 +3426,11 @@ class LIMSMasterApp:
             }
         elif "300" in p_name:
             return {
+                "Prepping DMSO-Drug Dilution (3x Plate - 200 µL Limit)": self.action_load_300ul_dmso_dilution_3x_plate,
+                "Prepping DMSO-Drug Dilution (1x Plate - 200 µL Limit)": self.action_load_300ul_dmso_dilution_1x_plate,
+                "Prepping DMSO-Drug Dilution (96-Well Plate)": self.action_load_300ul_dmso_dilution,
                 "Drug Addition to EHM Plates (7.5 µL) + Mix": lambda: self.action_load_300ul_drug_addition(7.5),
                 "Drug Addition to EHM Plates (5.0 µL) + Mix": lambda: self.action_load_300ul_drug_addition(5.0),
-                "Prepping DMSO-Drug Dilution (96-Well Plate)": self.action_load_300ul_dmso_dilution,
             }
         else:  # Fallback: 8-Channel Multi (8×1000 µL) [Media Change]
             return {
@@ -3883,6 +3932,132 @@ class LIMSMasterApp:
 
         self.show_protocol_deck_setup_modal(
             protocol_name="[300 µL Single] DMSO-Drug Serial Dilution",
+            pipettor_mode="1×300 µL (Single-Channel)",
+            is_multichannel=False,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descs,
+            sequence=seq,
+            on_confirm_callback=on_deck_confirmed
+        )
+
+    def action_load_300ul_dmso_dilution_3x_plate(self):
+        if getattr(self, "active_profile_id", "") != "machine_3_300ul":
+            self.switch_machine_profile("machine_3_300ul", save_to_disk=True)
+        self.switch_pipettor_head("300 µL Single-Channel", quiet=True)
+        filename = "1_200ul_limit_Serial_Dilution_3x_Plate.json"
+        target_path = self.resolve_protocol_path(filename)
+        if not target_path:
+            messagebox.showerror("File Not Found", f"Could not locate {filename}")
+            return
+
+        with open(target_path, "r") as f:
+            seq = json.load(f)
+
+        uses_slot2 = any(s.get("slot") == "Slot_2" or s.get("action") == "Discard Tip" for s in seq)
+        slot1_lw = getattr(self.lims.deck_labware.get("Slot_1"), "source_file", None) or "reservoir_3_well.json"
+        if slot1_lw == "tube_rack_2x6_2ml.json":
+            slot1_lw = "reservoir_3_well.json"
+        slot2_lw = getattr(self.lims.deck_labware.get("Slot_2"), "source_file", None) or ("waste_trough.json" if uses_slot2 else "(Empty / Clearance)")
+
+        deck_setup = {
+            "Slot_1": slot1_lw,
+            "Slot_2": slot2_lw,
+            "Slot_3": "generic_96_well_plate.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "generic_96_well_plate.json",
+            "Slot_6": "(Empty / Clearance)",
+        }
+        slot_descs = {
+            "Slot_1": "3-Well Reservoir (Well A1: Pure DMSO Buffer; Well A3: Waste)",
+            "Slot_2": "Waste Trough (Liquid Waste & Tip Graveyard)" if slot2_lw != "(Empty / Clearance)" else "Empty clearance slot",
+            "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells, Z=98.72 mm)",
+            "Slot_4": "300 µL Tip Rack (Single-Channel Tips A1..F1)",
+            "Slot_5": "96-Well Target Dilution Plate (3x Dilution Series, Z=98.72 mm)",
+            "Slot_6": "Empty clearance slot",
+        }
+        for s in seq:
+            if s.get("slot") == "Slot_1" and s.get("labware") == "tube_rack_2x6_2ml.json":
+                s["labware"] = slot1_lw
+            if (
+                s.get("action") == "Aspirate Media"
+                and s.get("slot") == "Slot_1"
+                and s.get("well") == "A1"
+                and float(s.get("volume", 0.0)) >= 150.0
+            ):
+                s["no_air_cushion"] = True
+
+        def on_deck_confirmed():
+            self.prompt_drug_wells_and_load(
+                seq,
+                protocol_name="[300 µL Single] DMSO-Drug Serial Dilution (3x Plate - 200 µL Limit)",
+                deck_setup=deck_setup,
+            )
+
+        self.show_protocol_deck_setup_modal(
+            protocol_name="[300 µL Single] DMSO-Drug Serial Dilution (3x Plate - 200 µL Limit)",
+            pipettor_mode="1×300 µL (Single-Channel)",
+            is_multichannel=False,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descs,
+            sequence=seq,
+            on_confirm_callback=on_deck_confirmed
+        )
+
+    def action_load_300ul_dmso_dilution_1x_plate(self):
+        if getattr(self, "active_profile_id", "") != "machine_3_300ul":
+            self.switch_machine_profile("machine_3_300ul", save_to_disk=True)
+        self.switch_pipettor_head("300 µL Single-Channel", quiet=True)
+        filename = "1_200ul_limit_Serial_Dilution_Plate.json"
+        target_path = self.resolve_protocol_path(filename)
+        if not target_path:
+            messagebox.showerror("File Not Found", f"Could not locate {filename}")
+            return
+
+        with open(target_path, "r") as f:
+            seq = json.load(f)
+
+        uses_slot2 = any(s.get("slot") == "Slot_2" or s.get("action") == "Discard Tip" for s in seq)
+        slot1_lw = getattr(self.lims.deck_labware.get("Slot_1"), "source_file", None) or "reservoir_3_well.json"
+        if slot1_lw == "tube_rack_2x6_2ml.json":
+            slot1_lw = "reservoir_3_well.json"
+        slot2_lw = getattr(self.lims.deck_labware.get("Slot_2"), "source_file", None) or ("waste_trough.json" if uses_slot2 else "(Empty / Clearance)")
+
+        deck_setup = {
+            "Slot_1": slot1_lw,
+            "Slot_2": slot2_lw,
+            "Slot_3": "generic_96_well_plate.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "generic_96_well_plate.json",
+            "Slot_6": "(Empty / Clearance)",
+        }
+        slot_descs = {
+            "Slot_1": "3-Well Reservoir (Well A1: Pure DMSO Buffer)",
+            "Slot_2": "Waste Trough (Liquid Waste & Tip Graveyard)" if slot2_lw != "(Empty / Clearance)" else "Empty clearance slot",
+            "Slot_3": "96-Well Stock Drug Plate (Interactive Source Wells, Z=98.72 mm)",
+            "Slot_4": "300 µL Tip Rack (Single-Channel Tips A1..E1)",
+            "Slot_5": "96-Well Target Dilution Plate (1x Dilution Series, Z=98.72 mm)",
+            "Slot_6": "Empty clearance slot",
+        }
+        for s in seq:
+            if s.get("slot") == "Slot_1" and s.get("labware") == "tube_rack_2x6_2ml.json":
+                s["labware"] = slot1_lw
+            if (
+                s.get("action") == "Aspirate Media"
+                and s.get("slot") == "Slot_1"
+                and s.get("well") == "A1"
+                and float(s.get("volume", 0.0)) >= 150.0
+            ):
+                s["no_air_cushion"] = True
+
+        def on_deck_confirmed():
+            self.prompt_drug_wells_and_load(
+                seq,
+                protocol_name="[300 µL Single] DMSO-Drug Serial Dilution (1x Plate - 200 µL Limit)",
+                deck_setup=deck_setup,
+            )
+
+        self.show_protocol_deck_setup_modal(
+            protocol_name="[300 µL Single] DMSO-Drug Serial Dilution (1x Plate - 200 µL Limit)",
             pipettor_mode="1×300 µL (Single-Channel)",
             is_multichannel=False,
             deck_setup=deck_setup,

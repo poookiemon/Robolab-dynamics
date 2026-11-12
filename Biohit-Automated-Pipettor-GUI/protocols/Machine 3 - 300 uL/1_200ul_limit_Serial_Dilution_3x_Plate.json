@@ -1,0 +1,2399 @@
+[
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A1"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A6",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A5",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A4",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A3",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A2",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A12",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A11",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A10",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A9",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A8",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A7",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B6",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B5",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B4",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B3",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B2",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B12",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B11",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B10",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B9",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B8",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B7",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C6",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C5",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C4",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C3",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C2",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C12",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C11",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C10",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C9",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C8",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C7",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D6",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D5",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D4",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D3",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D2",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D12",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D11",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D10",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D9",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D8",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D7",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E6",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E5",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E4",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E3",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E2",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E12",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E11",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E10",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E9",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E8",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E7",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F6",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F5",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F4",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F3",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F2",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F12",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F11",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F10",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F9",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F8",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F7",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G6",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G5",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G4",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G3",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G2",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G12",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G11",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G10",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G9",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G8",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G7",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 190.0,
+        "extra_z": 0.0,
+        "no_air_cushion": true
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H6",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H5",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H4",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H3",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H2",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H1",
+        "volume": 40.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "B1"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A1",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A6",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A6",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A5",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A5",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A4",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A4",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A3",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A3",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A2",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A1",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B6",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B6",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B5",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B5",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B4",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B4",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B3",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B3",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B2",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A1",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C6",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C6",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C5",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C5",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C4",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C4",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C3",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C3",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C2",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "C1"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A2",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D6",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D6",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D5",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D5",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D4",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D4",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D3",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D3",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D2",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A2",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E6",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E6",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E5",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E5",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E4",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E4",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E3",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E3",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E2",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A2",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F6",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F6",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F5",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F5",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F4",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F4",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F3",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F3",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F2",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "D1"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A3",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G6",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G6",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G5",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G5",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G4",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G4",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G3",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G3",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G2",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A3",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H6",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H6",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H5",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H5",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H4",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H4",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H3",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H3",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "H2",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A3",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A12",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A12",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A11",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A11",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A10",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A10",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A9",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A9",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "A8",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "E1"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A4",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B12",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B12",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B11",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B11",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B10",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B10",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B9",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B9",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "B8",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A4",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C12",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C12",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C11",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C11",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C10",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C10",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C9",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C9",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "C8",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A4",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D12",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D12",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D11",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D11",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D10",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D10",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D9",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D9",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "D8",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A3"
+    },
+    {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "F1"
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "B1",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E12",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E12",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E11",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E11",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E10",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E10",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E9",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E9",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "E8",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "B1",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F12",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F12",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F11",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F11",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F10",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F10",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F9",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F9",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "F8",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "B1",
+        "volume": 30.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G12",
+        "volume": 30.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G12",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G11",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G11",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G10",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G10",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G9",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G9",
+        "volume": 20.0,
+        "extra_z": 0.0
+    },
+    {
+        "action": "Dispense Media",
+        "mode": "auto",
+        "slot": "Slot_5",
+        "well": "G8",
+        "volume": 20.0,
+        "extra_z": 0.0,
+        "mix_cycles": 2,
+        "mix_volume": 40.0
+    },
+    {
+        "action": "Discard Tip",
+        "mode": "auto",
+        "slot": "Slot_1",
+        "well": "A3"
+    }
+]
