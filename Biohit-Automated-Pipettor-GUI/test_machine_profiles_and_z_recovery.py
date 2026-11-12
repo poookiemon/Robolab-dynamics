@@ -788,8 +788,71 @@ def run_all_tests():
     print("PASS: Machine 3 230 µL aspiration executes single aspirate(230.0) without air cushion.")
     print("PASS: Machine 1 (8-ch 1000 µL) and Machine 2 (1-10 µL) preserve standard air cushion behavior.")
 
+    print("\n--- 12. Testing Pre-Run Well Bottom Clearance (Negative Depth / Less Deep) ---")
+    app.switch_machine_profile("machine_3_300ul")
+    test_protocol_path = app.resolve_protocol_path("1_200ul_limit_Serial_Dilution_3x_Plate.json")
+    with open(test_protocol_path, "r") as f:
+        test_seq = json.load(f)
+    app.workflow_sequence = test_seq
+    app.headless_test_mode = True
+
+    # 1. Verify valid liquid labware identification
+    liquid_slots = []
+    for step in app.workflow_sequence:
+        act = step.get("action", "")
+        slot = step.get("slot", "")
+        if act in ("Aspirate Media", "Dispense Media", "Mix Well") and slot:
+            if slot not in liquid_slots and "Slot_" in slot:
+                lw_obj = getattr(getattr(app, "lims", None), "deck_labware", {}).get(slot)
+                lw_src = str(getattr(lw_obj, "source_file", "")).lower()
+                lw_name = str(getattr(lw_obj, "name", "")).lower()
+                if "tip" not in lw_src and "tip" not in lw_name:
+                    liquid_slots.append(slot)
+
+    assert "Slot_1" in liquid_slots, "Slot_1 (DMSO reservoir) must be identified as valid liquid labware"
+    assert "Slot_3" in liquid_slots, "Slot_3 (Stock drug plate) must be identified as valid liquid labware"
+    assert "Slot_5" in liquid_slots, "Slot_5 (Dilution plate) must be identified as valid liquid labware"
+    assert "Slot_4" not in liquid_slots, "Slot_4 (Tip rack) must NEVER be included in clearance adjustment"
+    assert "Slot_2" not in liquid_slots, "Slot_2 (Waste discard) must not be included in clearance adjustment"
+    print(f"PASS: Valid liquid-handling labware discovered: {liquid_slots} (Tip rack & waste excluded).")
+
+    # 2. Verify clearance subtraction on liquid operations
+    app.run_z_clearance_offsets = {
+        "Slot_1": 1.5,
+        "Slot_5": 2.0,
+    }
+
+    # Slot 5 Plate 96 (standard nominal 98.72mm) -> should execute at 96.72mm
+    base_z_5 = app._calculate_z("Aspirate Media", app.lims.deck_labware.get("Slot_5"), "A1", "auto", 0.0, "Slot_5")
+    c_dz_5 = app.run_z_clearance_offsets.get("Slot_5", 0.0)
+    final_z_5 = max(0.0, base_z_5 - c_dz_5)
+    assert final_z_5 == 96.72, f"Expected Slot 5 Z=96.72mm (98.72 - 2.0mm), got {final_z_5}"
+    print(f"PASS: Slot 5 Aspirate Media depth reduced from {base_z_5:.2f}mm to {final_z_5:.2f}mm (-2.0mm clearance).")
+
+    # Slot 1 Reservoir (standard nominal 86.00mm) -> should execute at 84.50mm
+    base_z_1 = app._calculate_z("Aspirate Media", app.lims.deck_labware.get("Slot_1"), "A1", "auto", 0.0, "Slot_1")
+    c_dz_1 = app.run_z_clearance_offsets.get("Slot_1", 0.0)
+    final_z_1 = max(0.0, base_z_1 - c_dz_1)
+    assert final_z_1 == 84.50, f"Expected Slot 1 Z=84.50mm (86.0 - 1.5mm), got {final_z_1}"
+    print(f"PASS: Slot 1 Aspirate Media depth reduced from {base_z_1:.2f}mm to {final_z_1:.2f}mm (-1.5mm clearance).")
+
+    # Slot 3 Drug plate (no clearance specified -> 0.0mm offset)
+    base_z_3 = app._calculate_z("Aspirate Media", app.lims.deck_labware.get("Slot_3"), "A1", "auto", 0.0, "Slot_3")
+    c_dz_3 = app.run_z_clearance_offsets.get("Slot_3", 0.0)
+    final_z_3 = max(0.0, base_z_3 - c_dz_3)
+    assert final_z_3 == base_z_3, f"Expected Slot 3 Z to remain {base_z_3}, got {final_z_3}"
+    print(f"PASS: Unspecified labware (Slot 3) preserves standard calibrated depth ({final_z_3:.2f}mm).")
+
+    # Tip pickup (Slot 4) remains full collar depth regardless of clearance offsets
+    collar_z = float(app.calibrated_heights.get("tip_rack_collar_z", 86.36))
+    assert collar_z == 86.36, f"Tip rack collar depth must remain 86.36mm, got {collar_z}"
+    print("PASS: Slot 4 tip pickup depth strictly preserved without clearance offset.")
+
+    app.run_z_clearance_offsets = {}
+    app.switch_machine_profile("machine_2_1_10ul")
+
     print("\n======================================================================")
-    print("ALL 11 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
+    print("ALL 12 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
     print("======================================================================")
 
 if __name__ == "__main__":

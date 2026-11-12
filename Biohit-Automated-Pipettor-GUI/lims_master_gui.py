@@ -218,6 +218,9 @@ class LIMSMasterApp:
         # Live Jogging & Keyboard Control State
         self.jog_step_var = tk.DoubleVar(value=1.0)
         self.jog_z_clearance_var = tk.BooleanVar(value=False)
+
+        # User-Configured Run Bottom Clearance (Less Deep) Offsets per Slot
+        self.run_z_clearance_offsets = {}
         self.jog_nudge_btns = []
         self._jogging_in_progress = False
 
@@ -7625,6 +7628,234 @@ class LIMSMasterApp:
         if self.timer_running:
             self.root.after(1000, self.update_timer)
 
+    def prompt_z_clearance_for_run(self) -> bool:
+        """
+        Pre-run prompt (Option A) asking operator if they want to adjust depth to be less deep
+        (higher bottom clearance), and if so, presents a modal dialog to configure the clearance (in mm)
+        for every valid liquid-handling labware present in the current protocol.
+        Subtracts the entered clearance from calibrated depth for liquid operations (Aspirate, Dispense, Mix).
+        """
+        seq = getattr(self, "workflow_sequence", [])
+        liquid_slots = []
+        slot_actions = {}
+        for step in seq:
+            act = step.get("action", "")
+            slot = step.get("slot", "")
+            if act in ("Aspirate Media", "Dispense Media", "Mix Well") and slot:
+                if slot not in slot_actions:
+                    slot_actions[slot] = set()
+                slot_actions[slot].add(act)
+                if slot not in liquid_slots and "Slot_" in slot:
+                    lw_obj = getattr(getattr(self, "lims", None), "deck_labware", {}).get(slot)
+                    lw_src = str(getattr(lw_obj, "source_file", "")).lower()
+                    lw_name = str(getattr(lw_obj, "name", "")).lower()
+                    if "tip" not in lw_src and "tip" not in lw_name:
+                        liquid_slots.append(slot)
+
+        if not liquid_slots:
+            self.run_z_clearance_offsets = {}
+            return True
+
+        def _slot_sort_key(s):
+            try:
+                return int(s.replace("Slot_", ""))
+            except Exception:
+                return 99
+
+        liquid_slots.sort(key=_slot_sort_key)
+
+        if getattr(self, "headless_test_mode", False) or not hasattr(self, "root") or not self.root:
+            return True
+
+        adjust_depth = messagebox.askyesno(
+            "Well Bottom Clearance (Less Deep)",
+            "Do you want to adjust depth to be less deep (set well bottom clearance) for this run?\n\n"
+            "• YES: Set clearance in mm (higher off well bottom) for each valid labware.\n"
+            "• NO: Run at standard calibrated depths (default)."
+        )
+        if not adjust_depth:
+            self.run_z_clearance_offsets = {}
+            return True
+
+        top = tk.Toplevel(self.root)
+        top.title("Configure Well Bottom Clearance (Less Deep)")
+        win_h = max(380, 240 + len(liquid_slots) * 60)
+        top.geometry(f"680x{min(680, win_h)}")
+        top.transient(self.root)
+        top.grab_set()
+
+        try:
+            rx = self.root.winfo_rootx() + (self.root.winfo_width() // 2) - 340
+            ry = self.root.winfo_rooty() + (self.root.winfo_height() // 2) - (min(680, win_h) // 2)
+            top.geometry(f"+{max(0, rx)}+{max(0, ry)}")
+        except Exception:
+            pass
+
+        hdr = tk.Frame(top, bg="#0d6efd", padx=14, pady=10)
+        hdr.pack(fill=tk.X)
+        tk.Label(
+            hdr,
+            text="🟢 Configure Well Bottom Clearance (Less Deep)",
+            font=("Arial", 11, "bold"),
+            bg="#0d6efd",
+            fg="white"
+        ).pack(anchor="w")
+        tk.Label(
+            hdr,
+            text="Enter millimeters to subtract from software depth (tip stays higher off bottom). Tip pickup is safely preserved.",
+            font=("Arial", 9),
+            bg="#0d6efd",
+            fg="#e7f1ff"
+        ).pack(anchor="w", pady=(2, 0))
+
+        body = ttk.Frame(top, padding=12)
+        body.pack(fill=tk.BOTH, expand=True)
+
+        q_frame = ttk.LabelFrame(body, text="Quick Set All Valid Labware", padding=8)
+        q_frame.pack(fill=tk.X, pady=(0, 10))
+        ttk.Label(q_frame, text="Clearance to apply to all:").pack(side=tk.LEFT, padx=(0, 6))
+        q_spin = ttk.Spinbox(q_frame, from_=0.0, to=25.0, increment=0.5, width=6)
+        q_spin.set("1.0")
+        q_spin.pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Label(q_frame, text="mm").pack(side=tk.LEFT, padx=(0, 10))
+
+        table_f = ttk.Frame(body)
+        table_f.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(table_f, text="Slot", font=("Arial", 9, "bold"), width=8).grid(row=0, column=0, sticky="w", pady=2)
+        ttk.Label(table_f, text="Labware / Reagent Deck Purpose", font=("Arial", 9, "bold"), width=30).grid(row=0, column=1, sticky="w", pady=2)
+        ttk.Label(table_f, text="Standard Z", font=("Arial", 9, "bold"), width=12).grid(row=0, column=2, sticky="w", pady=2)
+        ttk.Label(table_f, text="Clearance (mm)", font=("Arial", 9, "bold"), width=15).grid(row=0, column=3, sticky="w", pady=2)
+        ttk.Label(table_f, text="Effective Depth", font=("Arial", 9, "bold")).grid(row=0, column=4, sticky="w", pady=2)
+        ttk.Separator(table_f, orient="horizontal").grid(row=1, column=0, columnspan=5, sticky="ew", pady=(2, 6))
+
+        slot_entries = {}
+        slot_preview_labels = {}
+        slot_nominal_z = {}
+
+        for row_idx, slot in enumerate(liquid_slots, start=2):
+            lw_obj = getattr(getattr(self, "lims", None), "deck_labware", {}).get(slot)
+            lw_name = getattr(lw_obj, "name", None) or getattr(lw_obj, "source_file", slot)
+            acts = list(slot_actions.get(slot, []))
+            act_str = "/".join(a.replace(" Media", "").replace(" Well", "") for a in acts)
+
+            test_act = acts[0] if acts else "Aspirate Media"
+            try:
+                nom_z = float(self._calculate_z(test_act, lw_obj, "A1", "auto", 0.0, slot))
+            except Exception:
+                nom_z = 0.0
+            slot_nominal_z[slot] = nom_z
+
+            badge = tk.Label(table_f, text=slot.replace("_", " "), font=("Consolas", 9, "bold"), bg="#cce5ff", fg="#004085", padx=4, pady=2)
+            badge.grid(row=row_idx, column=0, sticky="w", pady=4)
+
+            desc_text = f"{lw_name} ({act_str})"
+            if len(desc_text) > 32:
+                desc_text = desc_text[:30] + "..."
+            ttk.Label(table_f, text=desc_text, font=("Arial", 9)).grid(row=row_idx, column=1, sticky="w", pady=4, padx=(0, 6))
+
+            ttk.Label(table_f, text=f"{nom_z:.2f} mm" if nom_z > 0 else "Auto", font=("Consolas", 9)).grid(row=row_idx, column=2, sticky="w", pady=4)
+
+            spin = ttk.Spinbox(table_f, from_=0.0, to=25.0, increment=0.5, width=6)
+            spin.set("0.0")
+            spin.grid(row=row_idx, column=3, sticky="w", pady=4, padx=(0, 6))
+            slot_entries[slot] = spin
+
+            lbl_eff = ttk.Label(table_f, text=f"{nom_z:.2f} mm", font=("Consolas", 9, "bold"), foreground="#28a745")
+            lbl_eff.grid(row=row_idx, column=4, sticky="w", pady=4)
+            slot_preview_labels[slot] = lbl_eff
+
+            def make_update_fn(s_key):
+                def _update(*args):
+                    try:
+                        c_val = float(slot_entries[s_key].get() or 0.0)
+                    except ValueError:
+                        c_val = 0.0
+                    base = slot_nominal_z[s_key]
+                    if base > 0:
+                        eff = max(0.0, base - c_val)
+                        if c_val > 0:
+                            slot_preview_labels[s_key].config(
+                                text=f"{eff:.2f} mm (-{c_val:.2f}mm)",
+                                foreground="#0d6efd"
+                            )
+                        else:
+                            slot_preview_labels[s_key].config(
+                                text=f"{eff:.2f} mm (Standard)",
+                                foreground="#28a745"
+                            )
+                    else:
+                        slot_preview_labels[s_key].config(text=f"-{c_val:.2f} mm" if c_val > 0 else "Default")
+                return _update
+
+            spin.bind("<KeyRelease>", make_update_fn(slot))
+            spin.bind("<<Increment>>", make_update_fn(slot))
+            spin.bind("<<Decrement>>", make_update_fn(slot))
+
+        def apply_quick_to_all():
+            try:
+                v = float(q_spin.get() or 0.0)
+            except ValueError:
+                v = 0.0
+            for s_key, sp in slot_entries.items():
+                sp.set(f"{v:.1f}")
+                base = slot_nominal_z[s_key]
+                if base > 0:
+                    eff = max(0.0, base - v)
+                    if v > 0:
+                        slot_preview_labels[s_key].config(
+                            text=f"{eff:.2f} mm (-{v:.2f}mm)",
+                            foreground="#0d6efd"
+                        )
+                    else:
+                        slot_preview_labels[s_key].config(
+                            text=f"{eff:.2f} mm (Standard)",
+                            foreground="#28a745"
+                        )
+                else:
+                    slot_preview_labels[s_key].config(text=f"-{v:.2f} mm" if v > 0 else "Default")
+
+        ttk.Button(q_frame, text="Apply to All Rows", command=apply_quick_to_all).pack(side=tk.LEFT)
+
+        user_confirmed = {"status": False}
+
+        def on_confirm():
+            offsets = {}
+            for s_key, sp in slot_entries.items():
+                try:
+                    c_val = float(sp.get() or 0.0)
+                    if c_val > 0.0:
+                        offsets[s_key] = c_val
+                except ValueError:
+                    pass
+            self.run_z_clearance_offsets = offsets
+            if offsets:
+                off_strs = [f"{s}: -{v:.2f}mm" for s, v in offsets.items()]
+                self.logger.info(f"Operator configured well bottom clearance offsets (less deep): {', '.join(off_strs)}")
+            else:
+                self.logger.info("Operator confirmed protocol run at standard calibrated depths (0.0mm clearance).")
+            user_confirmed["status"] = True
+            top.destroy()
+
+        def on_cancel():
+            user_confirmed["status"] = False
+            top.destroy()
+
+        btn_bar = ttk.Frame(top, padding=12)
+        btn_bar.pack(fill=tk.X, side=tk.BOTTOM)
+        ttk.Button(btn_bar, text="Cancel Protocol Run", command=on_cancel).pack(side=tk.RIGHT, padx=4)
+        tk.Button(
+            btn_bar,
+            text="🟢 Start Protocol with Selected Depths",
+            bg="#28a745",
+            fg="white",
+            font=("Arial", 9, "bold"),
+            command=on_confirm
+        ).pack(side=tk.RIGHT, padx=4)
+
+        top.wait_window()
+        return user_confirmed["status"]
+
     def execute_protocol(self):
         if getattr(self, 'is_running', False):
             self.logger.warning("Protocol sequence is already active or stopping. Please wait.")
@@ -7697,6 +7928,13 @@ class LIMSMasterApp:
             )
         else:
             self.enable_mixing_for_run = False
+
+        # Well Bottom Clearance / Less Deep Prompt (Option A)
+        proceed_with_run = self.prompt_z_clearance_for_run()
+        if not proceed_with_run:
+            self.logger.info("Protocol run cancelled by operator during Depth Clearance configuration.")
+            return
+
         self.is_running = True
 
         # --- AUTO SAVE FUNCTIONALITY INJECTED HERE ---
@@ -8144,8 +8382,16 @@ class LIMSMasterApp:
                             if is_8ch and not is_already_cal:
                                 # 1000 µL tips are ~20.5 mm longer than the 200 µL calibration tip
                                 tz = max(0.0, tz - self.EIGHT_CH_TIP_Z_COMP_MM)
+
+                            # Apply user-configured well bottom clearance (less deep) for liquid operations
+                            clearance_dz = float(getattr(self, "run_z_clearance_offsets", {}).get(slot_name, 0.0) or 0.0) if action in ("Aspirate Media", "Dispense Media", "Mix Well") else 0.0
+                            if clearance_dz > 0.0:
+                                tz = max(0.0, tz - clearance_dz)
+
+                        clearance_dz = float(getattr(self, "run_z_clearance_offsets", {}).get(slot_name, 0.0) or 0.0) if action in ("Aspirate Media", "Dispense Media", "Mix Well") else 0.0
+                        clearance_tag = f" [Clearance: -{clearance_dz:.2f}mm less deep -> final Z={tz:.2f}mm]" if clearance_dz > 0.0 else ""
                         self.logger.info(
-                            f"Absolute Z-Depth Executed: Z={tz:.2f}mm for {well_id if mode != 'manual' else 'Manual Target'}"
+                            f"Absolute Z-Depth Executed: Z={tz:.2f}mm for {well_id if mode != 'manual' else 'Manual Target'}{clearance_tag}"
                             + (f" (8-ch 1000 µL tip compensation -{self.EIGHT_CH_TIP_Z_COMP_MM:.1f} mm)" if is_8ch and not is_already_cal and mode != "manual" and not (action == "Discard Tip" and step.get('discard_z_override') is not None) else "")
                             + (f" (8-ch direct physical calibration: {tz:.2f}mm)" if is_8ch and is_already_cal else ""))
 
