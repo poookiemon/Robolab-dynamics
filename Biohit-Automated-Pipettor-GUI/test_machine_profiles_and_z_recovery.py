@@ -932,8 +932,50 @@ def run_all_tests():
     app.run_z_clearance_offsets = {}
     app.switch_machine_profile("machine_2_1_10ul")
 
+    # -------------------------------------------------------------------------
+    # TEST 13: Machine 2 Protocol Discovery & Slot 4 Visual Deck Containment
+    # -------------------------------------------------------------------------
+    print("\n--- 13. Testing Machine 2 Protocol Resolution & Slot 4 Visual Deck Geometry ---")
+    for vol_str in ("7.5uL", "5.0uL"):
+        p_par = app.resolve_protocol_path(
+            f"ehm_1ch_10ul_drug_addition_to_ehm_{vol_str}.json",
+            f"ehm_8ch_10ul_parallel_drug_addition_{vol_str}.json",
+        )
+        assert p_par and os.path.exists(p_par), f"Missing Machine 2 parallel protocol for {vol_str}"
+        p_tri = app.resolve_protocol_path(
+            f"ehm_1ch_10ul_triplicate_drug_addition_{vol_str}.json",
+        )
+        assert p_tri and os.path.exists(p_tri), f"Missing Machine 2 triplicate protocol for {vol_str}"
+
+    # Verify draw_deck renders Slot 4 wells inside Slot 4 rectangle (Y in [45.0, 130.5])
+    # without altering _calculate_xy/_resolve_step_xy motor targets.
+    app.switch_machine_profile("machine_2_1_10ul")
+    app.draw_deck()
+    s4 = app.lims.deck_slots["Slot_4"]
+    y4_min = s4.y_abs * app.scale
+    y4_max = (s4.y_abs + s4.height_mm) * app.scale
+    oval_ys = []
+    for item_id in app.canvas.find_all():
+        if app.canvas.type(item_id) == "oval":
+            fill_col = app.canvas.itemcget(item_id, "fill")
+            if fill_col not in ("#e7f5ff", "#0284c7", "#d6d8db", "#1e293b"):
+                continue
+            x0, y0, x1, y1 = app.canvas.coords(item_id)
+            cy = (y0 + y1) / 2.0
+            vx_left = app.get_v_x(s4.x_abs + s4.width_mm)
+            vx_right = app.get_v_x(s4.x_abs)
+            cx = (x0 + x1) / 2.0
+            if vx_left <= cx <= vx_right and cy < app.lims.deck_slots["Slot_5"].y_abs * app.scale:
+                oval_ys.append(cy)
+    assert oval_ys, "Expected Slot 4 tip rack wells drawn on canvas"
+    assert min(oval_ys) >= y4_min and max(oval_ys) <= y4_max, (
+        f"Slot 4 visual wells overflowed Slot 4 bounds [{y4_min}, {y4_max}]: [{min(oval_ys)}, {max(oval_ys)}]"
+    )
+    assert app._calculate_xy("Slot_4", "A1") == (105.66, 21.53), "Motor coordinate _calculate_xy changed unexpectedly"
+    print("PASS: All Machine 2 protocols resolved & Slot 4 wells rendered inside Slot 4 bounds with motor coordinates unchanged.")
+
     print("\n======================================================================")
-    print("ALL 12 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
+    print("ALL 13 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
     print("======================================================================")
 
 if __name__ == "__main__":

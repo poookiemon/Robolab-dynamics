@@ -2293,14 +2293,22 @@ class LIMSMasterApp:
 
                 # --- VISUAL UI FIX: Render all labware wells matching physical kinematics ---
                 is_tip_rack_lw = (self._lw_kind(lab) == "tip_rack")
+                is_m2_10ul_draw = "10ul" in str(getattr(self, "active_profile_id", "")).lower()
                 consumed_tips_for_slot = self.session_tip_tracker.get(name, {}).get("consumed", set()) if is_tip_rack_lw else set()
                 for w in lab.wells.values():
-                    coords = self._calculate_xy(name, w.name)
-                    if coords:
-                        phys_wx, phys_wy = coords
+                    if name == "Slot_4" and is_m2_10ul_draw:
+                        # Visual deck well centers inside Slot_4 box (carriage pickup Y is separate)
+                        r_idx, c_idx = self._parse_well(w.name)
+                        ci = c_idx if (c_idx is not None and 0 <= c_idx < 12) else 0
+                        ri = r_idx if (r_idx is not None and 0 <= r_idx < 8) else 0
+                        phys_wx, phys_wy = 105.66 - (ci * 9.0), 52.64 + (ri * 9.0)
                     else:
-                        phys_wx = cx + ((lw_w / 2.0) - w.x_rel)
-                        phys_wy = cy - (lw_h / 2.0) + w.y_rel
+                        coords = self._calculate_xy(name, w.name)
+                        if coords:
+                            phys_wx, phys_wy = coords
+                        else:
+                            phys_wx = cx + ((lw_w / 2.0) - w.x_rel)
+                            phys_wy = cy - (lw_h / 2.0) + w.y_rel
 
                     wx, wy, r = self.get_v_x(phys_wx), phys_wy * self.scale, w.radius * self.scale
 
@@ -2961,6 +2969,8 @@ class LIMSMasterApp:
         repo_root = os.path.dirname(script_dir)
         search_roots = [
             os.path.join(script_dir, "protocols"),
+            os.path.join(repo_root, "robolab_gui", "resources", "protocols"),
+            os.path.join(repo_root, "src", "robolab_gui", "resources", "protocols"),
             os.path.join(repo_root, "protocols"),
             os.path.join(os.getcwd(), "Biohit-Automated-Pipettor-GUI", "protocols"),
             os.path.join(os.getcwd(), "protocols"),
@@ -3557,10 +3567,13 @@ class LIMSMasterApp:
     # -------------------------------------------------------------------------
     def action_load_10ul_parallel_drug_addition(self, volume: float = 7.5):
         self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
-        filename = f"ehm_8ch_10ul_parallel_drug_addition_{volume:g}uL.json"
+        vol_str = f"{volume:.1f}uL" if volume in (5.0, 7.5) else f"{volume:g}uL"
+        filename = f"ehm_1ch_10ul_drug_addition_to_ehm_{vol_str}.json"
         target_path = self.resolve_protocol_path(
             filename,
-            f"ehm_8ch_10ul_drug_addition_to_ehm_{volume:g}uL.json"
+            f"ehm_1ch_10ul_drug_addition_to_ehm_{volume:g}uL.json",
+            f"ehm_8ch_10ul_parallel_drug_addition_{vol_str}.json",
+            f"ehm_8ch_10ul_drug_addition_to_ehm_{vol_str}.json",
         )
         if not target_path:
             messagebox.showerror("File Not Found", f"Could not locate {filename}")
@@ -3600,10 +3613,12 @@ class LIMSMasterApp:
 
     def action_load_10ul_triplicate_drug_addition(self, volume: float = 7.5):
         self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
-        filename = f"ehm_1ch_10ul_triplicate_drug_addition_{volume:g}uL.json"
+        vol_str = f"{volume:.1f}uL" if volume in (5.0, 7.5) else f"{volume:g}uL"
+        filename = f"ehm_1ch_10ul_triplicate_drug_addition_{vol_str}.json"
         target_path = self.resolve_protocol_path(
             filename,
-            f"ehm_1ch_10ul_drug_addition_to_ehm_{volume:g}uL.json"
+            f"ehm_1ch_10ul_triplicate_drug_addition_{volume:g}uL.json",
+            f"ehm_1ch_10ul_drug_addition_to_ehm_{vol_str}.json",
         )
         if not target_path:
             messagebox.showerror("File Not Found", f"Could not locate {filename}")
@@ -9433,9 +9448,17 @@ class LIMSMasterApp:
             with open(filepath, 'w') as f: json.dump(self.workflow_sequence, f, indent=4)
 
     def action_load_workflow(self):
-        proto_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "protocols")
-        if not os.path.isdir(proto_dir):
-            proto_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "protocols")
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        parent_dir = os.path.dirname(script_dir)
+        proto_dir = ""
+        for candidate in (
+            os.path.join(script_dir, "protocols"),
+            os.path.join(parent_dir, "robolab_gui", "resources", "protocols"),
+            os.path.join(parent_dir, "protocols"),
+        ):
+            if os.path.isdir(candidate):
+                proto_dir = candidate
+                break
         filepath = filedialog.askopenfilename(
             title="Import Workflow Sequence",
             initialdir=proto_dir if os.path.isdir(proto_dir) else None,
