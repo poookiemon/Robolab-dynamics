@@ -6176,7 +6176,11 @@ class LIMSMasterApp:
             elif action == "Discard Tip":
                 step_t = travel_time + 3.2
             elif action == "Aspirate Media":
-                has_air = (0.0 < vol <= 50.0) and not s.get('no_air_cushion', False)
+                has_air = (
+                    (0.0 < vol <= 50.0)
+                    and not s.get('no_air_cushion', False)
+                    and not self._is_machine_2_10ul_active()
+                )
                 air_time = 1.2 if has_air else 0.0
                 draw_time = max(0.8, vol * 0.005)
 
@@ -8834,13 +8838,14 @@ class LIMSMasterApp:
                                 avail_air = max(0.0, hw_plunger_max - req_vol_f)
                                 # Draw air cushion in open air (Z=0) BEFORE tip enters media, only when tip is empty
                                 # and when cumulative stroke (air_vol + req_vol_f) stays within hw_plunger_max (200uL on single-channel).
-                                # Specifically for Machine 3 (300 µL Single Channel): aspirations >= 150 µL (e.g. 165 µL, 190 µL, 200 µL, 230 µL)
-                                # bypass the pre-aspiration air cushion entirely so the single liquid stroke aspirates cleanly without
-                                # stalling the motor or exceeding the physical plunger limit. Machines 1 and 2 preserve existing behavior.
+                                # Machine 2 (1-10 uL 8-channel head) aspirates requested liquid directly with no air pre-draw.
+                                # Machine 3 (300 uL Single Channel): aspirations >= 150 uL bypass the air cushion.
+                                # Machine 1 and Machine 3 (<150 uL) preserve existing air-cushion behavior.
                                 if (
                                     req_vol_f > 0.0
                                     and avail_air >= 0.5
                                     and not step.get('no_air_cushion', False)
+                                    and not self._is_machine_2_10ul_active()
                                     and not (is_machine_3 and req_vol_f >= 150.0)
                                     and getattr(self, 'air_cushion_ul', 0.0) <= 0.0
                                     and getattr(self, 'tip_liquid_ul', 0.0) <= 0.0

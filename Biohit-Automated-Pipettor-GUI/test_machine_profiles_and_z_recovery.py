@@ -841,18 +841,20 @@ def run_all_tests():
     app.lims.pipettor.hardware.aspirate(m1_req)
     assert driver_history == [("aspirate", 30.0), ("aspirate", 200.0)], f"Machine 1 must preserve 30uL air cushion, got {driver_history}"
 
-    # Verification: Machine 2 (1-10 uL) preserves existing air cushion
+    # Verification: Machine 2 (1-10 uL) disables air cushion and aspirates directly
     driver_history.clear()
     app.air_cushion_ul = 0.0
     m2_hw_max = 10.0
     m2_tip_vol = 10.0
     m2_is_8ch = True
+    m2_is_m2 = True
     m2_is_m3 = False
     m2_req = 5.0
     m2_avail_air = max(0.0, m2_hw_max - m2_req)
     if (
         m2_req > 0.0
         and m2_avail_air >= 0.5
+        and not m2_is_m2
         and not (m2_is_m3 and m2_req >= 200.0)
         and getattr(app, "air_cushion_ul", 0.0) <= 0.0
     ):
@@ -860,14 +862,14 @@ def run_all_tests():
         app.lims.pipettor.hardware.aspirate(air_vol)
         app.air_cushion_ul = air_vol
     app.lims.pipettor.hardware.aspirate(m2_req)
-    assert driver_history == [("aspirate", 1.5), ("aspirate", 5.0)], f"Machine 2 must preserve 1.5uL air cushion, got {driver_history}"
+    assert driver_history == [("aspirate", 5.0)], f"Machine 2 must disable air cushion and aspirate directly, got {driver_history}"
 
     app.switch_machine_profile("machine_2_1_10ul")
     print("PASS: Machine 3 aspirates full 230.0 µL and 250.0 µL without 200 µL capping.")
     print("PASS: Machine 3 DMSO 200 µL aspiration executes single aspirate(200.0) without air cushion.")
     print("PASS: Machine 3 190 µL aspiration executes single aspirate(190.0) without air cushion.")
     print("PASS: Machine 3 230 µL aspiration executes single aspirate(230.0) without air cushion.")
-    print("PASS: Machine 1 (8-ch 1000 µL) and Machine 2 (1-10 µL) preserve standard air cushion behavior.")
+    print("PASS: Machine 1 preserves standard air cushion behavior and Machine 2 bypasses air cushion.")
 
     print("\n--- 12. Testing Pre-Run Well Bottom Clearance (Negative Depth / Less Deep) ---")
     app.switch_machine_profile("machine_3_300ul")
@@ -1218,6 +1220,7 @@ def run_all_tests():
         )
 
         # 16c. With verified test calibration (20.0 steps/uL), test 7.5 uL end-to-end (Slot 4 pickup -> Slot 3 draw -> Slot 5 dispense+mix -> Slot 2 discard)
+        # Machine 2 aspirates 7.5 uL liquid directly with NO air pre-draw and NO air blowout.
         app.reset_tip_rack_memory("Slot_4", announce=False)
         app.calibrated_heights["piston_steps_per_ul"] = 20.0
         mock_hw.moves.clear()
@@ -1235,8 +1238,7 @@ def run_all_tests():
         assert ("move_z", 0.0) in mock_hw.moves and ("eject_tip",) in mock_hw.moves
 
         expected_75_piston = [
-            ("aspirate", 150.0, 30),   # 1.5 uL air cushion -> 30 steps
-            ("aspirate", 750.0, 150),  # 7.5 uL draw -> 150 steps
+            ("aspirate", 750.0, 150),  # 7.5 uL direct liquid draw -> 150 steps (NO air pre-draw)
             ("dispense", 750.0, 150),  # 7.5 uL dispense -> 150 steps
             ("aspirate", 800.0, 160),  # Mix 1/5: 8.0 uL -> 160 steps
             ("dispense", 800.0, 160),
@@ -1248,13 +1250,16 @@ def run_all_tests():
             ("dispense", 800.0, 160),
             ("aspirate", 800.0, 160),  # Mix 5/5
             ("dispense", 800.0, 160),
-            ("dispense", 150.0, 30),   # 1.5 uL air cushion blowout -> 30 steps
         ]
         assert mock_hw.piston_calls == expected_75_piston, (
-            f"Machine 2 7.5uL+Mix piston translation mismatch:\nExpected: {expected_75_piston}\nGot:      {mock_hw.piston_calls}"
+            f"Machine 2 7.5uL+Mix direct piston translation mismatch:\nExpected: {expected_75_piston}\nGot:      {mock_hw.piston_calls}"
         )
+        assert app.air_cushion_ul == 0.0 and app.has_air_cushion is False, (
+            f"Machine 2 must never draw/track air cushion at 7.5 uL: air={app.air_cushion_ul}, has={app.has_air_cushion}"
+        )
+        piston_75_draw = mock_hw.piston_calls[0]
 
-        # 16d. With test calibration (20.0 steps/uL), test 10.0 uL (air cushion skipped, 200 steps draw/dispense)
+        # 16d. With test calibration (20.0 steps/uL), test 10.0 uL and verify 7.5 uL vs 10.0 uL produce distinct commands
         app.reset_tip_rack_memory("Slot_4", announce=False)
         app.workflow_sequence = [
             {"action": "Pick Up Tip", "mode": "auto", "slot": "Slot_4", "well": "A1", "volume": 0.0, "eight_ch_symmetric": True, "mounted_channels": "A-H"},
@@ -1269,18 +1274,20 @@ def run_all_tests():
         app.has_tip_var.set(False)
         app.run_sequence()
         assert mock_hw.piston_calls == [
-            ("aspirate", 1000.0, 200),  # 10.0 uL -> 200 steps (no phantom air cushion)
+            ("aspirate", 1000.0, 200),  # 10.0 uL -> 200 steps (direct liquid draw, no air cushion)
             ("dispense", 1000.0, 200),  # 10.0 uL dispense -> 200 steps
         ], f"Machine 2 10.0uL piston mismatch: {mock_hw.piston_calls}"
+        piston_100_draw = mock_hw.piston_calls[0]
+        assert piston_75_draw != piston_100_draw and piston_75_draw[2] == 150 and piston_100_draw[2] == 200, (
+            f"7.5 uL and 10.0 uL must produce distinct piston commands: 7.5={piston_75_draw}, 10.0={piston_100_draw}"
+        )
         assert app.air_cushion_ul == 0.0 and app.has_air_cushion is False
 
-        # 16e. Guard: air cushion is ONLY counted if it actually commands a nonzero piston move
-        # Simulate coarse calibration (0.2 steps/uL): 1.5 * 0.2 = 0.3 -> rounds to 0 steps (must NOT draw or count air cushion!)
-        app.calibrated_heights["piston_steps_per_ul"] = 0.2
+        # 16e. Machine 2 disables air cushion even at small volumes (e.g. 5.0 uL) and draws liquid directly
         app.reset_tip_rack_memory("Slot_4", announce=False)
         app.workflow_sequence = [
             {"action": "Pick Up Tip", "mode": "auto", "slot": "Slot_4", "well": "A1", "volume": 0.0, "eight_ch_symmetric": True, "mounted_channels": "A-H"},
-            {"action": "Aspirate Media", "mode": "auto", "slot": "Slot_3", "well": "A1", "volume": 7.5, "eight_ch_symmetric": True, "mounted_channels": "A-H", "track_liquid": False},
+            {"action": "Aspirate Media", "mode": "auto", "slot": "Slot_3", "well": "A1", "volume": 5.0, "eight_ch_symmetric": True, "mounted_channels": "A-H", "track_liquid": False},
         ]
         mock_hw.moves.clear()
         mock_hw.piston_calls.clear()
@@ -1288,13 +1295,13 @@ def run_all_tests():
         app.has_tip_var.set(False)
         app.run_sequence()
         assert app.air_cushion_ul == 0.0 and app.has_air_cushion is False, (
-            f"Zero-step air cushion must NOT be counted as drawn: air={app.air_cushion_ul}, has={app.has_air_cushion}"
+            f"Machine 2 must NOT draw or count air cushion at 5.0 uL: air={app.air_cushion_ul}, has={app.has_air_cushion}"
         )
-        assert mock_hw.piston_calls == [("aspirate", 10.0, 2)], (
-            f"0-step air cushion should not issue hardware call; got {mock_hw.piston_calls}"
+        assert mock_hw.piston_calls == [("aspirate", 500.0, 100)], (
+            f"Machine 2 5.0 uL must aspirate liquid directly without air pre-draw; got {mock_hw.piston_calls}"
         )
 
-        # 16f. Machines 1 and 3 remain completely unaffected and keep existing conversion
+        # 16f. Machines 1 and 3 remain completely unaffected and keep existing conversion & air cushion
         app.switch_machine_profile("machine_1_8x1000", save_to_disk=False)
         app.reset_tip_rack_memory("Slot_4", announce=False)
         assert not app._is_machine_2_10ul_active()
