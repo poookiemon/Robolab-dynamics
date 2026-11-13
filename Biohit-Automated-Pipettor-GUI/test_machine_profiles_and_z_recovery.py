@@ -1048,8 +1048,82 @@ def run_all_tests():
     app.switch_machine_profile("machine_2_1_10ul")
     print("PASS: Target Well column & range parsing verified for both Multi-Channel and Single-Channel.")
 
+    # -------------------------------------------------------------------------
+    # TEST 15: Step Editor Auto-Updates Label on Edit
+    # -------------------------------------------------------------------------
+    print("\n--- 15. Testing Protocol Step Editor Automatic Label Refresh ---")
+    import tkinter as _tk
+    from tkinter import ttk as _ttk
+
+    def _collect_widgets(parent):
+        out = []
+        for child in parent.winfo_children():
+            out.append(child)
+            out.extend(_collect_widgets(child))
+        return out
+
+    labeled_step = {
+        "action": "Aspirate Media",
+        "mode": "auto",
+        "slot": "Slot_3",
+        "well": "A1",
+        "volume": 7.5,
+        "labware": "generic_96_well_plate.json",
+        "eight_ch_symmetric": True,
+        "mounted_channels": "A-H",
+        "track_liquid": False,
+        "label": "Aspirate 7.5 µL per channel from Slot 3 column 1, rows A-H",
+    }
+    app.workflow_sequence = [dict(labeled_step)]
+    app.wf_box.delete(0, "end")
+    app.wf_box.insert(0, app._format_step_msg(app.workflow_sequence[0]))
+    assert "7.5" in app.wf_box.get(0)
+
+    # 15a: No-op Save preserves custom label
+    app._open_step_editor_dialog(app.workflow_sequence[0], edit_idx=0)
+    top_dlg = [w for w in app.root.winfo_children() if isinstance(w, _tk.Toplevel)][-1]
+    save_btn = [w for w in _collect_widgets(top_dlg) if isinstance(w, _ttk.Button) and "Save Step" in str(w.cget("text"))][0]
+    save_btn.invoke()
+    app.root.update_idletasks()
+    assert app.workflow_sequence[0].get("label") == labeled_step["label"]
+
+    # 15b: Editing volume (7.5 -> 10.0) clears stale label & updates wf_box immediately
+    app._open_step_editor_dialog(app.workflow_sequence[0], edit_idx=0)
+    top_dlg = [w for w in app.root.winfo_children() if isinstance(w, _tk.Toplevel)][-1]
+    widgets = _collect_widgets(top_dlg)
+    entries = [w for w in widgets if type(w) is _ttk.Entry]  # [well, vol, extra_z, mix_c, mix_v]
+    entries[1].delete(0, "end")
+    entries[1].insert(0, "10.0")
+    save_btn = [w for w in widgets if isinstance(w, _ttk.Button) and "Save Step" in str(w.cget("text"))][0]
+    save_btn.invoke()
+    app.root.update_idletasks()
+    assert "label" not in app.workflow_sequence[0], f"Stale label should be cleared: {app.workflow_sequence[0]}"
+    assert app.workflow_sequence[0]["volume"] == 10.0
+    assert app.workflow_sequence[0].get("mounted_channels") == "A-H"
+    box_txt = app.wf_box.get(0)
+    assert "10.0\u03bcL" in box_txt and "7.5" not in box_txt and "[Ch A-H]" in box_txt, f"Unexpected edited label: {box_txt}"
+
+    # 15c: Re-labeling and editing Target Well (A1 -> Col 2) also clears stale label & updates listbox
+    app.workflow_sequence[0]["label"] = "Stale Old Col 1 Label"
+    app._open_step_editor_dialog(app.workflow_sequence[0], edit_idx=0)
+    top_dlg = [w for w in app.root.winfo_children() if isinstance(w, _tk.Toplevel)][-1]
+    widgets = _collect_widgets(top_dlg)
+    entries = [w for w in widgets if type(w) is _ttk.Entry]
+    entries[0].delete(0, "end")
+    entries[0].insert(0, "Col 2")
+    save_btn = [w for w in widgets if isinstance(w, _ttk.Button) and "Save Step" in str(w.cget("text"))][0]
+    save_btn.invoke()
+    app.root.update_idletasks()
+    assert "label" not in app.workflow_sequence[0]
+    assert app.workflow_sequence[0]["well"] == "A2"
+    assert "Well A2 [Ch A-H]" in app.wf_box.get(0), f"Unexpected target well label: {app.wf_box.get(0)}"
+
+    app.workflow_sequence.clear()
+    app.wf_box.delete(0, "end")
+    print("PASS: Step editor clears stale labels and updates wf_box on edit.")
+
     print("\n======================================================================")
-    print("ALL 14 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
+    print("ALL 15 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
     print("======================================================================")
 
 if __name__ == "__main__":

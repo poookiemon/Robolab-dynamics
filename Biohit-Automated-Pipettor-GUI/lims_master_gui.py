@@ -5816,7 +5816,7 @@ class LIMSMasterApp:
         elif action == "Detect Liquid Level":
             return f"[{action.upper()}] at {slot}, Well {well}"
         else:
-            z_msg = f" (Z+{extra_z}mm)" if extra_z > 0 else ""
+            z_msg = f" (Z{float(extra_z):+}mm)" if abs(float(extra_z)) > 1e-9 else ""
             mix_msg = f" [Mix {mix_c}x {mix_v}uL]" if int(mix_c) > 0 and action == "Dispense Media" else ""
             return f"[{action.upper()}] {vol}\u03bcL at {slot}, Well {well}{ch_msg}{z_msg}{mix_msg}"
 
@@ -5965,21 +5965,42 @@ class LIMSMasterApp:
                 base_data = dict(step_data)
                 orig_well_str = str(step_data.get('well', '')).strip().upper()
                 new_well_str = well_ent.get().strip().upper()
+                new_action = act_cb.get()
+                new_slot = slot_cb.get()
+                new_vol = float(vol_ent.get())
+                new_extra_z = float(z_ent.get())
+                new_mix_c = int(mix_c_ent.get())
+                new_mix_v = float(mix_v_ent.get())
+
+                fields_changed = (
+                    (not is_edit)
+                    or new_action != str(step_data.get('action', ''))
+                    or new_slot != str(step_data.get('slot', ''))
+                    or new_well_str != orig_well_str
+                    or abs(new_vol - float(step_data.get('volume', 0.0))) > 1e-9
+                    or abs(new_extra_z - float(step_data.get('extra_z', 0.0))) > 1e-9
+                    or new_mix_c != int(step_data.get('mix_cycles', 0))
+                    or abs(new_mix_v - float(step_data.get('mix_volume', 100.0))) > 1e-9
+                )
+
                 if is_edit and new_well_str != orig_well_str:
                     base_data.pop('mounted_channels', None)
                     base_data.pop('eight_ch_symmetric', None)
-                base_data['action'] = act_cb.get()
-                base_data['slot'] = slot_cb.get()
-                base_data['volume'] = float(vol_ent.get())
-                base_data['extra_z'] = float(z_ent.get())
-                base_data['mix_cycles'] = int(mix_c_ent.get())
-                base_data['mix_volume'] = float(mix_v_ent.get())
+                base_data['action'] = new_action
+                base_data['slot'] = new_slot
+                base_data['volume'] = new_vol
+                base_data['extra_z'] = new_extra_z
+                base_data['mix_cycles'] = new_mix_c
+                base_data['mix_volume'] = new_mix_v
 
                 target_specs = self._expand_target_well_input(
                     well_ent.get(), base_data['slot'], base_data['action'], self._is_multichannel_head_active()
                 )
                 if target_specs is None:
                     return
+
+                if fields_changed or len(target_specs) > 1:
+                    base_data.pop('label', None)
 
                 expanded = []
                 for spec in target_specs:
@@ -6007,6 +6028,8 @@ class LIMSMasterApp:
 
                 if self.is_running:
                     self.estimated_total_time = self.estimate_workflow_time(self.workflow_sequence)
+                if hasattr(self, '_update_estimated_timer_preview'):
+                    self._update_estimated_timer_preview()
 
                 dlg.destroy()
             except ValueError as ve:
