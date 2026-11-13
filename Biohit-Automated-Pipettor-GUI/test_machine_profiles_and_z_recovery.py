@@ -1185,11 +1185,13 @@ def run_all_tests():
             app.mid_protocol_z_home_var.set(False)
         _time.sleep = lambda *_a, **_k: None
 
-        # 16a. Default Machine 2 profile keeps piston_steps_per_ul as None and does NOT block execution
+        # 16a. Default Machine 2 profile has calibrated piston_steps_per_ul=20.0 (200 steps = 10.0 uL),
+        # and clearing it to None does NOT block execution
         app.switch_machine_profile("machine_2_1_10ul", save_to_disk=False)
-        assert app.calibrated_heights.get("piston_steps_per_ul") is None, (
-            f"Machine 2 default piston_steps_per_ul expected None, got {app.calibrated_heights.get('piston_steps_per_ul')}"
+        assert float(app.calibrated_heights.get("piston_steps_per_ul")) == 20.0, (
+            f"Machine 2 default piston_steps_per_ul expected 20.0, got {app.calibrated_heights.get('piston_steps_per_ul')}"
         )
+        app.calibrated_heights["piston_steps_per_ul"] = None
 
         # 16b. Verify execute_protocol() and run_sequence() run cleanly when piston_steps_per_ul is None
         mock_hw = _MockPistonHardware(is_multichannel=True)
@@ -1396,7 +1398,6 @@ def run_all_tests():
         app.workflow_sequence.clear()
         app.wf_box.delete(0, "end")
         app.switch_machine_profile("machine_2_1_10ul", save_to_disk=False)
-        app.calibrated_heights["piston_steps_per_ul"] = None
 
     print("PASS: Machine 2 direct wrapper 7.5 uL / 10.0 uL / 5.0 uL calls, no block when piston_steps_per_ul=null, air cushion OFF, and M1/M3 isolation verified.")
 
@@ -1554,6 +1555,67 @@ def run_all_tests():
         app.headless_test_mode = orig_headless2
 
     print("PASS: Direct Operations RUN M2_STEP_TEST button & Machine 2 50/100/150/200 raw piston step sweep verified.")
+
+    # 16i. Calibrated Machine 2 scaling (piston_steps_per_ul=20.0 -> 10.0x wrapper uL -> 150 steps at 7.5 uL, 200 steps at 10.0 uL)
+    # while leaving Machine 1 & Machine 3 completely unscaled.
+    orig_hw_ready3 = app.lims.hw.is_initialized
+    orig_hw_move3 = app.lims.hw.move_to
+    orig_pip_hw3 = app.lims.pipettor.hardware
+    orig_headless3 = app.headless_test_mode
+    orig_mix3 = getattr(app, "enable_mixing_for_run", False)
+    try:
+        app.switch_machine_profile("machine_2_1_10ul", save_to_disk=False)
+        assert float(app.calibrated_heights.get("piston_steps_per_ul")) == 20.0
+        assert app._m2_driver_volume(7.5) == 75.0
+        assert app._m2_driver_volume(10.0) == 100.0
+        assert app._m2_driver_volume(5.0) == 50.0
+
+        cal_hw = _MockPistonHardware(is_multichannel=True)
+        app.headless_test_mode = True
+        app.lims.hw.is_initialized = True
+        app.lims.pipettor.hardware = cal_hw
+        app.lims.hw.move_to = lambda x, y, z, speed=None: True
+        app.enable_mixing_for_run = True
+        app._worker_has_tip = True
+        app.has_tip_var.set(True)
+        app.air_cushion_ul = 0.0
+        app.has_air_cushion = False
+        app.tip_liquid_ul = 0.0
+        app.workflow_sequence = [
+            {"action": "Aspirate Media", "slot": "Slot_3", "well": "A1", "volume": 7.5, "height": "calibrated", "eight_ch_symmetric": True},
+            {"action": "Dispense Media", "slot": "Slot_5", "well": "A1", "volume": 7.5, "height": "calibrated", "mix_cycles": 2, "mix_volume": 8.0, "eight_ch_symmetric": True},
+            {"action": "Aspirate Media", "slot": "Slot_3", "well": "A1", "volume": 10.0, "height": "calibrated", "eight_ch_symmetric": True},
+            {"action": "Dispense Media", "slot": "Slot_5", "well": "A1", "volume": 10.0, "height": "calibrated", "mix_cycles": 0, "eight_ch_symmetric": True},
+        ]
+        app.run_sequence()
+        assert [(c[0], c[1]) for c in cal_hw.piston_calls] == [
+            ("aspirate", 75.0),
+            ("dispense", 75.0),
+            ("aspirate", 80.0),
+            ("dispense", 80.0),
+            ("aspirate", 80.0),
+            ("dispense", 80.0),
+            ("aspirate", 100.0),
+            ("dispense", 100.0),
+        ], f"Expected 10x calibrated Machine 2 wrapper calls (150/160/200 steps), got {cal_hw.piston_calls}"
+        assert app.air_cushion_ul == 0.0 and app.has_air_cushion is False
+
+        # Machines 1 and 3 remain completely untouched
+        app.switch_machine_profile("machine_1_8x1000", save_to_disk=False)
+        assert app._m2_driver_volume(500.0) == 500.0
+        app.switch_machine_profile("machine_3_300ul", save_to_disk=False)
+        assert app._m2_driver_volume(200.0) == 200.0
+    finally:
+        app.lims.hw.is_initialized = orig_hw_ready3
+        app.lims.hw.move_to = orig_hw_move3
+        app.lims.pipettor.hardware = orig_pip_hw3
+        app.headless_test_mode = orig_headless3
+        app.enable_mixing_for_run = orig_mix3
+        app.workflow_sequence.clear()
+        app.wf_box.delete(0, "end")
+        app.switch_machine_profile("machine_2_1_10ul", save_to_disk=False)
+
+    print("PASS: Calibrated Machine 2 (20.0 steps/uL -> 150 steps @ 7.5 uL, 200 steps @ 10.0 uL) and M1/M3 isolation verified.")
 
     print("\n======================================================================")
     print("ALL 16 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")

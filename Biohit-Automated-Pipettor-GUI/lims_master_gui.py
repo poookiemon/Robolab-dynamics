@@ -189,7 +189,7 @@ class LIMSMasterApp:
             self.calibrated_heights.setdefault("tip_10ul_extra_press_mm", self.calibrated_heights.get("tip_pickup_extra_press_mm", 2.50))
             self.calibrated_heights.setdefault("reservoir_7_aspirate_z", self.calibrated_heights.get("reservoir_aspirate_z", 58.34))
             self.calibrated_heights.setdefault("reservoir_7_dispense_z", self.calibrated_heights.get("waste_dispense_z", 8.37))
-            self.calibrated_heights.setdefault("piston_steps_per_ul", None)
+            self.calibrated_heights.setdefault("piston_steps_per_ul", 20.0)
 
         self.head_mode_var = tk.StringVar(
             value=prof_cfg.get("head_name", "8-Channel Multi (1-10 µL)" if "10ul" in self.active_profile_id else "8×1000 µL (8-Channel Manifold)")
@@ -8491,6 +8491,21 @@ class LIMSMasterApp:
         pip = getattr(getattr(self, "lims", None), "pipettor", None)
         return bool(pip and getattr(pip, "multichannel", False) and float(getattr(pip, "tip_volume", 1000.0)) <= 10.0)
 
+    def _m2_driver_volume(self, vol_ul: float) -> float:
+        """Convert physical uL to wrapper uL for Machine 2 using calibrated piston_steps_per_ul.
+
+        Machine 2 configures RealBiohitPipettor(200, False) which steps at 2.0 steps/uL.
+        Calibrated on bench (10/20 uL tips): 200 steps = 10.0 uL => 20.0 steps/uL (10.0x wrapper uL).
+        If piston_steps_per_ul is None, passes raw vol_ul unchanged; Machines 1 & 3 are never scaled.
+        """
+        v = float(vol_ul)
+        if v <= 0.0 or not self._is_machine_2_10ul_active():
+            return v
+        cal = self.calibrated_heights.get("piston_steps_per_ul")
+        if cal is None:
+            return v
+        return v * (float(cal) / 2.0)
+
     def execute_protocol(self):
         if getattr(self, 'is_running', False):
             self.logger.warning("Protocol sequence is already active or stopping. Please wait.")
@@ -9373,12 +9388,12 @@ class LIMSMasterApp:
                                         )
 
                                     try:
-                                        self.lims.pipettor.hardware.aspirate(actual_vol)
+                                        self.lims.pipettor.hardware.aspirate(self._m2_driver_volume(actual_vol))
                                     except Exception as asp_err:
                                         fallback_vol = max(0.0, hw_plunger_max - getattr(self, 'air_cushion_ul', 0.0))
                                         if fallback_vol > 0 and fallback_vol < actual_vol:
                                             actual_vol = fallback_vol
-                                            self.lims.pipettor.hardware.aspirate(actual_vol)
+                                            self.lims.pipettor.hardware.aspirate(self._m2_driver_volume(actual_vol))
                                         else:
                                             raise asp_err
                                     self.tip_liquid_ul = getattr(self, 'tip_liquid_ul', 0.0) + actual_vol
@@ -9390,7 +9405,7 @@ class LIMSMasterApp:
                                 mix_cycles = effective_mix
                                 if actual_dispense > 0:
                                     try:
-                                        self.lims.pipettor.hardware.dispense(actual_dispense)
+                                        self.lims.pipettor.hardware.dispense(self._m2_driver_volume(actual_dispense))
                                         self.tip_liquid_ul = max(0.0, getattr(self, 'tip_liquid_ul', 0.0) - actual_dispense)
                                         time.sleep(0.4 if mix_cycles > 0 else 0.05)
                                     except Exception as d_err:
@@ -9404,9 +9419,9 @@ class LIMSMasterApp:
                                     for c_idx in range(mix_cycles):
                                         if self.is_aborted: break
                                         try:
-                                            self.lims.pipettor.hardware.aspirate(mix_vol)
+                                            self.lims.pipettor.hardware.aspirate(self._m2_driver_volume(mix_vol))
                                             time.sleep(1.2)
-                                            self.lims.pipettor.hardware.dispense(mix_vol)
+                                            self.lims.pipettor.hardware.dispense(self._m2_driver_volume(mix_vol))
                                             time.sleep(0.8)
                                         except Exception as m_err:
                                             self.logger.warning(f"Mix stroke {c_idx + 1}/{mix_cycles} warning: {m_err}")
@@ -9423,7 +9438,7 @@ class LIMSMasterApp:
                                         blowout_z = max(0.0, safe_tz - 12.0)
                                         self.lims.pipettor.hardware.move_z(blowout_z)
                                         time.sleep(0.1)
-                                        self.lims.pipettor.hardware.dispense(air_to_blow)
+                                        self.lims.pipettor.hardware.dispense(self._m2_driver_volume(air_to_blow))
                                         self.logger.info(
                                             f"Air Cushion Blowout (Bubble-Free): Lifted tip out of media to Z={blowout_z:.2f}mm "
                                             f"and expelled {air_to_blow:.2f}uL air cushion to clear residual drop."
@@ -9443,9 +9458,9 @@ class LIMSMasterApp:
                                 for c_idx in range(mix_cycles):
                                     if self.is_aborted: break
                                     try:
-                                        self.lims.pipettor.hardware.aspirate(mix_vol)
+                                        self.lims.pipettor.hardware.aspirate(self._m2_driver_volume(mix_vol))
                                         time.sleep(1.2)
-                                        self.lims.pipettor.hardware.dispense(mix_vol)
+                                        self.lims.pipettor.hardware.dispense(self._m2_driver_volume(mix_vol))
                                         time.sleep(0.8)
                                     except Exception as m_err:
                                         self.logger.warning(f"Mix stroke {c_idx + 1}/{mix_cycles} warning: {m_err}")
@@ -9455,7 +9470,7 @@ class LIMSMasterApp:
                                         blowout_z = max(0.0, safe_tz - 12.0)
                                         self.lims.pipettor.hardware.move_z(blowout_z)
                                         time.sleep(0.1)
-                                        self.lims.pipettor.hardware.dispense(air_to_blow)
+                                        self.lims.pipettor.hardware.dispense(self._m2_driver_volume(air_to_blow))
                                     except Exception:
                                         pass
                                     finally:

@@ -2,7 +2,7 @@
   "machine_id": "Machine 2: 1-10 \u00b5L",
   "pipettor_type": "8-Channel Multi (1-10 \u00b5L)",
   "tip_volume_ul": 10.0,
-  "piston_steps_per_ul": null,
+  "piston_steps_per_ul": 20.0,
   "tip_rack_pickup_approach_z": 50.0,
   "tip_rack_collar_z": 63.96,
   "tip_rack_pickup_limit_z": 75.0,
