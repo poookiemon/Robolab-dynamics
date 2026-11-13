@@ -1515,6 +1515,37 @@ def run_all_tests():
         assert [r["steps"] for r in res_abort] == [50.0]
         assert fake_m2_hw._Pipettor__instrument.Control.dispenses == 1
         assert fake_m2_hw.z_position == 0.0
+
+        # CommandFailed while Z is seated at collar (~64.5mm) still proceeds & completes sweep
+        def _pick_cmd_failed_seated(limit_z):
+            fake_m2_hw.picks.append(float(limit_z))
+            fake_m2_hw.z_position = 64.5
+            raise RuntimeError("CommandFailed")
+
+        fake_m2_hw.pick_tip = _pick_cmd_failed_seated
+        fake_m2_hw._Pipettor__instrument.Control.aspirates.clear()
+        fake_m2_hw._Pipettor__instrument.Control.dispenses = 0
+        res_cf_seated = app.run_m2_piston_step_sweep(
+            steps_list=[50, 100],
+            skip_tip_pickup=False,
+            eject_at_end=True,
+            pause_callback=lambda _t, _m: True,
+        )
+        assert [r["steps"] for r in res_cf_seated] == [50.0, 100.0]
+        assert fake_m2_hw._Pipettor__instrument.Control.dispenses == 2
+
+        # Unseated pick_tip (hits bottom Z=75.0mm) raises cleanly & leaves Z=0.0
+        def _pick_cmd_failed_miss(limit_z):
+            fake_m2_hw.z_position = 75.0
+            raise RuntimeError("CommandFailed")
+
+        fake_m2_hw.pick_tip = _pick_cmd_failed_miss
+        missed_raised = False
+        try:
+            app.run_m2_piston_step_sweep(steps_list=[50], skip_tip_pickup=False)
+        except RuntimeError:
+            missed_raised = True
+        assert missed_raised and fake_m2_hw.z_position == 0.0
     finally:
         app.prompt_for_m2_step_test = orig_prompt_m2
         app.lims.hw.is_initialized = orig_hw_ready2

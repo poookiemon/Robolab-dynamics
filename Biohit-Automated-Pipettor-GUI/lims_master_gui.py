@@ -7762,25 +7762,66 @@ class LIMSMasterApp:
 
             if not skip_tip_pickup:
                 tip_x, tip_y = self._m2_resolve_col_xy("Pick Up Tip", tip_slot, tip_well, (105.47, 84.99))
+                collar_z = float(self.calibrated_heights.get("tip_10ul_collar_z", self.calibrated_heights.get("tip_rack_collar_z", 63.96)))
                 approach_z = float(self.calibrated_heights.get("tip_10ul_approach_z", self.calibrated_heights.get("tip_rack_pickup_approach_z", 50.0)))
                 configured_limit = float(self.calibrated_heights.get("tip_10ul_limit_z", self.calibrated_heights.get("tip_rack_pickup_limit_z", 75.0)))
                 pickup_limit = min(80.0, max(68.0, configured_limit))
                 extra_press = float(self.calibrated_heights.get("tip_10ul_extra_press_mm", self.calibrated_heights.get("tip_pickup_extra_press_mm", 2.50)))
+                valid_collar_min = 48.0
+                valid_collar_max = max(74.0, collar_z + 8.0)
+                hw_speed = max(1, min(9, int((speed / 100.0) * 9)))
 
-                self.logger.info(f"[M2_STEP_TEST] Picking up 8 tips at {tip_slot} {tip_well} (X={tip_x:.2f}, Y={tip_y:.2f}, limit={pickup_limit:.2f}mm)")
+                self.logger.info(
+                    f"[M2_STEP_TEST] Picking up 8 tips at {tip_slot} {tip_well} "
+                    f"(X={tip_x:.2f}, Y={tip_y:.2f}, approach={approach_z:.2f}, limit={pickup_limit:.2f}mm)"
+                )
                 self.lims.hw.move_to(tip_x, tip_y, 0.0, speed=speed)
+                time.sleep(0.05)
+                hw.z_speed = hw_speed
                 hw.move_z(approach_z)
+                hw.z_speed = 3
                 try:
                     hw.tip_pickup_force = 26
                 except Exception:
                     pass
-                hw.pick_tip(pickup_limit)
-                curr_z = float(getattr(hw, "z_position", pickup_limit) or pickup_limit)
-                if extra_press > 0 and curr_z > 48.0:
+
+                pick_ok = False
+                try:
+                    hw.pick_tip(pickup_limit)
+                    pick_ok = True
+                except Exception as pe:
+                    self.logger.warning(f"[M2_STEP_TEST] pick_tip hardware return/exception ({type(pe).__name__}): {pe}")
+                    pick_ok = False
+
+                curr_z = float(getattr(hw, "z_position", 0.0) or 0.0)
+                valid_collar = (valid_collar_min <= curr_z <= valid_collar_max)
+                is_seated = valid_collar or (
+                    pick_ok and curr_z >= valid_collar_min and curr_z <= max(valid_collar_max, pickup_limit - 0.1)
+                )
+                if not is_seated:
+                    hw.z_speed = hw_speed
+                    hw.move_z(0.0)
+                    raise RuntimeError(
+                        f"Tip pickup did not seat at collar (Z={curr_z:.2f}mm, expected {valid_collar_min:.1f}-{valid_collar_max:.1f}mm, pick_ok={pick_ok}). "
+                        "Verify tips in Slot 4 Col 1 or check 'Tips already mounted'."
+                    )
+
+                if extra_press > 0:
                     try:
-                        hw.move_z(min(pickup_limit, curr_z + extra_press))
-                    except Exception:
-                        pass
+                        press_target = min(pickup_limit, curr_z + extra_press)
+                        self.logger.info(f"[M2_STEP_TEST] Seating tips firmly at Z={press_target:.2f}mm...")
+                        hw.z_speed = 2
+                        hw.move_z(press_target)
+                        time.sleep(0.25)
+                        if press_target - curr_z >= 1.0:
+                            hw.move_z(max(curr_z, press_target - 1.0))
+                            time.sleep(0.1)
+                            hw.move_z(press_target)
+                            time.sleep(0.25)
+                    except Exception as se:
+                        self.logger.warning(f"[M2_STEP_TEST] Tip seating press notice: {se}")
+
+                hw.z_speed = hw_speed
                 hw.move_z(0.0)
                 if hasattr(self, "mark_tip_consumed"):
                     for sock in self._expand_8ch_tip_sockets({"action": "Pick Up Tip", "eight_ch_symmetric": True}, tip_well):
@@ -7858,7 +7899,7 @@ class LIMSMasterApp:
             self.logger.info(f"=== Direct Op M2_STEP_TEST {'ABORTED' if aborted else 'COMPLETE'} ({len(results)}/{len(steps_seq)} steps tested) ===")
             return results
         except Exception as e:
-            self.logger.critical(f"[M2_STEP_TEST] Error during piston step sweep: {e}")
+            self.logger.critical(f"[M2_STEP_TEST] Error during piston step sweep: {type(e).__name__}: {e}")
             try:
                 hw.move_z(0.0)
             except Exception:
