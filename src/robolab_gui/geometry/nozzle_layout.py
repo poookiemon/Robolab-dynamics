@@ -17,6 +17,20 @@ class NozzleLayout:
 
     ROW_LETTERS: List[str] = ["A", "B", "C", "D", "E", "F", "G", "H"]
 
+    @staticmethod
+    def m2_slot4_tip_base_xy(tip_count: int) -> Tuple[float, float]:
+        """Return Slot 4 Col 1 base (X, Y) for Machine 2 (1-10 uL) for 1..8 tips."""
+        n = max(1, min(8, int(tip_count)))
+        if n <= 5:
+            t = (n - 1) / 4.0
+            bx = 105.66
+            by = round(21.53 + t * (56.83 - 21.53) + 1e-9, 2)
+        else:
+            t = (n - 5) / 3.0
+            bx = round(105.66 + t * (105.47 - 105.66), 2)
+            by = round(56.83 + t * (84.99 - 56.83), 2)
+        return bx, by
+
     @classmethod
     def parse_channel_mask(cls, mounted_channels: Optional[str]) -> List[int]:
         if not mounted_channels:
@@ -73,15 +87,10 @@ class NozzleLayout:
         if multi:
             if is_10ul and slot_name == "Slot_4":
                 # Machine 2 (1-10 µL): Physically verified seated coordinates
-                # 8 tips: Y=84.99mm | 5 tips (Rows A-E): Y=56.83mm
+                # 1 tip: Y=21.53mm | 5 tips (Rows A-E): Y=56.83mm | 8 tips: Y=84.99mm
                 mask = cls.parse_channel_mask(mounted_channels)
                 num_tips = len(mask) if mask else 8
-                if num_tips == 5:
-                    base_y = 56.83
-                elif num_tips == 8:
-                    base_y = 84.99
-                else:
-                    base_y = round(84.99 - (8 - num_tips) * 9.06, 2)
+                _, base_y = cls.m2_slot4_tip_base_xy(num_tips)
             elif is_10ul and slot_name == "Slot_3":
                 mask = cls.parse_channel_mask(mounted_channels)
                 num_tips = len(mask) if mask else 8
@@ -109,7 +118,10 @@ class NozzleLayout:
 
             return base_y + (tip_offset_rows * cls.NOZZLE_PITCH_MM)
         else:
-            if is_10ul and slot_name in ("Slot_3", "Slot_4"):
+            if is_10ul and slot_name == "Slot_4":
+                _, base_y = cls.m2_slot4_tip_base_xy(1 + tip_offset_rows)
+                return base_y
+            elif is_10ul and slot_name == "Slot_3":
                 return round(84.14 + (tip_offset_rows * cls.NOZZLE_PITCH_MM), 2)
             elif is_10ul and slot_name in ("Slot_5", "Slot_6"):
                 return round(178.31 + (tip_offset_rows * cls.NOZZLE_PITCH_MM), 2)

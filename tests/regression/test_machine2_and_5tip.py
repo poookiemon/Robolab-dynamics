@@ -22,6 +22,17 @@ def test_machine_2_calibrated_heights_isolation(tmp_path):
 
 def test_machine_2_8ch_and_5tip_kinematics():
     """Verify Machine 2 (1-10 µL) 8-tip and 5-tip pickup aligns at verified seated coordinates."""
+    # 1-tip pickup: Carriage Y=21.53mm (Col 1 at X=105.66mm, Row A1)
+    cy_1tip = NozzleLayout.get_carriage_y_for_manifold(
+        target_a1_y=21.53,
+        mounted_channels="A",
+        eight_ch_symmetric=False,
+        is_8ch_head=True,
+        slot_name="Slot_4",
+        is_10ul=True,
+    )
+    assert cy_1tip == 21.53
+
     # 8-tip pickup: Carriage Y=84.99mm (Col 1 at X=105.47mm)
     cy_8ch = NozzleLayout.get_carriage_y_for_manifold(
         target_a1_y=52.64,

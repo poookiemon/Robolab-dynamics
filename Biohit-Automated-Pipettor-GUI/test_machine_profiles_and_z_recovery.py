@@ -160,20 +160,52 @@ def run_all_tests():
         assert abs(col_coords[0] - expected_x) < 1e-2, f"Col {col_idx} expected X={expected_x}, got {col_coords[0]}"
         assert abs(col_coords[1] - 56.83) < 1e-2, f"Col {col_idx} expected Y=56.83, got {col_coords[1]}"
 
-    # Verify single-tip pickup remains strictly at calibrated well A1 center (105.63, 52.64)
-    step_1tip = {
+    # Verify single-tip and 1..8-tip calibration across all 12 columns
+    expected_1_to_8 = {
+        1: (105.66, 21.53),
+        2: (105.66, 30.36),
+        3: (105.66, 39.18),
+        4: (105.66, 48.01),
+        5: (105.66, 56.83),
+        6: (105.60, 66.22),
+        7: (105.53, 75.60),
+        8: (105.47, 84.99),
+    }
+    row_ranges = {1: "A", 2: "A-B", 3: "A-C", 4: "A-D", 5: "A-E", 6: "A-F", 7: "A-G", 8: "A-H"}
+    for n_tips, (exp_x, exp_y) in expected_1_to_8.items():
+        for fmt in (row_ranges[n_tips], str(n_tips)):
+            step_n = {
+                "action": "Pick Up Tip",
+                "mode": "auto",
+                "slot": "Slot_4",
+                "well": "A1",
+                "volume": 0.0,
+                "labware": "tip_rack_1000ul.json",
+                "eight_ch_symmetric": (n_tips > 1),
+                "mounted_channels": fmt,
+            }
+            for col_idx in range(1, 13):
+                col_coords = app._resolve_step_xy(step_n, "Slot_4", f"A{col_idx}")
+                col_exp_x = round(exp_x - ((col_idx - 1) * 9.0), 2)
+                assert abs(col_coords[0] - col_exp_x) < 1e-2 and abs(col_coords[1] - exp_y) < 1e-2, (
+                    f"{n_tips}-tip ({fmt}) Col {col_idx} expected ({col_exp_x}, {exp_y}), got {col_coords}"
+                )
+
+    step_1tip_default = {
         "action": "Pick Up Tip",
         "mode": "auto",
         "slot": "Slot_4",
         "well": "A1",
         "volume": 0.0,
         "labware": "tip_rack_1000ul.json",
-        "eight_ch_symmetric": False,
-        "mounted_channels": "A",
     }
-    coords_1tip = app._resolve_step_xy(step_1tip, "Slot_4", "A1")
-    assert abs(coords_1tip[0] - 105.63) < 1e-2 and abs(coords_1tip[1] - 52.64) < 1e-2, (
-        f"Expected single tip A1 at (105.63, 52.64), got {coords_1tip}"
+    coords_1tip = app._resolve_step_xy(step_1tip_default, "Slot_4", "A1")
+    assert abs(coords_1tip[0] - 105.66) < 1e-2 and abs(coords_1tip[1] - 21.53) < 1e-2, (
+        f"Expected single tip A1 at (105.66, 21.53), got {coords_1tip}"
+    )
+    coords_1tip_c2 = app._resolve_step_xy(step_1tip_default, "Slot_4", "A2")
+    assert abs(coords_1tip_c2[0] - 96.66) < 1e-2 and abs(coords_1tip_c2[1] - 21.53) < 1e-2, (
+        f"Expected single tip A2 at (96.66, 21.53), got {coords_1tip_c2}"
     )
 
     # Verify virtual tip remapping to Column 2 maintains correct Y for each mode
@@ -201,7 +233,7 @@ def run_all_tests():
 
     print("PASS: Machine 2 (1-10 µL ONLY) 8-tip pickup verified at X=105.47mm, Y=84.99mm.")
     print("PASS: Machine 2 (1-10 µL ONLY) 5-tip pickup verified at X=105.66mm, Y=56.83mm.")
-    print("PASS: Machine 2 single-tip pickup strictly preserved at X=105.63mm, Y=52.64mm.")
+    print("PASS: Machine 2 (1-10 µL ONLY) 1-tip..8-tip pickups verified across all 12 columns (1-tip A1 at X=105.66mm, Y=21.53mm).")
     print("PASS: Column remapping verified (Col 2: 5-tip=(96.66, 56.83), 8-tip=(96.47, 84.99)).")
     print("PASS: All 12 columns progress cleanly at 9.0mm pitch without mid-wall collisions.")
 
@@ -561,15 +593,19 @@ def run_all_tests():
     # TEST 10: Slot_4 A1 (105.63, 52.64) Well Center, Slot_1 Reservoir Preservation & Slot_6 Square Persistence
     # -------------------------------------------------------------------------
     print("\n--- 10. Testing Slot_4 A1 (105.63, 52.64), Slot_1 Reservoir Preservation & Slot_6 Square Persistence ---")
-    for prof_id in ("machine_2_1_10ul", "machine_3_300ul"):
+    expected_a1_by_profile = {
+        "machine_2_1_10ul": (105.66, 21.53),
+        "machine_3_300ul": (105.63, 52.64),
+    }
+    for prof_id, (exp_x, exp_y) in expected_a1_by_profile.items():
         app.switch_machine_profile(prof_id)
         calc_xy = app._calculate_xy("Slot_4", "A1")
-        assert abs(calc_xy[0] - 105.63) < 1e-4 and abs(calc_xy[1] - 52.64) < 1e-4, (
-            f"[{prof_id}] Expected _calculate_xy('Slot_4', 'A1') == (105.63, 52.64), got {calc_xy}"
+        assert abs(calc_xy[0] - exp_x) < 1e-4 and abs(calc_xy[1] - exp_y) < 1e-4, (
+            f"[{prof_id}] Expected _calculate_xy('Slot_4', 'A1') == ({exp_x}, {exp_y}), got {calc_xy}"
         )
         res_xy = app._resolve_step_xy({"action": "Pick Up Tip"}, "Slot_4", "A1")
-        assert abs(res_xy[0] - 105.63) < 1e-4 and abs(res_xy[1] - 52.64) < 1e-4, (
-            f"[{prof_id}] Expected _resolve_step_xy(single-channel, 'Slot_4', 'A1') == (105.63, 52.64), got {res_xy}"
+        assert abs(res_xy[0] - exp_x) < 1e-4 and abs(res_xy[1] - exp_y) < 1e-4, (
+            f"[{prof_id}] Expected _resolve_step_xy(single-channel, 'Slot_4', 'A1') == ({exp_x}, {exp_y}), got {res_xy}"
         )
         if prof_id == "machine_2_1_10ul":
             res_5tip = app._resolve_step_xy({"action": "Pick Up Tip", "mounted_channels": "A-E"}, "Slot_4", "A1")
@@ -580,7 +616,7 @@ def run_all_tests():
             assert abs(res_8tip[0] - 105.47) < 1e-4 and abs(res_8tip[1] - 84.99) < 1e-4, (
                 f"[{prof_id}] Expected 8-tip manifold pickup (105.47, 84.99), got {res_8tip}"
             )
-    print("PASS: Both _calculate_xy('Slot_4', 'A1') resolves to (105.63, 52.64) and single-tip pickup resolves to A1 center.")
+    print("PASS: Both Machine 2 Slot_4 A1 (105.66, 21.53) and Machine 3 Slot_4 A1 (105.63, 52.64) resolve cleanly.")
 
     # Verify loading 1_Serial_Dilution_Plate.json on Machine 3 preserves Slot_1 = reservoir_3_well.json and all 6 slots in placed_slots
     app.switch_machine_profile("machine_3_300ul")

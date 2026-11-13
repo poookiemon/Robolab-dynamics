@@ -6428,6 +6428,44 @@ class LIMSMasterApp:
             return None, None
         return r_idx, c_idx
 
+    @staticmethod
+    def _m2_slot4_tip_base_xy(tip_count: int) -> tuple[float, float]:
+        """Return Slot 4 Col 1 base (X, Y) for Machine 2 (1-10 uL) for 1..8 tips."""
+        n = max(1, min(8, int(tip_count)))
+        if n <= 5:
+            t = (n - 1) / 4.0
+            bx = 105.66
+            by = round(21.53 + t * (56.83 - 21.53) + 1e-9, 2)
+        else:
+            t = (n - 5) / 3.0
+            bx = round(105.66 + t * (105.47 - 105.66), 2)
+            by = round(56.83 + t * (84.99 - 56.83), 2)
+        return bx, by
+
+    @staticmethod
+    def _parse_mounted_tip_count(raw_mounted: str) -> int | None:
+        """Parse mounted_channels string (e.g. 'A', 'A-E', '5', '1-5', '5CH') into 1..8."""
+        s = str(raw_mounted or "").strip().upper()
+        if not s:
+            return None
+        if len(s) == 1 and s in "ABCDEFGH":
+            return 1
+        if "-" in s:
+            parts = [p.strip() for p in s.split("-", 1)]
+            if len(parts) == 2:
+                if len(parts[0]) == 1 and len(parts[1]) == 1 and parts[0] in "ABCDEFGH" and parts[1] in "ABCDEFGH":
+                    return max(1, min(8, ord(parts[1]) - ord(parts[0]) + 1))
+                if parts[0].isdigit() and parts[1].isdigit():
+                    return max(1, min(8, int(parts[1]) - int(parts[0]) + 1))
+        if "," in s:
+            items = [p.strip() for p in s.split(",") if p.strip()]
+            if items:
+                return max(1, min(8, len(items)))
+        digits = "".join(ch for ch in s if ch.isdigit())
+        if digits and (s == digits or s.startswith("CH") or "CH" in s or "TIP" in s):
+            return max(1, min(8, int(digits)))
+        return None
+
     def _calculate_xy(self, slot_name, well_id):
         is_300ul = (
             ("300" in getattr(self, "active_profile_id", ""))
@@ -6470,10 +6508,13 @@ class LIMSMasterApp:
             r_idx, c_idx = self._parse_well(well_id)
             ci = c_idx if (c_idx is not None and 0 <= c_idx < 12) else 0
             ri = r_idx if (r_idx is not None and 0 <= r_idx < 8) else 0
-            base_x = 105.63 if slot_name == "Slot_4" else 243.81
+            if slot_name == "Slot_4":
+                base_x, base_y = self._m2_slot4_tip_base_xy(1 + ri)
+                learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
+                return round(base_x - (ci * 9.0) + learned_dx, 2), round(base_y + learned_dy, 2)
+            base_x = 243.81
             base_y = 52.64
-            learned_dx, learned_dy = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0)) if slot_name == "Slot_4" else (0.0, 0.0)
-            return round(base_x - (ci * 9.0) + learned_dx, 2), round(base_y + (ri * 9.0) + learned_dy, 2)
+            return round(base_x - (ci * 9.0), 2), round(base_y + (ri * 9.0), 2)
 
         if slot_name in ("Slot_5", "Slot_6") and is_10ul and (getattr(self, "_lw_kind", lambda x: "")(self.lims.deck_labware.get(slot_name)) == "plate96" or "triplicate" in str(getattr(self, "current_protocol_file", "")).lower() or "triplicate" in str(getattr(self, "loaded_protocol_name", "")).lower()):
             r_idx, c_idx = self._parse_well(well_id)
@@ -6629,9 +6670,13 @@ class LIMSMasterApp:
         - Applies `tip_offset_rows * 9.0` mm Y shift for offset partial tip-picking / tip-shoveling.
         - Applies `self.eight_ch_cal_offset['X']` and `self.eight_ch_cal_offset['Y']` fine calibration trims.
         """
-        # multi-channel action (mounted_channels with range or eight_ch_symmetric)
+        # multi-channel action (mounted_channels with range/count or eight_ch_symmetric)
         m_channels = str((step or {}).get("mounted_channels", "")).strip().upper()
-        is_multi_channel_action = bool(m_channels and len(m_channels) > 1 and m_channels not in ("1", "CH1", "A"))
+        parsed_m_count = self._parse_mounted_tip_count(m_channels)
+        is_multi_channel_action = bool(
+            (parsed_m_count is not None and parsed_m_count > 1)
+            or (m_channels and len(m_channels) > 1 and m_channels not in ("1", "CH1", "A") and parsed_m_count != 1)
+        )
         is_8ch_step = bool(step and step.get('eight_ch_symmetric')) or is_multi_channel_action
 
         lw_obj = self.lims.deck_labware.get(slot_name)
@@ -6662,28 +6707,17 @@ class LIMSMasterApp:
             col_i = max(0, min(11, int(col_digits) - 1))
 
             raw_m_ch = str((step or {}).get("mounted_channels", "")).strip().upper()
-            num_tips = 8
-            if raw_m_ch:
-                if "-" in raw_m_ch:
-                    parts = raw_m_ch.split("-")
-                    if len(parts) == 2 and parts[0] in "ABCDEFGH" and parts[1] in "ABCDEFGH":
-                        num_tips = max(1, min(8, ord(parts[1]) - ord(parts[0]) + 1))
-                elif len(raw_m_ch) == 1 and raw_m_ch in "ABCDEFGH":
-                    num_tips = 1
+            parsed_tips = self._parse_mounted_tip_count(raw_m_ch)
+            if parsed_tips is not None:
+                num_tips = parsed_tips
             elif not step.get('eight_ch_symmetric'):
                 num_tips = 5
+            else:
+                num_tips = 8
 
             if slot_name == "Slot_4":
                 learned_dx, _ = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
-                if num_tips == 5:
-                    base_x = 105.66
-                    ty = 56.83
-                elif num_tips == 8:
-                    base_x = 105.47
-                    ty = 84.99
-                else:
-                    base_x = 105.47
-                    ty = round(84.99 - (8 - num_tips) * 9.06, 2)
+                base_x, ty = self._m2_slot4_tip_base_xy(num_tips)
                 tx = round(base_x - (col_i * 9.0) + learned_dx, 2)
             elif slot_name == "Slot_6":
                 tx = round(105.60 - (col_i * 9.0), 2)
