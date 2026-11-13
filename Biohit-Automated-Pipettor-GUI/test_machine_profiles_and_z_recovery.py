@@ -1122,8 +1122,233 @@ def run_all_tests():
     app.wf_box.delete(0, "end")
     print("PASS: Step editor clears stale labels and updates wf_box on edit.")
 
+    # -------------------------------------------------------------------------
+    # TEST 16: Machine 2 Explicit Piston Calibration, Safety Stop & Guards
+    # -------------------------------------------------------------------------
+    print("\n--- 16. Testing Machine 2 Piston Calibration, Safety Stop, Air Cushion Guard & Isolation ---")
+    import time as _time
+    import json as _json
+
+    orig_hw_ready = app.lims.hw.is_initialized
+    orig_hw_move_to = app.lims.hw.move_to
+    orig_pip_hw = app.lims.pipettor.hardware
+    orig_sleep = _time.sleep
+    orig_headless = getattr(app, "headless_test_mode", False)
+    orig_enable_mix = getattr(app, "enable_mixing_for_run", True)
+    orig_z_home_every_step = app.mid_protocol_z_home_var.get() if hasattr(app, "mid_protocol_z_home_var") else True
+
+    class _MockPistonHardware:
+        def __init__(self, is_multichannel=True, simulated_collar_z=63.96):
+            self.is_multichannel = is_multichannel
+            self.simulated_collar_z = float(simulated_collar_z)
+            self.z_position = 0.0
+            self.x_speed = 5
+            self.y_speed = 5
+            self.z_speed = 5
+            self.tip_pickup_force = 20
+            self.moves = []
+            self.piston_calls = []  # ("aspirate"/"dispense", wrapper_ul, dll_steps)
+
+        def move_xy(self, x, y, wait=True):
+            self.moves.append(("move_xy", round(float(x), 2), round(float(y), 2)))
+
+        def move_z(self, z, wait=True):
+            self.z_position = float(z)
+            self.moves.append(("move_z", round(float(z), 2)))
+
+        def pick_tip(self, limit):
+            self.z_position = min(float(limit), self.simulated_collar_z)
+            self.moves.append(("pick_tip", round(float(limit), 2)))
+
+        def eject_tip(self):
+            self.moves.append(("eject_tip",))
+
+        def initialize(self):
+            self.z_position = 0.0
+            self.moves.append(("initialize",))
+
+        def aspirate(self, vol, wait=True):
+            ul_to_steps = 0.2 if self.is_multichannel else 2.0
+            self.piston_calls.append(("aspirate", round(float(vol), 4), int(round(float(vol) * ul_to_steps))))
+
+        def dispense(self, vol, wait=True):
+            ul_to_steps = 0.2 if self.is_multichannel else 2.0
+            self.piston_calls.append(("dispense", round(float(vol), 4), int(round(float(vol) * ul_to_steps))))
+
+    try:
+        app.headless_test_mode = True
+        app.enable_mixing_for_run = True
+        app.lims.hw.is_initialized = True
+        if hasattr(app, "mid_protocol_z_home_var"):
+            app.mid_protocol_z_home_var.set(False)
+        _time.sleep = lambda *_a, **_k: None
+
+        # 16a. Default Machine 2 profile keeps piston_steps_per_ul explicitly unset (None)
+        app.switch_machine_profile("machine_2_1_10ul", save_to_disk=False)
+        assert app.calibrated_heights.get("piston_steps_per_ul") is None, (
+            f"Machine 2 default piston_steps_per_ul must remain unset (None), got {app.calibrated_heights.get('piston_steps_per_ul')}"
+        )
+        assert app._get_machine_2_piston_steps_per_ul() is None
+        for bad_cal in (None, 0, -5.0, "", "invalid", False, float("nan")):
+            app.calibrated_heights["piston_steps_per_ul"] = bad_cal
+            assert app._get_machine_2_piston_steps_per_ul() is None, f"Invalid cal {bad_cal!r} should resolve to None"
+        app.calibrated_heights["piston_steps_per_ul"] = None
+
+        # 16b. Missing calibration stops BOTH execute_protocol() and run_sequence() BEFORE any robot motion
+        mock_hw = _MockPistonHardware(is_multichannel=True)
+        xy_moves = []
+        app.lims.pipettor.hardware = mock_hw
+        app.lims.hw.move_to = lambda x, y, z, speed=None: (xy_moves.append((round(x, 2), round(y, 2), round(z, 2))), True)[1]
+
+        p_m2_75 = app.resolve_protocol_path("Machine_2_EHM_8tip_Both_Plates_7.5uL_REVIEW.json")
+        with open(p_m2_75, "r", encoding="utf-8") as f:
+            m2_75_seq = _json.load(f)
+        app.workflow_sequence = [dict(s) for s in m2_75_seq[:4]]
+
+        app.execute_protocol()
+        assert app.is_running is False, "execute_protocol() must not start when Machine 2 calibration is missing"
+        assert xy_moves == [] and mock_hw.moves == [] and mock_hw.piston_calls == [], (
+            f"Missing calibration must prevent ALL robot motion, got xy={xy_moves}, moves={mock_hw.moves}, piston={mock_hw.piston_calls}"
+        )
+
+        app.run_sequence()
+        assert app.is_running is False
+        assert xy_moves == [] and mock_hw.moves == [] and mock_hw.piston_calls == [], (
+            f"run_sequence() must prevent ALL robot motion when missing cal, got xy={xy_moves}, moves={mock_hw.moves}, piston={mock_hw.piston_calls}"
+        )
+
+        # 16c. With verified test calibration (20.0 steps/uL), test 7.5 uL end-to-end (Slot 4 pickup -> Slot 3 draw -> Slot 5 dispense+mix -> Slot 2 discard)
+        app.reset_tip_rack_memory("Slot_4", announce=False)
+        app.calibrated_heights["piston_steps_per_ul"] = 20.0
+        mock_hw.moves.clear()
+        mock_hw.piston_calls.clear()
+        xy_moves.clear()
+        app._worker_has_tip = False
+        app.has_tip_var.set(False)
+        app.run_sequence()
+
+        # Preserve pickup (Slot 4 Col 1 = 105.47, 84.99), Slot 3 draw (Col 1 = 243.81, 84.14), and Slot 2 discard (95.5, 13.0)
+        assert any(m[:2] == (105.47, 84.99) for m in xy_moves), f"Slot 4 8-tip pickup XY must be preserved: {xy_moves}"
+        assert any(m[:2] == (243.81, 84.14) for m in xy_moves), f"Slot 3 8-tip draw XY must be preserved: {xy_moves}"
+        assert any(m[:2] == (95.5, 13.0) for m in xy_moves), f"Slot 2 discard XY must be preserved: {xy_moves}"
+        assert ("move_z", 78.4) in mock_hw.moves, f"Slot 3 Z=78.40 must be preserved: {mock_hw.moves}"
+        assert ("move_z", 0.0) in mock_hw.moves and ("eject_tip",) in mock_hw.moves
+
+        expected_75_piston = [
+            ("aspirate", 150.0, 30),   # 1.5 uL air cushion -> 30 steps
+            ("aspirate", 750.0, 150),  # 7.5 uL draw -> 150 steps
+            ("dispense", 750.0, 150),  # 7.5 uL dispense -> 150 steps
+            ("aspirate", 800.0, 160),  # Mix 1/5: 8.0 uL -> 160 steps
+            ("dispense", 800.0, 160),
+            ("aspirate", 800.0, 160),  # Mix 2/5
+            ("dispense", 800.0, 160),
+            ("aspirate", 800.0, 160),  # Mix 3/5
+            ("dispense", 800.0, 160),
+            ("aspirate", 800.0, 160),  # Mix 4/5
+            ("dispense", 800.0, 160),
+            ("aspirate", 800.0, 160),  # Mix 5/5
+            ("dispense", 800.0, 160),
+            ("dispense", 150.0, 30),   # 1.5 uL air cushion blowout -> 30 steps
+        ]
+        assert mock_hw.piston_calls == expected_75_piston, (
+            f"Machine 2 7.5uL+Mix piston translation mismatch:\nExpected: {expected_75_piston}\nGot:      {mock_hw.piston_calls}"
+        )
+
+        # 16d. With test calibration (20.0 steps/uL), test 10.0 uL (air cushion skipped, 200 steps draw/dispense)
+        app.reset_tip_rack_memory("Slot_4", announce=False)
+        app.workflow_sequence = [
+            {"action": "Pick Up Tip", "mode": "auto", "slot": "Slot_4", "well": "A1", "volume": 0.0, "eight_ch_symmetric": True, "mounted_channels": "A-H"},
+            {"action": "Aspirate Media", "mode": "auto", "slot": "Slot_3", "well": "A1", "volume": 10.0, "eight_ch_symmetric": True, "mounted_channels": "A-H", "track_liquid": False},
+            {"action": "Dispense Media", "mode": "auto", "slot": "Slot_5", "well": "A1", "volume": 10.0, "eight_ch_symmetric": True, "mounted_channels": "A-H", "mix_cycles": 0, "track_liquid": False},
+            {"action": "Discard Tip", "mode": "auto", "slot": "Slot_2", "well": "A1", "volume": 0.0, "eight_ch_symmetric": True, "mounted_channels": "A-H", "discard_z_override": 0.0},
+        ]
+        mock_hw.moves.clear()
+        mock_hw.piston_calls.clear()
+        xy_moves.clear()
+        app._worker_has_tip = False
+        app.has_tip_var.set(False)
+        app.run_sequence()
+        assert mock_hw.piston_calls == [
+            ("aspirate", 1000.0, 200),  # 10.0 uL -> 200 steps (no phantom air cushion)
+            ("dispense", 1000.0, 200),  # 10.0 uL dispense -> 200 steps
+        ], f"Machine 2 10.0uL piston mismatch: {mock_hw.piston_calls}"
+        assert app.air_cushion_ul == 0.0 and app.has_air_cushion is False
+
+        # 16e. Guard: air cushion is ONLY counted if it actually commands a nonzero piston move
+        # Simulate coarse calibration (0.2 steps/uL): 1.5 * 0.2 = 0.3 -> rounds to 0 steps (must NOT draw or count air cushion!)
+        app.calibrated_heights["piston_steps_per_ul"] = 0.2
+        app.reset_tip_rack_memory("Slot_4", announce=False)
+        app.workflow_sequence = [
+            {"action": "Pick Up Tip", "mode": "auto", "slot": "Slot_4", "well": "A1", "volume": 0.0, "eight_ch_symmetric": True, "mounted_channels": "A-H"},
+            {"action": "Aspirate Media", "mode": "auto", "slot": "Slot_3", "well": "A1", "volume": 7.5, "eight_ch_symmetric": True, "mounted_channels": "A-H", "track_liquid": False},
+        ]
+        mock_hw.moves.clear()
+        mock_hw.piston_calls.clear()
+        app._worker_has_tip = False
+        app.has_tip_var.set(False)
+        app.run_sequence()
+        assert app.air_cushion_ul == 0.0 and app.has_air_cushion is False, (
+            f"Zero-step air cushion must NOT be counted as drawn: air={app.air_cushion_ul}, has={app.has_air_cushion}"
+        )
+        assert mock_hw.piston_calls == [("aspirate", 10.0, 2)], (
+            f"0-step air cushion should not issue hardware call; got {mock_hw.piston_calls}"
+        )
+
+        # 16f. Machines 1 and 3 remain completely unaffected and keep existing conversion
+        app.switch_machine_profile("machine_1_8x1000", save_to_disk=False)
+        app.reset_tip_rack_memory("Slot_4", announce=False)
+        assert not app._is_machine_2_10ul_active()
+        assert app._validate_machine_2_piston_calibration(show_dialog=False) is True
+        assert app._translate_piston_volume_for_hardware(200.0) == (200.0, 1)
+        m1_hw = _MockPistonHardware(is_multichannel=True, simulated_collar_z=86.36)
+        app.lims.pipettor.hardware = m1_hw
+        app.reset_tip_rack_memory("Slot_4", announce=False)
+        app.workflow_sequence = [
+            {"action": "Pick Up Tip", "mode": "auto", "slot": "Slot_4", "well": "A1", "volume": 0.0, "labware": "tip_rack_1000ul.json", "eight_ch_symmetric": True, "mounted_channels": "A-H"},
+            {"action": "Aspirate Media", "mode": "auto", "slot": "Slot_1", "well": "A1", "volume": 200.0, "labware": "reservoir_3_well.json", "eight_ch_symmetric": True, "mounted_channels": "A-H", "track_liquid": False},
+        ]
+        app._worker_has_tip = False
+        app.has_tip_var.set(False)
+        app.run_sequence()
+        assert [(c[0], c[1]) for c in m1_hw.piston_calls] == [("aspirate", 30.0), ("aspirate", 200.0)], (
+            f"Machine 1 must preserve 30.0uL air cushion and direct 200.0uL volume, got {m1_hw.piston_calls}"
+        )
+
+        app.switch_machine_profile("machine_3_300ul", save_to_disk=False)
+        app.reset_tip_rack_memory("Slot_4", announce=False)
+        assert not app._is_machine_2_10ul_active()
+        assert app._validate_machine_2_piston_calibration(show_dialog=False) is True
+        assert app._translate_piston_volume_for_hardware(230.0) == (230.0, 1)
+        m3_hw = _MockPistonHardware(is_multichannel=False, simulated_collar_z=86.36)
+        app.lims.pipettor.hardware = m3_hw
+        app.workflow_sequence = [
+            {"action": "Pick Up Tip", "mode": "auto", "slot": "Slot_4", "well": "A1", "volume": 0.0, "labware": "tip_rack_1000ul.json"},
+            {"action": "Aspirate Media", "mode": "auto", "slot": "Slot_1", "well": "A1", "volume": 230.0, "labware": "reservoir_3_well.json", "track_liquid": False},
+        ]
+        app._worker_has_tip = False
+        app.has_tip_var.set(False)
+        app.run_sequence()
+        assert [(c[0], c[1]) for c in m3_hw.piston_calls] == [("aspirate", 230.0)], (
+            f"Machine 3 must preserve direct 230.0uL volume, got {m3_hw.piston_calls}"
+        )
+    finally:
+        _time.sleep = orig_sleep
+        app.lims.hw.is_initialized = orig_hw_ready
+        app.lims.hw.move_to = orig_hw_move_to
+        app.lims.pipettor.hardware = orig_pip_hw
+        app.headless_test_mode = orig_headless
+        app.enable_mixing_for_run = orig_enable_mix
+        if hasattr(app, "mid_protocol_z_home_var"):
+            app.mid_protocol_z_home_var.set(orig_z_home_every_step)
+        app.workflow_sequence.clear()
+        app.wf_box.delete(0, "end")
+        app.switch_machine_profile("machine_2_1_10ul", save_to_disk=False)
+        app.calibrated_heights["piston_steps_per_ul"] = None
+
+    print("PASS: Machine 2 explicit piston calibration, missing-calibration gate, 0-step air cushion guard, and M1/M3 isolation verified.")
+
     print("\n======================================================================")
-    print("ALL 15 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
+    print("ALL 16 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
     print("======================================================================")
 
 if __name__ == "__main__":
