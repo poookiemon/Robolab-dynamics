@@ -8124,8 +8124,6 @@ class LIMSMasterApp:
         top.wait_window()
         return user_confirmed["status"]
 
-    MACHINE_2_WRAPPER_MC_STEPS_PER_UL = 0.2
-
     def _is_machine_2_10ul_active(self) -> bool:
         """Return True ONLY when Machine 2 (1-10 uL multichannel) is active."""
         pid = str(getattr(self, "active_profile_id", "") or "").lower()
@@ -8139,111 +8137,6 @@ class LIMSMasterApp:
             return True
         pip = getattr(getattr(self, "lims", None), "pipettor", None)
         return bool(pip and getattr(pip, "multichannel", False) and float(getattr(pip, "tip_volume", 1000.0)) <= 10.0)
-
-    def _get_machine_2_piston_calibration_path(self) -> str:
-        """Return the heights.json calibration file path for Machine 2 (1-10 uL)."""
-        if getattr(self, "profile_manager", None) and hasattr(self.profile_manager, "get_profile_path"):
-            return self.profile_manager.get_profile_path("machine_2_1_10ul")
-        return os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "config", "machine_profiles", "machine_2_1_10ul", "heights.json"
-        )
-
-    @staticmethod
-    def _parse_positive_piston_steps_per_ul(raw: Any) -> Optional[float]:
-        """Parse and validate a positive finite piston steps/uL value, returning None if unset or invalid."""
-        if raw is None or isinstance(raw, bool):
-            return None
-        if isinstance(raw, str) and not raw.strip():
-            return None
-        try:
-            val = float(raw)
-        except (TypeError, ValueError):
-            return None
-        if not math.isfinite(val) or val <= 0.0:
-            return None
-        return val
-
-    def _get_machine_2_piston_steps_per_ul(self) -> Optional[float]:
-        """Return verified Machine 2 piston steps/uL from calibrated_heights or profile JSON, else None."""
-        if not self._is_machine_2_10ul_active():
-            return None
-        cal = getattr(self, "calibrated_heights", None) or {}
-        val = self._parse_positive_piston_steps_per_ul(cal.get("piston_steps_per_ul"))
-        if val is not None:
-            return val
-        if getattr(self, "profile_manager", None) and hasattr(self.profile_manager, "load_profile"):
-            try:
-                disk_cal = self.profile_manager.load_profile("machine_2_1_10ul") or {}
-                disk_val = self._parse_positive_piston_steps_per_ul(disk_cal.get("piston_steps_per_ul"))
-                if disk_val is not None:
-                    if isinstance(getattr(self, "calibrated_heights", None), dict):
-                        self.calibrated_heights["piston_steps_per_ul"] = disk_val
-                    return disk_val
-            except Exception:
-                pass
-        return None
-
-    def _validate_machine_2_piston_calibration(self, show_dialog: bool = True) -> bool:
-        """Stop execution before any robot motion if Machine 2 has no verified piston calibration."""
-        if not self._is_machine_2_10ul_active():
-            return True
-        if self._get_machine_2_piston_steps_per_ul() is not None:
-            return True
-        cal_path = self._get_machine_2_piston_calibration_path()
-        msg = (
-            "Machine 2 (1-10 µL) piston calibration ('piston_steps_per_ul') is missing or unset.\n\n"
-            "Run stopped before moving the robot because the generic multichannel wrapper "
-            "(0.2 steps/µL) rounds small volumes down to ~0–2 piston steps.\n\n"
-            f"Enter the verified steps/µL value for Machine 2 as \"piston_steps_per_ul\" in:\n{cal_path}"
-        )
-        self.logger.error(f"CALIBRATION REQUIRED: {msg.replace(chr(10), ' ')}")
-        if show_dialog and not getattr(self, "headless_test_mode", False):
-            try:
-                messagebox.showerror("Machine 2 Piston Calibration Missing", msg)
-            except Exception:
-                pass
-        return False
-
-    def _translate_piston_volume_for_hardware(self, volume_ul: float) -> Tuple[float, int]:
-        """Translate a requested µL volume into `(wrapper_ul_arg, piston_steps)` for hardware calls.
-
-        Machines 1 and 3 keep the direct wrapper volume unchanged. Machine 2 uses its calibrated
-        `piston_steps_per_ul` rounded to whole motor steps and compensates for the wrapper's
-        hardcoded 0.2 steps/µL multichannel factor; moves rounding to 0 steps return `(0.0, 0)`.
-        """
-        vol = float(volume_ul)
-        if not self._is_machine_2_10ul_active():
-            return vol, (1 if vol > 0.0 else 0)
-
-        steps_per_ul = self._get_machine_2_piston_steps_per_ul()
-        if steps_per_ul is None:
-            raise RuntimeError(
-                "Machine 2 (1-10 µL) piston calibration ('piston_steps_per_ul') is missing or unset."
-            )
-
-        commanded_steps = int(round(vol * steps_per_ul))
-        if commanded_steps <= 0:
-            return 0.0, 0
-
-        wrapper_ul = float(commanded_steps) / float(self.MACHINE_2_WRAPPER_MC_STEPS_PER_UL)
-        return wrapper_ul, commanded_steps
-
-    def _hardware_piston_aspirate(self, volume_ul: float) -> Tuple[float, int]:
-        """Execute hardware aspirate using Machine 2's calibrated piston conversion when active."""
-        cmd_vol, cmd_steps = self._translate_piston_volume_for_hardware(volume_ul)
-        if cmd_steps <= 0:
-            return 0.0, 0
-        self.lims.pipettor.hardware.aspirate(cmd_vol)
-        return cmd_vol, cmd_steps
-
-    def _hardware_piston_dispense(self, volume_ul: float) -> Tuple[float, int]:
-        """Execute hardware dispense using Machine 2's calibrated piston conversion when active."""
-        cmd_vol, cmd_steps = self._translate_piston_volume_for_hardware(volume_ul)
-        if cmd_steps <= 0:
-            return 0.0, 0
-        self.lims.pipettor.hardware.dispense(cmd_vol)
-        return cmd_vol, cmd_steps
 
     def execute_protocol(self):
         if getattr(self, 'is_running', False):
@@ -8269,9 +8162,6 @@ class LIMSMasterApp:
             or ("300" in str(getattr(self, "proto_pipettor_var", tk.StringVar()).get()).lower())
             or any("300" in str(s.get("label", "")).lower() or "300" in str(s.get("labware", "")).lower() for s in self.workflow_sequence)
         )
-        if not is_300_run and self._is_machine_2_10ul_active():
-            if not self._validate_machine_2_piston_calibration(show_dialog=True):
-                return
 
         # Pre-Run Safety Check: Verify Tip Usage & Clearance Slots
         tips_info, empty_slots, active_slots = self._analyze_protocol_tips_and_slots(self.workflow_sequence)
@@ -8311,8 +8201,6 @@ class LIMSMasterApp:
                     self.switch_pipettor_head("20 µL Single-Channel", quiet=True)
                 else:
                     self.switch_pipettor_head("300 µL Single-Channel", quiet=True)
-            if not self._validate_machine_2_piston_calibration(show_dialog=True):
-                return
         has_mix_steps = any(int(s.get('mix_cycles', 0)) > 0 or s.get('action') == "Mix Well" for s in self.workflow_sequence)
         if has_mix_steps and not getattr(self, "headless_test_mode", False):
             self.enable_mixing_for_run = messagebox.askyesno(
@@ -8347,15 +8235,6 @@ class LIMSMasterApp:
         threading.Thread(target=self.run_sequence, daemon=True).start()
 
     def run_sequence(self):
-        if not self._validate_machine_2_piston_calibration(show_dialog=False):
-            self.is_running = False
-            self.timer_running = False
-            try:
-                self.root.after(0, lambda: self.update_ui_state(False))
-            except Exception:
-                pass
-            return
-
         def _worker():
             self.is_running = True
             self.is_aborted = False
@@ -8861,26 +8740,14 @@ class LIMSMasterApp:
 
                                     if air_vol > 0.0:
                                         try:
-                                            _, air_steps = self._hardware_piston_aspirate(air_vol)
-                                            if air_steps > 0:
-                                                if self._is_machine_2_10ul_active():
-                                                    m2_cal = self._get_machine_2_piston_steps_per_ul()
-                                                    drawn_air_ul = (float(air_steps) / m2_cal) if m2_cal else air_vol
-                                                else:
-                                                    drawn_air_ul = air_vol
-                                                self.air_cushion_ul = drawn_air_ul
-                                                self.has_air_cushion = True
-                                                self.logger.info(
-                                                    f"Air Cushion: Pre-aspirated {drawn_air_ul:.2f}uL air cushion in open air (Z=0.0mm) "
-                                                    f"before entering media for {req_vol_f:.1f}uL ({slot_name} {well_id})."
-                                                )
-                                                time.sleep(0.25)
-                                            else:
-                                                self.air_cushion_ul = 0.0
-                                                self.has_air_cushion = False
-                                                self.logger.info(
-                                                    f"Air Cushion: Skipped {air_vol:.1f}uL air cushion (0 piston steps commanded)."
-                                                )
+                                            self.lims.pipettor.hardware.aspirate(air_vol)
+                                            self.air_cushion_ul = air_vol
+                                            self.has_air_cushion = True
+                                            self.logger.info(
+                                                f"Air Cushion: Pre-aspirated {air_vol:.2f}uL air cushion in open air (Z=0.0mm) "
+                                                f"before entering media for {req_vol_f:.1f}uL ({slot_name} {well_id})."
+                                            )
+                                            time.sleep(0.25)
                                         except Exception as air_err:
                                             self.air_cushion_ul = 0.0
                                             self.has_air_cushion = False
@@ -9153,16 +9020,15 @@ class LIMSMasterApp:
                                         )
 
                                     try:
-                                        _, asp_steps = self._hardware_piston_aspirate(actual_vol)
+                                        self.lims.pipettor.hardware.aspirate(actual_vol)
                                     except Exception as asp_err:
                                         fallback_vol = max(0.0, hw_plunger_max - getattr(self, 'air_cushion_ul', 0.0))
                                         if fallback_vol > 0 and fallback_vol < actual_vol:
                                             actual_vol = fallback_vol
-                                            _, asp_steps = self._hardware_piston_aspirate(actual_vol)
+                                            self.lims.pipettor.hardware.aspirate(actual_vol)
                                         else:
                                             raise asp_err
-                                    if asp_steps > 0:
-                                        self.tip_liquid_ul = getattr(self, 'tip_liquid_ul', 0.0) + actual_vol
+                                    self.tip_liquid_ul = getattr(self, 'tip_liquid_ul', 0.0) + actual_vol
                                     time.sleep(1.5)
                                 else:
                                     time.sleep(0.3)
@@ -9171,9 +9037,8 @@ class LIMSMasterApp:
                                 mix_cycles = effective_mix
                                 if actual_dispense > 0:
                                     try:
-                                        _, disp_steps = self._hardware_piston_dispense(actual_dispense)
-                                        if disp_steps > 0:
-                                            self.tip_liquid_ul = max(0.0, getattr(self, 'tip_liquid_ul', 0.0) - actual_dispense)
+                                        self.lims.pipettor.hardware.dispense(actual_dispense)
+                                        self.tip_liquid_ul = max(0.0, getattr(self, 'tip_liquid_ul', 0.0) - actual_dispense)
                                         time.sleep(0.4 if mix_cycles > 0 else 0.05)
                                     except Exception as d_err:
                                         self.logger.warning(f"Dispense exception ignored: {d_err}")
@@ -9186,9 +9051,9 @@ class LIMSMasterApp:
                                     for c_idx in range(mix_cycles):
                                         if self.is_aborted: break
                                         try:
-                                            self._hardware_piston_aspirate(mix_vol)
+                                            self.lims.pipettor.hardware.aspirate(mix_vol)
                                             time.sleep(1.2)
-                                            self._hardware_piston_dispense(mix_vol)
+                                            self.lims.pipettor.hardware.dispense(mix_vol)
                                             time.sleep(0.8)
                                         except Exception as m_err:
                                             self.logger.warning(f"Mix stroke {c_idx + 1}/{mix_cycles} warning: {m_err}")
@@ -9205,7 +9070,7 @@ class LIMSMasterApp:
                                         blowout_z = max(0.0, safe_tz - 12.0)
                                         self.lims.pipettor.hardware.move_z(blowout_z)
                                         time.sleep(0.1)
-                                        self._hardware_piston_dispense(air_to_blow)
+                                        self.lims.pipettor.hardware.dispense(air_to_blow)
                                         self.logger.info(
                                             f"Air Cushion Blowout (Bubble-Free): Lifted tip out of media to Z={blowout_z:.2f}mm "
                                             f"and expelled {air_to_blow:.2f}uL air cushion to clear residual drop."
@@ -9225,9 +9090,9 @@ class LIMSMasterApp:
                                 for c_idx in range(mix_cycles):
                                     if self.is_aborted: break
                                     try:
-                                        self._hardware_piston_aspirate(mix_vol)
+                                        self.lims.pipettor.hardware.aspirate(mix_vol)
                                         time.sleep(1.2)
-                                        self._hardware_piston_dispense(mix_vol)
+                                        self.lims.pipettor.hardware.dispense(mix_vol)
                                         time.sleep(0.8)
                                     except Exception as m_err:
                                         self.logger.warning(f"Mix stroke {c_idx + 1}/{mix_cycles} warning: {m_err}")
@@ -9237,7 +9102,7 @@ class LIMSMasterApp:
                                         blowout_z = max(0.0, safe_tz - 12.0)
                                         self.lims.pipettor.hardware.move_z(blowout_z)
                                         time.sleep(0.1)
-                                        self._hardware_piston_dispense(air_to_blow)
+                                        self.lims.pipettor.hardware.dispense(air_to_blow)
                                     except Exception:
                                         pass
                                     finally:

@@ -1185,18 +1185,13 @@ def run_all_tests():
             app.mid_protocol_z_home_var.set(False)
         _time.sleep = lambda *_a, **_k: None
 
-        # 16a. Default Machine 2 profile keeps piston_steps_per_ul explicitly unset (None)
+        # 16a. Default Machine 2 profile keeps piston_steps_per_ul as None and does NOT block execution
         app.switch_machine_profile("machine_2_1_10ul", save_to_disk=False)
         assert app.calibrated_heights.get("piston_steps_per_ul") is None, (
-            f"Machine 2 default piston_steps_per_ul must remain unset (None), got {app.calibrated_heights.get('piston_steps_per_ul')}"
+            f"Machine 2 default piston_steps_per_ul expected None, got {app.calibrated_heights.get('piston_steps_per_ul')}"
         )
-        assert app._get_machine_2_piston_steps_per_ul() is None
-        for bad_cal in (None, 0, -5.0, "", "invalid", False, float("nan")):
-            app.calibrated_heights["piston_steps_per_ul"] = bad_cal
-            assert app._get_machine_2_piston_steps_per_ul() is None, f"Invalid cal {bad_cal!r} should resolve to None"
-        app.calibrated_heights["piston_steps_per_ul"] = None
 
-        # 16b. Missing calibration stops BOTH execute_protocol() and run_sequence() BEFORE any robot motion
+        # 16b. Verify execute_protocol() and run_sequence() run cleanly when piston_steps_per_ul is None
         mock_hw = _MockPistonHardware(is_multichannel=True)
         xy_moves = []
         app.lims.pipettor.hardware = mock_hw
@@ -1207,22 +1202,35 @@ def run_all_tests():
             m2_75_seq = _json.load(f)
         app.workflow_sequence = [dict(s) for s in m2_75_seq[:4]]
 
-        app.execute_protocol()
-        assert app.is_running is False, "execute_protocol() must not start when Machine 2 calibration is missing"
-        assert xy_moves == [] and mock_hw.moves == [] and mock_hw.piston_calls == [], (
-            f"Missing calibration must prevent ALL robot motion, got xy={xy_moves}, moves={mock_hw.moves}, piston={mock_hw.piston_calls}"
-        )
+        # 16b-c. Verify execute_protocol() does NOT block when piston_steps_per_ul is None,
+        # calls hardware.aspirate(7.5) / dispense(7.5) directly with air cushion OFF
+        import threading as _threading
+        orig_thread = _threading.Thread
 
-        app.run_sequence()
-        assert app.is_running is False
-        assert xy_moves == [] and mock_hw.moves == [] and mock_hw.piston_calls == [], (
-            f"run_sequence() must prevent ALL robot motion when missing cal, got xy={xy_moves}, moves={mock_hw.moves}, piston={mock_hw.piston_calls}"
-        )
+        class _SyncThread:
+            def __init__(self, target=None, *a, **kw):
+                self._target = target
 
-        # 16c. With verified test calibration (20.0 steps/uL), test 7.5 uL end-to-end (Slot 4 pickup -> Slot 3 draw -> Slot 5 dispense+mix -> Slot 2 discard)
-        # Machine 2 aspirates 7.5 uL liquid directly with NO air pre-draw and NO air blowout.
+            def start(self):
+                if self._target:
+                    self._target()
+
         app.reset_tip_rack_memory("Slot_4", announce=False)
-        app.calibrated_heights["piston_steps_per_ul"] = 20.0
+        app._worker_has_tip = False
+        app.has_tip_var.set(False)
+        _threading.Thread = _SyncThread
+        try:
+            app.execute_protocol()
+        finally:
+            _threading.Thread = orig_thread
+        assert [(c[0], c[1]) for c in mock_hw.piston_calls] == [("aspirate", 7.5), ("dispense", 7.5)], (
+            f"execute_protocol() must not block when piston_steps_per_ul=None and must call aspirate/dispense(7.5) directly; got {mock_hw.piston_calls}"
+        )
+        assert app.air_cushion_ul == 0.0 and app.has_air_cushion is False
+        app.enable_mixing_for_run = True
+
+        # Re-run with enable_mixing_for_run=True via run_sequence() to check 7.5 uL + 8.0 uL mix directly
+        app.reset_tip_rack_memory("Slot_4", announce=False)
         mock_hw.moves.clear()
         mock_hw.piston_calls.clear()
         xy_moves.clear()
@@ -1237,29 +1245,28 @@ def run_all_tests():
         assert ("move_z", 78.4) in mock_hw.moves, f"Slot 3 Z=78.40 must be preserved: {mock_hw.moves}"
         assert ("move_z", 0.0) in mock_hw.moves and ("eject_tip",) in mock_hw.moves
 
-        expected_75_piston = [
-            ("aspirate", 750.0, 150),  # 7.5 uL direct liquid draw -> 150 steps (NO air pre-draw)
-            ("dispense", 750.0, 150),  # 7.5 uL dispense -> 150 steps
-            ("aspirate", 800.0, 160),  # Mix 1/5: 8.0 uL -> 160 steps
-            ("dispense", 800.0, 160),
-            ("aspirate", 800.0, 160),  # Mix 2/5
-            ("dispense", 800.0, 160),
-            ("aspirate", 800.0, 160),  # Mix 3/5
-            ("dispense", 800.0, 160),
-            ("aspirate", 800.0, 160),  # Mix 4/5
-            ("dispense", 800.0, 160),
-            ("aspirate", 800.0, 160),  # Mix 5/5
-            ("dispense", 800.0, 160),
+        expected_75_direct = [
+            ("aspirate", 7.5),   # 7.5 uL direct to hardware.aspirate(7.5), NO air cushion
+            ("dispense", 7.5),   # 7.5 uL direct to hardware.dispense(7.5)
+            ("aspirate", 8.0),   # Mix 1/5: 8.0 uL
+            ("dispense", 8.0),
+            ("aspirate", 8.0),   # Mix 2/5
+            ("dispense", 8.0),
+            ("aspirate", 8.0),   # Mix 3/5
+            ("dispense", 8.0),
+            ("aspirate", 8.0),   # Mix 4/5
+            ("dispense", 8.0),
+            ("aspirate", 8.0),   # Mix 5/5
+            ("dispense", 8.0),
         ]
-        assert mock_hw.piston_calls == expected_75_piston, (
-            f"Machine 2 7.5uL+Mix direct piston translation mismatch:\nExpected: {expected_75_piston}\nGot:      {mock_hw.piston_calls}"
+        assert [(c[0], c[1]) for c in mock_hw.piston_calls] == expected_75_direct, (
+            f"Machine 2 7.5uL+Mix direct wrapper mismatch:\nExpected: {expected_75_direct}\nGot:      {mock_hw.piston_calls}"
         )
         assert app.air_cushion_ul == 0.0 and app.has_air_cushion is False, (
             f"Machine 2 must never draw/track air cushion at 7.5 uL: air={app.air_cushion_ul}, has={app.has_air_cushion}"
         )
-        piston_75_draw = mock_hw.piston_calls[0]
 
-        # 16d. With test calibration (20.0 steps/uL), test 10.0 uL and verify 7.5 uL vs 10.0 uL produce distinct commands
+        # 16d. Verify 10.0 uL passes directly to hardware.aspirate(10.0) and hardware.dispense(10.0) with air cushion OFF
         app.reset_tip_rack_memory("Slot_4", announce=False)
         app.workflow_sequence = [
             {"action": "Pick Up Tip", "mode": "auto", "slot": "Slot_4", "well": "A1", "volume": 0.0, "eight_ch_symmetric": True, "mounted_channels": "A-H"},
@@ -1273,17 +1280,13 @@ def run_all_tests():
         app._worker_has_tip = False
         app.has_tip_var.set(False)
         app.run_sequence()
-        assert mock_hw.piston_calls == [
-            ("aspirate", 1000.0, 200),  # 10.0 uL -> 200 steps (direct liquid draw, no air cushion)
-            ("dispense", 1000.0, 200),  # 10.0 uL dispense -> 200 steps
-        ], f"Machine 2 10.0uL piston mismatch: {mock_hw.piston_calls}"
-        piston_100_draw = mock_hw.piston_calls[0]
-        assert piston_75_draw != piston_100_draw and piston_75_draw[2] == 150 and piston_100_draw[2] == 200, (
-            f"7.5 uL and 10.0 uL must produce distinct piston commands: 7.5={piston_75_draw}, 10.0={piston_100_draw}"
-        )
+        assert [(c[0], c[1]) for c in mock_hw.piston_calls] == [
+            ("aspirate", 10.0),
+            ("dispense", 10.0),
+        ], f"Machine 2 10.0uL direct wrapper mismatch: {mock_hw.piston_calls}"
         assert app.air_cushion_ul == 0.0 and app.has_air_cushion is False
 
-        # 16e. Machine 2 disables air cushion even at small volumes (e.g. 5.0 uL) and draws liquid directly
+        # 16e. Verify 5.0 uL also disables air cushion and passes 5.0 directly
         app.reset_tip_rack_memory("Slot_4", announce=False)
         app.workflow_sequence = [
             {"action": "Pick Up Tip", "mode": "auto", "slot": "Slot_4", "well": "A1", "volume": 0.0, "eight_ch_symmetric": True, "mounted_channels": "A-H"},
@@ -1297,16 +1300,14 @@ def run_all_tests():
         assert app.air_cushion_ul == 0.0 and app.has_air_cushion is False, (
             f"Machine 2 must NOT draw or count air cushion at 5.0 uL: air={app.air_cushion_ul}, has={app.has_air_cushion}"
         )
-        assert mock_hw.piston_calls == [("aspirate", 500.0, 100)], (
-            f"Machine 2 5.0 uL must aspirate liquid directly without air pre-draw; got {mock_hw.piston_calls}"
+        assert [(c[0], c[1]) for c in mock_hw.piston_calls] == [("aspirate", 5.0)], (
+            f"Machine 2 5.0 uL must aspirate 5.0 directly without air pre-draw; got {mock_hw.piston_calls}"
         )
 
         # 16f. Machines 1 and 3 remain completely unaffected and keep existing conversion & air cushion
         app.switch_machine_profile("machine_1_8x1000", save_to_disk=False)
         app.reset_tip_rack_memory("Slot_4", announce=False)
         assert not app._is_machine_2_10ul_active()
-        assert app._validate_machine_2_piston_calibration(show_dialog=False) is True
-        assert app._translate_piston_volume_for_hardware(200.0) == (200.0, 1)
         m1_hw = _MockPistonHardware(is_multichannel=True, simulated_collar_z=86.36)
         app.lims.pipettor.hardware = m1_hw
         app.reset_tip_rack_memory("Slot_4", announce=False)
@@ -1324,8 +1325,6 @@ def run_all_tests():
         app.switch_machine_profile("machine_3_300ul", save_to_disk=False)
         app.reset_tip_rack_memory("Slot_4", announce=False)
         assert not app._is_machine_2_10ul_active()
-        assert app._validate_machine_2_piston_calibration(show_dialog=False) is True
-        assert app._translate_piston_volume_for_hardware(230.0) == (230.0, 1)
         m3_hw = _MockPistonHardware(is_multichannel=False, simulated_collar_z=86.36)
         app.lims.pipettor.hardware = m3_hw
         app.workflow_sequence = [
@@ -1352,7 +1351,7 @@ def run_all_tests():
         app.switch_machine_profile("machine_2_1_10ul", save_to_disk=False)
         app.calibrated_heights["piston_steps_per_ul"] = None
 
-    print("PASS: Machine 2 explicit piston calibration, missing-calibration gate, 0-step air cushion guard, and M1/M3 isolation verified.")
+    print("PASS: Machine 2 direct wrapper 7.5 uL / 10.0 uL / 5.0 uL calls, no block when piston_steps_per_ul=null, air cushion OFF, and M1/M3 isolation verified.")
 
     print("\n======================================================================")
     print("ALL 16 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
