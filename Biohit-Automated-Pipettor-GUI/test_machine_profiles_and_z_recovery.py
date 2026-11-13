@@ -1400,6 +1400,130 @@ def run_all_tests():
 
     print("PASS: Machine 2 direct wrapper 7.5 uL / 10.0 uL / 5.0 uL calls, no block when piston_steps_per_ul=null, air cushion OFF, and M1/M3 isolation verified.")
 
+    # 16h. Direct Operations button & Machine 2 Piston Step Sweep calibration diagnostic
+    def _collect_button_texts(widget):
+        texts = []
+        try:
+            texts.append(widget.cget("text"))
+        except Exception:
+            pass
+        for child in widget.winfo_children():
+            texts.extend(_collect_button_texts(child))
+        return texts
+
+    direct_buttons = _collect_button_texts(app.tab_direct)
+    assert "RUN M2_STEP_TEST" in direct_buttons, f"Missing RUN M2_STEP_TEST button in Direct Ops: {direct_buttons}"
+
+    orig_prompt_m2 = app.prompt_for_m2_step_test
+    orig_hw_ready2 = app.lims.hw.is_initialized
+    orig_hw_move2 = app.lims.hw.move_to
+    orig_pip_hw2 = app.lims.pipettor.hardware
+    orig_headless2 = app.headless_test_mode
+    prompt_called = []
+
+    class _FakeM2Control:
+        def __init__(self):
+            self.p_pos = 0.0
+            self.aspirates = []
+            self.dispenses = 0
+            self.ErrorCode = 0
+
+        def PollPosition(self, addr, steps=True):
+            return self.p_pos
+
+        def PollError(self, addr):
+            return 0
+
+        def Aspirate(self, vol, steps=True, wait=True):
+            assert steps is True and wait is True
+            self.aspirates.append(float(vol))
+            self.p_pos += float(vol)
+            return True
+
+        def DispenseAll(self, wait=True):
+            assert wait is True
+            self.dispenses += 1
+            self.p_pos = 0.0
+            return True
+
+    class _FakeM2Instrument:
+        def __init__(self):
+            self.Control = _FakeM2Control()
+
+    class _FakeM2PipHw:
+        def __init__(self):
+            self._Pipettor__instrument = _FakeM2Instrument()
+            self.z_position = 0.0
+            self.z_moves = []
+            self.picks = []
+            self.ejects = 0
+
+        def move_z(self, z):
+            self.z_position = float(z)
+            self.z_moves.append(float(z))
+
+        def pick_tip(self, limit_z):
+            self.picks.append(float(limit_z))
+            self.z_position = 64.5
+
+        def eject_tip(self):
+            self.ejects += 1
+
+    xy_trace = []
+    fake_m2_hw = _FakeM2PipHw()
+    pauses = []
+    try:
+        app.switch_machine_profile("machine_2_1_10ul", save_to_disk=False)
+        app.headless_test_mode = True
+        app.lims.hw.is_initialized = True
+        app.lims.pipettor.hardware = fake_m2_hw
+        app.lims.hw.move_to = lambda x, y, z, speed=100: xy_trace.append((round(float(x), 2), round(float(y), 2), round(float(z), 2)))
+
+        # Clicking RUN M2_STEP_TEST routes via run_direct_op("M2_STEP_TEST")
+        app.prompt_for_m2_step_test = lambda: prompt_called.append(True)
+        app.run_direct_op("M2_STEP_TEST")
+        assert prompt_called == [True], f"run_direct_op('M2_STEP_TEST') did not call prompt_for_m2_step_test: {prompt_called}"
+
+        def _pause_cb(title, msg):
+            # Must pause only after retracting to Z=0.0
+            assert fake_m2_hw.z_position == 0.0, f"Expected Z=0.0 during pause, got {fake_m2_hw.z_position}"
+            pauses.append((title, round(fake_m2_hw._Pipettor__instrument.Control.p_pos, 1)))
+            return True
+
+        res = app.run_m2_piston_step_sweep(steps_list=[50, 100, 150, 200], pause_callback=_pause_cb)
+        ctrl = fake_m2_hw._Pipettor__instrument.Control
+        assert [r["steps"] for r in res] == [50.0, 100.0, 150.0, 200.0]
+        assert ctrl.aspirates == [50.0, 100.0, 150.0, 200.0], f"Unexpected raw steps aspirated: {ctrl.aspirates}"
+        assert ctrl.dispenses == 4, f"Expected 4 DispenseAll(True) calls, got {ctrl.dispenses}"
+        assert len(pauses) == 4 and [p[1] for p in pauses] == [50.0, 100.0, 150.0, 200.0]
+        assert len(fake_m2_hw.picks) == 1 and fake_m2_hw.ejects == 1
+        assert (105.47, 84.99, 0.0) in xy_trace, f"Missing Slot 4 Col 1 pickup XY in {xy_trace}"
+        assert (243.81, 84.14, 0.0) in xy_trace, f"Missing Slot 3 Col 1 water XY in {xy_trace}"
+        assert (95.5, 13.0, 0.0) in xy_trace, f"Missing Slot 2 Waste XY in {xy_trace}"
+        assert 78.4 in [round(z, 2) for z in fake_m2_hw.z_moves], f"Expected Z=78.40 water aspirate in {fake_m2_hw.z_moves}"
+        assert fake_m2_hw.z_position == 0.0 and app._worker_has_tip is False and app.has_tip_var.get() is False
+
+        # Cancel mid-sweep after step 1 still dispenses captured liquid & exits cleanly
+        fake_m2_hw._Pipettor__instrument.Control.aspirates.clear()
+        fake_m2_hw._Pipettor__instrument.Control.dispenses = 0
+        res_abort = app.run_m2_piston_step_sweep(
+            steps_list=[50, 100, 150],
+            skip_tip_pickup=True,
+            eject_at_end=False,
+            pause_callback=lambda _t, _m: False,
+        )
+        assert [r["steps"] for r in res_abort] == [50.0]
+        assert fake_m2_hw._Pipettor__instrument.Control.dispenses == 1
+        assert fake_m2_hw.z_position == 0.0
+    finally:
+        app.prompt_for_m2_step_test = orig_prompt_m2
+        app.lims.hw.is_initialized = orig_hw_ready2
+        app.lims.hw.move_to = orig_hw_move2
+        app.lims.pipettor.hardware = orig_pip_hw2
+        app.headless_test_mode = orig_headless2
+
+    print("PASS: Direct Operations RUN M2_STEP_TEST button & Machine 2 50/100/150/200 raw piston step sweep verified.")
+
     print("\n======================================================================")
     print("ALL 16 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
     print("======================================================================")

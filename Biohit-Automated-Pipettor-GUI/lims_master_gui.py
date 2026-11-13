@@ -2479,21 +2479,36 @@ class LIMSMasterApp:
 
     def build_direct_ops_tab(self):
         ttk.Label(self.tab_direct, text="Immediate Machine Controls", font=("Arial", 16, "bold")).pack(anchor="w")
+
+        container = ttk.Frame(self.tab_direct)
+        container.pack(fill=tk.BOTH, expand=True, pady=(6, 0))
+        canvas = tk.Canvas(container, highlightthickness=0, bd=0)
+        sb = ttk.Scrollbar(container, orient=tk.VERTICAL, command=canvas.yview)
+        ops_frame = ttk.Frame(canvas)
+        win_id = canvas.create_window((0, 0), window=ops_frame, anchor="nw")
+
+        ops_frame.bind("<Configure>", lambda _e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", lambda e: canvas.itemconfig(win_id, width=e.width))
+        canvas.configure(yscrollcommand=sb.set)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+
         ops = [
             ("Home Head", "Resets pipette head to safety origin.", "HOME"),
             ("Find Tip", "Auto-searches a designated slot using NATIVE API.", "FIND_TIP"),
             ("Return Tip to Well", "Returns/ejects mounted tip(s) to a specific slot & well using the labware from Deck Setup.", "RETURN_TIP"),
             ("Discard Tips", "Moves head to designated Waste slot and triggers ejection mechanism.", "DISCARD"),
             ("Check Liquid Level", "Detects liquid surface in selected slot/well and calculates remaining volume.", "CHECK_LIQUID"),
-            ("Check Alignment", "Compares visual mouse grid to hardware jog coordinates.", "CHECK")
+            ("Check Alignment", "Compares visual mouse grid to hardware jog coordinates.", "CHECK"),
+            ("Machine 2 Piston Step Test", "Runs 50/100/150/200-step water aspiration sweep (1-10 µL head) with pause at Z=0 to measure volume.", "M2_STEP_TEST"),
         ]
         for title, desc, code in ops:
-            f = ttk.LabelFrame(self.tab_direct, text=f" {title} ", padding=15)
-            f.pack(fill=tk.X, pady=8)
+            f = ttk.LabelFrame(ops_frame, text=f" {title} ", padding=10)
+            f.pack(fill=tk.X, pady=5)
             sub = ttk.Frame(f)
             sub.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             ttk.Label(sub, text=f"Action: {desc}").pack(anchor="w")
-            tk.Button(f, text=f"RUN {code}", bg="#007bff", fg="white", font=("Arial", 9, "bold"), width=12,
+            tk.Button(f, text=f"RUN {code}", bg="#007bff", fg="white", font=("Arial", 9, "bold"), width=16,
                       command=lambda c=code: self.run_direct_op(c)).pack(side=tk.RIGHT, padx=10)
 
     def build_workflow_tab(self):
@@ -7553,6 +7568,303 @@ class LIMSMasterApp:
             except Exception:
                 pass
 
+    def prompt_for_m2_step_test(self):
+        """Prompt operator to run the Machine 2 raw piston step sweep diagnostic."""
+        if not self.lims.hw.is_initialized:
+            messagebox.showerror("Safety Interlock", "Hardware must be initialized first.")
+            return
+        if getattr(self, "is_running", False):
+            messagebox.showwarning("Wait", "A protocol is currently running.")
+            return
+
+        top = tk.Toplevel(self.root)
+        top.title("Machine 2 Piston Step Test (1-10 µL Head)")
+        top.geometry("500x400")
+        top.transient(self.root)
+
+        f = ttk.Frame(top, padding=14)
+        f.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(
+            f,
+            text="Machine 2 Raw Piston Step-Sweep Calibration",
+            font=("Arial", 11, "bold"),
+        ).pack(anchor="w")
+
+        checklist = ttk.LabelFrame(f, text=" Deck Checklist ", padding=8)
+        checklist.pack(fill=tk.X, pady=(8, 10))
+        ttk.Label(
+            checklist,
+            text=(
+                "1. Fill Slot 3 Col 1 (A1-H1) with water\n"
+                "2. Load fresh 10 µL tips in Slot 4 Col 1 (or check below if already mounted)\n"
+                "3. Keep Slot 2 Waste clear (dispenses & ejects there)"
+            ),
+            justify=tk.LEFT,
+        ).pack(anchor="w")
+
+        default_asp_z = float(self.calibrated_heights.get("plate96_aspirate_z", 78.40))
+        steps_var = tk.StringVar(value="50, 100, 150, 200")
+        tip_slot_var = tk.StringVar(value="Slot_4")
+        tip_well_var = tk.StringVar(value="A1")
+        water_slot_var = tk.StringVar(value="Slot_3")
+        water_well_var = tk.StringVar(value="A1")
+        asp_z_var = tk.StringVar(value=f"{default_asp_z:.2f}")
+        already_mounted = bool(getattr(self, "_worker_has_tip", False) or (hasattr(self, "has_tip_var") and self.has_tip_var.get()))
+        skip_pickup_var = tk.BooleanVar(value=already_mounted)
+        eject_end_var = tk.BooleanVar(value=True)
+
+        grid = ttk.Frame(f)
+        grid.pack(fill=tk.X, pady=(0, 8))
+
+        rows = [
+            ("Piston steps (comma-sep):", steps_var),
+            ("Tip slot / col:", None),
+            ("Water slot / col:", None),
+            ("Aspirate Z (mm):", asp_z_var),
+        ]
+        for idx, (label, var) in enumerate(rows):
+            ttk.Label(grid, text=label).grid(row=idx, column=0, sticky="w", pady=3, padx=(0, 8))
+            if var is not None:
+                ttk.Entry(grid, textvariable=var, width=28).grid(row=idx, column=1, columnspan=2, sticky="ew", pady=3)
+            elif idx == 1:
+                ttk.Entry(grid, textvariable=tip_slot_var, width=12).grid(row=idx, column=1, sticky="w", pady=3)
+                ttk.Entry(grid, textvariable=tip_well_var, width=10).grid(row=idx, column=2, sticky="w", pady=3, padx=(6, 0))
+            else:
+                ttk.Entry(grid, textvariable=water_slot_var, width=12).grid(row=idx, column=1, sticky="w", pady=3)
+                ttk.Entry(grid, textvariable=water_well_var, width=10).grid(row=idx, column=2, sticky="w", pady=3, padx=(6, 0))
+
+        ttk.Checkbutton(
+            f,
+            text="Tips already mounted (skip Slot 4 pickup)",
+            variable=skip_pickup_var,
+        ).pack(anchor="w", pady=2)
+        ttk.Checkbutton(
+            f,
+            text="Eject tips at Slot 2 Waste when finished",
+            variable=eject_end_var,
+        ).pack(anchor="w", pady=2)
+
+        def on_confirm():
+            try:
+                parsed_steps = [float(tok.strip()) for tok in steps_var.get().split(",") if tok.strip()]
+                if not parsed_steps or any(s <= 0 for s in parsed_steps):
+                    raise ValueError("Enter one or more positive step counts.")
+                az = float(asp_z_var.get().strip())
+            except ValueError as err:
+                messagebox.showerror("Invalid Input", str(err), parent=top)
+                return
+
+            kwargs = {
+                "steps_list": parsed_steps,
+                "tip_slot": tip_slot_var.get().strip() or "Slot_4",
+                "tip_well": (tip_well_var.get().strip() or "A1").upper(),
+                "water_slot": water_slot_var.get().strip() or "Slot_3",
+                "water_well": (water_well_var.get().strip() or "A1").upper(),
+                "aspirate_z": az,
+                "skip_tip_pickup": bool(skip_pickup_var.get()),
+                "eject_at_end": bool(eject_end_var.get()),
+            }
+            top.destroy()
+            threading.Thread(target=self.run_m2_piston_step_sweep, kwargs=kwargs, daemon=True).start()
+
+        btn_frame = ttk.Frame(f)
+        btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
+        tk.Button(
+            btn_frame,
+            text="Start Step Sweep",
+            bg="#0d6efd",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            command=on_confirm,
+        ).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
+        ttk.Button(btn_frame, text="Cancel", command=top.destroy).pack(side=tk.RIGHT)
+
+    def _m2_pause_prompt(self, title: str, message: str, pause_callback=None) -> bool:
+        """Pause step sweep safely on main thread (or via pause_callback/headless)."""
+        if pause_callback is not None:
+            return bool(pause_callback(title, message))
+        if getattr(self, "headless_test_mode", False):
+            return True
+        done = threading.Event()
+        result = {"ok": False}
+
+        def _ask():
+            try:
+                result["ok"] = bool(messagebox.askokcancel(title, message, parent=self.root))
+            finally:
+                done.set()
+
+        self.root.after(0, _ask)
+        done.wait()
+        return result["ok"]
+
+    def _m2_resolve_col_xy(self, action: str, slot_name: str, well_id: str, fallback: tuple[float, float]) -> tuple[float, float]:
+        """Resolve 8-channel XY via deck calibration, falling back to verified Machine 2 coords."""
+        step_ctx = {"action": action, "eight_ch_symmetric": True}
+        try:
+            coords = self._resolve_step_xy(step_ctx, slot_name, well_id)
+            if coords and (coords[0] != 0.0 or coords[1] != 0.0):
+                return float(coords[0]), float(coords[1])
+        except Exception:
+            pass
+        return fallback
+
+    def run_m2_piston_step_sweep(
+        self,
+        steps_list=None,
+        tip_slot: str = "Slot_4",
+        tip_well: str = "A1",
+        water_slot: str = "Slot_3",
+        water_well: str = "A1",
+        aspirate_z=None,
+        skip_tip_pickup: bool = False,
+        eject_at_end: bool = True,
+        pause_callback=None,
+    ):
+        """
+        Execute a stepped raw-piston aspiration diagnostic for Machine 2 (1-10 µL 8-channel):
+        1. Picks up 8 tips at Slot 4 (unless skip_tip_pickup=True).
+        2. For each step count (default [50, 100, 150, 200]):
+           - Moves to Slot 3 water column and lowers to plate96_aspirate_z (78.40 mm).
+           - Aspirates raw piston `steps` via Control.Aspirate(float(steps), True, True)
+             (or `hw.aspirate(steps / 2.0)` fallback in simulation/mocks), logging P position & errors.
+           - Retracts to Z=0.0 so operator can inspect/measure drawn water.
+           - Moves to Slot 2 Waste (95.5, 13.0) and calls Control.DispenseAll(True) (or dispense fallback).
+        3. Ejects tips at Slot 2 Waste if eject_at_end=True and homes Z to 0.0.
+        """
+        hw = getattr(getattr(self.lims, "pipettor", None), "hardware", None)
+        if not hw:
+            self.logger.error("Machine 2 Step Sweep aborted: hardware not initialized.")
+            return []
+
+        raw_steps = list(steps_list) if steps_list is not None else [50, 100, 150, 200]
+        steps_seq = [float(s) for s in raw_steps if float(s) > 0]
+        if not steps_seq:
+            self.logger.error("Machine 2 Step Sweep aborted: no positive step counts provided.")
+            return []
+
+        asp_z = float(aspirate_z if aspirate_z is not None else self.calibrated_heights.get("plate96_aspirate_z", 78.40))
+        asp_z = max(0.0, min(asp_z, 102.0))
+        waste_disp_z = max(0.0, min(float(self.calibrated_heights.get("waste_dispense_z", 8.37)), 102.0))
+        waste_drop_z = max(0.0, min(float(self.calibrated_heights.get("waste_tip_drop_z", 8.37)), 102.0))
+        speed = self.speed_var.get() if hasattr(self, "speed_var") else 100
+
+        ctrl = getattr(getattr(hw, "_Pipettor__instrument", None), "Control", None)
+        results = []
+        aborted = False
+
+        self.logger.info(
+            f"=== Direct Op M2_STEP_TEST: Piston sweep {steps_seq} | Water={water_slot} {water_well} (Z={asp_z:.2f}mm) | Control={'DLL' if ctrl else 'Wrapper'} ==="
+        )
+        try:
+            hw.move_z(0.0)
+
+            if not skip_tip_pickup:
+                tip_x, tip_y = self._m2_resolve_col_xy("Pick Up Tip", tip_slot, tip_well, (105.47, 84.99))
+                approach_z = float(self.calibrated_heights.get("tip_10ul_approach_z", self.calibrated_heights.get("tip_rack_pickup_approach_z", 50.0)))
+                configured_limit = float(self.calibrated_heights.get("tip_10ul_limit_z", self.calibrated_heights.get("tip_rack_pickup_limit_z", 75.0)))
+                pickup_limit = min(80.0, max(68.0, configured_limit))
+                extra_press = float(self.calibrated_heights.get("tip_10ul_extra_press_mm", self.calibrated_heights.get("tip_pickup_extra_press_mm", 2.50)))
+
+                self.logger.info(f"[M2_STEP_TEST] Picking up 8 tips at {tip_slot} {tip_well} (X={tip_x:.2f}, Y={tip_y:.2f}, limit={pickup_limit:.2f}mm)")
+                self.lims.hw.move_to(tip_x, tip_y, 0.0, speed=speed)
+                hw.move_z(approach_z)
+                try:
+                    hw.tip_pickup_force = 26
+                except Exception:
+                    pass
+                hw.pick_tip(pickup_limit)
+                curr_z = float(getattr(hw, "z_position", pickup_limit) or pickup_limit)
+                if extra_press > 0 and curr_z > 48.0:
+                    try:
+                        hw.move_z(min(pickup_limit, curr_z + extra_press))
+                    except Exception:
+                        pass
+                hw.move_z(0.0)
+                if hasattr(self, "mark_tip_consumed"):
+                    for sock in self._expand_8ch_tip_sockets({"action": "Pick Up Tip", "eight_ch_symmetric": True}, tip_well):
+                        self.mark_tip_consumed(tip_slot, sock, redraw=False)
+                    if hasattr(self, "_schedule_deck_redraw"):
+                        self._schedule_deck_redraw()
+                self._set_has_tip(True)
+
+            water_x, water_y = self._m2_resolve_col_xy("Aspirate Media", water_slot, water_well, (243.81, 84.14))
+            waste_x, waste_y = (95.5, 13.0)
+
+            for idx, steps in enumerate(steps_seq, start=1):
+                self.lims.hw.move_to(water_x, water_y, 0.0, speed=speed)
+                hw.move_z(asp_z)
+
+                p_before = ctrl.PollPosition("P", True) if ctrl else None
+                if ctrl:
+                    asp_ok = ctrl.Aspirate(float(steps), True, True)
+                    p_after = ctrl.PollPosition("P", True)
+                    err_m = ctrl.PollError("M")
+                    err_p = ctrl.PollError("P")
+                    err_code = getattr(ctrl, "ErrorCode", None)
+                    msg = (
+                        f"[M2_STEP_TEST] Step {idx}/{len(steps_seq)}: Control.Aspirate({steps:.0f}, True, True) -> {asp_ok} | "
+                        f"P: {p_before} -> {p_after} | Err(M={err_m}, P={err_p}, Code={err_code})"
+                    )
+                else:
+                    equiv_ul = float(steps) / 2.0
+                    hw.aspirate(equiv_ul)
+                    p_after = None
+                    asp_ok = True
+                    msg = f"[M2_STEP_TEST] Step {idx}/{len(steps_seq)}: Wrapper hw.aspirate({equiv_ul:.1f} uL = {steps:.0f} steps)"
+
+                self.logger.info(msg)
+                results.append({"steps": float(steps), "p_before": p_before, "p_after": p_after, "ok": asp_ok})
+
+                hw.move_z(0.0)
+                prompt_msg = (
+                    f"{msg}\n\n"
+                    f"Tips are raised at Z=0.0 mm over {water_slot} {water_well}.\n"
+                    f"Inspect or measure drawn water volume, then click OK to dispense into { 'Slot 2 Waste' } and continue "
+                    f"(or Cancel to stop sweep cleanly)."
+                )
+                keep_going = self._m2_pause_prompt(
+                    f"M2 Step Test ({idx}/{len(steps_seq)}: {steps:.0f} steps)",
+                    prompt_msg,
+                    pause_callback=pause_callback,
+                )
+
+                # Always dispense captured water into waste before continuing or exiting
+                self.lims.hw.move_to(waste_x, waste_y, 0.0, speed=speed)
+                hw.move_z(waste_disp_z)
+                if ctrl:
+                    disp_ok = ctrl.DispenseAll(True)
+                    p_disp = ctrl.PollPosition("P", True)
+                    self.logger.info(f"[M2_STEP_TEST] Control.DispenseAll(True) at Slot 2 Waste -> {disp_ok} | P={p_disp}")
+                else:
+                    hw.dispense_all() if hasattr(hw, "dispense_all") else hw.dispense(float(steps) / 2.0)
+                    self.logger.info(f"[M2_STEP_TEST] Wrapper dispense at Slot 2 Waste for {steps:.0f} steps")
+                hw.move_z(0.0)
+
+                if not keep_going:
+                    aborted = True
+                    self.logger.warning(f"[M2_STEP_TEST] Sweep aborted by user after {steps:.0f} steps.")
+                    break
+
+            if eject_at_end:
+                self.lims.hw.move_to(waste_x, waste_y, 0.0, speed=speed)
+                hw.move_z(waste_drop_z)
+                hw.eject_tip()
+                hw.move_z(0.0)
+                self._set_has_tip(False)
+                self.logger.info("[M2_STEP_TEST] Tips ejected at Slot 2 Waste. HAS_TIP = False")
+
+            self.logger.info(f"=== Direct Op M2_STEP_TEST {'ABORTED' if aborted else 'COMPLETE'} ({len(results)}/{len(steps_seq)} steps tested) ===")
+            return results
+        except Exception as e:
+            self.logger.critical(f"[M2_STEP_TEST] Error during piston step sweep: {e}")
+            try:
+                hw.move_z(0.0)
+            except Exception:
+                pass
+            raise
+
     def prompt_for_tip_slot(self):
         if not self.lims.hw.is_initialized:
             messagebox.showerror("Safety Interlock", "Hardware must be initialized first.")
@@ -9383,6 +9695,8 @@ class LIMSMasterApp:
             self.prompt_for_liquid_check()
         elif c == "CHECK":
             self.check_alignment()
+        elif c == "M2_STEP_TEST":
+            self.prompt_for_m2_step_test()
 
     def sync_to_backend(self, k, var):
         if self.selected_slot_name and not self.dragging_slot:
