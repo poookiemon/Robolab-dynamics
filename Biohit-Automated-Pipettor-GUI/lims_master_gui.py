@@ -336,6 +336,9 @@ class LIMSMasterApp:
 
         # Submenu 3: 8-Channel Multi (1-10 µL) [Drug Addition to EHM]
         m10ch = tk.Menu(protocolmenu, tearoff=0)
+        m10ch.add_command(label="🟢 3x [8-Tip Both Plates] Drug Addition to EHM (7.5 µL) + Mix", command=lambda: self.action_load_10ul_3x_8tip_both_plates(7.5))
+        m10ch.add_command(label="🟢 3x [8-Tip Both Plates] Drug Addition to EHM (5.0 µL) + Mix", command=lambda: self.action_load_10ul_3x_8tip_both_plates(5.0))
+        m10ch.add_separator()
         m10ch.add_command(label="🟢 [5-Tip Parallel] Drug Addition to EHM (7.5 µL) + Mix (~8 mins)", command=lambda: self.action_load_10ul_parallel_drug_addition(7.5))
         m10ch.add_command(label="🟢 [5-Tip Parallel] Drug Addition to EHM (5.0 µL) + Mix (~8 mins)", command=lambda: self.action_load_10ul_parallel_drug_addition(5.0))
         m10ch.add_separator()
@@ -3432,6 +3435,8 @@ class LIMSMasterApp:
             }
         elif "1-10" in p_name or "8×10" in p_name or "10 µl" in p_name or ("10" in p_name and "1000" not in p_name):
             return {
+                "3x [8-Tip Both Plates] Drug Addition to EHM (7.5 µL) + Mix": lambda: self.action_load_10ul_3x_8tip_both_plates(7.5),
+                "3x [8-Tip Both Plates] Drug Addition to EHM (5.0 µL) + Mix": lambda: self.action_load_10ul_3x_8tip_both_plates(5.0),
                 "[5-Tip Parallel] Drug Addition to EHM (7.5 µL) + Mix (~8 mins)": lambda: self.action_load_10ul_parallel_drug_addition(7.5),
                 "[5-Tip Parallel] Drug Addition to EHM (5.0 µL) + Mix (~8 mins)": lambda: self.action_load_10ul_parallel_drug_addition(5.0),
                 "[Triplicate Assay] Drug Addition to EHM (7.5 µL) + Mix": lambda: self.action_load_10ul_triplicate_drug_addition(7.5),
@@ -3565,6 +3570,47 @@ class LIMSMasterApp:
     # -------------------------------------------------------------------------
     # 0. 8-CHANNEL 1-10 µL PROTOCOL LOADERS
     # -------------------------------------------------------------------------
+    def action_load_10ul_3x_8tip_both_plates(self, volume: float = 7.5):
+        self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
+        vol_str = f"{volume:.1f}uL" if volume in (5.0, 7.5) else f"{volume:g}uL"
+        filename = f"Machine_2_EHM_8tip_Both_Plates_{vol_str}_REVIEW.json"
+        target_path = self.resolve_protocol_path(filename)
+        if not target_path:
+            messagebox.showerror("File Not Found", f"Could not locate {filename}")
+            return
+
+        deck_setup = {
+            "Slot_1": "(Empty / Clearance)",
+            "Slot_2": "waste_trough.json",
+            "Slot_3": "generic_96_well_plate.json",
+            "Slot_4": "tip_rack_1000ul.json",
+            "Slot_5": "myriamed_48_well.json",
+            "Slot_6": "myriamed_48_well.json",
+        }
+        slot_descs = {
+            "Slot_1": "Empty clearance zone",
+            "Slot_2": "Waste Trough (8-Tip Eject above Slot 2 Well A1 at clearance height)",
+            "Slot_3": "Prepped 3x 96-Well Drug Plate (Rows A-H across Cols 1..12)",
+            "Slot_4": "1-10 µL Tip Rack (Full 96 Tips: All 12 Columns x 8 Tips A-H)",
+            "Slot_5": "Plate 1 (Myriamed 48-Well EHM, Cols 1..6, 5x 8 µL Mix)",
+            "Slot_6": "Plate 2 (Myriamed 48-Well EHM, Cols 1..6, 5x 8 µL Mix)",
+        }
+        with open(target_path, "r") as f:
+            seq = json.load(f)
+
+        def do_load():
+            self._populate_workflow_from_sequence(seq, f"3x [8-Tip Both Plates] EHM Drug Addition ({volume:g} µL) + Mix")
+
+        self.show_protocol_deck_setup_modal(
+            protocol_name=f"3x [8-Tip Both Plates] Drug Addition to EHM ({volume:g} µL) + Mix",
+            pipettor_mode="8-Channel Multi (1-10 µL)",
+            is_multichannel=True,
+            deck_setup=deck_setup,
+            slot_descriptions=slot_descs,
+            sequence=seq,
+            on_confirm_callback=do_load
+        )
+
     def action_load_10ul_parallel_drug_addition(self, volume: float = 7.5):
         self.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
         vol_str = f"{volume:.1f}uL" if volume in (5.0, 7.5) else f"{volume:g}uL"

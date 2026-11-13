@@ -946,6 +946,12 @@ def run_all_tests():
             f"ehm_1ch_10ul_triplicate_drug_addition_{vol_str}.json",
         )
         assert p_tri and os.path.exists(p_tri), f"Missing Machine 2 triplicate protocol for {vol_str}"
+        p_3x_8tip = app.resolve_protocol_path(f"Machine_2_EHM_8tip_Both_Plates_{vol_str}_REVIEW.json")
+        assert p_3x_8tip and os.path.exists(p_3x_8tip), f"Missing Machine 2 3x 8-tip protocol for {vol_str}"
+
+    m2_map = app._get_protocols_for_pipettor("8-Channel Multi (1-10 µL)")
+    assert "3x [8-Tip Both Plates] Drug Addition to EHM (7.5 µL) + Mix" in m2_map
+    assert "3x [8-Tip Both Plates] Drug Addition to EHM (5.0 µL) + Mix" in m2_map
 
     # Verify draw_deck renders Slot 4 wells inside Slot 4 rectangle (Y in [45.0, 130.5])
     # without altering _calculate_xy/_resolve_step_xy motor targets.
