@@ -2,7 +2,7 @@ from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import json, logging, threading, time, os, subprocess, math, sys, traceback, webbrowser, csv, socket, shutil
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, List, Any, Tuple
 from datetime import datetime, timedelta
 import ctypes  # Native Windows library for ghost mouse
 from working import LIMSOrchestrator, Labware, DeckSlot, Pipettor
@@ -6429,7 +6429,7 @@ class LIMSMasterApp:
         return r_idx, c_idx
 
     @staticmethod
-    def _m2_slot4_tip_base_xy(tip_count: int) -> tuple[float, float]:
+    def _m2_slot4_tip_base_xy(tip_count: int) -> Tuple[float, float]:
         """Return Slot 4 Col 1 base (X, Y) for Machine 2 (1-10 uL) for 1..8 tips."""
         n = max(1, min(8, int(tip_count)))
         if n <= 5:
@@ -6443,7 +6443,7 @@ class LIMSMasterApp:
         return bx, by
 
     @staticmethod
-    def _parse_mounted_tip_count(raw_mounted: str) -> int | None:
+    def _parse_mounted_tip_count(raw_mounted: str) -> Optional[int]:
         """Parse mounted_channels string (e.g. 'A', 'A-E', '5', '1-5', '5CH') into 1..8."""
         s = str(raw_mounted or "").strip().upper()
         if not s:
