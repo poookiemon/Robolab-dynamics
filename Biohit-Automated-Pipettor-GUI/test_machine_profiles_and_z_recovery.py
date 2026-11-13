@@ -995,8 +995,61 @@ def run_all_tests():
     assert app._calculate_xy("Slot_4", "A1") == (105.66, 21.53), "Motor coordinate _calculate_xy changed unexpectedly"
     print("PASS: All Machine 2 protocols resolved & Slot 4 wells rendered inside Slot 4 bounds with motor coordinates unchanged.")
 
+    # -------------------------------------------------------------------------
+    # TEST 14: Target Well Whole-Column & Range Input Parsing / Expansion
+    # -------------------------------------------------------------------------
+    print("\n--- 14. Testing Target Well Column & Range Parsing (Col X, A1:H1, A1:E1) ---")
+    app.switch_machine_profile("machine_2_1_10ul")
+    app.switch_pipettor_head("8-Channel Multi (1-10 µL)", quiet=True)
+    # Full column on Multi-Channel -> 1 symmetric 8-tip step
+    mc_col1 = app._expand_target_well_input("Col 1", "Slot_4", "Pick Up Tip", True)
+    assert mc_col1 == [{"well": "A1", "mounted_channels": "A-H", "eight_ch_symmetric": True}], f"Got {mc_col1}"
+    assert app._resolve_step_xy(mc_col1[0], "Slot_4", "A1") == (105.47, 84.99), "Col 1 Pick Up Tip must resolve to 8-tip Slot_4 coords"
+    # A1:H1 on Slot_3 -> 1 symmetric 8-tip step
+    mc_ah = app._expand_target_well_input("A1:H1", "Slot_3", "Aspirate Media", True)
+    assert mc_ah == [{"well": "A1", "mounted_channels": "A-H", "eight_ch_symmetric": True}], f"Got {mc_ah}"
+    assert app._resolve_step_xy(mc_ah[0], "Slot_3", "A1") == (243.81, 84.14), "A1:H1 Aspirate must resolve to 8-tip Slot_3 coords"
+    # Partial A1:E1 -> 5-tip mounted_channels A-E
+    mc_ae = app._expand_target_well_input("A1:E1", "Slot_4", "Pick Up Tip", True)
+    assert mc_ae == [{"well": "A1", "mounted_channels": "A-E", "eight_ch_symmetric": False}], f"Got {mc_ae}"
+    assert app._resolve_step_xy(mc_ae[0], "Slot_4", "A1") == (105.66, 56.83), "A1:E1 must resolve to 5-tip Slot_4 coords"
+    # Single well C1 MUST remain single well C1 (never treated as Column 1)
+    mc_c1 = app._expand_target_well_input("C1", "Slot_3", "Aspirate Media", True)
+    assert mc_c1 == [{"well": "C1"}], f"Expected single well C1, got {mc_c1}"
+
+    # UI add_wf_step() end-to-end with Col 2 on Multi-Channel
+    app.workflow_sequence.clear()
+    app.wf_box.delete(0, "end")
+    app.manual_mode_var.set(False)
+    app.wf_action.set("Aspirate Media")
+    app.cbx_slot.set("Slot_3")
+    app.ent_well.delete(0, "end")
+    app.ent_well.insert(0, "Col 2")
+    app.ent_vol.delete(0, "end")
+    app.ent_vol.insert(0, "5.0")
+    app.add_wf_step()
+    assert len(app.workflow_sequence) == 1 and app.workflow_sequence[0]["well"] == "A2"
+    assert app.workflow_sequence[0].get("mounted_channels") == "A-H"
+    assert app.workflow_sequence[0].get("eight_ch_symmetric") is True
+    assert "[Ch A-H]" in app.wf_box.get(0)
+
+    # Single-Channel (300 µL): Col 2 expands to 8 sequential wells A2..H2
+    app.switch_pipettor_head("300 µL Single-Channel", quiet=True)
+    app.workflow_sequence.clear()
+    app.wf_box.delete(0, "end")
+    app.ent_well.delete(0, "end")
+    app.ent_well.insert(0, "Col 2")
+    app.add_wf_step()
+    assert [s["well"] for s in app.workflow_sequence] == [f"{r}2" for r in "ABCDEFGH"], (
+        f"Expected A2..H2 expansion on single-channel, got {app.workflow_sequence}"
+    )
+    app.workflow_sequence.clear()
+    app.wf_box.delete(0, "end")
+    app.switch_machine_profile("machine_2_1_10ul")
+    print("PASS: Target Well column & range parsing verified for both Multi-Channel and Single-Channel.")
+
     print("\n======================================================================")
-    print("ALL 13 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
+    print("ALL 14 TEST SUITES PASSED SUCCESSFULLY! (100% End-to-End Verified)")
     print("======================================================================")
 
 if __name__ == "__main__":

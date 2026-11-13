@@ -2924,7 +2924,7 @@ class LIMSMasterApp:
                 self.lbl_1.config(text="Target Deck Slot:")
                 self.lbl_1.pack(anchor="w")
                 self.cbx_slot.pack(fill=tk.X, pady=(0, 5))
-                self.lbl_2.config(text="Target Well (e.g., A1):")
+                self.lbl_2.config(text="Target Well (e.g., A1, Col 1, A1:H1):")
                 self.lbl_2.pack(anchor="w")
                 self.ent_well.pack(fill=tk.X, pady=(0, 5))
                 if action not in ["Pick Up Tip", "Discard Tip", "Detect Liquid Level"]:
@@ -5562,6 +5562,111 @@ class LIMSMasterApp:
             command=_apply_and_load,
         ).pack(side=tk.RIGHT, padx=5)
 
+    def _is_multichannel_head_active(self) -> bool:
+        """Return True if the active pipettor/dropdown head is multi-channel."""
+        pip = getattr(getattr(self, "lims", None), "pipettor", None)
+        if pip is not None:
+            return bool(getattr(pip, "multichannel", False))
+        pip_sel = (self.proto_pipettor_var.get() if hasattr(self, "proto_pipettor_var") else "").lower()
+        return ("multi" in pip_sel) or ("8-channel" in pip_sel)
+
+    def _expand_target_well_input(
+        self,
+        raw_well: str,
+        slot_name: str,
+        action: str,
+        is_multichannel: bool,
+    ) -> Optional[List[Dict[str, Any]]]:
+        """Parse Target Well input into step specs, supporting whole columns (Col 1, Col 1-3) and ranges (A1:H1, A1:E1)."""
+        raw_str = (raw_well or "").strip()
+        if not raw_str or raw_str.upper() in ("AUTO", "DEFAULT", "NONE", "DISCARD", "WASTE"):
+            return [{"well": raw_str}]
+
+        labware_obj = getattr(getattr(self, "lims", None), "deck_labware", {}).get(slot_name)
+        n_rows = max(1, min(8, int(getattr(labware_obj, "rows", 8) or 8)))
+        n_cols = max(1, int(getattr(labware_obj, "columns", 12) or 12))
+        row_letters = "ABCDEFGH"[:n_rows]
+        specs: List[Dict[str, Any]] = []
+
+        def _append_col_slice(col: int, r_start: int = 0, r_end: Optional[int] = None) -> bool:
+            if col < 1 or col > n_cols:
+                messagebox.showwarning(
+                    "Invalid Column",
+                    f"Column {col} is out of range for {slot_name} (valid columns: 1..{n_cols}).",
+                )
+                return False
+            end_i = (n_rows - 1) if r_end is None else r_end
+            start_i, end_i = (min(r_start, end_i), max(r_start, end_i))
+            start_i = max(0, min(n_rows - 1, start_i))
+            end_i = max(0, min(n_rows - 1, end_i))
+            count = (end_i - start_i) + 1
+
+            if action == "Discard Tip":
+                specs.append({"well": f"{row_letters[start_i]}{col}"})
+                return True
+
+            if is_multichannel:
+                if count >= 2 and start_i == 0:
+                    specs.append({
+                        "well": f"A{col}",
+                        "mounted_channels": f"A-{row_letters[end_i]}",
+                        "eight_ch_symmetric": (count == n_rows and n_rows == 8),
+                    })
+                    return True
+                if count == 1:
+                    specs.append({"well": f"{row_letters[start_i]}{col}"})
+                    return True
+
+            for ri in range(start_i, end_i + 1):
+                specs.append({"well": f"{row_letters[ri]}{col}"})
+            return True
+
+        tokens = [t.strip() for t in raw_str.split(",") if t.strip()]
+        for tok in tokens:
+            tok_up = tok.upper()
+            m_col_range = re.match(r"^COL(?:UMN)?\s*(\d+)\s*[-:]\s*(?:COL(?:UMN)?\s*)?(\d+)$", tok_up)
+            if m_col_range:
+                c1, c2 = int(m_col_range.group(1)), int(m_col_range.group(2))
+                step_dir = 1 if c1 <= c2 else -1
+                for col in range(c1, c2 + step_dir, step_dir):
+                    if not _append_col_slice(col):
+                        return None
+                continue
+
+            m_col = re.match(r"^COL(?:UMN)?\s*(\d+)$", tok_up)
+            if m_col:
+                if not _append_col_slice(int(m_col.group(1))):
+                    return None
+                continue
+
+            m_range = re.match(r"^([A-H])(\d+)\s*[:\-]\s*([A-H])(\d+)$", tok_up)
+            if m_range:
+                r1, c1, r2, c2 = m_range.group(1), int(m_range.group(2)), m_range.group(3), int(m_range.group(4))
+                if r1 not in row_letters or r2 not in row_letters or c1 < 1 or c1 > n_cols or c2 < 1 or c2 > n_cols:
+                    messagebox.showwarning(
+                        "Invalid Well Range",
+                        f"Range '{tok}' exceeds {slot_name} bounds (rows A..{row_letters[-1]}, cols 1..{n_cols}).",
+                    )
+                    return None
+                i1, i2 = row_letters.index(r1), row_letters.index(r2)
+                if c1 == c2:
+                    if not _append_col_slice(c1, i1, i2):
+                        return None
+                elif i1 == i2:
+                    step_dir = 1 if c1 <= c2 else -1
+                    for col in range(c1, c2 + step_dir, step_dir):
+                        specs.append({"well": f"{r1}{col}"})
+                else:
+                    step_dir = 1 if c1 <= c2 else -1
+                    for col in range(c1, c2 + step_dir, step_dir):
+                        if not _append_col_slice(col, i1, i2):
+                            return None
+                continue
+
+            specs.append({"well": tok_up if re.match(r"^[A-H]\d+$", tok_up) else tok})
+
+        return specs
+
     def add_wf_step(self):
         action = self.wf_action.get()
         is_manual = self.manual_mode_var.get()
@@ -5585,6 +5690,8 @@ class LIMSMasterApp:
                 msg = f"[ANALYSIS] Execute Hill Equation Modeling"
             elif "DB Upload" in action:
                 msg = f"[DATABASE] Sync Results to ContractionDB"
+            self.wf_box.insert(tk.END, msg)
+            self.workflow_sequence.append(step_data)
         elif is_manual:
             x, y, z, vol = self.ent_x.get(), self.ent_y.get(), self.ent_z.get(), self.ent_vol.get()
             try:
@@ -5607,18 +5714,20 @@ class LIMSMasterApp:
                 ):
                     return
 
-            if action in ["Pick Up Tip", "Discard Tip"]:
-                msg = f"[{action.upper()} MANUAL] X:{step_data['x']} Y:{step_data['y']} Z:{step_data['z']}"
-            elif action == "Detect Liquid Level":
+            if action in ["Pick Up Tip", "Discard Tip", "Detect Liquid Level"]:
                 msg = f"[{action.upper()} MANUAL] X:{step_data['x']} Y:{step_data['y']} Z:{step_data['z']}"
             else:
                 msg = f"[{action.upper()} MANUAL] X:{step_data['x']} Y:{step_data['y']} Z:{step_data['z']} Vol:{step_data['volume']}\u03bcL"
+            self.wf_box.insert(tk.END, msg)
+            self.workflow_sequence.append(step_data)
         else:
-            slot, well, vol = self.cbx_slot.get(), self.ent_well.get(), self.ent_vol.get()
+            slot, raw_well, vol = self.cbx_slot.get(), self.ent_well.get(), self.ent_vol.get()
             extra_z_val = self.ent_z.get() if self.ent_z.winfo_ismapped() else "0.0"
 
-            if not slot: messagebox.showwarning("Incomplete Data", "Please select a target deck slot."); return
-            step_data["slot"], step_data["well"] = slot, well
+            if not slot:
+                messagebox.showwarning("Incomplete Data", "Please select a target deck slot.")
+                return
+            step_data["slot"] = slot
             try:
                 step_data["volume"] = float(vol) if vol else 0.0
             except ValueError:
@@ -5629,20 +5738,35 @@ class LIMSMasterApp:
             except ValueError:
                 step_data["extra_z"] = 0.0
 
-            # Y Travel Limit Guardrail (any slot / any labware): Row G on back slots (~209mm) is the last reachable row
-            if well:
-                _wx, _wy = self._calculate_xy(slot, well.strip().upper())
-                if _wy > 212.0:
-                    messagebox.showwarning(
-                        "⚠️ Physical Travel Limit Warning",
-                        f"Warning: Well '{well}' on {slot} is at Y ≈ {_wy:.1f}mm, which exceeds the physical travel limit of the pipette head (~212mm)."
-                    )
+            target_specs = self._expand_target_well_input(
+                raw_well, slot, action, self._is_multichannel_head_active()
+            )
+            if target_specs is None:
+                return
 
-            # Safe Z-Depth Guardrail Check
-            if action in ["Aspirate Media", "Dispense Media"]:
+            steps_to_add = []
+            for spec in target_specs:
+                st = dict(step_data)
+                st.update(spec)
+                steps_to_add.append(st)
+
+            # Y Travel Limit Guardrail (check first out-of-bounds target once for the batch)
+            for st in steps_to_add:
+                w = st.get("well", "")
+                if w:
+                    _wx, _wy = self._resolve_step_xy(st, slot, w.strip().upper())
+                    if _wy > 212.0:
+                        messagebox.showwarning(
+                            "⚠️ Physical Travel Limit Warning",
+                            f"Warning: Target '{w}' on {slot} resolves to Y ≈ {_wy:.1f}mm, which exceeds the physical travel limit of the pipette head (~212mm)."
+                        )
+                        break
+
+            # Safe Z-Depth Guardrail Check (once for the batch)
+            if action in ["Aspirate Media", "Dispense Media"] and steps_to_add:
                 labware_obj = self.lims.deck_labware.get(slot)
                 try:
-                    calc_z = self._calculate_z(action, labware_obj, well, "auto", 0.0, slot, step_data["extra_z"])
+                    calc_z = self._calculate_z(action, labware_obj, steps_to_add[0]["well"], "auto", 0.0, slot, step_data["extra_z"])
                 except ValueError as cal_err:
                     messagebox.showwarning("Labware Not Calibrated", f"{cal_err}\n\nThe step will be added, but the run will stop at it until calibrated.")
                     calc_z = 0.0
@@ -5657,18 +5781,12 @@ class LIMSMasterApp:
                     ):
                         return
 
-            if action in ["Pick Up Tip", "Discard Tip"]:
-                slot_str = slot or "Default Tip Rack"
-                well_str = f"Well {well}" if well and well.upper() not in ("AUTO", "DEFAULT", "NONE", "") else "Auto (Default Start Spot)"
-                msg = f"[{action.upper()}] from {slot_str}, {well_str}" if action == "Pick Up Tip" else f"[{action.upper()}] into {slot} (Waste Trough)"
-            elif action == "Detect Liquid Level":
-                msg = f"[{action.upper()}] at {slot}, Well {well}"
-            else:
-                z_msg = f" (Z+{step_data['extra_z']}mm)" if step_data.get('extra_z', 0.0) > 0 else ""
-                msg = f"[{action.upper()}] {step_data['volume']}\u03bcL at {slot}, Well {well}{z_msg}"
+            for st in steps_to_add:
+                self.wf_box.insert(tk.END, self._format_step_msg(st))
+                self.workflow_sequence.append(st)
 
-        self.wf_box.insert(tk.END, msg)
-        self.workflow_sequence.append(step_data)
+        if hasattr(self, '_update_estimated_timer_preview'):
+            self._update_estimated_timer_preview()
 
     def _format_step_msg(self, step_data):
         if step_data.get('label'):
@@ -5681,6 +5799,7 @@ class LIMSMasterApp:
         extra_z = step_data.get('extra_z', 0.0)
         mix_c = step_data.get('mix_cycles', 0)
         mix_v = step_data.get('mix_volume', 100.0)
+        ch_msg = f" [Ch {step_data.get('mounted_channels')}]" if step_data.get('mounted_channels') else ""
 
         if "FOC48" in action:
             return f"[MEASURE] FOC48_autoOrgan -> Experiment: '{well or 'Default'}'"
@@ -5693,13 +5812,13 @@ class LIMSMasterApp:
         elif action in ["Pick Up Tip", "Discard Tip"]:
             slot_str = slot or "Default Tip Rack"
             well_str = f"Well {well}" if well and well.upper() not in ("AUTO", "DEFAULT", "NONE", "") else "Auto (Default Start Spot)"
-            return f"[{action.upper()}] from {slot_str}, {well_str}" if action == "Pick Up Tip" else f"[{action.upper()}] into {slot} (Well {well})"
+            return f"[{action.upper()}] from {slot_str}, {well_str}{ch_msg}" if action == "Pick Up Tip" else f"[{action.upper()}] into {slot} (Well {well})"
         elif action == "Detect Liquid Level":
             return f"[{action.upper()}] at {slot}, Well {well}"
         else:
             z_msg = f" (Z+{extra_z}mm)" if extra_z > 0 else ""
             mix_msg = f" [Mix {mix_c}x {mix_v}uL]" if int(mix_c) > 0 and action == "Dispense Media" else ""
-            return f"[{action.upper()}] {vol}\u03bcL at {slot}, Well {well}{z_msg}{mix_msg}"
+            return f"[{action.upper()}] {vol}\u03bcL at {slot}, Well {well}{ch_msg}{z_msg}{mix_msg}"
 
     def _set_protocol_edit_buttons_state(self, state):
         for btn in getattr(self, 'protocol_edit_buttons', []):
@@ -5816,7 +5935,7 @@ class LIMSMasterApp:
         slot_cb.set(step_data.get('slot', 'Slot_1'))
         slot_cb.grid(row=1, column=1, sticky="ew", **pad)
 
-        ttk.Label(f, text="Well:").grid(row=2, column=0, sticky="w", **pad)
+        ttk.Label(f, text="Well / Col (e.g., A1, Col 1):").grid(row=2, column=0, sticky="w", **pad)
         well_ent = ttk.Entry(f)
         well_ent.insert(0, str(step_data.get('well', 'A1')))
         well_ent.grid(row=2, column=1, sticky="ew", **pad)
@@ -5843,30 +5962,48 @@ class LIMSMasterApp:
 
         def save():
             try:
-                new_data = dict(step_data)
-                new_data['action'] = act_cb.get()
-                new_data['slot'] = slot_cb.get()
-                new_data['well'] = well_ent.get().strip().upper()
-                new_data['volume'] = float(vol_ent.get())
-                new_data['extra_z'] = float(z_ent.get())
-                new_data['mix_cycles'] = int(mix_c_ent.get())
-                new_data['mix_volume'] = float(mix_v_ent.get())
+                base_data = dict(step_data)
+                orig_well_str = str(step_data.get('well', '')).strip().upper()
+                new_well_str = well_ent.get().strip().upper()
+                if is_edit and new_well_str != orig_well_str:
+                    base_data.pop('mounted_channels', None)
+                    base_data.pop('eight_ch_symmetric', None)
+                base_data['action'] = act_cb.get()
+                base_data['slot'] = slot_cb.get()
+                base_data['volume'] = float(vol_ent.get())
+                base_data['extra_z'] = float(z_ent.get())
+                base_data['mix_cycles'] = int(mix_c_ent.get())
+                base_data['mix_volume'] = float(mix_v_ent.get())
 
-                msg = self._format_step_msg(new_data)
+                target_specs = self._expand_target_well_input(
+                    well_ent.get(), base_data['slot'], base_data['action'], self._is_multichannel_head_active()
+                )
+                if target_specs is None:
+                    return
+
+                expanded = []
+                for spec in target_specs:
+                    st = dict(base_data)
+                    st.update(spec)
+                    expanded.append(st)
+
                 if is_edit:
-                    self.workflow_sequence[edit_idx] = new_data
+                    self.workflow_sequence[edit_idx:edit_idx + 1] = expanded
                     self.wf_box.delete(edit_idx)
-                    self.wf_box.insert(edit_idx, msg)
+                    for offset, st in enumerate(expanded):
+                        self.wf_box.insert(edit_idx + offset, self._format_step_msg(st))
                     self.wf_box.selection_set(edit_idx)
-                    self.logger.info(f"Edited Step {edit_idx + 1}: {msg}")
+                    if self.is_running and hasattr(self, 'current_step_idx') and edit_idx < self.current_step_idx:
+                        self.current_step_idx += max(0, len(expanded) - 1)
+                    self.logger.info(f"Edited Step {edit_idx + 1} ({len(expanded)} step(s)).")
                 else:
-                    self.workflow_sequence.insert(insert_idx, new_data)
-                    self.wf_box.insert(insert_idx, msg)
+                    for offset, st in enumerate(expanded):
+                        self.workflow_sequence.insert(insert_idx + offset, st)
+                        self.wf_box.insert(insert_idx + offset, self._format_step_msg(st))
                     self.wf_box.selection_set(insert_idx)
-                    if self.is_running and hasattr(self, 'current_step_idx'):
-                        if insert_idx <= self.current_step_idx:
-                            self.current_step_idx += 1
-                    self.logger.info(f"Inserted Step at {insert_idx + 1}: {msg}")
+                    if self.is_running and hasattr(self, 'current_step_idx') and insert_idx <= self.current_step_idx:
+                        self.current_step_idx += len(expanded)
+                    self.logger.info(f"Inserted {len(expanded)} step(s) at {insert_idx + 1}.")
 
                 if self.is_running:
                     self.estimated_total_time = self.estimate_workflow_time(self.workflow_sequence)
