@@ -6661,16 +6661,6 @@ class LIMSMasterApp:
             col_digits = "".join(ch for ch in w_str if ch.isdigit()) or "1"
             col_i = max(0, min(11, int(col_digits) - 1))
 
-            if slot_name == "Slot_4":
-                learned_dx, _ = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
-                tx = round(105.63 - (col_i * 9.0) + learned_dx, 2)
-            elif slot_name == "Slot_6":
-                tx = round(105.60 - (col_i * 9.0), 2)
-            elif slot_name == "Slot_3":
-                tx = round(243.81 - (col_i * 9.0), 2)
-            else:  # Slot_5
-                tx = round(242.98 - (col_i * 9.0), 2)
-
             raw_m_ch = str((step or {}).get("mounted_channels", "")).strip().upper()
             num_tips = 8
             if raw_m_ch:
@@ -6683,14 +6673,33 @@ class LIMSMasterApp:
             elif not step.get('eight_ch_symmetric'):
                 num_tips = 5
 
-            if slot_name in ("Slot_3", "Slot_4"):
+            if slot_name == "Slot_4":
+                learned_dx, _ = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
+                if num_tips == 5:
+                    base_x = 105.66
+                    ty = 56.83
+                elif num_tips == 8:
+                    base_x = 105.47
+                    ty = 84.99
+                else:
+                    base_x = 105.47
+                    ty = round(84.99 - (8 - num_tips) * 9.06, 2)
+                tx = round(base_x - (col_i * 9.0) + learned_dx, 2)
+            elif slot_name == "Slot_6":
+                tx = round(105.60 - (col_i * 9.0), 2)
+            elif slot_name == "Slot_3":
+                tx = round(243.81 - (col_i * 9.0), 2)
+            else:  # Slot_5
+                tx = round(242.98 - (col_i * 9.0), 2)
+
+            if slot_name == "Slot_3":
                 if num_tips == 5:
                     ty = 57.12
                 elif num_tips == 8:
                     ty = 84.14
                 else:
                     ty = round(84.14 - (8 - num_tips) * 9.06, 2)
-            else:
+            elif slot_name in ("Slot_5", "Slot_6"):
                 if num_tips == 5:
                     ty = 147.64 if slot_name == "Slot_5" else 146.81
                 elif num_tips == 8:
@@ -6710,7 +6719,8 @@ class LIMSMasterApp:
             tx = max(0.0, min(tx, max_x))
             ty = max(0.0, min(ty, max_y))
 
-            self.logger.info(f"🎯 [MACHINE 2: 1-10µL] Resolved multi-channel {slot_name} {well_id}: X={tx:.2f}mm, Y={ty:.2f}mm (Slot Center Y={'84.14' if slot_name in ('Slot_3', 'Slot_4') else '178.31'}mm)")
+            slot_center_str = f"{ty:.2f}" if slot_name == "Slot_4" else ("84.14" if slot_name == "Slot_3" else "178.31")
+            self.logger.info(f"🎯 [MACHINE 2: 1-10µL] Resolved multi-channel {slot_name} {well_id}: X={tx:.2f}mm, Y={ty:.2f}mm (Slot Center Y={slot_center_str}mm)")
             return tx, ty
 
         if not is_8ch_step:
@@ -8002,7 +8012,9 @@ class LIMSMasterApp:
 
                     action, mode, vol = step['action'], step.get('mode', 'auto'), step.get('volume', 0.0)
                     extra_z = step.get('extra_z', 0.0)
-                    is_8ch = bool(self.lims.pipettor.multichannel or step.get('eight_ch_symmetric'))
+                    m_channels = str((step or {}).get("mounted_channels", "")).strip().upper()
+                    is_multi_channel_action = bool(m_channels and len(m_channels) > 1 and m_channels not in ("1", "CH1", "A"))
+                    is_8ch = bool(self.lims.pipettor.multichannel or step.get('eight_ch_symmetric') or is_multi_channel_action)
                     step_desc = step.get('label') or f"[{action}]"
                     self.logger.info(f"Executing Step {i}/{total_steps}: {step_desc}")
 

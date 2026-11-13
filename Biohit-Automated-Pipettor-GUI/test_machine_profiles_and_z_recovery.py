@@ -124,8 +124,8 @@ def run_all_tests():
     tx5, ty5 = t_coords_5
 
     print(f"Resolved Carriage Position for 5-Tip Pickup (Machine 2: 1-10 µL): X = {tx5:.2f} mm, Y = {ty5:.2f} mm")
-    assert abs(tx5 - 105.63) < 1e-2, f"Expected X=105.63, got {tx5}"
-    assert abs(ty5 - 57.12) < 1e-2, f"Expected Y=57.12 (physically seated position), got {ty5}"
+    assert abs(tx5 - 105.66) < 1e-2, f"Expected X=105.66, got {tx5}"
+    assert abs(ty5 - 56.83) < 1e-2, f"Expected Y=56.83 (physically seated position), got {ty5}"
 
     # Step: Pick Up Tip with mounted_channels = "A-H" (8 tips)
     step_8tip = {
@@ -143,25 +143,66 @@ def run_all_tests():
     tx8, ty8 = t_coords_8
 
     print(f"Resolved Carriage Position for 8-Tip Pickup (Machine 2: 1-10 µL): X = {tx8:.2f} mm, Y = {ty8:.2f} mm")
-    assert abs(tx8 - 105.63) < 1e-2, f"Expected X=105.63, got {tx8}"
-    assert abs(ty8 - 84.14) < 1e-2, f"Expected Y=84.14 (physically seated position), got {ty8}"
+    assert abs(tx8 - 105.47) < 1e-2, f"Expected X=105.47, got {tx8}"
+    assert abs(ty8 - 84.99) < 1e-2, f"Expected Y=84.99 (physically seated position), got {ty8}"
 
     # Verify column pitch progression across all 12 columns for 8 tips
     for col_idx in range(1, 13):
         col_coords = app._resolve_step_xy(step_8tip, "Slot_4", f"A{col_idx}")
-        expected_x = round(105.63 - ((col_idx - 1) * 9.0), 2)
+        expected_x = round(105.47 - ((col_idx - 1) * 9.0), 2)
         assert abs(col_coords[0] - expected_x) < 1e-2, f"Col {col_idx} expected X={expected_x}, got {col_coords[0]}"
-        assert abs(col_coords[1] - 84.14) < 1e-2, f"Col {col_idx} expected Y=84.14, got {col_coords[1]}"
+        assert abs(col_coords[1] - 84.99) < 1e-2, f"Col {col_idx} expected Y=84.99, got {col_coords[1]}"
 
     # Verify column pitch progression across all 12 columns for 5 tips
     for col_idx in range(1, 13):
         col_coords = app._resolve_step_xy(step_5tip, "Slot_4", f"A{col_idx}")
-        expected_x = round(105.63 - ((col_idx - 1) * 9.0), 2)
+        expected_x = round(105.66 - ((col_idx - 1) * 9.0), 2)
         assert abs(col_coords[0] - expected_x) < 1e-2, f"Col {col_idx} expected X={expected_x}, got {col_coords[0]}"
-        assert abs(col_coords[1] - 57.12) < 1e-2, f"Col {col_idx} expected Y=57.12, got {col_coords[1]}"
+        assert abs(col_coords[1] - 56.83) < 1e-2, f"Col {col_idx} expected Y=56.83, got {col_coords[1]}"
 
-    print("PASS: Machine 2 (1-10 µL ONLY) 8-tip pickup verified at X=105.63mm, Y=84.14mm.")
-    print("PASS: Machine 2 (1-10 µL ONLY) 5-tip pickup verified at X=105.63mm, Y=57.12mm.")
+    # Verify single-tip pickup remains strictly at calibrated well A1 center (105.63, 52.64)
+    step_1tip = {
+        "action": "Pick Up Tip",
+        "mode": "auto",
+        "slot": "Slot_4",
+        "well": "A1",
+        "volume": 0.0,
+        "labware": "tip_rack_1000ul.json",
+        "eight_ch_symmetric": False,
+        "mounted_channels": "A",
+    }
+    coords_1tip = app._resolve_step_xy(step_1tip, "Slot_4", "A1")
+    assert abs(coords_1tip[0] - 105.63) < 1e-2 and abs(coords_1tip[1] - 52.64) < 1e-2, (
+        f"Expected single tip A1 at (105.63, 52.64), got {coords_1tip}"
+    )
+
+    # Verify virtual tip remapping to Column 2 maintains correct Y for each mode
+    app.reset_tip_rack_memory("Slot_4", announce=False)
+    # Consume Column 1 for 5 tips
+    for r in "ABCDE":
+        app.mark_tip_consumed("Slot_4", f"{r}1", redraw=False)
+    remap_col_5, was_remapped_5 = app.resolve_8ch_session_tip_col("Slot_4", "A1", step_5tip)
+    assert remap_col_5 == 2 and was_remapped_5 is True
+    coords_remap_5 = app._resolve_step_xy(step_5tip, "Slot_4", f"A{remap_col_5}")
+    assert abs(coords_remap_5[0] - 96.66) < 1e-2 and abs(coords_remap_5[1] - 56.83) < 1e-2, (
+        f"Expected remapped 5-tip Col 2 at (96.66, 56.83), got {coords_remap_5}"
+    )
+
+    app.reset_tip_rack_memory("Slot_4", announce=False)
+    # Consume Column 1 for 8 tips
+    for r in "ABCDEFGH":
+        app.mark_tip_consumed("Slot_4", f"{r}1", redraw=False)
+    remap_col_8, was_remapped_8 = app.resolve_8ch_session_tip_col("Slot_4", "A1", step_8tip)
+    assert remap_col_8 == 2 and was_remapped_8 is True
+    coords_remap_8 = app._resolve_step_xy(step_8tip, "Slot_4", f"A{remap_col_8}")
+    assert abs(coords_remap_8[0] - 96.47) < 1e-2 and abs(coords_remap_8[1] - 84.99) < 1e-2, (
+        f"Expected remapped 8-tip Col 2 at (96.47, 84.99), got {coords_remap_8}"
+    )
+
+    print("PASS: Machine 2 (1-10 µL ONLY) 8-tip pickup verified at X=105.47mm, Y=84.99mm.")
+    print("PASS: Machine 2 (1-10 µL ONLY) 5-tip pickup verified at X=105.66mm, Y=56.83mm.")
+    print("PASS: Machine 2 single-tip pickup strictly preserved at X=105.63mm, Y=52.64mm.")
+    print("PASS: Column remapping verified (Col 2: 5-tip=(96.66, 56.83), 8-tip=(96.47, 84.99)).")
     print("PASS: All 12 columns progress cleanly at 9.0mm pitch without mid-wall collisions.")
 
     # Verify 5-tip Aspirate and Dispense maintain alignment with Rows A..E (never shifting to D..H)
@@ -532,8 +573,12 @@ def run_all_tests():
         )
         if prof_id == "machine_2_1_10ul":
             res_5tip = app._resolve_step_xy({"action": "Pick Up Tip", "mounted_channels": "A-E"}, "Slot_4", "A1")
-            assert abs(res_5tip[0] - 105.63) < 1e-4 and abs(res_5tip[1] - 57.12) < 1e-4, (
-                f"[{prof_id}] Expected 5-tip manifold pickup Y=57.12, got {res_5tip}"
+            assert abs(res_5tip[0] - 105.66) < 1e-4 and abs(res_5tip[1] - 56.83) < 1e-4, (
+                f"[{prof_id}] Expected 5-tip manifold pickup (105.66, 56.83), got {res_5tip}"
+            )
+            res_8tip = app._resolve_step_xy({"action": "Pick Up Tip", "mounted_channels": "A-H"}, "Slot_4", "A1")
+            assert abs(res_8tip[0] - 105.47) < 1e-4 and abs(res_8tip[1] - 84.99) < 1e-4, (
+                f"[{prof_id}] Expected 8-tip manifold pickup (105.47, 84.99), got {res_8tip}"
             )
     print("PASS: Both _calculate_xy('Slot_4', 'A1') resolves to (105.63, 52.64) and single-tip pickup resolves to A1 center.")
 

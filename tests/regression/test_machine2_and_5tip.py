@@ -22,7 +22,7 @@ def test_machine_2_calibrated_heights_isolation(tmp_path):
 
 def test_machine_2_8ch_and_5tip_kinematics():
     """Verify Machine 2 (1-10 µL) 8-tip and 5-tip pickup aligns at verified seated coordinates."""
-    # 8-tip pickup: Carriage Y=84.14mm (Col 1 at X=105.66mm, Row A=52.64mm)
+    # 8-tip pickup: Carriage Y=84.99mm (Col 1 at X=105.47mm)
     cy_8ch = NozzleLayout.get_carriage_y_for_manifold(
         target_a1_y=52.64,
         mounted_channels="A-H",
@@ -31,9 +31,9 @@ def test_machine_2_8ch_and_5tip_kinematics():
         slot_name="Slot_4",
         is_10ul=True,
     )
-    assert cy_8ch == 84.14
+    assert cy_8ch == 84.99
 
-    # 5-tip pickup: Carriage Y=56.96mm (Col 1 at X=105.63mm, Rows A-E)
+    # 5-tip pickup: Carriage Y=56.83mm (Col 1 at X=105.66mm, Rows A-E)
     cy_5tip = NozzleLayout.get_carriage_y_for_manifold(
         target_a1_y=52.64,
         mounted_channels="A-E",
@@ -42,18 +42,18 @@ def test_machine_2_8ch_and_5tip_kinematics():
         slot_name="Slot_4",
         is_10ul=True,
     )
-    assert cy_5tip == 56.96
+    assert cy_5tip == 56.83
 
-    # Calculate nozzle positions at Y=84.14
+    # Calculate nozzle positions at Y=84.99 (start_y = 84.99 - 31.50 = 53.49)
     nozzles = NozzleLayout.get_nozzle_positions_y(cy_8ch)
-    assert nozzles[0] == 52.64  # Row A
-    assert nozzles[1] == 61.64  # Row B
-    assert nozzles[2] == 70.64  # Row C
-    assert nozzles[3] == 79.64  # Row D
-    assert nozzles[4] == 88.64  # Row E
-    assert nozzles[5] == 97.64  # Row F
-    assert nozzles[6] == 106.64 # Row G
-    assert nozzles[7] == 115.64 # Row H
+    assert nozzles[0] == 53.49  # Row A
+    assert nozzles[1] == 62.49  # Row B
+    assert nozzles[2] == 71.49  # Row C
+    assert nozzles[3] == 80.49  # Row D
+    assert nozzles[4] == 89.49  # Row E
+    assert nozzles[5] == 98.49  # Row F
+    assert nozzles[6] == 107.49 # Row G
+    assert nozzles[7] == 116.49 # Row H
 
 
 def test_machine_2_slot3_and_slot5_z_depth():

@@ -71,13 +71,22 @@ class NozzleLayout:
             return target_a1_y + (tip_offset_rows * cls.NOZZLE_PITCH_MM)
 
         if multi:
-            if is_10ul and slot_name in ("Slot_3", "Slot_4"):
+            if is_10ul and slot_name == "Slot_4":
                 # Machine 2 (1-10 µL): Physically verified seated coordinates
-                # 8 tips: Y=84.14mm | 5 tips (Rows A-E): Y=56.96mm
+                # 8 tips: Y=84.99mm | 5 tips (Rows A-E): Y=56.83mm
                 mask = cls.parse_channel_mask(mounted_channels)
                 num_tips = len(mask) if mask else 8
                 if num_tips == 5:
-                    base_y = 56.96
+                    base_y = 56.83
+                elif num_tips == 8:
+                    base_y = 84.99
+                else:
+                    base_y = round(84.99 - (8 - num_tips) * 9.06, 2)
+            elif is_10ul and slot_name == "Slot_3":
+                mask = cls.parse_channel_mask(mounted_channels)
+                num_tips = len(mask) if mask else 8
+                if num_tips == 5:
+                    base_y = 57.12
                 elif num_tips == 8:
                     base_y = 84.14
                 else:
