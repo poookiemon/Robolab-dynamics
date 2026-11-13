@@ -897,7 +897,7 @@ def run_all_tests():
     assert "Slot_2" not in liquid_slots, "Slot_2 (Waste discard) must not be included in clearance adjustment"
     print(f"PASS: Valid liquid-handling labware discovered: {liquid_slots} (Tip rack & waste excluded).")
 
-    # 2. Verify clearance subtraction on liquid operations
+    # 2. Verify bidirectional +/- Z clearance math & formatting helpers
     app.run_z_clearance_offsets = {
         "Slot_1": 1.5,
         "Slot_5": 2.0,
@@ -906,21 +906,36 @@ def run_all_tests():
     # Slot 5 Plate 96 (standard nominal 98.72mm) -> should execute at 96.72mm
     base_z_5 = app._calculate_z("Aspirate Media", app.lims.deck_labware.get("Slot_5"), "A1", "auto", 0.0, "Slot_5")
     c_dz_5 = app.run_z_clearance_offsets.get("Slot_5", 0.0)
-    final_z_5 = max(0.0, base_z_5 - c_dz_5)
+    final_z_5 = app._apply_run_z_clearance(base_z_5, c_dz_5)
     assert final_z_5 == 96.72, f"Expected Slot 5 Z=96.72mm (98.72 - 2.0mm), got {final_z_5}"
     print(f"PASS: Slot 5 Aspirate Media depth reduced from {base_z_5:.2f}mm to {final_z_5:.2f}mm (-2.0mm clearance).")
 
     # Slot 1 Reservoir (standard nominal 86.00mm) -> should execute at 84.50mm
     base_z_1 = app._calculate_z("Aspirate Media", app.lims.deck_labware.get("Slot_1"), "A1", "auto", 0.0, "Slot_1")
     c_dz_1 = app.run_z_clearance_offsets.get("Slot_1", 0.0)
-    final_z_1 = max(0.0, base_z_1 - c_dz_1)
+    final_z_1 = app._apply_run_z_clearance(base_z_1, c_dz_1)
     assert final_z_1 == 84.50, f"Expected Slot 1 Z=84.50mm (86.0 - 1.5mm), got {final_z_1}"
     print(f"PASS: Slot 1 Aspirate Media depth reduced from {base_z_1:.2f}mm to {final_z_1:.2f}mm (-1.5mm clearance).")
+
+    # Negative spinbox values (▼ arrow below 0) -> increase Z (go deeper), safely capped at 103.5 mm
+    deeper_z_1 = app._apply_run_z_clearance(base_z_1, -2.5)
+    assert abs(deeper_z_1 - 88.50) < 1e-6, f"Expected Slot 1 deeper Z=88.50mm (86.0 + 2.5mm), got {deeper_z_1}"
+    capped_z_5 = app._apply_run_z_clearance(base_z_5, -10.0)
+    assert capped_z_5 == 103.5, f"Expected deeper Z clamped at 103.5mm max, got {capped_z_5}"
+    clamped_low = app._apply_run_z_clearance(5.0, 10.0)
+    assert clamped_low == 0.0, f"Expected shallow Z clamped at 0.0mm min, got {clamped_low}"
+    txt_pos, fg_pos = app._format_run_z_preview(86.0, 1.5)
+    txt_neg, fg_neg = app._format_run_z_preview(86.0, -2.5)
+    txt_cap, fg_cap = app._format_run_z_preview(98.72, -10.0)
+    assert "(-1.50mm)" in txt_pos and fg_pos == "#0d6efd", f"Unexpected positive preview: {(txt_pos, fg_pos)}"
+    assert "(+2.50mm deeper)" in txt_neg and fg_neg == "#dc3545", f"Unexpected deeper preview: {(txt_neg, fg_neg)}"
+    assert "MAX!" in txt_cap and fg_cap == "#dc3545", f"Unexpected capped preview: {(txt_cap, fg_cap)}"
+    print(f"PASS: Negative spinbox offset increases Z safely ({base_z_1:.2f} -> {deeper_z_1:.2f}mm) and clamps at 103.5mm max.")
 
     # Slot 3 Drug plate (no clearance specified -> 0.0mm offset)
     base_z_3 = app._calculate_z("Aspirate Media", app.lims.deck_labware.get("Slot_3"), "A1", "auto", 0.0, "Slot_3")
     c_dz_3 = app.run_z_clearance_offsets.get("Slot_3", 0.0)
-    final_z_3 = max(0.0, base_z_3 - c_dz_3)
+    final_z_3 = app._apply_run_z_clearance(base_z_3, c_dz_3)
     assert final_z_3 == base_z_3, f"Expected Slot 3 Z to remain {base_z_3}, got {final_z_3}"
     print(f"PASS: Unspecified labware (Slot 3) preserves standard calibrated depth ({final_z_3:.2f}mm).")
 
