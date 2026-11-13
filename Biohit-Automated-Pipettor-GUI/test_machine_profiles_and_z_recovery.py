@@ -1337,6 +1337,53 @@ def run_all_tests():
         assert [(c[0], c[1]) for c in m3_hw.piston_calls] == [("aspirate", 230.0)], (
             f"Machine 3 must preserve direct 230.0uL volume, got {m3_hw.piston_calls}"
         )
+
+        # 16g. Verify working.Pipettor configures Machine 2's RealBiohitPipettor with (200, False -> 2.0 steps/uL)
+        # while keeping self.multichannel=True for 8-tip kinematics, and leaving Machine 1 & 3 untouched.
+        import working as _working
+        opened_configs = []
+
+        class _FakeRealBiohitPipettor:
+            def __init__(self, tip_volume, multichannel, initialize=False):
+                self._AbstractPipettor__multichannel = multichannel
+                self.tip_volume = tip_volume
+                opened_configs.append((tip_volume, multichannel, initialize))
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        orig_has_dll = _working.HAS_BIOHIT_DLL
+        orig_real_cls = _working.RealBiohitPipettor
+        _working.HAS_BIOHIT_DLL = True
+        _working.RealBiohitPipettor = _FakeRealBiohitPipettor
+        try:
+            pip = _working.Pipettor(tip_volume=10.0, multichannel=True)
+            assert pip.multichannel is True and pip.channels == 8 and pip.tip_volume == 10.0
+            assert pip._wrapper_config() == (200, False)
+            assert opened_configs[-1] == (200, False, False), f"Expected (200, False, False), got {opened_configs[-1]}"
+            assert pip.hardware.tip_volume == 200 and pip.hardware._AbstractPipettor__multichannel is False
+
+            # Live reconfigure to Machine 1 (8x1000) -> (1000, True)
+            pip.reconfigure(tip_volume=1000.0, multichannel=True)
+            assert pip.multichannel is True and pip.channels == 8 and pip._wrapper_config() == (1000, True)
+            assert pip.hardware.tip_volume == 1000 and pip.hardware._AbstractPipettor__multichannel is True
+
+            # Live reconfigure back to Machine 2 (1-10 uL) -> (200, False)
+            pip.reconfigure(tip_volume=10.0, multichannel=True)
+            assert pip.multichannel is True and pip.channels == 8 and pip._wrapper_config() == (200, False)
+            assert pip.hardware.tip_volume == 200 and pip.hardware._AbstractPipettor__multichannel is False
+
+            # Live reconfigure to Machine 3 (300 uL) -> (200, False)
+            pip.reconfigure(tip_volume=300.0, multichannel=False)
+            assert pip.multichannel is False and pip.channels == 1 and pip._wrapper_config() == (200, False)
+            assert pip.hardware.tip_volume == 200 and pip.hardware._AbstractPipettor__multichannel is False
+            pip.close()
+        finally:
+            _working.HAS_BIOHIT_DLL = orig_has_dll
+            _working.RealBiohitPipettor = orig_real_cls
     finally:
         _time.sleep = orig_sleep
         app.lims.hw.is_initialized = orig_hw_ready

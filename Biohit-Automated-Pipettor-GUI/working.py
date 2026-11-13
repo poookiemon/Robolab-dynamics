@@ -126,16 +126,29 @@ class Pipettor:
         self.hardware = None
         self._open_hardware()
 
+    def _wrapper_config(self) -> Tuple[int, bool]:
+        """Return (tip_volume_literal, driver_multichannel) for biohit_pipettor.Pipettor.
+
+        Machine 2 (1-10 uL 8-channel: self.multichannel=True, self.tip_volume<=50)
+        configures the underlying wrapper as (200, False) so biohit_pipettor uses
+        2.0 steps/uL (15 steps at 7.5 uL, 20 steps at 10 uL) instead of the 8x1000 uL
+        0.2 steps/uL rate, while preserving self.multichannel=True for 8-tip kinematics.
+        """
+        if self.multichannel and self.tip_volume <= 50.0:
+            return 200, False
+        vol_literal = 1000 if (self.multichannel or self.tip_volume >= 1000.0) else 200
+        return vol_literal, self.multichannel
+
     def _open_hardware(self) -> Tuple[bool, str]:
         if HAS_BIOHIT_DLL:
             try:
-                # Biohit hardware driver strictly accepts 200 or 1000 uL (PipetType: 1=200uL, 2=1000uL).
-                # Multi-channel manifold strictly requires 1000 uL (PipetType=2, 0.2 steps/uL).
-                # Single-channel heads (200uL/250uL/300uL) configure PipetType=1 (2.0 steps/uL), enabling strokes up to 250uL+.
-                vol_literal = 1000 if (self.multichannel or self.tip_volume >= 1000.0) else 200
+                # Biohit hardware driver accepts 200 or 1000 uL (PipetType: 1=200uL, 2=1000uL).
+                # Machine 1 (8x1000 uL) uses (1000, True -> 0.2 steps/uL);
+                # Machine 2 (1-10 uL) and Machine 3 (300 uL) use (200, False -> 2.0 steps/uL).
+                vol_literal, driver_multi = self._wrapper_config()
                 self.hardware_context = RealBiohitPipettor(
                     tip_volume=vol_literal,
-                    multichannel=self.multichannel,
+                    multichannel=driver_multi,
                     initialize=False
                 )
                 self.hardware = self.hardware_context.__enter__()
@@ -153,17 +166,13 @@ class Pipettor:
         else:
             self.tip_volume = 1000.0 if self.multichannel else 250.0
         self.channels = 8 if self.multichannel else 1
-        vol_literal = 1000 if (self.multichannel or self.tip_volume >= 1000.0) else 200
+        vol_literal, driver_multi = self._wrapper_config()
 
         # Prefer in-place live driver reconfiguration when already connected to avoid CLR/COM handle teardown race
         if self.hardware is not None:
             try:
-                if self.multichannel:
-                    setattr(self.hardware, "_AbstractPipettor__multichannel", True)
-                    self.hardware.tip_volume = 1000
-                else:
-                    setattr(self.hardware, "_AbstractPipettor__multichannel", False)
-                    self.hardware.tip_volume = vol_literal
+                setattr(self.hardware, "_AbstractPipettor__multichannel", driver_multi)
+                self.hardware.tip_volume = vol_literal
                 return True, f"Hardware driver reconfigured live ({self.channels}x{int(self.tip_volume)}uL {'Multi' if self.multichannel else 'Single'})."
             except Exception as e:
                 print(f"Live reconfigure fallback to reopen: {e}")
