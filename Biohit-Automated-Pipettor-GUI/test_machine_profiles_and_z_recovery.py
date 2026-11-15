@@ -953,7 +953,7 @@ def run_all_tests():
     # TEST 13: Machine 2 Protocol Discovery & Slot 4 Visual Deck Containment
     # -------------------------------------------------------------------------
     print("\n--- 13. Testing Machine 2 Protocol Resolution & Slot 4 Visual Deck Geometry ---")
-    for vol_str in ("7.5uL", "5.0uL"):
+    for vol_str in ("7.5uL", "5.0uL", "1.5uL", "1.25uL"):
         p_par = app.resolve_protocol_path(
             f"ehm_1ch_10ul_drug_addition_to_ehm_{vol_str}.json",
             f"ehm_8ch_10ul_parallel_drug_addition_{vol_str}.json",
@@ -969,6 +969,8 @@ def run_all_tests():
     m2_map = app._get_protocols_for_pipettor("8-Channel Multi (1-10 µL)")
     assert "3x [8-Tip Both Plates] Drug Addition to EHM (7.5 µL) + Mix" in m2_map
     assert "3x [8-Tip Both Plates] Drug Addition to EHM (5.0 µL) + Mix" in m2_map
+    assert "3x [8-Tip Both Plates] Drug Addition to EHM (1.5 µL) + Mix" in m2_map
+    assert "3x [8-Tip Both Plates] Drug Addition to EHM (1.25 µL) + Mix" in m2_map
 
     # Verify draw_deck renders Slot 4 wells inside Slot 4 rectangle (Y in [45.0, 130.5])
     # without altering _calculate_xy/_resolve_step_xy motor targets.

@@ -339,12 +339,18 @@ class LIMSMasterApp:
         m10ch = tk.Menu(protocolmenu, tearoff=0)
         m10ch.add_command(label="🟢 3x [8-Tip Both Plates] Drug Addition to EHM (7.5 µL) + Mix", command=lambda: self.action_load_10ul_3x_8tip_both_plates(7.5))
         m10ch.add_command(label="🟢 3x [8-Tip Both Plates] Drug Addition to EHM (5.0 µL) + Mix", command=lambda: self.action_load_10ul_3x_8tip_both_plates(5.0))
+        m10ch.add_command(label="🟢 3x [8-Tip Both Plates] Drug Addition to EHM (1.5 µL) + Mix", command=lambda: self.action_load_10ul_3x_8tip_both_plates(1.5))
+        m10ch.add_command(label="🟢 3x [8-Tip Both Plates] Drug Addition to EHM (1.25 µL) + Mix", command=lambda: self.action_load_10ul_3x_8tip_both_plates(1.25))
         m10ch.add_separator()
         m10ch.add_command(label="🟢 [5-Tip Parallel] Drug Addition to EHM (7.5 µL) + Mix (~8 mins)", command=lambda: self.action_load_10ul_parallel_drug_addition(7.5))
         m10ch.add_command(label="🟢 [5-Tip Parallel] Drug Addition to EHM (5.0 µL) + Mix (~8 mins)", command=lambda: self.action_load_10ul_parallel_drug_addition(5.0))
+        m10ch.add_command(label="🟢 [5-Tip Parallel] Drug Addition to EHM (1.5 µL) + Mix (~8 mins)", command=lambda: self.action_load_10ul_parallel_drug_addition(1.5))
+        m10ch.add_command(label="🟢 [5-Tip Parallel] Drug Addition to EHM (1.25 µL) + Mix (~8 mins)", command=lambda: self.action_load_10ul_parallel_drug_addition(1.25))
         m10ch.add_separator()
         m10ch.add_command(label="🟢 [Triplicate Assay] Drug Addition to EHM (7.5 µL) + Mix", command=lambda: self.action_load_10ul_triplicate_drug_addition(7.5))
         m10ch.add_command(label="🟢 [Triplicate Assay] Drug Addition to EHM (5.0 µL) + Mix", command=lambda: self.action_load_10ul_triplicate_drug_addition(5.0))
+        m10ch.add_command(label="🟢 [Triplicate Assay] Drug Addition to EHM (1.5 µL) + Mix", command=lambda: self.action_load_10ul_triplicate_drug_addition(1.5))
+        m10ch.add_command(label="🟢 [Triplicate Assay] Drug Addition to EHM (1.25 µL) + Mix", command=lambda: self.action_load_10ul_triplicate_drug_addition(1.25))
         protocolmenu.add_cascade(label="8-Channel Multi (1-10 µL) [Drug Addition to EHM]", menu=m10ch)
 
         menubar.add_cascade(label="Protocols", menu=protocolmenu)
@@ -3453,10 +3459,16 @@ class LIMSMasterApp:
             return {
                 "3x [8-Tip Both Plates] Drug Addition to EHM (7.5 µL) + Mix": lambda: self.action_load_10ul_3x_8tip_both_plates(7.5),
                 "3x [8-Tip Both Plates] Drug Addition to EHM (5.0 µL) + Mix": lambda: self.action_load_10ul_3x_8tip_both_plates(5.0),
+                "3x [8-Tip Both Plates] Drug Addition to EHM (1.5 µL) + Mix": lambda: self.action_load_10ul_3x_8tip_both_plates(1.5),
+                "3x [8-Tip Both Plates] Drug Addition to EHM (1.25 µL) + Mix": lambda: self.action_load_10ul_3x_8tip_both_plates(1.25),
                 "[5-Tip Parallel] Drug Addition to EHM (7.5 µL) + Mix (~8 mins)": lambda: self.action_load_10ul_parallel_drug_addition(7.5),
                 "[5-Tip Parallel] Drug Addition to EHM (5.0 µL) + Mix (~8 mins)": lambda: self.action_load_10ul_parallel_drug_addition(5.0),
+                "[5-Tip Parallel] Drug Addition to EHM (1.5 µL) + Mix (~8 mins)": lambda: self.action_load_10ul_parallel_drug_addition(1.5),
+                "[5-Tip Parallel] Drug Addition to EHM (1.25 µL) + Mix (~8 mins)": lambda: self.action_load_10ul_parallel_drug_addition(1.25),
                 "[Triplicate Assay] Drug Addition to EHM (7.5 µL) + Mix": lambda: self.action_load_10ul_triplicate_drug_addition(7.5),
                 "[Triplicate Assay] Drug Addition to EHM (5.0 µL) + Mix": lambda: self.action_load_10ul_triplicate_drug_addition(5.0),
+                "[Triplicate Assay] Drug Addition to EHM (1.5 µL) + Mix": lambda: self.action_load_10ul_triplicate_drug_addition(1.5),
+                "[Triplicate Assay] Drug Addition to EHM (1.25 µL) + Mix": lambda: self.action_load_10ul_triplicate_drug_addition(1.25),
             }
         elif "300" in p_name:
             return {
