@@ -8302,6 +8302,8 @@ class LIMSMasterApp:
         seq = getattr(self, "workflow_sequence", [])
         liquid_slots = []
         slot_actions = {}
+        slot_mix_cycles = {}
+        mix_enabled = bool(getattr(self, "enable_mixing_for_run", True))
         for step in seq:
             act = step.get("action", "")
             slot = step.get("slot", "")
@@ -8309,6 +8311,9 @@ class LIMSMasterApp:
                 if slot not in slot_actions:
                     slot_actions[slot] = set()
                 slot_actions[slot].add(act)
+                step_mix = int(step.get("mix_cycles", 0) or 0) if mix_enabled else 0
+                if step_mix > slot_mix_cycles.get(slot, 0):
+                    slot_mix_cycles[slot] = step_mix
                 if slot not in liquid_slots and "Slot_" in slot:
                     lw_obj = getattr(getattr(self, "lims", None), "deck_labware", {}).get(slot)
                     lw_src = str(getattr(lw_obj, "source_file", "")).lower()
@@ -8419,7 +8424,17 @@ class LIMSMasterApp:
 
             test_act = acts[0] if acts else "Aspirate Media"
             try:
-                nom_z = float(self._calculate_z(test_act, lw_obj, "A1", "auto", 0.0, slot))
+                nom_z = float(
+                    self._calculate_z(
+                        test_act,
+                        lw_obj,
+                        "A1",
+                        "auto",
+                        0.0,
+                        slot,
+                        mix_cycles=slot_mix_cycles.get(slot, 0),
+                    )
+                )
             except Exception:
                 nom_z = 0.0
             slot_nominal_z[slot] = nom_z

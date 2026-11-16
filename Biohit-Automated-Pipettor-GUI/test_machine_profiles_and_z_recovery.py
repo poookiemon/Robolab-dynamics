@@ -996,6 +996,13 @@ def run_all_tests():
         f"Expected 18.0mm Myriamed 48-well column pitch on Slot_6, got {s6_ehm_x}"
     )
 
+    # Verify Pre-Run Depth nominal Z matches run_sequence Z when mixing is enabled (no +10mm jump)
+    ehm_lw_s5 = app.lims.deck_labware.get("Slot_5")
+    z_preview_mix = app._calculate_z("Dispense Media", ehm_lw_s5, "A1", "auto", 0.0, "Slot_5", mix_cycles=5)
+    z_exec_mix = app._calculate_z("Dispense Media", ehm_lw_s5, "A1", "auto", 0.0, "Slot_5", mix_cycles=5)
+    assert z_preview_mix == 72.35 and z_exec_mix == 72.35
+    assert app._apply_run_z_clearance(z_exec_mix, -0.95) == 73.30
+
     # Verify draw_deck renders Slot 4 wells inside Slot 4 rectangle (Y in [45.0, 130.5])
     # without altering _calculate_xy/_resolve_step_xy motor targets.
     app.switch_machine_profile("machine_2_1_10ul")
