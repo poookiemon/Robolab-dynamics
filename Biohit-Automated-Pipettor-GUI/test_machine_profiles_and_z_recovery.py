@@ -972,6 +972,30 @@ def run_all_tests():
     assert "3x [8-Tip Both Plates] Drug Addition to EHM (1.5 µL) + Mix" in m2_map
     assert "3x [8-Tip Both Plates] Drug Addition to EHM (1.25 µL) + Mix" in m2_map
 
+    # Verify Myriamed 48-well plate on Slot_5 & Slot_6 uses 18.0mm column pitch (not 9.0mm 96-well pitch)
+    s5_ehm_x = [
+        app._resolve_step_xy(
+            {"action": "Dispense Media", "eight_ch_symmetric": True, "mounted_channels": "A-H", "labware": "myriamed_48_well.json"},
+            "Slot_5",
+            f"A{c}",
+        )[0]
+        for c in range(1, 7)
+    ]
+    assert s5_ehm_x == [242.98, 224.98, 206.98, 188.98, 170.98, 152.98], (
+        f"Expected 18.0mm Myriamed 48-well column pitch on Slot_5, got {s5_ehm_x}"
+    )
+    s6_ehm_x = [
+        app._resolve_step_xy(
+            {"action": "Dispense Media", "eight_ch_symmetric": True, "mounted_channels": "A-H", "labware": "myriamed_48_well.json"},
+            "Slot_6",
+            f"A{c}",
+        )[0]
+        for c in range(1, 7)
+    ]
+    assert s6_ehm_x == [105.60, 87.60, 69.60, 51.60, 33.60, 15.60], (
+        f"Expected 18.0mm Myriamed 48-well column pitch on Slot_6, got {s6_ehm_x}"
+    )
+
     # Verify draw_deck renders Slot 4 wells inside Slot 4 rectangle (Y in [45.0, 130.5])
     # without altering _calculate_xy/_resolve_step_xy motor targets.
     app.switch_machine_profile("machine_2_1_10ul")

@@ -6769,7 +6769,7 @@ class LIMSMasterApp:
             base_y = 52.64
             return round(base_x - (ci * 9.0), 2), round(base_y + (ri * 9.0), 2)
 
-        if slot_name in ("Slot_5", "Slot_6") and is_10ul and (getattr(self, "_lw_kind", lambda x: "")(self.lims.deck_labware.get(slot_name)) == "plate96" or "triplicate" in str(getattr(self, "current_protocol_file", "")).lower() or "triplicate" in str(getattr(self, "loaded_protocol_name", "")).lower()):
+        if slot_name in ("Slot_5", "Slot_6") and is_10ul and getattr(self, "_lw_kind", lambda x: "")(self.lims.deck_labware.get(slot_name)) == "plate96":
             r_idx, c_idx = self._parse_well(well_id)
             ci = c_idx if (c_idx is not None and 0 <= c_idx < 12) else 0
             ri = r_idx if (r_idx is not None and 0 <= r_idx < 8) else 0
@@ -6968,16 +6968,20 @@ class LIMSMasterApp:
             else:
                 num_tips = 8
 
+            step_lw = str((step or {}).get("labware", "")).lower()
+            is_ehm48_slot = (kind == "ehm48" and "96" not in step_lw) or ("48" in step_lw) or ("myriamed" in step_lw)
+            s56_col_pitch = 18.0 if is_ehm48_slot else 9.0
+
             if slot_name == "Slot_4":
                 learned_dx, _ = getattr(self, 'tip_rack_learned_offset', (0.0, 0.0))
                 base_x, ty = self._m2_slot4_tip_base_xy(num_tips)
                 tx = round(base_x - (col_i * 9.0) + learned_dx, 2)
             elif slot_name == "Slot_6":
-                tx = round(105.60 - (col_i * 9.0), 2)
+                tx = round(105.60 - (col_i * s56_col_pitch), 2)
             elif slot_name == "Slot_3":
                 tx = round(243.81 - (col_i * 9.0), 2)
             else:  # Slot_5
-                tx = round(242.98 - (col_i * 9.0), 2)
+                tx = round(242.98 - (col_i * s56_col_pitch), 2)
 
             if slot_name == "Slot_3":
                 if num_tips == 5:
